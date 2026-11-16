@@ -3,7 +3,7 @@ import { formatTime } from '../../domain/cruise'
 import type { Bundle } from '../../domain/explorer/evening'
 import { EXPLORER_PATHS } from '../../domain/explorer/planItems'
 import type { RecommendWhy } from '../../domain/explorer/recommend'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
 import { Card } from '../Card'
@@ -19,7 +19,7 @@ export function EveningBundles({ bundles, day, clockAt, busy, onAdd }: {
     <>
       {bundles.map((b) => (
         <Card key={b.kind} labelledBy={`tp-bundle-${b.kind}`}>
-          <h2 id={`tp-bundle-${b.kind}`} className="card__title">{t(b.kind === 'return' ? 'plan.bundle.return' : 'plan.bundle.evening')}</h2>
+          <h2 id={`tp-bundle-${b.kind}`} className="card__title">{headingCase(t(b.kind === 'return' ? 'plan.bundle.return' : 'plan.bundle.evening'))}</h2>
           <p className="muted">{b.kind === 'return' && b.tourEndsAt !== undefined ? t('plan.bundle.returnWhy', { time: clockAt(b.tourEndsAt) }) : t('plan.bundle.eveningWhy')}</p>
           <ul className="icon-list">
             {b.steps.map((s) => (

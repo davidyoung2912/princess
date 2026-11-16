@@ -11,7 +11,7 @@ import { useAction } from '../../hooks/useAction'
 import { sendWithin, worthRetrying } from '../../hooks/useOutbox'
 import { useNow } from '../../hooks/useDemo'
 import { api } from '../../runtime'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { useShipTime } from './shipTime'
 
@@ -171,7 +171,7 @@ function PollForm({ conversationId, onSent }: { conversationId: string; onSent: 
   })
   return (
     <form onSubmit={(e) => { e.preventDefault(); void ask.run() }}>
-      <h3>{t('cpoll.heading')}</h3>
+      <h3>{headingCase(t('cpoll.heading'))}</h3>
       <p className="muted">{t('cpoll.hint')}</p>
       <p role="status" className="visually-hidden">{announce}</p>
       <div className="field">
@@ -211,7 +211,7 @@ function PlanForm({ conversationId, events, onSent }: { conversationId: string; 
   if (events.length === 0) return <p className="muted">{t('cplan.none')}</p>
   return (
     <form onSubmit={(e) => { e.preventDefault(); void send.run() }}>
-      <h3>{t('cplan.heading')}</h3>
+      <h3>{headingCase(t('cplan.heading'))}</h3>
       <p role="status" className="visually-hidden">{announce}</p>
       <div className="field">
         <label htmlFor="plan-day">{t('cplan.day')}</label>

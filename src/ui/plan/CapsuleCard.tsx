@@ -6,7 +6,7 @@ import { clearUnreadable, exportDevice, recoverDevice, scanDevice } from '../../
 import { batteryNow, watchBattery } from '../../data/battery'
 import { nightBeforeTest, type ReadinessReport } from '../../domain/nightBefore'
 import { CAPSULE_KINDS, formatBytes, formatWhen, setKept, storageState } from '../../domain/offlineCapsule'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -115,7 +115,7 @@ export function CapsuleCard() {
         ))}
       </fieldset>
       <p role="status" className="muted">{prefs.lastTest ? t('capsule.lastTest', { time: formatWhen(prefs.lastTest.at), result: t(`ready.result.${prefs.lastTest.result}` as StringKey) }) : t('capsule.neverTested')}</p>
-      <h3>{t('backup.title')}</h3>
+      <h3>{headingCase(t('backup.title'))}</h3>
       <p className="muted">{t('backup.note')}</p>
       {scan.corrupt.length > 0 && (
         <Banner kind="warning" title={t('backup.corrupt', { count: scan.corrupt.length })} action={<Button variant="secondary" onClick={() => { setBackup({ kind: 'cleared', count: clearUnreadable() }); setScan(scanDevice()) }}>{t('backup.clear')}</Button>}>

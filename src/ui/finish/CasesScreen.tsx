@@ -5,7 +5,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -111,7 +111,7 @@ function CasePictures({ number, kind }: { number: string; kind: CaseKind }) {
   const here = mine.list.filter((m) => m.ref === number)
   return (
     <div className="case__pictures">
-      <h4>{t(`case.pictures.${kind === 'claim' ? 'claim' : 'lostItem'}` as StringKey)}</h4>
+      <h4>{headingCase(t(`case.pictures.${kind === 'claim' ? 'claim' : 'lostItem'}` as StringKey))}</h4>
       {here.map((m) => <KeptPicture key={m.id} media={m} alt={t('case.pictures.alt', { number })} onDeleted={mine.reload} />)}
       <PicturePicker purpose="case" reference={number} ready camera onSaved={mine.reload} />
     </div>

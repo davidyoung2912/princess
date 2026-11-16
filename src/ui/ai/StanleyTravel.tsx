@@ -6,7 +6,7 @@ import {
 import type { Mobility } from '../../domain/day'
 import { formatMoney } from '../../domain/money'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { stanleyTravel } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -55,8 +55,8 @@ export function StanleyFlightCard({ sailingId }: { sailingId: string }) {
             {flight.newFlightAt && <p>{t('tr10.flight.newTime', { time: flight.newFlightAt, clock: flight.clock })}</p>}
             <p className={flightNeedsAttention(flight) ? 'tag tag--warn' : 'tag tag--good'}>{t(`tr10.flight.verdict.${flight.verdict}` as StringKey)}</p>
             {flight.leaveBy && flight.offAt && <p>{t('tr10.flight.leave', { off: flight.offAt, by: flight.leaveBy, clock: flight.clock })}</p>}
-            {flight.alternatives.length > 0 && <><h3>{t('tr10.flight.alts')}</h3><ul>{flight.alternatives.map((a) => <li key={`${a.offOption}-${a.mode}`}>{a.text}</li>)}</ul></>}
-            <h3>{t('tr10.draft')}</h3>
+            {flight.alternatives.length > 0 && <><h3>{headingCase(t('tr10.flight.alts'))}</h3><ul>{flight.alternatives.map((a) => <li key={`${a.offOption}-${a.mode}`}>{a.text}</li>)}</ul></>}
+            <h3>{headingCase(t('tr10.draft'))}</h3>
             <CopyDraft text={flight.message} />
             <ul>{flight.notes.map((n) => <li key={n}>{n}</li>)}</ul>
           </>
@@ -93,7 +93,7 @@ export function StanleyTrafficCard({ sailingId }: { sailingId: string }) {
           <>
             <p className="muted">{t('tr10.source', { provider: r.provider, time: asOfText(r.asOf) })}</p>
             <ul>{r.notes.map((n) => <li key={n}>{n}</li>)}</ul>
-            <h3>{t('tr10.draft')}</h3>
+            <h3>{headingCase(t('tr10.draft'))}</h3>
             <CopyDraft text={r.message} />
           </>
         )}
@@ -107,7 +107,7 @@ function PortPackSection({ sailingId, day }: { sailingId: string; day: number })
   const copy = useSavedCopy<PortPack | null>('portPack', `${sailingId}.${day}`, async () => normalizePack(await stanleyTravel.pack({ sailingId, day })), (raw) => (raw === null ? null : normalizePack(raw)), [sailingId, day])
   return (
     <section aria-label={t('tr10.pack.title')} role="status">
-      <h3>{t('tr10.pack.title')}</h3>
+      <h3>{headingCase(t('tr10.pack.title'))}</h3>
       {copy.status === 'loading' && !copy.data && <p className="muted">{t('account.loading')}</p>}
       {copy.status === 'error' && !copy.data && <p>{t('tr10.failed')}</p>}
       {copy.data && (
@@ -187,13 +187,13 @@ export function StanleyShoreCard({ sailingId, day }: { sailingId: string; day: n
                 </li>
               ))}
             </ol>
-            <h3>{t('tr10.shore.return')}</h3>
+            <h3>{headingCase(t('tr10.shore.return'))}</h3>
             <p className={planIsSafe(plan) || plan.stops.length === 0 ? '' : 'tag tag--warn'}><strong>{plan.returnBrief.text}</strong></p>
             <ul>{plan.notes.map((n) => <li key={n}>{n}</li>)}</ul>
           </>
         )}
       </div>
-      <h3>{t('tr10.phrase.title')}</h3>
+      <h3>{headingCase(t('tr10.phrase.title'))}</h3>
       <div className="field">
         <label htmlFor={`${id}-q`}>{t('tr10.phrase.ask')}</label>
         <input id={`${id}-q`} className="field__input" maxLength={200} value={query} onChange={(e) => setQuery(e.target.value)} />

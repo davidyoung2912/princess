@@ -14,7 +14,7 @@ import { PhoneCheck } from '../account/PushPanels'
 import { useAwayFromShip, type PortToday } from '../../hooks/useAwayFromShip'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { api } from '../../runtime'
 import { ContactsAshore } from '../aboard/PortExtras'
 import { Banner } from '../Banner'
@@ -84,7 +84,7 @@ export function AwayFromShipPanel({ day }: { day: PortToday }) {
   const levelKind = level === 'plenty' ? 'info' : level === 'soon' ? 'warning' : 'danger'
   return (
     <>
-      <h1 className="visually-hidden">{t('aship.title')}</h1>
+      <h1 className="visually-hidden">{headingCase(t('aship.title'))}</h1>
       <Card hero labelledBy="aship-hero-h">
         <h2 id="aship-hero-h" className="card__title">{th('aship.hero.title')}</h2>
         <p className="aboard__deadline"><strong>{t('aship.hero.ship', { time: day.allAboardShip })}</strong></p>

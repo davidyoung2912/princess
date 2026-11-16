@@ -3,7 +3,7 @@ import { ApiError } from '../../api/errors'
 import { questionOf, LIBRARY } from '../../ai/stanleyLibrary'
 import { SHIP_FACTS } from '../../domain/finishMore'
 import { costDashboard, normalizeHandoffOutcomes, normalizeTierSummary, readDeviceSignals, staleReport, TARGET_LARGE_BELOW, TARGET_NO_MODEL, type CostDashboard, type HandoffOutcomes } from '../../ai/stanleyOps'
-import { t, th } from '../../i18n'
+import { t, th, headingCase } from '../../i18n'
 import { fetchHandoffOutcomes, fetchStanleyTiers } from '../../runtime'
 import { Button } from '../Button'
 
@@ -44,7 +44,7 @@ export function StanleyOpsConsole() {
     <section aria-labelledby={`${id}-h`}>
       <h3 id={`${id}-h`}>{th('ops.title')}</h3>
       <p>{t('ops.intro')}</p>
-      <h4>{t('ops.review.title')}</h4>
+      <h4>{headingCase(t('ops.review.title'))}</h4>
       {owners.length === 0 ? <p>{t('ops.review.none')}</p> : (
         <ul>
           {owners.map((o) => (
@@ -57,10 +57,10 @@ export function StanleyOpsConsole() {
           ))}
         </ul>
       )}
-      <h4>{t('ops.signals.title')}</h4>
+      <h4>{headingCase(t('ops.signals.title'))}</h4>
       <p>{t('ops.signals.unanswered', { percent: percent(sig.unansweredShare) })}</p>
       {sig.repeats.length === 0 ? <p>{t('ops.signals.noRepeats')}</p> : <ul>{sig.repeats.map((r) => <li key={r.id}>{t('diag.stanley.repeat.line', { question: askedQuestion(r.id), count: r.count })}</li>)}</ul>}
-      <h4>{t('ops.cost.title')}</h4>
+      <h4>{headingCase(t('ops.cost.title'))}</h4>
       <p>{t('ops.cost.intro', { free: TARGET_NO_MODEL, large: TARGET_LARGE_BELOW })}</p>
       <Button variant="secondary" onClick={() => void load()} disabled={state === 'busy'}>{t('ops.cost.load')}</Button>
       <div role="status">

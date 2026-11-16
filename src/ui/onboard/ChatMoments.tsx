@@ -4,7 +4,7 @@ import { MOMENT_TOPICS, shareGroupOf, toggleTopic, topicOn } from '../../domain/
 import { useAction } from '../../hooks/useAction'
 import { chatChanged } from '../../hooks/useChatSummary'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { api } from '../../runtime'
 import { ActionError } from '../account/parts'
 import { Button } from '../Button'
@@ -62,7 +62,7 @@ export function StanleySuggestions() {
   if (!prefs.data) return null
   return (
     <section aria-labelledby="stanley-sugg-h">
-      <h4 id="stanley-sugg-h">{t('stanley.moment.settingsTitle')}</h4>
+      <h4 id="stanley-sugg-h">{headingCase(t('stanley.moment.settingsTitle'))}</h4>
       <p className="muted">{t(`stanley.moment.mode.${prefs.data.mode}` as StringKey)}</p>
       <div className="chip-row">
         {MOMENT_TOPICS.map((topic) => (

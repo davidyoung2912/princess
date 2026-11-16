@@ -4,7 +4,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ActionError } from '../account/parts'
@@ -28,7 +28,7 @@ export function InstalmentPlanner({ number }: { number: string }) {
   const chosen = data.plans.find((p) => p.count === shown) ?? null
   return (
     <section className="card" aria-labelledby="instalments-h">
-      <h2 id="instalments-h">{t('book.instalments.title')}</h2>
+      <h2 id="instalments-h">{headingCase(t('book.instalments.title'))}</h2>
       <p className="muted">{t('book.instalments.intro')}</p>
       {data.chosen !== null && data.next && (
         <Banner kind="info" title={t('book.instalments.next', { amount: formatMoney(data.next.cents), date: formatDate(data.next.date) })} />

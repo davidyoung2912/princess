@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router'
 import { STANLEY_LEVELS } from '../../settings/settings'
 import { levelOfProactivity, PROACTIVITY, proactivityOfLevel } from '../../ai/stanleyMemory'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { useSettings } from '../../hooks/useSettings'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
@@ -29,7 +29,7 @@ export function StanleyIntro() {
       </div>
       <header className="welcome__head">
         <p className="welcome__eyebrow">{t('stanleyIntro.eyebrow')}</p>
-        <h2 className="welcome__title">{t('stanleyIntro.title')}</h2>
+        <h2 className="welcome__title">{headingCase(t('stanleyIntro.title'))}</h2>
       </header>
       <Card labelledBy="stanley-intro-who-h">
         <h2 id="stanley-intro-who-h">{th('stanleyIntro.h.who')}</h2>

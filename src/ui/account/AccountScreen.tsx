@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from 'react'
 import { auth, signOutEverywhereSaving, signOutSaving } from '../../runtime'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { DevicesCard } from './DevicesCard'
@@ -33,7 +33,7 @@ export function AccountScreen() {
       {auth.account && user?.role === 'admin' && <RoomsStaffCard />}
       {auth.account && !user?.isDemo && (
         <Card>
-          <h2>{t('signin.signOutEverywhere')}</h2>
+          <h2>{headingCase(t('signin.signOutEverywhere'))}</h2>
           <p className="muted">{t('signin.signOutEverywhereBody')}</p>
           {failed && <p role="alert">{t('signin.signOutEverywhereFailed')}</p>}
           {asking

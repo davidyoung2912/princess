@@ -6,7 +6,7 @@ import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Dialog } from '../Dialog'
@@ -28,7 +28,7 @@ export function Rooms({ onOpen }: { onOpen: (id: string) => void }) {
   const [previewing, setPreviewing] = useState<ChatRoomListItem | null>(null)
   return (
     <section aria-labelledby="rooms-h">
-      <h2 id="rooms-h">{t('room.title')}</h2>
+      <h2 id="rooms-h">{headingCase(t('room.title'))}</h2>
       <p className="muted">{t('room.intro')}</p>
       <Load state={list}>
         {(items) => {
@@ -93,11 +93,11 @@ function RoomPreview({ item, onClose, onJoined }: { item: ChatRoomListItem; onCl
       <Load state={preview}>
         {(p) => (
           <>
-            <h3>{t('room.rules')}</h3>
+            <h3>{headingCase(t('room.rules'))}</h3>
             <p>{p.rules}</p>
             {p.lines.length > 0 && (
               <>
-                <h3>{t(channel ? 'room.latest' : 'room.pinned')}</h3>
+                <h3>{headingCase(t(channel ? 'room.latest' : 'room.pinned'))}</h3>
                 <ul className="plain-list">
                   {p.lines.map((l) => <li key={`${l.at}-${l.text}`}><p>{l.text}</p><p className="muted">{shipTime(l.at)}</p></li>)}
                 </ul>
@@ -105,7 +105,7 @@ function RoomPreview({ item, onClose, onJoined }: { item: ChatRoomListItem; onCl
             )}
             {p.questions.length > 0 && (
               <>
-                <h3>{t('room.popular')}</h3>
+                <h3>{headingCase(t('room.popular'))}</h3>
                 <ul className="plain-bullets">{p.questions.map((q) => <li key={q}>{q}</li>)}</ul>
               </>
             )}
@@ -157,7 +157,7 @@ export function RoomDetails({ conversation, onClose, onLeft }: { conversation: C
     <Dialog title={conversation.name} onClose={onClose}>
       {room?.topic && <p className="muted">{room.topic}</p>}
       <p>{t('room.members', { count: room?.members ?? 0 })}</p>
-      <h3>{t('room.rules')}</h3>
+      <h3>{headingCase(t('room.rules'))}</h3>
       <p>{room?.rules}</p>
       <p className="muted">{t('room.history')}</p>
       <Button variant="secondary" onClick={() => setLeaving(true)}>{t(channel ? 'room.unfollow' : 'room.leave')}</Button>

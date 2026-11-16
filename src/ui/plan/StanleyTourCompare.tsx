@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { normalizeTourCompare, type TourCompare } from '../../ai/stanleyPlanner'
 import { EXCURSIONS } from '../../domain/excursions'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { stanleyPlanner } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -45,8 +45,8 @@ export function StanleyTourCompare({ sailingId }: { sailingId: string }) {
                 ))}
               </tbody>
             </table>
-            {result.risks.length > 0 && <><h3>{t('cmp9.risks')}</h3><ul>{result.risks.map((x) => <li key={x}>{x}</li>)}</ul></>}
-            {result.missing.length > 0 && <><h3>{t('cmp9.missing')}</h3><ul>{result.missing.map((x) => <li key={x}>{x}</li>)}</ul></>}
+            {result.risks.length > 0 && <><h3>{headingCase(t('cmp9.risks'))}</h3><ul>{result.risks.map((x) => <li key={x}>{x}</li>)}</ul></>}
+            {result.missing.length > 0 && <><h3>{headingCase(t('cmp9.missing'))}</h3><ul>{result.missing.map((x) => <li key={x}>{x}</li>)}</ul></>}
           </>
         )}
       </div>

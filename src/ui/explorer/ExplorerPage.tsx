@@ -5,7 +5,7 @@ import { cancelledListed, filterVenues, kindsOf, SEARCH_FROM } from '../../domai
 import { upcomingEvents } from '../../domain/explorer/upcoming'
 import type { ExplorerKind } from '../../domain/explorer/types'
 import { useExplorerData, useExplorerDay, type ExplorerDayState } from '../../hooks/useExplorer'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { Saved } from '../onboard/common'
 import { ChosenDayNote, PickDateButton } from './DateControls'
 import { EventRow, FilterChips, HappeningNow, HoursBadge } from './Parts'
@@ -78,7 +78,7 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
     <>
     <ForYou data={data} events={picks.events} venues={picks.venues} venueTitles={Object.fromEntries(data.venues.map((v) => [v.venue.id, v.venue.title]))} basePath={basePath} onChanged={onChanged} />
     <section aria-labelledby="exp-list-h">
-      <h2 id="exp-list-h">{t('exp.list.title')}</h2>
+      <h2 id="exp-list-h">{headingCase(t('exp.list.title'))}</h2>
       {dining && <DiningControls kinds={kindsOf(data.venues.map((v) => v.venue))} kindLabels={kindLabels} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} anyKidsMenu={data.venues.some((v) => hasKidsMenu(v.venue))} />}
       {!dining && <FilterChips kinds={kindsOf(data.venues.map((v) => v.venue))} label={t('exp.filter.label')} value={kind} onChange={setKind} labels={kindLabels} />}
       {!dining && data.venues.length > SEARCH_FROM && (

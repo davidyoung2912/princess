@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { calendarRows, compareRows, type CalendarSailing } from '../../domain/priceCalendar'
 import { formatMoney, type Cents } from '../../domain/money'
 import { rangeOf, type BrowseSailing } from '../../domain/catalogueBrowse'
@@ -21,7 +21,7 @@ export function PriceCalendar({ sailings, priceOf, today }: { sailings: readonly
       <p className="muted">{t('pcal.pickHint')}</p>
       {pair && cmp && (
         <section className="price-cal__compare" aria-labelledby="pcal-compare" aria-live="polite">
-          <h2 id="pcal-compare">{t('pcal.compare.title')}</h2>
+          <h2 id="pcal-compare">{headingCase(t('pcal.compare.title'))}</h2>
           <p>{t('pcal.compare.first', { range: rangeOf(pair[0].s) })}{cmp.firstPrice !== null && ` (${t('pcal.price', { price: formatMoney(cmp.firstPrice) })})`}</p>
           <p>{t('pcal.compare.second', { range: rangeOf(pair[1].s) })}{cmp.secondPrice !== null && ` (${t('pcal.price', { price: formatMoney(cmp.secondPrice) })})`}</p>
           {cmp.cheaper === null && <p>{t('pcal.compare.noPrice')}</p>}

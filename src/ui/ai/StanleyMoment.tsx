@@ -8,7 +8,7 @@ import { addAuto, dayFor } from '../../domain/tripDiary'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useSettings } from '../../hooks/useSettings'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { isSeen, markSeen, seenVersion, subscribeSeen } from '../../settings/stanleySeen'
 import { BUZZ, buzz } from '../../settings/haptics'
 import { stanleyLevelFor } from '../../settings/settings'
@@ -56,7 +56,7 @@ export function StanleyMoment({ id, subject, params = {} }: { id: MomentId; subj
       <span className="stanley-moment__stamp" aria-hidden="true"><Stamp size={28} /></span>
       <img className="stanley-moment__face" src={stanley} alt="" width="192" height="192" />
       <div className="stanley-moment__text">
-        <h2 className="stanley-moment__title">{t(`stanley.moment.${id}.title` as StringKey, params)}</h2>
+        <h2 className="stanley-moment__title">{headingCase(t(`stanley.moment.${id}.title` as StringKey, params))}</h2>
         <p>{t(`stanley.moment.${id}.line` as StringKey, params)}</p>
         <div className="stanley-moment__actions">
           <LinkButton to={def.to} variant="secondary" onClick={() => markSeen(key)}>{t(`stanley.moment.${id}.go` as StringKey)}</LinkButton>

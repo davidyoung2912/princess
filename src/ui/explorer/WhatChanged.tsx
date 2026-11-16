@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import type { ExplorerDay } from '../../api/explorerTypes'
 import { formatTime } from '../../domain/cruise'
 import { whatChanged, type ChangeLine } from '../../domain/explorer/whatChanged'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 
@@ -21,7 +21,7 @@ export function WhatChanged({ data, now, basePath }: { data: ExplorerDay; now: n
   if (changes.length === 0) return null
   return (
     <Card labelledBy="exp-changed-h">
-      <h2 id="exp-changed-h" className="card__title">{t(TITLE[data.explorer] ?? 'exp.changed.title.other')}</h2>
+      <h2 id="exp-changed-h" className="card__title">{headingCase(t(TITLE[data.explorer] ?? 'exp.changed.title.other'))}</h2>
       <ul className="plain-bullets">
         {changes.map((c) => (
           <li key={c.id}>

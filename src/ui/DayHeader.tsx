@@ -5,7 +5,7 @@ import { relativeIn } from '../domain/homeLook'
 import { formatTemp } from '../domain/readiness'
 import { useSailing, useNow } from '../hooks/useDemo'
 import { useSettings } from '../hooks/useSettings'
-import { t } from '../i18n'
+import { t, headingCase } from '../i18n'
 import { LinkButton } from './Button'
 import { Card } from './Card'
 import { ProgressRing } from './ProgressRing'
@@ -26,7 +26,7 @@ export function DayHeader({ today }: { today: OnboardToday }) {
     return (
       <Card labelledBy="dayhead-h">
         <div className="dayhead dayhead--sea">
-          <h2 id="dayhead-h" className="dayhead__title">{t('look.day.sea', { day: today.day })}</h2>
+          <h2 id="dayhead-h" className="dayhead__title">{headingCase(t('look.day.sea', { day: today.day }))}</h2>
           {next && <p>{t('look.day.sea.next', { port: portName(next) })}</p>}
           <div className="dayhead__route" role="img" aria-label={t('look.day.sea.route', { day: today.day, total: days.length })}>
             <span className="dayhead__routefill" style={{ inlineSize: `${routePercent(today.day, days.length)}%` }} />
@@ -62,7 +62,7 @@ export function DayHeader({ today }: { today: OnboardToday }) {
   return (
     <Card hero labelledBy="dayhead-h">
       <div className="dayhead">
-        <h2 id="dayhead-h" className="dayhead__title">{t(`look.day.${key}`)}</h2>
+        <h2 id="dayhead-h" className="dayhead__title">{headingCase(t(`look.day.${key}`))}</h2>
         <p>{t(`look.day.${key}.body`)}</p>
         <div className="button-row"><LinkButton to={key === 'embark' ? '/home/embarkation' : '/home/disembark'}>{t(`look.day.${key}.go`)}</LinkButton></div>
       </div>

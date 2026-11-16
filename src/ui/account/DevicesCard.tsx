@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { auth } from '../../runtime'
 import type { DeviceSession } from '../../auth/provider'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Banner } from '../Banner'
@@ -47,7 +47,7 @@ export function DevicesCard() {
 
   return (
     <Card>
-      <h2>{t('devices.title')}</h2>
+      <h2>{headingCase(t('devices.title'))}</h2>
       <p className="muted">{t('devices.body')}</p>
       {loadFailed && (
         <>

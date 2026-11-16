@@ -5,7 +5,7 @@ import { canOpenRoom, checkNewRoom, MIN_MODERATORS, staffOrder, staffProblem } f
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Dialog } from '../Dialog'
@@ -26,10 +26,10 @@ export function RoomsStaffCard() {
   const rooms = useMine(() => api.chatRoomsStaff.list())
   return (
     <Card>
-      <h2>{t('rs.title')}</h2>
+      <h2>{headingCase(t('rs.title'))}</h2>
       <p className="muted">{t('rs.body')}</p>
       <Summary />
-      <h3>{t('rs.rooms')}</h3>
+      <h3>{headingCase(t('rs.rooms'))}</h3>
       <Load state={rooms}>
         {(items) => (items.length === 0 ? <p>{t('rs.none')}</p> : (
           <ul className="plain-list">{staffOrder(items).map((r) => <li key={r.id}><RoomRow room={r} onChanged={rooms.retry} /></li>)}</ul>
@@ -47,7 +47,7 @@ function Summary() {
   const s = useMine(() => api.chatRoomsStaff.summary(7))
   return (
     <section aria-labelledby="rs-summary-h">
-      <h3 id="rs-summary-h">{t('rs.summary')}</h3>
+      <h3 id="rs-summary-h">{headingCase(t('rs.summary'))}</h3>
       <Load state={s}>
         {(d) => (
           <>
@@ -158,7 +158,7 @@ function Held() {
   const decide = useAction(async (id: string, decision: 'release' | 'reject') => { await api.chatRoomsStaff.decideHeld(id, decision); held.retry() })
   return (
     <section aria-labelledby="rs-held-h">
-      <h3 id="rs-held-h">{t('rs.held')}</h3>
+      <h3 id="rs-held-h">{headingCase(t('rs.held'))}</h3>
       <p className="muted">{t('rs.heldBody')}</p>
       <Load state={held}>
         {(items) => (items.length === 0 ? <p>{t('rs.heldNone')}</p> : (
@@ -186,7 +186,7 @@ function Questions() {
   const decide = useAction(async (id: string, decision: 'popular' | 'reject') => { await api.chatRoomsStaff.decideQuestion(id, decision); qs.retry() })
   return (
     <section aria-labelledby="rs-q-h">
-      <h3 id="rs-q-h">{t('rs.questions')}</h3>
+      <h3 id="rs-q-h">{headingCase(t('rs.questions'))}</h3>
       <p className="muted">{t('rs.questionsBody')}</p>
       <Load state={qs}>
         {(items) => (items.length === 0 ? <p>{t('rs.questionsNone')}</p> : (

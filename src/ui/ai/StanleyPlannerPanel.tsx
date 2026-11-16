@@ -7,7 +7,7 @@ import {
 import { PLACES } from '../../domain/deck'
 import type { Mobility } from '../../domain/day'
 import { formatMoney } from '../../domain/money'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { stanleyPlanner } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -142,7 +142,7 @@ export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: s
           )}
           {hardConflicts(planned).length === 0 && planned.windows.length > 0 && (
             <>
-              <h3>{t('plan9.windows')}</h3>
+              <h3>{headingCase(t('plan9.windows'))}</h3>
               <ul>{planned.windows.map((w) => <li key={w.start}>{t('plan9.windowLine', { start: w.start, end: w.end, minutes: w.minutes })}</li>)}</ul>
             </>
           )}
@@ -159,7 +159,7 @@ export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: s
         </div>
       )}
 
-      <h3>{t('plan9.hour')}</h3>
+      <h3>{headingCase(t('plan9.hour'))}</h3>
       <div className="field">
         <label htmlFor={`${ids}-at`}>{t('plan9.hourFrom')}</label>
         <input id={`${ids}-at`} type="time" className="field__input" value={at} onChange={(e) => setAt(e.target.value)} />
@@ -181,7 +181,7 @@ export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: s
         </div>
       )}
 
-      <h3>{t('plan9.evening')}</h3>
+      <h3>{headingCase(t('plan9.evening'))}</h3>
       <Button variant="secondary" onClick={() => void askEvening()} disabled={busy !== ''}>{t('plan9.eveningGo')}</Button>
       {evening && (
         <div>
@@ -201,7 +201,7 @@ export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: s
         </div>
       )}
 
-      <h3>{t('plan9.meeting')}</h3>
+      <h3>{headingCase(t('plan9.meeting'))}</h3>
       <div className="field">
         <label htmlFor={`${ids}-place`}>{t('plan9.meetPlace')}</label>
         <select id={`${ids}-place`} className="field__input" value={place} onChange={(e) => setPlace(e.target.value)}>

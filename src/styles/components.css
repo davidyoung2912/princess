@@ -9,8 +9,8 @@
 .btn--block { display: flex; width: 100%; max-width: var(--form-max); }
 .btn--primary { background: linear-gradient(135deg, var(--primary), var(--primary-bright)); color: var(--on-primary); }
 .btn--primary:hover { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); border-color: var(--primary-dark); }
-.btn--secondary { background: var(--sky-tint); color: var(--primary); }
-.btn--secondary:hover { background: var(--brand-tint); }
+.btn--secondary { background: var(--bg); color: var(--primary); }
+.btn--secondary:not(:disabled):hover { background: var(--brand-tint); border-color: var(--primary-dark); }
 .btn--tertiary { background: transparent; border-color: transparent; color: var(--link); text-decoration: underline; text-underline-offset: 0.2em; }
 .btn--tertiary:hover { background: var(--brand-tint); }
 .btn--danger { background: var(--danger-tint); color: var(--danger); border-color: var(--danger); }

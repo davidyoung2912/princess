@@ -4,7 +4,7 @@ import {
   COMPARE_MAX, TEXT_MAX, WEIGHT_MAX, chipsLeft, defaultWeights, normalizeBrief, normalizeComparison, normalizeDirections, normalizeInterview, toggleShortlist, withoutChip,
   type Brief, type Comparison, type Criterion, type DiscoverChip, type DiscoverFilters, type Directions, type Weights,
 } from '../../ai/stanleyDiscover'
-import { t, th } from '../../i18n'
+import { t, th, headingCase } from '../../i18n'
 import { useStanleyMemory } from '../../hooks/useStanleyMemory'
 import { stanleyDiscover } from '../../runtime'
 import { formatMoney } from '../../domain/money'
@@ -91,7 +91,7 @@ export function StanleyFindPanel() {
       {understood === false && <p role="status">{t('find8.notUnderstood')}</p>}
       {chips.length > 0 && (
         <section aria-labelledby="find8-chips-h">
-          <h3 id="find8-chips-h">{t('find8.chips')}</h3>
+          <h3 id="find8-chips-h">{headingCase(t('find8.chips'))}</h3>
           <ul className="plain-list">
             {chips.map((c) => (
               <li key={c.key}>
@@ -102,7 +102,7 @@ export function StanleyFindPanel() {
           </ul>
           {assumptions.length > 0 && (
             <>
-              <h3>{t('find8.assumptions')}</h3>
+              <h3>{headingCase(t('find8.assumptions'))}</h3>
               <ul>{assumptions.map((a) => <li key={a}>{a}</li>)}</ul>
             </>
           )}
@@ -112,7 +112,7 @@ export function StanleyFindPanel() {
 
       {directions && (
         <section aria-labelledby="find8-dir-h">
-          <h3 id="find8-dir-h">{t('find8.directions')}</h3>
+          <h3 id="find8-dir-h">{headingCase(t('find8.directions'))}</h3>
           {directions.note === 'none' && <p role="status">{t('find8.none')}</p>}
           {directions.note === 'onlyOne' && <p role="status">{t('find8.onlyOne')}</p>}
           <ul className="card-grid">
@@ -136,7 +136,7 @@ export function StanleyFindPanel() {
 
       {shortlist.length > 0 && (
         <section aria-labelledby="find8-cmp-h">
-          <h3 id="find8-cmp-h">{t('find8.compare', { count: shortlist.length })}</h3>
+          <h3 id="find8-cmp-h">{headingCase(t('find8.compare', { count: shortlist.length }))}</h3>
           <ul>{shortlist.map((id) => <li key={id}>{nameOf(id)}</li>)}</ul>
           {shortlist.length >= 2 && shortlist.length <= COMPARE_MAX && (
             <>
@@ -151,7 +151,7 @@ export function StanleyFindPanel() {
       {comparison && <ComparisonResult comparison={comparison} nameOf={nameOf} />}
 
       <section aria-labelledby="find8-brief-h">
-        <h3 id="find8-brief-h">{t('find8.brief')}</h3>
+        <h3 id="find8-brief-h">{headingCase(t('find8.brief'))}</h3>
         <p>{t('find8.briefBody')}</p>
         <Button onClick={() => void save()} disabled={busy !== '' || (text.trim() === '' && shortlist.length === 0)}>{t('find8.save')}</Button>{' '}
         <Button variant="secondary" onClick={() => void share()} disabled={busy !== ''}>{t('find8.share')}</Button>

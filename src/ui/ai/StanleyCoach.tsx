@@ -5,7 +5,7 @@ import { COACH_STEPS, coachAutoShows, hasCoach, type CoachScreen } from '../../a
 import { startVisibleInterval } from '../../hooks/visibleInterval'
 import { useSettings } from '../../hooks/useSettings'
 import { useDialog } from '../../hooks/useDialog'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { isReplayed, isSeen, markSeen, seenVersion, subscribeSeen } from '../../settings/stanleySeen'
 import { stanleyLevelFor } from '../../settings/settings'
 import { Button } from '../Button'
@@ -73,7 +73,7 @@ function Spotlight({ screenId, onFinish }: { screenId: CoachScreen; onFinish: ()
           <div className="stanley-coach__text">
             <p className="muted" aria-live="polite">{t('stanley.coach.count', { n: step + 1, total })}</p>
             {step === 0 && <p className="muted">{t('stanley.why.coach')}</p>}
-            <h2 id={titleId} className="stanley-coach__title">{t(`stanley.coach.${screenId}.${step + 1}.title` as StringKey)}</h2>
+            <h2 id={titleId} className="stanley-coach__title">{headingCase(t(`stanley.coach.${screenId}.${step + 1}.title` as StringKey))}</h2>
             <p>{t(`stanley.coach.${screenId}.${step + 1}.body` as StringKey)}</p>
             <div className="stanley-coach__actions">
               {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)}>{t('stanley.coach.back')}</Button>}

@@ -8,7 +8,7 @@ import { walletTotals } from '../../domain/wallet'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -142,7 +142,7 @@ function Wallet({ v }: { v: LoyaltyView }) {
           </ul>
         </>
       )}
-      <h3>{t('loy.history')}</h3>
+      <h3>{headingCase(t('loy.history'))}</h3>
       {v.used.length === 0 ? <p>{t('loy.historyNone')}</p> : <ul className="plain-list">{v.used.map((u) => <li key={`${u.at}-${u.what}`}><span>{u.what} · {formatDateTime(u.at)}</span><span>{formatMoney(u.amount)}</span></li>)}</ul>}
       <p className={totals.reconciles ? 'muted' : undefined} role={totals.reconciles ? undefined : 'status'}>
         {totals.reconciles ? t('loy.reconciles') : t('loy.noReconcile', { spent: formatMoney(totals.spent), used: formatMoney(totals.redeemed) })}
@@ -180,7 +180,7 @@ function Report({ v, reload }: { v: LoyaltyView; reload: () => void }) {
       </form>
       {v.reports.length > 0 && (
         <>
-          <h3>{t('loy.reports')}</h3>
+          <h3>{headingCase(t('loy.reports'))}</h3>
           <ul className="plain-list">{v.reports.map((r) => <li key={r.id}><span>{t(`loy.report.${r.what}` as StringKey)} · {formatDateTime(r.at)}</span><span>{t(`loy.report.${r.status}` as StringKey)}</span></li>)}</ul>
         </>
       )}

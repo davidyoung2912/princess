@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { normalizeCases, type StanleyCase } from '../../ai/stanleyHandoff'
 import { useNow } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { stanleyHandoffs } from '../../runtime'
 import { CaseStatusLine } from './HandoffCard'
 
@@ -17,7 +17,7 @@ export function HandoffCases() {
   if (cases.length === 0) return null
   return (
     <section aria-labelledby="ai-cases-h" className="stanley__note">
-      <h3 id="ai-cases-h">{t('handoff.cases')}</h3>
+      <h3 id="ai-cases-h">{headingCase(t('handoff.cases'))}</h3>
       <ul>
         {cases.map((c) => (
           <li key={c.id}>

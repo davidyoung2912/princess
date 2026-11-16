@@ -17,7 +17,7 @@ import { useStanleyMemory } from '../../hooks/useStanleyMemory'
 import { EXCURSIONS } from '../../domain/excursions'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useSettings } from '../../hooks/useSettings'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { stanleyLevelFor } from '../../settings/settings'
 import type { RebookOption } from '../../api/finishTypes'
 import { Button } from '../Button'
@@ -151,7 +151,7 @@ export function StanleyFeedbackDrafter({ crew, overall, liked, disliked, comment
   const use = () => { onUse(comment.trim() === '' ? draft : `${comment.trim()} ${draft}`.slice(0, max)); setOpen(false) }
   return (
     <section className="plain-fieldset" aria-labelledby="rem13-fb-h">
-      <h3 id="rem13-fb-h">{t('rem13.fb.title')}</h3>
+      <h3 id="rem13-fb-h">{headingCase(t('rem13.fb.title'))}</h3>
       <Button variant="secondary" aria-expanded={open} onClick={() => setOpen(!open)}>{t('rem13.fb.open')}</Button>
       {open && (
         <div>
@@ -255,7 +255,7 @@ export function StanleyPhotoOrganiser({ photos, favourites }: { photos: readonly
   if (favourites.length === 0) return null
   return (
     <Card labelledBy="rem13-org-h">
-      <h2 id="rem13-org-h" className="card__title">{t('rem13.org.title')}</h2>
+      <h2 id="rem13-org-h" className="card__title">{headingCase(t('rem13.org.title'))}</h2>
       <Button variant="secondary" aria-expanded={open} onClick={() => setOpen(!open)}>{t('rem13.org.open')}</Button>
       {open && (
         <div>
@@ -268,7 +268,7 @@ export function StanleyPhotoOrganiser({ photos, favourites }: { photos: readonly
             <ul className="plain-list">
               {groups.map((g) => (
                 <li key={g.day}>
-                  <h3>{t('rem13.org.day', { day: g.day, place: g.port ?? t('stanley.story.seaPlace'), count: g.photoIds.length })}</h3>
+                  <h3>{headingCase(t('rem13.org.day', { day: g.day, place: g.port ?? t('stanley.story.seaPlace'), count: g.photoIds.length }))}</h3>
                   <p className="muted">{g.titles.join('; ')}</p>
                   <p>{g.caption}</p>
                   <Button variant="tertiary" onClick={() => { void navigator.clipboard.writeText(g.caption).then(() => setCopied(g.day), () => setCopied(null)) }}>{t('rem13.cap.copy')}<span className="visually-hidden"> {t('plan.day', { n: g.day })}</span></Button>

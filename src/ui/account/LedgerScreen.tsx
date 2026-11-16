@@ -9,7 +9,7 @@ import { api, stanleyActions } from '../../runtime'
 import { usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Card } from '../Card'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
@@ -50,7 +50,7 @@ function StanleyReceipts() {
   const shipTime = useShipTime()
   return (
     <section aria-labelledby="led-stanley">
-      <h2 id="led-stanley">{t('ledger.stanley.title')}</h2>
+      <h2 id="led-stanley">{headingCase(t('ledger.stanley.title'))}</h2>
       <Load state={receipts}>
         {(list: StanleyAction[]) => list.length === 0 ? <Card info><p>{t('ledger.stanley.none')}</p></Card> : (
           <ul className="plain-list">

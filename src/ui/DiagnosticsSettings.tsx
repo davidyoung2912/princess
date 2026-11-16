@@ -3,7 +3,7 @@ import { clearLog, logToText, readLog } from '../diagnostics/log'
 import { clearAsked, clearTiers, freeShare, modelShare, readAsked, readTiers, repeated, tierMix } from '../diagnostics/stanleyTiers'
 import { LIBRARY, questionOf } from '../ai/stanleyLibrary'
 import { SHIP_FACTS } from '../domain/finishMore'
-import { t, th, type StringKey } from '../i18n'
+import { t, th, type StringKey, headingCase } from '../i18n'
 import { Button } from './Button'
 import { Card } from './Card'
 import { StanleyOpsConsole } from './ai/StanleyOpsConsole'
@@ -57,14 +57,14 @@ export function DiagnosticsSettings() {
           </div>
         </>
       )}
-      <h3>{t('diag.stanley.title')}</h3>
+      <h3>{headingCase(t('diag.stanley.title'))}</h3>
       <p>{t('diag.stanley.intro')}</p>
       {tierMix(tiers).some((m) => m.count > 0) ? (
         <>
           <ul>{tierMix(tiers).map((m) => <li key={m.tier}>{t(`diag.stanley.${m.tier}` as StringKey)}: {m.count} ({m.percent}%)</li>)}</ul>
           {share !== null && <p>{t('diag.stanley.share', { percent: share })}</p>}
           {paid !== null && <p>{t('diag.stanley.modelShare', { percent: paid })}</p>}
-          <h4>{t('diag.stanley.repeat.title')}</h4>
+          <h4>{headingCase(t('diag.stanley.repeat.title'))}</h4>
           {again.length === 0 ? <p>{t('diag.stanley.repeat.none')}</p> : <ul>{again.map((a) => <li key={a.id}>{t('diag.stanley.repeat.line', { question: askedQuestion(a.id), count: a.count })}</li>)}</ul>}
           <Button variant="secondary" onClick={() => { clearTiers(store()); clearAsked(store()); setTiers(readTiers(store())); setAsked(readAsked(store())) }}>{t('diag.stanley.clear')}</Button>
         </>

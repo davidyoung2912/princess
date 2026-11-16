@@ -4,7 +4,7 @@ import { goodNowKey, lineKey, modeCanOpen, timingOf, titleKey, type ModeStep } f
 import { useSettings } from '../../hooks/useSettings'
 import { useWakeLock } from '../../hooks/useWakeLock'
 import { useStanleyMode } from '../../hooks/useStanleyMode'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
 import { stanleyLevelFor } from '../../settings/settings'
 import { BUZZ, buzz } from '../../settings/haptics'
@@ -39,7 +39,7 @@ export function StanleyModeScreen() {
   return (
     <div className="page stanley-mode">
       {back}
-      <h2 className="stanley-mode__name">{t(`stanley.mode.${mode}.name` as StringKey)}</h2>
+      <h2 className="stanley-mode__name">{headingCase(t(`stanley.mode.${mode}.name` as StringKey))}</h2>
       <ol className="stanley-mode__strip" aria-label={t('stanley.mode.strip')}>
         {view.steps.map((s) => {
           const done = view.finished.includes(s)
@@ -56,7 +56,7 @@ export function StanleyModeScreen() {
       {cur ? (
         <section className="stanley-mode__now" aria-labelledby="stanley-mode-h" data-timing={timing}>
           <img className="stanley-next__face" src={stanley} alt="" width="192" height="192" />
-          <h3 id="stanley-mode-h">{t('stanley.mode.next', { step: title(cur) })}</h3>
+          <h3 id="stanley-mode-h">{headingCase(t('stanley.mode.next', { step: title(cur) }))}</h3>
           <p className="stanley-mode__line">{t(lineKey(mode, cur, timing) as StringKey, { time: at(cur), minutes: Math.max(0, view.minutesTo ?? 0), place: cur.where ?? '' })}</p>
           {cur.walk !== undefined && <p className="muted">{t(cur.walkFromCabin ? 'stanley.mode.seaDay.walkCabin' : 'stanley.mode.seaDay.walk', { minutes: cur.walk })}</p>}
           {cur.at !== null && <p className="stanley-mode__time" role="timer" aria-live="off">{timing === 'past' ? t('stanley.mode.past', { time: at(cur) }) : t('stanley.mode.in', { time: at(cur), minutes: view.minutesTo ?? 0 })}</p>}
@@ -68,7 +68,7 @@ export function StanleyModeScreen() {
       ) : (
         <section className="stanley-mode__now" aria-labelledby="stanley-mode-h">
           <img className="stanley-next__face" src={stanley} alt="" width="192" height="192" />
-          <h3 id="stanley-mode-h">{t('stanley.mode.finished')}</h3>
+          <h3 id="stanley-mode-h">{headingCase(t('stanley.mode.finished'))}</h3>
           <p className="stanley-mode__line">{t(`stanley.mode.${mode}.finished` as StringKey)}</p>
         </section>
       )}

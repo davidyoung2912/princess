@@ -5,7 +5,7 @@ import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
@@ -87,7 +87,7 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
       <Load state={group}>
         {(g) => (
           <>
-            <h3>{t('cgroup.members', { count: g.members.length, max: g.max })}</h3>
+            <h3>{headingCase(t('cgroup.members', { count: g.members.length, max: g.max }))}</h3>
             <ul className="plain-list">
               {g.members.map((m) => (
                 <li key={m.id}>
@@ -109,7 +109,7 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
             )}
             {g.isCreator && g.waiting.length > 0 && (
               <>
-                <h3>{t('cgroup.waiting')}</h3>
+                <h3>{headingCase(t('cgroup.waiting'))}</h3>
                 <ul className="plain-list">
                   {g.waiting.map((w) => <li key={w.inviteId}><span>{w.name} <span className="muted">{t(w.needsGuardian ? 'cgroup.waitingGuardian' : 'cgroup.waitingReply')}</span></span></li>)}
                 </ul>
@@ -167,7 +167,7 @@ export function GroupInvites({ onDone }: { onDone: (note: string) => void }) {
   if (list.length === 0) return null
   return (
     <section aria-labelledby="group-invites-h">
-      <h3 id="group-invites-h">{t('cgroup.invites')}</h3>
+      <h3 id="group-invites-h">{headingCase(t('cgroup.invites'))}</h3>
       <ul className="plain-list">
         {list.map((i) => <li key={i.id}><Card><Invite invite={i} onDone={(text) => { onDone(text); invites.retry() }} /></Card></li>)}
       </ul>

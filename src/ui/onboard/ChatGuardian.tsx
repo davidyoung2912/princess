@@ -3,7 +3,7 @@ import type { ChatChild, ChatConversation, ChatMessage } from '../../api/chatTyp
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
-import { t, th as heading } from '../../i18n'
+import { t, th as heading, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ActionError, Load } from '../account/parts'
@@ -41,7 +41,7 @@ function ChildChats({ child, onBack }: { child: ChatChild; onBack: () => void })
   return (
     <div>
       <Button variant="tertiary" onClick={onBack}>{t('guard.back')}</Button>
-      <h3>{t('guard.chatsOf', { name: child.name })}</h3>
+      <h3>{headingCase(t('guard.chatsOf', { name: child.name }))}</h3>
       <p className="muted">{t('guard.recorded')}</p>
       <Load state={rows}>
         {(list) => list.length === 0 ? <p>{t('conv.none')}</p> : (
@@ -86,7 +86,7 @@ function ChildThread({ child, conversation, onBack }: { child: ChatChild; conver
   return (
     <div>
       <Button variant="tertiary" onClick={onBack}>{t('guard.backChats')}</Button>
-      <h3>{t('guard.thread', { name: conversation.name, child: child.name })}</h3>
+      <h3>{headingCase(t('guard.thread', { name: conversation.name, child: child.name }))}</h3>
       <p className="muted">{t('guard.readOnly')}</p>
       {!conversation.permanent && !conversation.closed && <KeepSection conversationId={conversation.id} childId={child.id} />}
       {failed && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CREW_CARDS, CREW_DETAIL_HINT, CREW_DETAIL_MAX, crewCard, type CrewCardKind } from '../../domain/crewCards'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -28,7 +28,7 @@ export function CrewCards() {
   }
   return (
     <Card labelledBy="crew-h">
-      <h2 id="crew-h" className="card__title">{t('crew.title')}</h2>
+      <h2 id="crew-h" className="card__title">{headingCase(t('crew.title'))}</h2>
       <p>{t('crew.body')}</p>
       <fieldset className="plain-fieldset">
         <legend>{t('crew.card.label')}</legend>

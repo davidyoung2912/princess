@@ -7,7 +7,7 @@ import { clock12 } from '../../domain/planCard'
 import { useAction } from '../../hooks/useAction'
 import { useNow } from '../../hooks/useDemo'
 import { api } from '../../runtime'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { useShipTime } from './shipTime'
 
@@ -131,7 +131,7 @@ export function ShareChooser({ conversation, onSent }: { conversation: ChatConve
       {failed && <p role="alert" className="field__error">{t('conv.share.failed')}</p>}
       {data && (
         <>
-          <h3>{t('conv.share.fromTrip')}</h3>
+          <h3>{headingCase(t('conv.share.fromTrip'))}</h3>
           {items.length === 0
             ? <p className="muted">{t('conv.share.none')}</p>
             : (
@@ -144,7 +144,7 @@ export function ShareChooser({ conversation, onSent }: { conversation: ChatConve
                 ))}
               </ul>
             )}
-          <h3>{t('card.place.title')}</h3>
+          <h3>{headingCase(t('card.place.title'))}</h3>
           <form onSubmit={(e) => { e.preventDefault(); if (placeId) void send.run({ kind: 'place', placeId, ...(cleanNote(note) ? { note: cleanNote(note) } : {}) }) }}>
             <div className="field">
               <label htmlFor="meet-place">{t('card.place.pick')}</label>

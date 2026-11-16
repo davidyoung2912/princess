@@ -7,7 +7,7 @@ import { formatMoney } from '../../../domain/money'
 import { itinerary } from '../../../domain/sailings'
 import { useAction } from '../../../hooks/useAction'
 import { useSailing } from '../../../hooks/useDemo'
-import { t } from '../../../i18n'
+import { t, headingCase } from '../../../i18n'
 import { api } from '../../../runtime'
 import { Button } from '../../Button'
 import { Dialog } from '../../Dialog'
@@ -54,7 +54,7 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath }
       />
       {here.length > 0 && (
         <section aria-labelledby="spa-here-h">
-          <h2 id="spa-here-h">{t('spa.treatmentsHere')}</h2>
+          <h2 id="spa-here-h">{headingCase(t('spa.treatmentsHere'))}</h2>
           <ul className="card-grid">
             {here.map((x) => (
               <li key={x.id} className="card">

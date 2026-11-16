@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { auth } from '../../runtime'
 import type { ReviewDecision, ReviewItem } from '../../auth/provider'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 
@@ -36,7 +36,7 @@ export function ReviewCard() {
 
   return (
     <Card>
-      <h2>{t('review.title')}</h2>
+      <h2>{headingCase(t('review.title'))}</h2>
       <p className="muted">{t('review.body')}</p>
       {loadFailed && (
         <>

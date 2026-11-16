@@ -15,7 +15,7 @@ import { useVenuePins } from '../../hooks/useVenuePins'
 import { EveningBundles } from './EveningBundles'
 import { StanleyPose } from '../StanleyPose'
 import { useTodayPlan } from '../../hooks/useTodayPlan'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
@@ -62,7 +62,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
     <div className="page">
       <Card hero labelledBy="tp-head">
         <span className="landing-pose calm-hide"><StanleyPose head="scheduler" size={88} /></span>
-        <h2 id="tp-head" className="card__title">{t(details ? 'route.dayDetails' : 'route.todayPlan')}</h2>
+        <h2 id="tp-head" className="card__title">{headingCase(t(details ? 'route.dayDetails' : 'route.todayPlan'))}</h2>
         {details && plan.date && <p><strong>{t('plan.day.line', { day: t('itin.day', { day: state.day }), date: formatDate(plan.date), where: portName || t('onb.atSea') })}</strong></p>}
         <p>{t(details ? 'plan.day.purpose' : 'plan.today.purpose')}</p>
         {portName && <p><Link to={`/home/ports/${choice.port}`}>{t('port.guide', { port: portName })}</Link></p>}
@@ -82,7 +82,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
           {plan.failed && <Banner kind="info" title={t('plan.today.partial')} action={<Button variant="secondary" onClick={plan.retry}>{t('plan.today.retry')}</Button>}><p>{t('plan.today.partialBody')}</p></Banner>}
           {groups.length === 0 ? <p className="muted">{t('plan.today.empty')}</p> : groups.map((g) => (
             <section key={g.period} aria-labelledby={`tp-${g.period}`}>
-              <h2 id={`tp-${g.period}`}>{t(PERIOD[g.period])}</h2>
+              <h2 id={`tp-${g.period}`}>{headingCase(t(PERIOD[g.period]))}</h2>
               <ul className="exp-events">
                 {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} onAdd={addToPlan.add} busy={addToPlan.busy} />)}
               </ul>
@@ -94,7 +94,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
         </>
       )}
       <section aria-labelledby="tp-add">
-        <h2 id="tp-add">{t('plan.today.add')}</h2>
+        <h2 id="tp-add">{headingCase(t('plan.today.add'))}</h2>
         <ul className="plain-bullets">{LINKS.map(([key, to]) => <li key={to}><Link to={`${to}?day=${state.day}`}>{t(key)}</Link></li>)}</ul>
       </section>
     </div>

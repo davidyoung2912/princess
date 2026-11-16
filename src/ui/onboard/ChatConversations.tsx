@@ -38,7 +38,7 @@ import { closeChatNotice, currentSupport } from '../../push/browser'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { useNow, useOwnerId, usePersona } from '../../hooks/useDemo'
 import { api } from '../../runtime'
-import { t, th as heading, type StringKey } from '../../i18n'
+import { t, th as heading, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Dialog } from '../Dialog'
 import { Button, LinkButton } from '../Button'
@@ -797,7 +797,7 @@ function NeedsYouStrip({ messages, ackBusy, onAck }: { messages: ChatMessage[]; 
   if (waiting.length === 0) return null
   return (
     <section className="chat-needs" aria-labelledby="needs-h">
-      <h3 id="needs-h">{t('stanley.notice.needsTitle')}</h3>
+      <h3 id="needs-h">{headingCase(t('stanley.notice.needsTitle'))}</h3>
       <p className="muted">{t('stanley.notice.needsBody')}</p>
       <ul>
         {waiting.map((m) => (
@@ -1127,7 +1127,7 @@ function ChatMenu({ conversation, messages, now, busy, onMute, onArchive, onBloc
       <Button variant="secondary" aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}>{t('conv.menu')}</Button>
       {open && (
         <div className="chat-menu__panel" role="group" aria-label={t('conv.menu')}>
-          <h3>{t('conv.menuMute')}</h3>
+          <h3>{headingCase(t('conv.menuMute'))}</h3>
           {muted ? (
             <>
               <p className="muted">{conversation.mutedUntil ? t('conv.mutedUntil', { time: shipTime(conversation.mutedUntil) }) : t('conv.mutedNoEnd')}</p>
@@ -1150,7 +1150,7 @@ function ChatMenu({ conversation, messages, now, busy, onMute, onArchive, onBloc
           {!conversation.permanent && !conversation.closed && !isRoomChat(conversation) && <KeepSection conversationId={conversation.id} />}
           {person && (
             <>
-              <h3>{t('conv.menuPerson')}</h3>
+              <h3>{headingCase(t('conv.menuPerson'))}</h3>
               {people.length > 1 && (
                 <div className="field">
                   <label htmlFor="menu-person">{t('conv.menuPerson')}</label>

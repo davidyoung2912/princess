@@ -9,7 +9,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -149,7 +149,7 @@ const roomName = (id: string): string => t(`reb.room.${id}` as StringKey)
 function Inputs({ v, setInputs }: { v: RebookView; setInputs: (i: RebookInputs) => void }) {
   return (
     <div role="group" aria-labelledby="reb-inputs-h">
-      <h3 id="reb-inputs-h">{t('reb.inputsH')}</h3>
+      <h3 id="reb-inputs-h">{headingCase(t('reb.inputsH'))}</h3>
       <p className="muted">{t('reb.for', { room: roomName(v.category), count: v.guests })}</p>
       <div className="field">
         <label htmlFor="reb-cabin">{t('reb.cabin')}</label>

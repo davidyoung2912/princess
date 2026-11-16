@@ -6,7 +6,7 @@ import { cabinNeighbours, cabinWalks, canFlip, costPerDay, dayOn, dayStrip, flip
 import { formatMoney } from '../../domain/money'
 import { PORT_COORDS } from '../../domain/ports'
 import { itinerary, portById, SAILINGS, sailingNights, type Sailing } from '../../domain/sailings'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -90,13 +90,13 @@ export function CabinExtras({ cabin, sailing }: { cabin: Cabin; sailing: Sailing
         <li>{t('dl3.walk.lift', { minutes: walks.lift.minutes, bank: walks.lift.bank })}</li>
       </ul>
       <p className="muted">{t('dl3.walk.note')} {t('dl3.walk.closures')}</p>
-      <h4>{t('dl3.near.title')}</h4>
+      <h4>{headingCase(t('dl3.near.title'))}</h4>
       <ul className="plain-bullets">
         <li>{t('dl3.near.above', { deck: cabin.deck + 1, places: names(near.above) })}</li>
         <li>{t('dl3.near.below', { deck: cabin.deck - 1, places: names(near.below) })}</li>
       </ul>
       <p>{t(`dl3.near.${near.noise}` as StringKey)}</p>
-      <h4>{t('dl3.sun.title')}</h4>
+      <h4>{headingCase(t('dl3.sun.title'))}</h4>
       <ul className="plain-bullets">
         {sun.map((s) => (
           <li key={s.day}>{t('dl3.sun.day', { day: s.day })}: {s.heading === null ? t('dl3.sun.berth') : s.morning && s.afternoon ? `${t('dl3.sun.morning')}, ${t('dl3.sun.afternoon')}` : s.morning ? t('dl3.sun.morning') : s.afternoon ? t('dl3.sun.afternoon') : t('dl3.sun.little')}</li>
@@ -205,7 +205,7 @@ function LastHolidayForm({ perDay }: { perDay: number }) {
   }
   return (
     <form onSubmit={(e) => { e.preventDefault(); if (parsed) { set(parsed); setEditing(false) } }}>
-      <h4>{t('dl3.last.title')}</h4>
+      <h4>{headingCase(t('dl3.last.title'))}</h4>
       <Field label={t('dl3.last.people')} type="number" inputMode="numeric" min={1} max={20} value={people} onChange={(e) => setPeople(e.target.value)} />
       <Field label={t('dl3.last.nights')} type="number" inputMode="numeric" min={1} max={365} value={nights} onChange={(e) => setNights(e.target.value)} />
       <Field label={t('dl3.last.total')} hint={t('dl3.last.hint')} type="number" inputMode="decimal" min={1} value={total} onChange={(e) => setTotal(e.target.value)} />

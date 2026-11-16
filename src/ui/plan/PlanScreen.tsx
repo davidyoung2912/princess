@@ -6,7 +6,7 @@ import { StatusBadge } from '../StatusBadge'
 import { formatDate, formatTime } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
-import { t, th } from '../../i18n'
+import { t, th, headingCase } from '../../i18n'
 import { Card } from '../Card'
 import { TabScreens } from '../TabScreens'
 import { Load } from '../account/parts'
@@ -81,7 +81,7 @@ function DayCard({ day, days }: { day: PlanDay; days: readonly PlanDay[] }) {
         {day.entries.length > 0 && <ul className="day-card__entries">{day.entries.map((e) => <Entry key={`${e.kind}-${e.id ?? e.time}`} entry={e} colour={colour} />)}</ul>}
         {planned.length > 0 && (
           <>
-            <h4 className="day-card__sub">{t('plan.planned.title')}</h4>
+            <h4 className="day-card__sub">{headingCase(t('plan.planned.title'))}</h4>
             <ul className="day-card__entries" aria-label={t('plan.planned.title')}>
               {planned.map((p) => <li key={p.id}><span className="day-card__time">{formatTime(p.time)}</span><span>{p.title} <StatusBadge kind="ready" label={t('plan.planned.badge')} /></span></li>)}
             </ul>

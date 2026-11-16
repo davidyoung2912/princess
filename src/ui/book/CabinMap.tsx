@@ -1,6 +1,6 @@
 import { deckMaps, type DeckMap } from '../../domain/cabinMap'
 import type { Cabin } from '../../domain/cabins'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 
 /** A schematic of each deck (DSC-05): real buttons in a grid, so it works with a keyboard and a screen reader. Status is words, not colour alone. */
 export function CabinMap({ cabins, selected, onPick }: { cabins: readonly Cabin[]; selected: string; onPick: (number: string) => void }) {
@@ -14,7 +14,7 @@ export function CabinMap({ cabins, selected, onPick }: { cabins: readonly Cabin[
 function DeckGrid({ map, selected, onPick }: { map: DeckMap; selected: string; onPick: (n: string) => void }) {
   return (
     <section aria-labelledby={`cm-${map.deck}`} className="cabin-map__deck">
-      <h4 id={`cm-${map.deck}`}>{t('book.cabin.deck', { deck: map.deck })}</h4>
+      <h4 id={`cm-${map.deck}`}>{headingCase(t('book.cabin.deck', { deck: map.deck }))}</h4>
       <p className="muted cabin-map__axis" aria-hidden="true">{t('book.map.axis')}</p>
       {map.rows.map((row) => (
         <div key={row.side} className="cabin-map__row" role="group" aria-label={t(`book.cabin.side.${row.side}`)}>

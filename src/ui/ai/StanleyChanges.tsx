@@ -10,7 +10,7 @@ import {
 import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useSettings } from '../../hooks/useSettings'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { getWatched } from '../../push/browser'
 import { stanleyActions, stanleyChanges } from '../../runtime'
 import { stanleyLevelFor } from '../../settings/settings'
@@ -105,16 +105,16 @@ export function StanleyChangeCard({ card, sailingId, onDismissed }: { card: Chan
         <span className={card.status === 'verified' ? 'tag tag--good' : 'tag'}>{t(`ch11.status.${card.status}` as StringKey)}</span>
       </p>
       <p className="muted">{t('ch11.source', { source: card.source, time: card.sourceAtText })}</p>
-      <h3>{t('ch11.what')}</h3>
+      <h3>{headingCase(t('ch11.what'))}</h3>
       <p>{card.what}</p>
-      <h3>{t('ch11.why')}</h3>
+      <h3>{headingCase(t('ch11.why'))}</h3>
       <p>{card.why}</p>
       {card.affects.length > 0 && <p className="muted">{t('ch11.affects')}: {card.affects.map((a) => (a.time ? `${a.name} ${a.time}` : a.name)).join(', ')}.</p>}
-      <h3>{t('ch11.recommended')}</h3>
+      <h3>{headingCase(t('ch11.recommended'))}</h3>
       <OptionView option={card.recommended} />
       {card.others.length > 0 && (
         <>
-          <h3>{t('ch11.others')}</h3>
+          <h3>{headingCase(t('ch11.others'))}</h3>
           <ul className="plain-list">{card.others.map((o) => <li key={o.id}><OptionView option={o} /></li>)}</ul>
         </>
       )}

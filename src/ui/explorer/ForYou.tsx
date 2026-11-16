@@ -5,7 +5,7 @@ import { formatTime } from '../../domain/cruise'
 import { interestsOf, venueHideId, type EventPick, type RecommendWhy, type VenuePick } from '../../domain/explorer/recommend'
 import { useAddToPlan } from '../../hooks/useAddToPlan'
 import { useTaste } from '../../hooks/useTaste'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 
@@ -30,7 +30,7 @@ export function ForYou({ data, events, venues, venueTitles, basePath, onChanged 
   }
   return (
     <Card labelledBy="exp-foryou-h">
-      <h2 id="exp-foryou-h" className="card__title">{t('exp.foryou.title')}</h2>
+      <h2 id="exp-foryou-h" className="card__title">{headingCase(t('exp.foryou.title'))}</h2>
       {events.length + venues.length === 0 && <p className="muted">{taste.likes.length === 0 ? t('exp.foryou.choose') : t('exp.foryou.none')}</p>}
       {events.length > 0 && (
         <ul className="plain-bullets">

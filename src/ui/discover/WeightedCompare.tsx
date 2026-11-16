@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { CRITERIA, WEIGHT_MAX, defaultWeights, normalizeComparison, type Comparison, type Criterion, type Weights } from '../../ai/stanleyDiscover'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { stanleyDiscover } from '../../runtime'
 import { Button } from '../Button'
 
@@ -24,7 +24,7 @@ export function WeightFields({ weights, onChange }: { weights: Weights; onChange
 export function ComparisonResult({ comparison, nameOf }: { comparison: Comparison; nameOf: (id: string) => string }) {
   return (
     <section aria-labelledby="find8-res-h">
-      <h3 id="find8-res-h">{t('find8.result')}</h3>
+      <h3 id="find8-res-h">{headingCase(t('find8.result'))}</h3>
       <div className="table-scroll">
         <table className="compare-table">
           <caption>{t('find8.caption')}</caption>
@@ -79,7 +79,7 @@ export function WeightedCompare({ ids }: { ids: string[] }) {
   const titleOf = (id: string) => shown?.rows.find((r) => r.sailingId === id)?.title ?? id
   return (
     <section aria-labelledby="cmpw-h">
-      <h3 id="cmpw-h">{t('cat.saved.weigh')}</h3>
+      <h3 id="cmpw-h">{headingCase(t('cat.saved.weigh'))}</h3>
       <p>{t('cat.saved.weighBody')}</p>
       <WeightFields weights={weights} onChange={(c, v) => { setWeights({ ...weights, [c]: Math.min(WEIGHT_MAX, Math.max(0, v)) }); setResult(null) }} />
       <Button onClick={() => void go()} disabled={busy}>{t('find8.compareNow')}</Button>

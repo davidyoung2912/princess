@@ -6,7 +6,7 @@ import { PORTS, type ItineraryDay } from '../../domain/sailings'
 import type { Journal } from '../../domain/memoryBook'
 import type { TripEntry } from '../../domain/tripDiary'
 import { useSettings } from '../../hooks/useSettings'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { stanleyLevelFor } from '../../settings/settings'
 import { Button } from '../Button'
 
@@ -54,7 +54,7 @@ export function StanleyStoryteller({ days, journal, onSave, diary = [] }: { days
       )}
       {draft && day !== null && (
         <div>
-          <h3 className="stanley-ask__q">{t('stanley.story.draftLabel', { day })}</h3>
+          <h3 className="stanley-ask__q">{headingCase(t('stanley.story.draftLabel', { day }))}</h3>
           <p>{draft}</p>
           <div className="button-row">
             <Button onClick={keep}>{t('stanley.story.use')}</Button>

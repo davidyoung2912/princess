@@ -9,7 +9,7 @@ import type { ExplorerKind } from '../../domain/explorer/types'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
 import { useExplorerData, useExplorerDay, usePlan, useVenueData, type ExplorerDayState } from '../../hooks/useExplorer'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { api } from '../../runtime'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
@@ -58,7 +58,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
     <div className="page exp-split">
       {siblings.length > 1 && (
         <nav className="exp-split__list" aria-labelledby="exp-others-h">
-          <h2 id="exp-others-h">{t('exp.venue.others')}</h2>
+          <h2 id="exp-others-h">{headingCase(t('exp.venue.others'))}</h2>
           <ul>
             {siblings.map((s) => (
               <li key={s.venue.id}>
@@ -111,7 +111,7 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
       </Card>
       {above?.(ctx)}
       <section aria-labelledby="exp-sum-h">
-        <h2 id="exp-sum-h">{t('exp.venue.about')}</h2>
+        <h2 id="exp-sum-h">{headingCase(t('exp.venue.about'))}</h2>
         <p>{v.short}</p>
         {v.long !== v.short && <p>{v.long}</p>}
         <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
@@ -126,11 +126,11 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
       </section>
       {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
         <section aria-labelledby="exp-fam-h">
-          <h2 id="exp-fam-h">{t('exp.family.title')}</h2>
+          <h2 id="exp-fam-h">{headingCase(t('exp.family.title'))}</h2>
           <ul className="tour__facts">{v.family?.map((f) => <li key={f}>{f}</li>)}</ul>
           {(v.kidsMenu?.length ?? 0) > 0 && (
             <>
-              <h3>{t('exp.family.menu')}</h3>
+              <h3>{headingCase(t('exp.family.menu'))}</h3>
               <ul>{v.kidsMenu?.map((d) => <li key={d}>{d}</li>)}</ul>
             </>
           )}
@@ -138,7 +138,7 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
       )}
       <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} />
       <section aria-labelledby="exp-ev-h">
-        <h2 id="exp-ev-h">{t('exp.venue.events')}</h2>
+        <h2 id="exp-ev-h">{headingCase(t('exp.venue.events'))}</h2>
         <p role="status" className="visually-hidden">{plan.announcement}</p>
         {plan.failed && <p role="alert" className="field__error">{t('exp.plan.failed')}</p>}
         {past && venue.events.length > 0 && <p className="muted">{t('exp.venue.readOnly')}</p>}

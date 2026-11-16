@@ -9,7 +9,7 @@ import { categoryById, type CategoryId } from '../../domain/ship'
 import { useSailing } from '../../hooks/useDemo'
 import { usePricedSailings, useRoomChoices } from '../../hooks/useShipCatalogue'
 import { useJourneyEvent } from '../../hooks/useJourneyEvent'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { comfortIndicators, GUEST_REPORTS_NOTE } from '../../domain/cabinComfort'
 import { cabinRegrets } from '../../domain/regret'
 import { Card } from '../Card'
@@ -180,7 +180,7 @@ export function CabinChooserScreen() {
             <div><dt>{t('cabins.motion')}</dt><dd>{stars(c.motion)}</dd></div>
             <div><dt>{t('cabins.noise')}</dt><dd>{stars(c.noise)}</dd></div>
           </dl>
-          <h4>{t('cabins.comfort')}</h4>
+          <h4>{headingCase(t('cabins.comfort'))}</h4>
           <ul className="plain-bullets">{comfortIndicators(c).map((i) => <li key={i.key}><strong>{t(`cabins.basis.${i.basis}` as StringKey)}:</strong> {i.text}</li>)}</ul>
           <p className="muted">{GUEST_REPORTS_NOTE}</p>
           {c.warnings.length > 0 && <ul className="plain-bullets">{c.warnings.map((w) => <li key={w}>{w}</li>)}</ul>}
@@ -189,11 +189,11 @@ export function CabinChooserScreen() {
             <summary>{t('cabins.why')}</summary>
             {(['sleep', 'motion', 'noise'] as const).map((k) => (
               <div key={k}>
-                <h4>{t(`cabins.${k}` as StringKey)}</h4>
+                <h4>{headingCase(t(`cabins.${k}` as StringKey))}</h4>
                 <ul className="plain-bullets">{c.reasons[k].map((r) => <li key={r}>{r}</li>)}</ul>
               </div>
             ))}
-            {c.sun && <><h4>{t('cabins.sun')}</h4><p>{c.sun.text} {t('cabins.sunSim')}</p></>}
+            {c.sun && <><h4>{headingCase(t('cabins.sun'))}</h4><p>{c.sun.text} {t('cabins.sunSim')}</p></>}
           </details>
           <CabinExtras cabin={c.cabin} sailing={sailing} />
           <label className="choice">

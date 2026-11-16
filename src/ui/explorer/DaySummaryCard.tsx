@@ -3,7 +3,7 @@ import { formatTime } from '../../domain/cruise'
 import { summariseDay, summaryLines } from '../../domain/explorer/daySummary'
 import type { ExplorerKind } from '../../domain/explorer/types'
 import type { ExplorerDayState } from '../../hooks/useExplorer'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import type { StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { StanleyPose } from '../StanleyPose'
@@ -16,7 +16,7 @@ export function DaySummaryCard({ kind, data, state }: { kind: ExplorerKind; data
   return (
     <Card hero labelledBy="exp-sum-h">
       <span className="landing-pose calm-hide"><StanleyPose pose={EXPLORER_POSE[kind]} size={72} /></span>
-      <h2 id="exp-sum-h" className="card__title">{t('exp.sum.title')}</h2>
+      <h2 id="exp-sum-h" className="card__title">{headingCase(t('exp.sum.title'))}</h2>
       <ul className="exp-sum">
         {lines.map((l) => <li key={l.key}>{t(`exp.sum.${l.key}` as StringKey, l.params)}</li>)}
       </ul>

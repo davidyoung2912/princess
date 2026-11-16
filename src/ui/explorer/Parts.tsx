@@ -8,7 +8,7 @@ import { formatMoney } from '../../domain/money'
 import { fillingUp, openState, type Span } from '../../domain/explorer/presentation'
 import { happeningNow } from '../../domain/explorer/planTimeline'
 import { eventPhase } from '../../domain/explorer/upcoming'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { MEAL } from './mealStrings'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
@@ -124,7 +124,7 @@ export function MenuPanel({ venueId, menus, diets }: { venueId: string; menus: r
   const ask = diets.filter((d) => NEEDS_ASKING.includes(d))
   return (
     <section aria-labelledby="exp-menu-h">
-      <h2 id="exp-menu-h">{t('exp.menu.title')}</h2>
+      <h2 id="exp-menu-h">{headingCase(t('exp.menu.title'))}</h2>
       {diets.length > 0 && <div className="chip-row"><Chip pressed={onlyMine} onToggle={() => setOnlyMine(!onlyMine)}>{t('exp.menu.suits')}</Chip></div>}
       {ask.length > 0 && <p className="muted">{t('exp.menu.ask')}</p>}
       {menus.map((m) => (
@@ -197,7 +197,7 @@ export function HappeningNow({ data, currentDay, now, basePath }: { data: Explor
   if (running.length === 0) return null
   return (
     <section aria-labelledby="exp-now-h">
-      <h2 id="exp-now-h">{t('exp.now.title')}</h2>
+      <h2 id="exp-now-h">{headingCase(t('exp.now.title'))}</h2>
       <ul className="exp-now">
         {running.map((r) => (
           <li key={r.event.id} className="card">
@@ -213,7 +213,7 @@ export function HappeningNow({ data, currentDay, now, basePath }: { data: Explor
 export function MoreLinks({ links }: { links: readonly { to: string; label: string }[] }) {
   return (
     <section aria-labelledby="exp-more-h">
-      <h2 id="exp-more-h">{t('exp.more.title')}</h2>
+      <h2 id="exp-more-h">{headingCase(t('exp.more.title'))}</h2>
       <div className="exp-actions">
         {links.map((l) => <LinkButton key={l.to} to={l.to} variant="secondary">{l.label}</LinkButton>)}
       </div>
