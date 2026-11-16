@@ -22,6 +22,7 @@
     "db:seed:check": "vite-node scripts/check-reference-seed.ts",
     "shipvenues:gen": "vite-node scripts/gen-ship-venues.ts",
     "shipprogrammes:gen": "vite-node scripts/gen-ship-programmes.ts",
+    "shipexplorer:gen": "vite-node scripts/gen-ship-explorer.ts",
     "catalogue:gen": "vite-node scripts/gen-catalogue-seed.ts",
     "catalogue:check": "vite-node scripts/check-catalogue-seed.ts",
     "db:persona:gen": "vite-node scripts/gen-persona-seed.ts",

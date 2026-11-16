@@ -53,7 +53,7 @@ export interface Settings {
   stanleyLevel: StanleyLevel
   /** The guest's own accent for the trip (X1b): tints the hero frame and the icons on lists. Chosen per device; "sea" is the app's own blue. */
   tripColour: TripColour
-  /** Screen ids the guest pinned to the top of their tab lists (X2f); Home also shows them as the shortcut bar (X2g). Chosen per device; at most `MAX_PINS`. */
+  /** Retired: screen pins now live on the server with the guest's other saved items (`usePins`). A device that still holds some uploads them once and empties this. At most `MAX_PINS`. */
   pins: string[]
 }
 

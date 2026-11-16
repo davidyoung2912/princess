@@ -27,7 +27,7 @@ export interface HttpGroups {
   budget: BudgetApi
   privacy: PrivacyApi
   feedback: FeedbackApi
-  favourites: { favourites: Api['discover']['favourites']; toggleFavourite: Api['discover']['toggleFavourite'] }
+  favourites: { favourites: Api['discover']['favourites']; toggleFavourite: Api['discover']['toggleFavourite']; reorderFavourites: Api['discover']['reorderFavourites'] }
   /** Phase 14: sailing offers and quotes, and the whole booking funnel. */
   discover: Pick<Api['discover'], 'offers' | 'quote'>
   booking: Api['booking']
@@ -147,6 +147,9 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       return view
     },
     togglePlan: (eventId, on) => inTrip('put', `/onboard/plan/${seg(eventId)}`, { on, day: eventDay.get(eventId) ?? lastDay }),
+    explorerDay: (kind, day) => inBooking(`/onboard/explorer/${seg(kind)}?day=${day}`),
+    explorerVenue: (kind, venueId, day) => inBooking(`/onboard/explorer/${seg(kind)}/${seg(venueId)}?day=${day}`),
+    togglePlanOn: (eventId, day, on) => inTrip('put', `/onboard/plan/${seg(eventId)}`, { on, day }),
     portDay: () => inBooking('/onboard/port-day'),
     muster: () => inBooking('/onboard/muster'),
     confirmMuster: (guests) => inTrip('post', '/onboard/muster', { guests: guests }),
@@ -517,6 +520,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     favourites: {
       favourites: () => get('/me/favourites'),
       toggleFavourite: (key) => send('post', '/me/favourites/toggle', { key }),
+      reorderFavourites: (keys) => send('put', '/me/favourites/order', { keys }),
     },
     discover: {
       offers: () => get('/sailings/offers'),

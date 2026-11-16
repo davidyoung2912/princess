@@ -204,6 +204,10 @@ public static class JourneyEndpoints
         api.MapPost("/me/favourites/toggle", async (ToggleFavouriteRequest body, ICurrentUser me, InboxService svc, CancellationToken ct) =>
                 Results.Ok(await svc.ToggleFavouriteAsync(await me.LoadAsync(ct), body, ct)))
             .WithTags("Favourites").WithSummary("Saves an item or removes it if saved; returns the list.");
+
+        api.MapPut("/me/favourites/order", async (ReorderFavouritesRequest body, ICurrentUser me, InboxService svc, CancellationToken ct) =>
+                Results.Ok(await svc.ReorderFavouritesAsync(await me.LoadAsync(ct), body, ct)))
+            .WithTags("Favourites").WithSummary("Puts the listed saved items in the given order (screen pins the guest arranged); items not listed keep their order after them. 400 keys.");
     }
 
     private static void MapPrivacy(IEndpointRouteBuilder api)

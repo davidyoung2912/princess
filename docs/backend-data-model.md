@@ -334,7 +334,7 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `budget.get/save` | `GET/PUT /bookings/{n}/budget` | B / BA; a child's limit needs that child's booker |
 | `bookings.get` / `bookings.sailings` | `GET /bookings/{n}` (core: number, personaId, bookerId, sailingId, departure, party ids, category, stateroom, cabinNumber, tier, package), `GET /sailings` | B / P |
 | `aboard.feedback.list/send` | `GET/POST /me/feedback` | U |
-| `ahead.saved.list/toggle`, `discover.favourites/toggleFavourite` | `GET /me/favourites`, `POST /me/favourites/toggle` | U |
+| `ahead.saved.list/toggle`, `discover.favourites/toggleFavourite/reorderFavourites` | `GET /me/favourites`, `POST /me/favourites/toggle`, `PUT /me/favourites/order` (screen pins `screen:<id>` at most 5, the oldest making room; venue pins `venue:<ship>.<venue>` at most 10 per Explorer, refused with `pinsFull`) | U |
 
 ### 6.2 Discover and booking (Phase 7, built)
 | Api method | Verb route | Auth |
@@ -401,7 +401,7 @@ Phase 9 built these as listed, under `/bookings/{number}` (the lookup is the onl
 ### 6.5 On board (Phase 10: 10a, 10b and 10c built)
 | Api method | Route | Auth |
 | --- | --- | --- |
-| `onboard.today/program/togglePlan/portDay/muster/confirmMuster/emergency/folio` | `GET /onboard/today`, `GET /onboard/program/{day}`, `PUT /onboard/plan/{eventId}`, `GET /onboard/port-day`, `GET/POST /onboard/muster`, `GET /onboard/emergency`, `GET /onboard/folio` | B (togglePlan: BA or self) |
+| `onboard.today/program/togglePlan/togglePlanOn/explorerDay/explorerVenue/portDay/muster/confirmMuster/emergency/folio` | `GET /onboard/today`, `GET /onboard/program/{day}`, `PUT /onboard/plan/{eventId}` (programme events and Explorer events; `togglePlanOn` names the day), `GET /onboard/explorer/{kind}?day=`, `GET /onboard/explorer/{kind}/{venueId}?day=`, `GET /onboard/port-day`, `GET/POST /onboard/muster`, `GET /onboard/emergency`, `GET /onboard/folio` | B (togglePlan: BA or self) |
 | `ports.today` | `GET /onboard/port` | B |
 | `orders.menu/list/place/resolve/cancel/moveTo/contact` | `GET /orders/menu`, `GET/POST /orders`, `POST …/{id}/resolve`, `DELETE …/{id}`, `PUT …/{id}/location`, `POST …/{id}/contact` | B / BA |
 | `messages.receipts/setReceipts` | `GET/PUT /me/chat/receipts` |

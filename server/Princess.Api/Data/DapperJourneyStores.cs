@@ -444,6 +444,19 @@ public sealed class DapperInboxStore(IDbConnectionFactory db) : IInboxStore
         return list;
     }
 
+    public async Task<List<string>> ReorderFavouritesAsync(long userId, IReadOnlyList<string> keys, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        var current = await Favourites(c, userId, tx, ct);
+        var order = keys.Distinct().Where(current.Contains).Concat(current.Where(k => !keys.Contains(k))).ToList();
+        for (var i = 0; i < order.Count; i++)
+            await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.Favourites SET Position = @position WHERE UserId = @userId AND ItemKey = @key", new { position = i + 1, userId, key = order[i] }, tx, ct));
+        var list = await Favourites(c, userId, tx, ct);
+        await tx.CommitAsync(ct);
+        return list;
+    }
+
     public async Task AddJourneyEventAsync(long userId, string kind, string? sailingId, DateTime at, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

@@ -1,3 +1,5 @@
+import type { ExplorerDay, VenueDay } from './explorerTypes'
+import type { ExplorerKind } from '../domain/explorer/types'
 import type { AboardApi } from './aboardTypes'
 import type { AvatarChoice, ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi, ChatRoomsApi, ChatRoomsStaffApi } from './chatTypes'
 import type { AheadApi } from './aheadTypes'
@@ -797,6 +799,8 @@ export interface Api {
     favourites(): Promise<string[]>
     /** Saves an item, or removes it if saved; returns the new list. */
     toggleFavourite(key: string): Promise<string[]>
+    /** Puts the saved items in this order (the pinned screens the person arranged); items not named keep their order after these. Returns the list. */
+    reorderFavourites(keys: readonly string[]): Promise<string[]>
   }
   account: {
     party(): Promise<PartyMember[]>
@@ -1026,6 +1030,12 @@ export interface OnboardApi {
   program(day: number): Promise<ProgramView>
   /** Adds or removes an event from the signed-in person's plan; rejects `forbidden` for a supervised account, `invalid` for an unknown event. */
   togglePlan(eventId: string, on: boolean): Promise<string[]>
+  /** Every venue of one Explorer with the hours and events of cruise day `day`, and the events the person has planned that day. Rejects `notFound` for an unknown Explorer, `invalid` for a day outside the sailing. */
+  explorerDay(kind: ExplorerKind, day: number): Promise<ExplorerDay>
+  /** One venue with its hours, all its events and its menus for a day. Rejects `notFound` for an unknown Explorer or venue. */
+  explorerVenue(kind: ExplorerKind, venueId: string, day: number): Promise<VenueDay>
+  /** Adds an event of any Explorer (or the daily programme) to the plan of a day, or removes it; returns that day's planned event ids. Rejects `invalid` for an unknown event or a day it does not run. */
+  togglePlanOn(eventId: string, day: number, on: boolean): Promise<string[]>
   portDay(): Promise<PortDayView | null>
   muster(): Promise<MusterView>
   /** Checks guests in at the muster station; rejects `forbidden` for someone outside the booking. */

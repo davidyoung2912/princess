@@ -1,3 +1,4 @@
+import type { ExplorerDay, VenueDay } from './explorerTypes'
 import type { CustomsView, DisembarkView, NightView, OnwardView } from './finishTypes'
 import type { BoardingView, DiningView, EmbarkView, FamilyView, FolioView, HealthView, MusterView, OnboardToday, PhotosView, PortDayView, PrintView, ProgramView, ReceiptView, RoomView } from './types'
 
@@ -120,4 +121,27 @@ export function asNightView(raw: unknown): NightView | null {
   const o = obj(raw)
   if (!o || !Array.isArray(o.entries)) return null
   return o.entries.every((e) => !!obj(e) && typeof obj(e)!.id === 'string' && typeof obj(e)!.dueAt === 'number' && typeof obj(e)!.state === 'string') ? (raw as NightView) : null
+}
+
+const isWindow = (w: unknown): boolean => Array.isArray(w) && w.length === 2 && typeof w[0] === 'string' && typeof w[1] === 'string'
+
+/** An Explorer venue on a day: the venue, its hours and its events, each the right shape to read. */
+export function asVenueDay(raw: unknown): VenueDay | null {
+  const o = obj(raw)
+  const v = o ? obj(o.venue) : null
+  const h = o ? obj(o.hours) : null
+  if (!o || !v || !h || typeof v.id !== 'string' || typeof v.title !== 'string' || typeof v.explorer !== 'string') return null
+  if (!Array.isArray(h.windows) || !h.windows.every(isWindow) || !Array.isArray(h.staffed) || !h.staffed.every(isWindow)) return null
+  if (!Array.isArray(o.menus) || !Array.isArray(o.events)) return null
+  const events = o.events.every((e) => {
+    const x = obj(e)
+    return !!x && typeof x.id === 'string' && typeof x.venueId === 'string' && typeof x.title === 'string' && typeof x.startAt === 'number' && typeof x.endAt === 'number' && typeof x.status === 'string'
+  })
+  return events ? (raw as VenueDay) : null
+}
+
+export function asExplorerDay(raw: unknown): ExplorerDay | null {
+  const o = obj(raw)
+  if (!o || typeof o.explorer !== 'string' || typeof o.day !== 'number' || typeof o.date !== 'string' || !Array.isArray(o.venues) || !Array.isArray(o.mine)) return null
+  return o.venues.every((v) => asVenueDay(v) !== null) ? (raw as ExplorerDay) : null
 }

@@ -217,11 +217,13 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 - Day-mapping: document how each "Day n" in the 7-day doc schedules maps to day kinds and how a 5-, 10- or 14-day sailing reuses them.
 - Exit: tests cover the 15-minute boundary, pin ordering stability, relative hours (sailaway + 45 min), day mapping for several sailing lengths.
 
-### Phase 1: Backend contract and content pipeline
-- Define C# contracts and `ship-explorer.json` schema; generator script; embed per ship (Sun, Sky, Sapphire); seed SQL in `db/seed`.
-- Endpoints `explorer/{kind}` and `explorer/{kind}/{venueId}`; `venue` favourites; plan toggle accepting any event id; spa reservations CRUD (service, rules, SQL schema in `db/01-schema.sql`).
-- Front end: `src/api` types, guards, `httpApi` client functions, contract tests (`httpApi.test`, guard tests, `check-api-coverage`).
-- Verification caveat: with no `dotnet test` allowed, server logic is verified by TypeScript-side contract and fixture tests only; I will keep server rules small, mirror them in tested TS where possible, and list every server file changed so you can run the server yourself.
+### Phase 1: Backend contract and content pipeline (done)
+- Content: `scripts/ship-explorer-data.ts` + `npm run shipexplorer:gen` write `server/Princess.Api/Content/ship-explorer.json` (embedded), with venues, hours rules, events and menus per ship (Sun, Sky, Sapphire). Phase 1 carries the dining rooms of all three ships; the other Explorers, events and menus arrive in their own phases. A test fails when the file is stale or breaks a rule. The content is served from the embedded file; it is not seeded into `ref.*` tables.
+- Endpoints: `GET /bookings/{number}/onboard/explorer/{kind}?day=` and `.../{kind}/{venueId}?day=` (venues with resolved hours, events with mid-day changes applied, menus on the venue page, the guest's planned events). `PUT /onboard/plan/{eventId}` accepts Explorer event ids as well as programme ids.
+- Pins on the server, everywhere: screen pins (`screen:<id>`, max 5, oldest makes room) and venue pins (`venue:<ship>.<venue>`, max 10 per Explorer, validated against the catalogue, `pinsFull` when full) ride on the existing favourites, plus `PUT /me/favourites/order`. `usePins` is one shared store behind `ScreenList`, `EditFavourites` and `ShortcutBar`; pins saved on a device are uploaded once and the device setting is emptied.
+- Front end: `api/explorerTypes.ts`, guards, `onboard.explorerDay/explorerVenue/togglePlanOn`, `discover.reorderFavourites`, contract tests.
+- **Moved to Phase 3:** the spa reservation service (tables, store, rules, CRUD endpoints). It has no screen to use it until the Spa Explorer, and building it with that screen keeps the server and client shapes honest.
+- Server files changed are listed in the Phase 1 commit message; you test the backend.
 
 ### Phase 2: Shared UI kit and Dining Explorer (the pilot)
 - Build the kit (2.1, 2.2, 3.3) and migrate **Dining** first because it has the most surface: reservations for the day, venue list with next events (service periods, themed nights, tastings, winemaker dinners), pins, venue detail with the 7-day menu, hours, dress, cover charges, diet filter, reservation CRUD wired to the existing dining APIs.
@@ -229,6 +231,7 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 - Exit: Dining meets every point in section 2; the kit contains no dining-specific code.
 
 ### Phase 3: Spa Explorer
+- Spa reservations backend (moved from Phase 1): `dbo.SpaAppointments` (+ guests) in `db/01-schema.sql`, store, rules and service mirroring dining, endpoints under `/plan/spa`, and the client `plan.spa` group.
 - Venues: Lotus Spa and salon, Enclave thermal suite, barber / medi-spa (as in `princess-spa-casino.md`); treatments become bookable slots and spa events (seminars, port-day specials, tours).
 - Spa reservations CRUD (create, move, edit notes, cancel with policy), clash checks against dining and tours, price and folio display.
 

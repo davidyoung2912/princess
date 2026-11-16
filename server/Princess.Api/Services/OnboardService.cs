@@ -64,9 +64,11 @@ public sealed class OnboardService(
     public async Task<List<string>> TogglePlanAsync(UserRecord actor, string? number, string? eventId, PlanToggleRequest? body, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
-        var ev = ProgramRules.ById(eventId, AboardPlans.ShipOfSailing(c.Booking.SailingId)) ?? throw ApiException.Invalid("event");
-        if (body is null || !DayKinds.Runs(c.Timeline, body.Day, ev.When)) throw ApiException.Invalid("day");
-        await store.SetPlanAsync(actor.Id, c.Booking.SailingId, ev.Id, body.Day, body.On, ct);
+        var shipId = AboardPlans.ShipOfSailing(c.Booking.SailingId);
+        // An event is on the daily programme or in one of the Explorers; both go in the same plan (a plan holds an event id and a day).
+        var (id, when) = ProgramRules.ById(eventId, shipId) is { } ev ? (ev.Id, ev.When) : ExplorerCatalogue.EventOn(shipId, eventId) is { } x ? (x.Id, x.When) : throw ApiException.Invalid("event");
+        if (body is null || !DayKinds.Runs(c.Timeline, body.Day, when)) throw ApiException.Invalid("day");
+        await store.SetPlanAsync(actor.Id, c.Booking.SailingId, id, body.Day, body.On, ct);
         return [.. (await store.ListPlanAsync(actor.Id, c.Booking.SailingId, ct)).Where(r => r.Day == body.Day).Select(r => r.EventId)];
     }
 

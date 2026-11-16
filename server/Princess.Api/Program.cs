@@ -162,6 +162,7 @@ services.AddOptions<PassOptions>().BindConfiguration(PassOptions.Section).Valida
 services.AddSingleton<PassLookupGuard>();
 services.AddScoped<CheckinService>();
 services.AddScoped<OnboardService>();
+services.AddScoped<ExplorerService>();
 services.AddScoped<ServiceChatService>();
 services.AddScoped<OrderService>();
 services.AddScoped<FamilyService>();
@@ -350,6 +351,7 @@ v1.MapPlanEndpoints();
 v1.MapAheadEndpoints();
 v1.MapCheckinEndpoints();
 v1.MapOnboardEndpoints();
+v1.MapExplorerEndpoints();
 v1.MapShipboardEndpoints();
 v1.MapAboardEndpoints();
 v1.MapChatConnectionEndpoints();

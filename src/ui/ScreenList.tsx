@@ -6,9 +6,8 @@ import { openedFrom, type TabColour } from '../routes/screens'
 import { listedScreens } from '../routes/stageNav'
 import { SCREEN_ICONS } from './screenIcons'
 import { CircleDot, Pin } from 'lucide-react'
-import { useSettings } from '../hooks/useSettings'
-import { MAX_PINS } from '../settings/settings'
-import { orderForParty, togglePin } from '../domain/tileOrder'
+import { usePins } from '../hooks/usePins'
+import { orderForParty } from '../domain/tileOrder'
 import type { TileLine } from '../domain/tileLive'
 import { TileLiveLine } from './TileLiveLine'
 
@@ -19,7 +18,7 @@ import { TileLiveLine } from './TileLiveLine'
  */
 export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headingId }: { ids: readonly string[]; colour: TabColour; badges?: Record<string, ReactNode>; live?: Record<string, TileLine>; heading?: string; headingId: string }) {
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
-  const [{ pins }, update] = useSettings()
+  const { screens: pins, toggleScreen, ready } = usePins()
   const items = listedScreens(orderForParty(ids, pins), { sailingId: context?.focusSailingId ?? context?.sailingId ?? null, tripNumber: context?.booking?.number ?? null })
   if (items.length === 0) return null
   return (
@@ -30,7 +29,7 @@ export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headi
           const Icon = SCREEN_ICONS[screen.id] ?? CircleDot
           return (
             <TileItem key={screen.id} id={screen.id} title={th(screen.titleKey)} text={t(screen.subtextKey)} live={live[screen.path]} icon={<Icon className="screen-list__icon" size={20} aria-hidden="true" />}>
-              <button type="button" className="screen-list__pin" aria-pressed={pins.includes(screen.id)} aria-label={t('pin.label', { title: th(screen.titleKey) })} onClick={() => update({ pins: togglePin(pins, screen.id, MAX_PINS) })}><Pin size={16} aria-hidden="true" /></button>
+              <button type="button" className="screen-list__pin" disabled={!ready} aria-pressed={pins.includes(screen.id)} aria-label={t('pin.label', { title: th(screen.titleKey) })} onClick={() => void toggleScreen(screen.id)}><Pin size={16} aria-hidden="true" /></button>
               <Link to={to} state={openedFrom(colour)}><Icon className="screen-list__icon" size={20} aria-hidden="true" />{th(screen.titleKey)}{badges[screen.path]}</Link>
             </TileItem>
           )

@@ -135,6 +135,24 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
     {
         var key = req.Key?.Trim() ?? "";
         if (key.Length > 80 || !FavouriteKey().IsMatch(key)) throw ApiException.Invalid("key");
-        return inbox.ToggleFavouriteAsync(actor.Id, key, ct);
+        return ToggleCheckedAsync(actor, key, ct);
+    }
+
+    /// <summary>Screen pins and venue pins are favourites with limits and a check that they name something real; any other key is saved as it is.</summary>
+    private async Task<List<string>> ToggleCheckedAsync(UserRecord actor, string key, CancellationToken ct)
+    {
+        var current = await inbox.ListFavouritesAsync(actor.Id, ct);
+        if (current.Contains(key)) return await inbox.ToggleFavouriteAsync(actor.Id, key, ct);
+        ExplorerRules.RequirePinAllowed(current, key);
+        if (key.StartsWith("screen:", StringComparison.Ordinal) && current.Where(k => k.StartsWith("screen:", StringComparison.Ordinal)).ToList() is { } screens && screens.Count >= ExplorerRules.MaxScreenPins)
+            await inbox.ToggleFavouriteAsync(actor.Id, screens[0], ct);   // the oldest pin makes room
+        return await inbox.ToggleFavouriteAsync(actor.Id, key, ct);
+    }
+
+    public async Task<List<string>> ReorderFavouritesAsync(UserRecord actor, ReorderFavouritesRequest req, CancellationToken ct)
+    {
+        var keys = req.Keys ?? throw ApiException.Invalid("keys");
+        if (keys.Count > 200 || keys.Any(k => k.Length > 80)) throw ApiException.Invalid("keys");
+        return await inbox.ReorderFavouritesAsync(actor.Id, keys, ct);
     }
 }
