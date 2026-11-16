@@ -10,6 +10,7 @@ import { Button } from '../Button'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
 import { StatusBadge } from '../StatusBadge'
+import { DayIcon } from '../onboard/ItineraryScreen'
 
 const placeOf = (c: DayChoice): string => (c.atSea ? t('exp.clock.sea') : portById(c.port)?.name ?? c.port)
 
@@ -37,7 +38,7 @@ export function PickDateButton({ state }: { state: ExplorerDayState }) {
             {state.choices.map((c) => (
               <li key={c.day}>
                 <button type="button" className="exp-days__btn" aria-pressed={c.day === state.day} onClick={() => { state.setDay(c.day); setOpen(false) }}>
-                  <span className="exp-days__head"><strong>{t('exp.date.option', { day: c.day, date: shortDate(c.date) })}</strong>{c.isToday && <StatusBadge kind="booked" label={t('exp.date.todayTag')} />}</span>
+                  <span className="exp-days__head"><DayIcon day={c.day} last={c.day === state.choices.length} sea={c.atSea} /><strong>{t('exp.date.option', { day: c.day, date: shortDate(c.date) })}</strong>{c.isToday && <StatusBadge kind="booked" label={t('exp.date.todayTag')} />}</span>
                   <span>{placeOf(c)}</span>
                 </button>
               </li>

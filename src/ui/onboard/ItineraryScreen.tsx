@@ -8,7 +8,7 @@ import { StatusBadge } from '../StatusBadge'
 import { Anchor, Arrive, Clock, Depart, Plane, Ship, Waves } from '../icons'
 
 /** The icon for the kind of day: boarding, at sea, in port, or going home. */
-const DayIcon = ({ day, last, sea }: { day: number; last: boolean; sea: boolean }) => {
+export const DayIcon = ({ day, last, sea }: { day: number; last: boolean; sea: boolean }) => {
   const Icon = day === 1 ? Ship : last ? Plane : sea ? Waves : Anchor
   return <Icon className="event__day-icon" aria-hidden="true" focusable="false" />
 }
