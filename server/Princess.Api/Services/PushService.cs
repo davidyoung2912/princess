@@ -100,7 +100,7 @@ public sealed class PushService(
         var zone = departure is { } d ? Itinerary.ShipZoneAt(d, now) : Itinerary.ShipHomeZone;
         var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(now, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById(zone));
         var prefs = await PrefsAsync(target.Id, ct);
-        var settings = new PushSettings(subs.Min(s => s.Budget), subs.Any(s => s.Calm), []);
+        var settings = new PushSettings(subs.Count == 0 ? 0 : subs.Min(s => s.Budget), subs.Any(s => s.Calm), []);
         var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
         // sentToday is 0: chat does not count against the budget, but a guest who chose "none" (budget 0) still hears nothing.
         var decision = PushRules.Decide(n, prefs, settings, TimeOnly.FromDateTime(local), 0, Shipboard.Ms(now));
@@ -148,7 +148,7 @@ public sealed class PushService(
         if (notices.Count == 0) return;
 
         // Several phones: the strictest limit applies, so one phone's calm mode is not undone by another.
-        var settings = new PushSettings(subs.Min(s => s.Budget), subs.Any(s => s.Calm), [.. Watch(subs)]);
+        var settings = new PushSettings(subs.Count == 0 ? 0 : subs.Min(s => s.Budget), subs.Any(s => s.Calm), [.. Watch(subs)]);
         var log = await store.ListDeliveriesAsync(actor.Id, 200, ct);
         var sentKeys = log.Where(l => l.Outcome == "sent").Select(l => l.NoticeKey).ToHashSet();
         await ReachOtherChannelsAsync(actor, notices, prefs, TimeOnly.FromDateTime(local), sentKeys, now, ct);

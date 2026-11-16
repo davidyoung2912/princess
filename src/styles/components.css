@@ -334,8 +334,12 @@ main.signin { margin-inline: auto; }
 
 /* Left nav and tab bar: the icon gives the same small tilt and grow as the top-right icons on hover or focus, and the label goes bolder. Off for reduced motion. */
 .tabs__item .lucide { transition: transform var(--t-mid) var(--ease); }
-.tabs__item:is(:hover, :focus-visible) .lucide { transform: scale(1.15) rotate(-8deg); }
-.tabs__item:not([aria-current='page']):is(:hover, :focus-visible) { font-weight: 700; }
+@media (hover: hover) {
+  .tabs__item:is(:hover, :focus-visible) .lucide { transform: scale(1.15) rotate(-8deg); }
+}
+@media (hover: hover) {
+  .tabs__item:not([aria-current='page']):is(:hover, :focus-visible) { font-weight: 700; }
+}
 @media (prefers-reduced-motion: reduce) {
   .tabs__item .lucide { transition: none; }
   .tabs__item:is(:hover, :focus-visible) .lucide { transform: none; }
