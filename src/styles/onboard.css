@@ -354,3 +354,22 @@ button.chat-quote { cursor: pointer; }
 .deckfind__row { display: flex; gap: var(--space-2); align-items: stretch; }
 .deckfind__row .field__input { flex: 1; min-width: 0; }
 .deckfind__result { min-height: 1.5em; margin: 0; }
+
+/* Explorer pages (docs/explorer-harmony-plan.md): the shared kit. */
+.exp-clock { margin: 0; }
+.exp-chosen { margin: var(--space-2) 0; }
+.exp-date { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-3) 0; }
+.exp-days { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.exp-days__btn { display: grid; gap: 2px; width: 100%; min-height: var(--target-min); padding: var(--space-3) var(--space-4); text-align: start; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: var(--radius-card); cursor: pointer; }
+.exp-days__btn[aria-pressed='true'] { border-color: var(--explorer); background: var(--explorer-tint); }
+.exp-card { position: relative; }
+.exp-card__link::after { content: ''; position: absolute; inset: 0; }
+.exp-pin { z-index: 1; }
+.exp-card:has(.exp-card__link:focus-visible) { outline: 3px solid var(--explorer); outline-offset: 2px; }
+.exp-events { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-3); }
+.exp-event { padding-block-start: var(--space-2); border-block-start: 1px solid var(--border); }
+.exp-event p { margin: 0 0 var(--space-1); }
+.exp-event--cancelled { color: var(--text-muted); }
+.exp-event__clash { color: var(--warning); font-weight: 600; }
+.exp-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block-start: var(--space-3); }
+@media (prefers-reduced-motion: no-preference) { .exp-days__btn { transition: border-color 0.15s; } }

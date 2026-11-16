@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { shipExplorerFileText, shipExplorerRows } from '../../../scripts/ship-explorer-data'
-import { isDayKind, type DayShape } from '../dayKinds'
+import { isDayKind, isDayKindOn, type DayShape } from '../dayKinds'
 import { resolveHours } from './hours'
 import { templateIndexFor } from './dayMapping'
 import { EXPLORER_KINDS } from './types'
@@ -62,6 +62,31 @@ describe('the Explorer content of the ships', () => {
             const h = resolveHours(v.hours, week, day, '17:00')
             expect(h.windows.length, `${v.id} day ${day}`).toBeGreaterThan(0)
           }
+        }
+      })
+
+      it('gives every main dining room a dinner menu for each night of the authored week, formal on the two formal nights', () => {
+        for (const v of content.venues.filter((x) => x.kind === 'main')) {
+          const dinners = content.menus.filter((m) => m.venueId === v.id && m.meal === 'dinner')
+          expect(dinners.map((m) => m.templateDay).sort()).toEqual([1, 2, 3, 4, 5, 6, 7])
+          expect(dinners.filter((m) => m.formal).map((m) => m.templateDay).sort()).toEqual([2, 6])
+        }
+      })
+
+      it('tags every dish and keeps eggplant from counting as egg', () => {
+        const dishes = content.menus.flatMap((m) => m.courses.flatMap((c) => c.dishes))
+        expect(dishes.length).toBeGreaterThan(50)
+        expect(dishes.find((d) => d.name === 'Eggplant Parmigiana')?.contains).not.toContain('egg')
+      })
+
+      it('starts every event inside the hours of its venue on a day it runs', () => {
+        for (const e of content.events) {
+          const v = content.venues.find((x) => x.id === e.venueId)!
+          const inside = week.some((_, i) => {
+            if (!e.when.some((k) => isDayKindOn(week, i + 1, k as never))) return false
+            return resolveHours(v.hours, week, i + 1, '17:00').windows.some(([a, b]) => a <= e.start && e.start < b)
+          })
+          expect(inside, `${e.id} at ${e.start}`).toBe(true)
         }
       })
 

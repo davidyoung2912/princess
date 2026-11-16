@@ -225,10 +225,12 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 - **Moved to Phase 3:** the spa reservation service (tables, store, rules, CRUD endpoints). It has no screen to use it until the Spa Explorer, and building it with that screen keeps the server and client shapes honest.
 - Server files changed are listed in the Phase 1 commit message; you test the backend.
 
-### Phase 2: Shared UI kit and Dining Explorer (the pilot)
+### Phase 2: Shared UI kit and Dining Explorer (the pilot) (done)
 - Build the kit (2.1, 2.2, 3.3) and migrate **Dining** first because it has the most surface: reservations for the day, venue list with next events (service periods, themed nights, tastings, winemaker dinners), pins, venue detail with the 7-day menu, hours, dress, cover charges, diet filter, reservation CRUD wired to the existing dining APIs.
 - Content for Dining (from `princess-restuarants.md`, `princess-bars.md`, `princess-special-events.md`) for all three ships.
 - Exit: Dining meets every point in section 2; the kit contains no dining-specific code.
+- Built: `src/ui/explorer/` (kit: `ExplorerPage`, `VenueDetailPage`, `ShipClockCard`, `DateControls`, `Pins`, `Parts`) and `src/ui/explorer/dining/` (the only dining code: reservations list wiring and the reserve / move editor). Hooks `useExplorer` and `useVenuePins`; pure rules in `src/domain/explorer/presentation.ts`. Route `/dining-today/:venueId` (screen X21). Dining content (bars, events, menus for all three ships) in `scripts/ship-explorer-dining.ts`, written to `ship-explorer.json`.
+- Left for later phases: the date list has no "you have plans" dot, venue pages have no share-to-chat (the server builds share text only for tours and reservations), the deck-plan link opens the plan without placing a pin, and the desktop master/detail layout is Phase 9.
 
 ### Phase 3: Spa Explorer
 - Spa reservations backend (moved from Phase 1): `dbo.SpaAppointments` (+ guests) in `db/01-schema.sql`, store, rules and service mirroring dining, endpoints under `/plan/spa`, and the client `plan.spa` group.

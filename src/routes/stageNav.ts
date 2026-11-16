@@ -139,7 +139,7 @@ export function groupShip(ids: readonly string[]): { group: ShipGroup | null; id
 
 /** The six Explorer pages (entertainment, dining, shopping, spa, exercise, activities). They share one colour of their own, apart from the five tab colours. */
 export const EXPLORER_PATHS: readonly string[] = ['/entertainment', '/dining-today', '/shopping-today', '/spa-explorer', '/exercise-explorer', '/activities-explorer']
-export const isExplorerPath = (pathname: string): boolean => EXPLORER_PATHS.includes(pathname)
+export const isExplorerPath = (pathname: string): boolean => EXPLORER_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 
 /** What the shell's `data-area` says: the Explorer colour on an Explorer page, otherwise the area's own colour. */
 export const shellArea = (pathname: string, area: TabColour): TabColour | 'explorer' => (isExplorerPath(pathname) ? 'explorer' : area)
