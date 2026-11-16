@@ -157,3 +157,4 @@ main.page > h1 { color: var(--primary); }
 /* Big figures (prices, totals, booking numbers) take the section accent. */
 .price__amount, .fare__total, .booking-number, .trip-count, .bill__big, .help-now__big, .wrapped-card__big { color: var(--sec); }
 progress, meter { accent-color: var(--sec); }
+.page-header__row .page-header__art { margin-inline-start: auto; flex: none; display: grid; place-items: center; width: 3.75rem; height: 3.75rem; border-radius: 50%; background: color-mix(in srgb, var(--on-header) 88%, transparent); }

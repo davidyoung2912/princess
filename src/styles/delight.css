@@ -151,3 +151,4 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 0.4em; fon
 .stamp__date { font-size: 0.8rem; color: var(--muted, inherit); font-variant-numeric: tabular-nums; }
 .stamp--waiting { border-style: dashed; border-width: 2px; opacity: 0.8; }
 :root[data-fun='lively'] .stamp--new { animation: land var(--t-mid) var(--ease) both; }
+.landing-pose--clear-pin { margin-inline-end: var(--space-6); }

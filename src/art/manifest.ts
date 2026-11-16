@@ -7,15 +7,21 @@ import { JOURNEY_STAGES, type JourneyStage } from '../routes/hubs'
 export type HeroId = JourneyStage
 export const HERO_IDS: readonly HeroId[] = JOURNEY_STAGES
 
-/** The sixteen full-body Stanley poses and what each is for (14.2). */
+/** The thirty-two full-body Stanley poses and what each is for (14.2). The first sixteen are the everyday set; the rest suit a place or a moment on board. */
 export const POSES = {
   wave: 'greeting', think: 'searching', thumbs: 'success', lifebuoy: 'help', sleep: 'quiet', point: 'look here', binoculars: 'port and search', clipboard: 'checklists',
   suitcase: 'packing and boarding', cheer: 'moments', oops: 'errors and offline', map: 'navigation', tray: 'dining', lifejacket: 'muster practice', umbrella: 'weather', camera: 'photos and diary',
+  bar: 'bars and drinks', casino: 'the casino', 'checking-itinerary': 'the itinerary', checklist: 'to-do lists', countdown: 'days to go', dancing: 'dance floors and parties', dining: 'restaurants',
+  exercise: 'fitness', passport: 'documents and travel papers', pirate: 'children and family fun', planning: 'planning and booking', poolside: 'pools and sun decks', 'port-visit': 'port days',
+  shopping: 'shops', spa: 'the spa and wellness', theatre: 'shows',
 } as const
 export type PoseId = keyof typeof POSES
 
-/** The head-and-shoulders moods. */
-export const HEADS = ['stanley', 'confused', 'congratulations', 'excited', 'idea', 'proud', 'sailor-salute', 'sunglasses', 'surprised'] as const
+/** The head-and-shoulders moods, then the same face in a uniform or a role. */
+export const HEADS = [
+  'stanley', 'confused', 'congratulations', 'excited', 'idea', 'proud', 'sailor-salute', 'sunglasses', 'surprised', 'gentle',
+  'accountant', 'captain', 'chef', 'customer-service', 'formal', 'lifeguard', 'maintenance', 'navigating', 'scheduler', 'sherlock', 'vacation',
+] as const
 export type HeadId = (typeof HEADS)[number]
 
 export type ArtFile = { kind: 'hero'; id: HeroId; size: 'wide' | 'narrow' } | { kind: 'pose'; id: PoseId } | { kind: 'head'; id: HeadId }

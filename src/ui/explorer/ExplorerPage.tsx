@@ -12,6 +12,8 @@ import { ChosenDayNote, PickDateButton } from './DateControls'
 import { EventRow, FilterChips, HappeningNow, HoursBadge } from './Parts'
 import { useVenuePins, type VenuePins } from '../../hooks/useVenuePins'
 import { PinButton } from './Pins'
+import { StanleyPose } from '../StanleyPose'
+import { EXPLORER_POSE } from './venueArt'
 import { ShipClockCard } from './ShipClockCard'
 
 export interface ExplorerContext { data: ExplorerDay; state: ExplorerDayState; reload: () => void }
@@ -36,6 +38,7 @@ export function ExplorerPage({ kind, title, purpose, basePath, kindLabels, above
   return (
     <div className="page">
       <Card hero labelledBy="exp-head-h">
+        <span className="landing-pose calm-hide"><StanleyPose pose={EXPLORER_POSE[kind]} size={88} /></span>
         <h2 id="exp-head-h" className="card__title">{title}</h2>
         <p>{purpose}</p>
       </Card>

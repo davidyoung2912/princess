@@ -19,6 +19,8 @@ import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
 import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
 import { PinButton } from './Pins'
+import { StanleyPose } from '../StanleyPose'
+import { venuePose } from './venueArt'
 import { ShipClockCard } from './ShipClockCard'
 
 export interface VenueContext { venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; reload: () => void }
@@ -70,7 +72,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
         <Banner kind="info" title={t('exp.venue.gone')} action={<LinkButton to={basePath} variant="secondary">{backLabel}</LinkButton>}><p>{t('exp.venue.goneBody')}</p></Banner>
       ) : (
         <Saved copy={venueCopy}>
-          {(venue) => <Body venue={venue} explorerDay={dayCopy.data} state={state} diets={diets} above={above} busy={busy} reload={() => { venueCopy.retry(); dayCopy.retry() }} />}
+          {(venue) => <Body kind={kind} venue={venue} explorerDay={dayCopy.data} state={state} diets={diets} above={above} busy={busy} reload={() => { venueCopy.retry(); dayCopy.retry() }} />}
         </Saved>
       )}
       <BackLink to={`${basePath}?day=${state.day}`} label={backLabel} />
@@ -79,7 +81,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
   )
 }
 
-function Body({ venue, explorerDay, state, diets, above, busy, reload }: { venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; diets: DietaryId[]; above?: VenueDetailProps['above']; busy?: VenueDetailProps['busy']; reload: () => void }) {
+function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: { kind: ExplorerKind; venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; diets: DietaryId[]; above?: VenueDetailProps['above']; busy?: VenueDetailProps['busy']; reload: () => void }) {
   const v = venue.venue
   const pins = useVenuePins([v])
   const plan = usePlan(state.day, explorerDay?.mine ?? [], { added: (title) => t('exp.plan.added', { title }), removed: (title) => t('exp.plan.removed', { title }) })
@@ -94,6 +96,7 @@ function Body({ venue, explorerDay, state, diets, above, busy, reload }: { venue
     <>
       <Card hero labelledBy="exp-venue-h">
         <PinButton venue={v} pins={pins} />
+        <span className="landing-pose landing-pose--clear-pin calm-hide"><StanleyPose pose={venuePose(kind, v.kind, v.title)} size={88} /></span>
         <h2 id="exp-venue-h" className="card__title">{v.title}</h2>
         <p className="muted">{v.deckLabel}</p>
         <p role="status" className="visually-hidden">{pins.message}</p>

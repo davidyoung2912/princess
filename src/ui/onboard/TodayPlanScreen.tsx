@@ -7,6 +7,7 @@ import { PORTS, shipZoneAt, shipZoneOnDate } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
 import { useExplorerDay } from '../../hooks/useExplorer'
 import { useSailing } from '../../hooks/useDemo'
+import { StanleyPose } from '../StanleyPose'
 import { useTodayPlan } from '../../hooks/useTodayPlan'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -43,6 +44,7 @@ export function TodayPlanScreen() {
   return (
     <div className="page">
       <Card hero labelledBy="tp-head">
+        <span className="landing-pose calm-hide"><StanleyPose head="scheduler" size={88} /></span>
         <h2 id="tp-head" className="card__title">{t('route.todayPlan')}</h2>
         <p>{t('plan.today.purpose')}</p>
         {portName && <p><Link to={`/home/ports/${choice.port}`}>{t('port.guide', { port: portName })}</Link></p>}

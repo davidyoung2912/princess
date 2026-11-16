@@ -38,6 +38,7 @@ import { PageHeader } from './PageHeader'
 import { BrowseDepthNote } from './BrowseDepthNote'
 import { LocalReminders } from './LocalReminders'
 import { OfflineNote } from './OfflineNote'
+import { pageArt } from './pageArt'
 import { DeepLinkNote } from './DeepLinkNote'
 import { useActiveDeck } from '../hooks/useShipCatalogue'
 import { TipCard } from './TipCard'
@@ -227,7 +228,7 @@ export function Shell() {
       <UpdateBanner />
       <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        {landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} back />}
+        {landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}
         {route && !route.public && <LocalReminders />}
