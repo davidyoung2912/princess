@@ -366,7 +366,7 @@ button.chat-quote { cursor: pointer; }
 /* Explorer pages (docs/explorer-harmony-plan.md): the shared kit. */
 .exp-clock { margin: 0; }
 .exp-chosen { margin: var(--space-2) 0; }
-.exp-date { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-3) 0; }
+.exp-date { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: 0; }
 .exp-date .btn.exp-date__step { min-height: 2rem; min-width: 2rem; padding: 0; border-color: var(--primary); }
 .exp-date .btn.exp-date__step svg { width: 1rem; height: 1rem; }
 .exp-date .btn.exp-date__step:disabled { border-color: var(--border-strong); }

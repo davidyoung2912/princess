@@ -69,10 +69,12 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
         </nav>
       )}
       <div className="exp-split__detail">
-      <ShipClockCard state={state} />
-      <PickDateButton state={state} />
       {venueCopy.status === 'error' && venueCopy.data === null ? (
+        <>
+        <ShipClockCard state={state} />
+        <PickDateButton state={state} />
         <Banner kind="info" title={t('exp.venue.gone')} action={<LinkButton to={basePath} variant="secondary">{backLabel}</LinkButton>}><p>{t('exp.venue.goneBody')}</p></Banner>
+        </>
       ) : (
         <Saved copy={venueCopy}>
           {(venue) => <Body kind={kind} venue={venue} explorerDay={dayCopy.data} state={state} diets={diets} above={above} busy={busy} reload={() => { venueCopy.retry(); dayCopy.retry() }} />}
@@ -108,6 +110,8 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
         <p role="status" className="visually-hidden">{pins.message}</p>
         <SendToChat shareRef={`venue:${v.id}`} title={v.title} />
       </Card>
+      <ShipClockCard state={state} />
+      <PickDateButton state={state} />
       {above?.(ctx)}
       {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
         <section aria-labelledby="exp-fam-h">

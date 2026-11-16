@@ -19,6 +19,8 @@ export function SyncChip({ updated, now, state, timeZone, lookup }: SyncChipProp
   const text = label.kind === 'justNow' ? t('sync.justNow') : label.kind === 'updatedAt' ? t('sync.updatedAt', { time: label.time ?? '' }) : t('sync.offlineSince', { time: label.time ?? '' })
   const pending = usePendingCount()
   const kind = chipKind({ state, updated, now, pending, lookup })
+  // Nothing to say while the view is current: the chip only speaks when the copy is old, the connection is down, changes are waiting, or the lookup failed.
+  if (kind === 'current') return null
   const Icon = state === 'offline' || kind === 'unavailable' ? WifiOff : Sync
   return (
     <p className={`sync-chip sync-chip--${state} sync-chip--${kind}`} role="status">
