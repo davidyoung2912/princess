@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import type { ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
@@ -8,15 +8,15 @@ import type { ExplorerKind } from '../../domain/explorer/types'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
 import { useExplorerData, useExplorerDay, usePlan, useVenueData, type ExplorerDayState } from '../../hooks/useExplorer'
-import { t } from '../../i18n'
+import { t, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { BackLink, Saved } from '../onboard/common'
 import { ChosenDayNote, PickDateButton } from './DateControls'
-import { EventRow, HoursBadge, MenuPanel } from './Parts'
-import { windowsText } from './text'
+import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
+import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
 import { PinButton } from './Pins'
 import { ShipClockCard } from './ShipClockCard'
@@ -83,6 +83,9 @@ function Body({ venue, explorerDay, state, diets, above, busy, reload }: { venue
   const v = venue.venue
   const pins = useVenuePins([v])
   const plan = usePlan(state.day, explorerDay?.mine ?? [], { added: (title) => t('exp.plan.added', { title }), removed: (title) => t('exp.plan.removed', { title }) })
+  const [interest, setInterest] = useState<string | null>(null)
+  const interests = [...new Set(venue.events.map((e) => e.interest))]
+  const shownEvents = interest === null ? venue.events : venue.events.filter((e) => e.interest === interest)
   const ctx: VenueContext = { venue, explorerDay, state, reload }
   const past = state.day < state.currentDay
   const taken = busy?.(ctx) ?? []
@@ -102,6 +105,7 @@ function Body({ venue, explorerDay, state, diets, above, busy, reload }: { venue
         {v.long !== v.short && <p>{v.long}</p>}
         <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
         {venue.hours.windows.length > 0 && <p>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</p>}
+        {staffedText(venue.hours) && <p>{t('exp.venue.staffed', { hours: staffedText(venue.hours) })}</p>}
         <ul className="tour__facts">
           {v.cover !== undefined && <li>{t('exp.venue.cover', { amount: formatMoney(v.cover) })}</li>}
           {v.minAge !== undefined && <li>{t('exp.venue.minAge', { age: v.minAge })}</li>}
@@ -115,9 +119,10 @@ function Body({ venue, explorerDay, state, diets, above, busy, reload }: { venue
         <p role="status" className="visually-hidden">{plan.announcement}</p>
         {plan.failed && <p role="alert" className="field__error">{t('exp.plan.failed')}</p>}
         {past && venue.events.length > 0 && <p className="muted">{t('exp.venue.readOnly')}</p>}
+        <FilterChips kinds={interests} label={t('exp.interest.label')} value={interest} onChange={setInterest} labels={Object.fromEntries(interests.map((i) => [i, t(`exp.interest.${i}` as StringKey)]))} />
         {venue.events.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : (
           <ul className="exp-events">
-            {venue.events.map((e) => (
+            {shownEvents.map((e) => (
               <EventRow key={e.id} event={e} now={state.nowAt}
                 clash={clashesWith(e, [...taken, ...planned])}
                 plan={past || !explorerDay ? undefined : { planned: plan.planned.has(e.id), busy: plan.busy, onToggle: () => { void plan.toggle(e.id, e.title, !plan.planned.has(e.id)) } }} />

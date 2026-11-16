@@ -40,7 +40,7 @@ export function EventRow({ event, now, plan, clash, compact }: { event: Explorer
   return (
     <li className={`exp-event${cancelled ? ' exp-event--cancelled' : ''}`}>
       <p className="exp-event__time">
-        <time>{formatTime(event.start)}</time> {t('exp.event.for', { minutes: event.minutes })}
+        <time dateTime={event.start}>{formatTime(event.start)}</time> {t('exp.event.for', { minutes: event.minutes })}
         {phase === 'now' && !cancelled && <> <StatusBadge kind="booked" label={t('exp.event.now')} /></>}
       </p>
       <p className="exp-event__title"><strong>{cancelled ? <s>{event.title}</s> : event.title}</strong></p>
@@ -55,7 +55,7 @@ export function EventRow({ event, now, plan, clash, compact }: { event: Explorer
       </p>
       {clash && clash.length > 0 && !(plan?.planned) && <p className="exp-event__clash" role="note">{t('exp.event.clash', { title: clash[0].title })}</p>}
       {plan && !cancelled && (
-        <Button variant={plan.planned ? 'secondary' : 'primary'} aria-pressed={plan.planned} disabled={plan.busy || (full && !plan.planned)} onClick={plan.onToggle}>
+        <Button variant={plan.planned ? 'secondary' : 'primary'} disabled={plan.busy || (full && !plan.planned)} onClick={plan.onToggle}>
           {plan.planned ? t('exp.plan.remove') : t('exp.plan.add')}<span className="visually-hidden"> {event.title}</span>
         </Button>
       )}

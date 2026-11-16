@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { DayShape } from '../dayKinds'
-import { hoursStatus, isAllDay, resolveHours } from './hours'
+import { resolveHours } from './hours'
 import type { HoursRule } from './types'
 
 // A 7-night week: embark, sea, port, port, sea, port, sea, then disembark.
@@ -31,7 +31,7 @@ describe('resolveHours', () => {
   })
   it('carries staffed hours for a 24-hour gym', () => {
     const r = resolveHours(gym, days, 4, '17:00')
-    expect(isAllDay(r.windows)).toBe(true)
+    expect(r.windows).toEqual([['00:00', '24:00']])
     expect(r.staffed).toEqual([['07:00', '20:00']])
   })
   it('puts windows in time order', () => {
@@ -40,23 +40,5 @@ describe('resolveHours', () => {
   })
   it('honours an explicit closed rule', () => {
     expect(resolveHours([{ kind: 'closed', when: ['port'] }], days, 3, '17:00').closedBecause).toBe('alongside')
-  })
-})
-
-describe('hoursStatus', () => {
-  const w = [['07:00', '09:30'], ['17:30', '21:30']] as const
-  it('is open inside a window, with when it closes', () => {
-    expect(hoursStatus(w, '08:00')).toEqual({ state: 'open', closesAt: '09:30' })
-  })
-  it('opens at the start and closes at the end of a window', () => {
-    expect(hoursStatus(w, '07:00').state).toBe('open')
-    expect(hoursStatus(w, '09:30').state).toBe('closed')
-  })
-  it('says when it next opens today', () => {
-    expect(hoursStatus(w, '12:00')).toEqual({ state: 'closed', opensAt: '17:30' })
-    expect(hoursStatus(w, '22:00')).toEqual({ state: 'closed' })
-  })
-  it('is unavailable whatever the hours say', () => {
-    expect(hoursStatus(w, '08:00', true)).toEqual({ state: 'unavailable' })
   })
 })

@@ -50,6 +50,8 @@ export default defineConfig(({ mode }) => ({
     })(),
   },
   build: {
+    // Flag pictures are small enough that Vite would inline them as base64 into one big script chunk; keep them as files instead.
+    assetsInlineLimit: (file) => (file.includes('/flags/') ? false : undefined),
     rolldownOptions: {
       // React and the router get their own long-lived chunk, so a release that changes only app code leaves them cached.
       output: { codeSplitting: { groups: [{ name: 'react-vendor', test: /node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/, priority: 10 }] } },

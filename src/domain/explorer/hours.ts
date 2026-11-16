@@ -28,26 +28,3 @@ export function resolveHours(rules: readonly HoursRule[], days: readonly DayShap
 }
 
 const sorted = (w: readonly Window[]): Window[] => [...w].sort((a, b) => mins(a[0]) - mins(b[0]))
-
-export type OpenState = 'open' | 'closed' | 'unavailable'
-
-export interface HoursStatus {
-  state: OpenState
-  /** When it closes, if open now. */
-  closesAt?: string
-  /** When it next opens today, if closed now and it opens later today. */
-  opensAt?: string
-}
-
-/** Open or closed at a ship-time "HH:MM" (never open while the ship has marked the venue unavailable). */
-export function hoursStatus(windows: readonly Window[], time: string, unavailable = false): HoursStatus {
-  if (unavailable) return { state: 'unavailable' }
-  const at = mins(time)
-  const now = windows.find(([a, b]) => at >= mins(a) && at < mins(b))
-  if (now) return { state: 'open', closesAt: now[1] }
-  const later = windows.find(([a]) => mins(a) > at)
-  return later ? { state: 'closed', opensAt: later[0] } : { state: 'closed' }
-}
-
-/** True for one window that covers the whole day. */
-export const isAllDay = (windows: readonly Window[]): boolean => windows.length === 1 && windows[0][0] === '00:00' && windows[0][1] === '24:00'

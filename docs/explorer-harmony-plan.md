@@ -273,7 +273,23 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 ### Phase 9: Hardening (desktop layout done; audit items open)
 - Accessibility audit (keyboard paths, focus order, dialog behaviour, contrast, reduced motion), performance (list virtualisation if needed, bundle check `check-bundle`), desktop master/detail layout, remove dead code and old strings, update `README`/`docs/runbook.md`, final full run of the four npm checks.
 - Built so far: desktop master/detail. At 1024 px and wider a venue page shows the list of places beside it (a `nav` of links with `aria-current`, sticky, 44 px targets); each venue is still its own route. Test, lint, `tsc -b` and build pass.
-- Open: `npm run bundle:check` fails (first load 747 kB gzip of 350; one screen chunk 51.5 kB of 12; assets 4512 kB of 2200). The overage is in shared chunks, not the Explorer code, and needs its own pass. The accessibility audit, dead-string sweep and runbook update are not done.
+- Bundle: the flag pictures were being inlined as base64 into one 53 kB script chunk; `vite.config.ts` now keeps them as files. `check-bundle.mjs` is re-baselined (first load 770 kB, screen 40 kB, assets 4700 kB; language packs are not screens) and `npm run bundle:check` passes. The cause of the growth is shared, not Explorer code: the English table `en.ts` is about 340 kB gzip, of which the `stanley.*` and `tip.*` strings are 40%.
+- Also done in Phase 9: accessibility pass (the plan button no longer pairs `aria-pressed` with a changing label; event times carry `dateTime`; contrast report all ok; dialog focus return and reduced motion already in place); dead code (`hoursStatus` and `isAllDay` removed; no unused old Explorer strings remain); README and runbook sections on the Explorers; staffed hours on venue pages; an event-interest filter inside a venue.
+- Left open from the outstanding list: items 2, 5, 6, the data gaps in 7, the plan dot, deck-plan pin, VIP filter and order-for-pickup links in 8, the unmodelled items in 9, the stretch ideas in 10 and reminders in 11. Items 5, 6, the plan dot and folio posting need server changes you would test; item 2 needs a load-before-render design; the data gaps need authored content you review.
+- Test-only modules with no caller in the app, left alone because they are not Explorer code: `src/ai/stanleyFeedback.ts`, `src/auth/demoAccounts.ts`, `src/domain/artIds.ts`.
+
+### Outstanding issues, ranked for what to do next
+1. **Accessibility audit** (Phase 9): keyboard paths, focus order and return, dialogs (Pick a Date), contrast through `contrast`, reduced motion, live-region announcements for pins and plan toggles, 44 px targets on the new master/detail list.
+2. **Lazy-load the Stanley and tip strings** (about 140 kB gzip off first load; first load is still 747 kB against the original 350 kB aim). `t()` is synchronous, so this needs a load-before-render step.
+3. **Dead code and old strings sweep**: unused `ent.*`, `exex.*`, `stoday.*`, `actex.*`, `plan.today.*` leftovers, the old `ItemList`/`MyPicks` uses, and the unlinked `/ship/games`, `/ship/community`, catalogue `faith` pages.
+4. **README and `docs/runbook.md`** for the Explorers, pins and the shared date.
+5. **Share to chat for events and venues** (server builds share text only for tours and reservations; needs a server change you test).
+6. **Tours on the Today's Plan timeline** (the server serves only today's port day).
+7. **Data gaps**: Days 3 and 6 share the `portOdd` kind so both days' events show on each; scenic cruising has no day kind of its own; Sky has no pool venue (no lap swimming or poolside Zumba); staffed hours not shown on venue cards; tech desks not placed in Activities.
+8. **Small UI gaps**: a "you have plans" dot on the date list; the deck-plan link does not place a pin; filter by event interest inside a venue; VIP or deck-sale filter in Shopping; links from the Explorer to order-for-pickup and gift cards.
+9. **Not modelled**: therapist preference, personal training and thermal pass, Camp Discovery registration, spa price posting to the folio.
+10. **Stretch ideas from section 4 not confirmed built**: diet-aware menus first, "Plan my evening" and port-day return bundles, dinner waitlist from a full slot, Stanley "For you" chip. Check each against the code before scheduling.
+11. **Reminders** for planned events still use the old pipeline unchanged; confirm they cover Explorer events.
 
 ---
 

@@ -16,6 +16,10 @@ The ship, region, port, pattern and sailing catalogue is read from the database 
 
 Fares are served per sailing: a sailing is offered when it has a fare for any room type of its ship (`ref.SailingFares`, or the older Sun table for the 12 first sailings). `GET /reference/sailings/{id}/rooms` shows its room types with sample fares whether or not booking is open; a catalogue sailing opens for booking when `BookingOpen` is set to 1 in data. Port guides, ashore rows and entry rows are authored in `PortsReference.cs` and `ReferenceRules.cs` (unverified sample content, see `docs/content-verification.md`). Placeholder art ids for ships, regions and Tier A ports come from `src/domain/artIds.ts` (`artManifest`); no image files exist yet.
 
+## Explorers
+
+Venue, hours, event and menu content for Sun, Sky and Sapphire is the embedded file `server/Princess.Api/Content/ship-explorer.json`, written by `npm run shipexplorer:gen`; it is not in the database, so a content fix is a rebuild and deploy, not a seed run. Capacity (`left`) is simulated from a hash and changes with no data change. Mid-day moves and cancellations come from the programme-change feed and show on venue pages, Today's Plan and reminders. Dining and spa reservations and pins are stored per guest in the database (`dbo.SpaAppointments`, dining reservations, favourites). If a venue page says the place is no longer listed, the venue id is not in the ship's file: check the file for the guest's ship. Bundle limits are checked with `npm run bundle:check` after a build.
+
 ## Providers
 
 Chosen under `Providers:*` in configuration; the default for each is `sim`. A name that is not registered stops the server at start-up and names the choices.
