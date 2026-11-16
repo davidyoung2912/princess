@@ -16,6 +16,7 @@ import { ACCESS_FEATURES, type AccessFeature } from '../../domain/eventAccess'
 import { EXPLORER_LEADS, REMINDER_DEFAULT } from '../../domain/notifications'
 import { StatusBadge } from '../StatusBadge'
 import { SendToChat } from '../onboard/SendToChat'
+import { DietLegend, DietMarks } from './DietMarks'
 
 /** Open, closed or finished for the chosen day, in words and an icon, never colour alone. */
 export function HoursBadge({ hours, day, currentDay, now }: { hours: HoursDay; day: number; currentDay: number; now: string }) {
@@ -127,6 +128,7 @@ export function MenuPanel({ venueId, menus, diets }: { venueId: string; menus: r
       <h2 id="exp-menu-h">{headingCase(t('exp.menu.title'))}</h2>
       {diets.length > 0 && <div className="chip-row"><Chip pressed={onlyMine} onToggle={() => setOnlyMine(!onlyMine)}>{t('exp.menu.suits')}</Chip></div>}
       {ask.length > 0 && <p className="muted">{t('exp.menu.ask')}</p>}
+      {menus.some((m) => m.courses.some((c) => c.dishes.some((d) => (d.marks?.length ?? 0) > 0))) && <><DietLegend /><p className="muted">{t('exp.diet.ask')}</p></>}
       {menus.map((m) => (
         <div key={`${m.meal}-${m.from}`} className="card">
           <h3 className="card__title">{m.theme ? `${t(MEAL[m.meal])}: ${m.theme}` : m.title}</h3>
@@ -139,7 +141,7 @@ export function MenuPanel({ venueId, menus, diets }: { venueId: string; menus: r
               <div key={c.name}>
                 <h4>{c.name}</h4>
                 <ul className="plain-bullets">
-                  {shown.map((d) => <li key={d.name}><strong>{d.name}</strong>{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}
+                  {shown.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} />{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}
                 </ul>
               </div>
             )

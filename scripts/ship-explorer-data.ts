@@ -80,7 +80,7 @@ export interface SpaTreatmentRow {
   when: string[]
 }
 
-export interface MealCourseRow { name: string; dishes: { name: string; contains: string[]; note?: string }[] }
+export interface MealCourseRow { name: string; dishes: { name: string; contains: string[]; note?: string; marks?: string[] }[] }
 
 export interface MealMenuRow {
   venueId: string

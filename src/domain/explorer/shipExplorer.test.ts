@@ -95,6 +95,25 @@ describe('the Explorer content of the ships', () => {
         expect(dishes.find((d) => d.name === 'Aubergine Parmigiana')?.contains).not.toContain('egg')
       })
 
+      it('marks the diets: every section of every menu has a vegan, a vegetarian and a no-added-sugar dish, and no meat or fish dish is marked vegan or vegetarian', () => {
+        for (const m of content.menus) {
+          for (const c of m.courses) {
+            for (const d of c.dishes) {
+              expect(d.marks, `${m.venueId} ${d.name}`).toBeDefined()
+              if (d.contains.some((x) => ['meat', 'pork', 'fish', 'shellfish'].includes(x))) expect(d.marks).not.toEqual(expect.arrayContaining(['vegan']))
+              if (d.contains.some((x) => ['meat', 'pork', 'fish', 'shellfish'].includes(x))) expect(d.marks).not.toEqual(expect.arrayContaining(['vegetarian']))
+              if (d.contains.some((x) => ['dairy', 'egg'].includes(x))) expect(d.marks).not.toEqual(expect.arrayContaining(['vegan']))
+            }
+            if (c.name.startsWith('Chef')) continue
+            const marks = c.dishes.flatMap((d) => d.marks ?? [])
+            const label = `${m.venueId} ${m.meal} day ${m.templateDay} ${c.name}`
+            expect(marks, label).toContain('vegan')
+            expect(marks, label).toContain('vegetarian')
+            expect(marks, label).toContain('nas')
+          }
+        }
+      })
+
       it('starts every event inside the hours of its venue on a day it runs', () => {
         for (const e of content.events) {
           const v = content.venues.find((x) => x.id === e.venueId)!

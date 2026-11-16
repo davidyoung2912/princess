@@ -66,7 +66,8 @@ export interface ExplorerEvent {
   arrive?: string
 }
 
-export interface MealDish { name: string; contains: string[]; note?: string }
+export type DietMark = 'vegan' | 'vegetarian' | 'nas'
+export interface MealDish { name: string; contains: string[]; note?: string; /** Vegan, vegetarian and NAS (no added sugar), as the ship marks the dish. */ marks?: DietMark[] }
 export interface MealCourse { name: string; dishes: MealDish[] }
 
 export interface MealMenu {

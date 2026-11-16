@@ -434,6 +434,15 @@ button.chat-quote { cursor: pointer; }
 .event__title--icon .explorer-icon, .event__time .explorer-icon { display: inline-block; width: 1.25rem; height: 1.25rem; margin: 0 var(--space-2) 0 0; vertical-align: -0.2em; }
 
 /* A dish's menu-style description, under its title. */
+.diet-marks { display: inline-flex; gap: 4px; margin-inline-start: var(--space-2); vertical-align: middle; }
+.diet-mark { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
+.diet-mark svg { width: 1rem; height: 1rem; }
+.diet-mark--vegan { color: var(--success); background: var(--success-tint); }
+.diet-mark--vegetarian { color: var(--success); background: transparent; }
+.diet-mark--nas { color: var(--text); background: var(--brand-tint); }
+.diet-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); list-style: none; padding: 0; margin: var(--space-2) 0; }
+.diet-legend li { display: inline-flex; align-items: center; gap: var(--space-2); }
+@media (forced-colors: active) { .diet-mark { border-color: CanvasText; color: CanvasText; background: Canvas; } }
 .dish-desc { display: block; margin: 2px 0 var(--space-1); color: var(--text-muted); font-style: italic; }
 
 /* An event's description under its times on a card. */

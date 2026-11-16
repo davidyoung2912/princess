@@ -3,6 +3,9 @@
  * stays one consistent family and the bundle only carries the ones used. Icons beside a label are `aria-hidden`.
  */
 export {
+  Vegan as DietVegan,
+  Sprout as DietVegetarian,
+  CandyOff as DietNas,
   House as Home,
   CalendarDays as Plan,
   Ship,

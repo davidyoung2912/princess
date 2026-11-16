@@ -17,7 +17,8 @@ public sealed record ExplorerEventDef(
     string Id, string VenueId, string[] When, string Start, int Minutes, string Title, string Detail, string Age, string Interest, long Extra, bool AfterAllAboard, int? Capacity,
     string? Performer = null, string? Series = null, string[]? Access = null, string? Dress = null, string? Arrive = null);
 
-public sealed record MealDish(string Name, string[] Contains, string? Note);
+/// <summary><see cref="Marks"/> are "vegan", "vegetarian" and "nas" (no added sugar), a guide like <see cref="Contains"/>.
+public sealed record MealDish(string Name, string[] Contains, string? Note, string[]? Marks = null);
 
 public sealed record MealCourse(string Name, MealDish[] Dishes);
 

@@ -3,6 +3,7 @@
 import type { DirectoryVenue } from '../src/domain/menus.ts'
 import { dishCopy } from '../src/domain/dishCopy.ts'
 import type { HoursRule } from '../src/domain/explorer/types.ts'
+import { fillSection, kindOf, marksOf, isNas, sectionsOf, type MenuCourse } from './ship-explorer-diets.ts'
 import { EXTRA_DINING, type ExtraDining } from './ship-explorer-extra-dining.ts'
 import type { ExplorerEventRow, ExplorerVenueRow, MealCourseRow, MealMenuRow } from './ship-explorer-data.ts'
 
@@ -70,29 +71,41 @@ export function diningMenus(venues: readonly ExplorerVenueRow[], directory: read
     if (v.explorer !== 'dining') continue
     if (v.kind === 'main') {
       if (opensAt(v, '07:00')) {
-        for (let day = 1; day <= 7; day++) out.push({ venueId: v.id, meal: 'breakfast', from: '07:00', to: '09:30', templateDay: day, title: 'Breakfast', courses: [course('Every morning', BREAKFAST_CORE), course('Chef’s special today', [BREAKFAST_SPECIAL[day - 1]])] })
+        for (let day = 1; day <= 7; day++) out.push({ venueId: v.id, meal: 'breakfast', from: '07:00', to: '09:30', templateDay: day, title: 'Breakfast', courses: [fill(course('Every morning', BREAKFAST_CORE), 'breakfast', `${v.id}|b|${day}`, 2), course('Chef’s special today', [BREAKFAST_SPECIAL[day - 1]])] })
       }
       if (opensAt(v, '12:00')) {
-        for (const day of [2, 5]) out.push({ venueId: v.id, meal: 'lunch', from: '12:00', to: '13:30', templateDay: day, title: 'Sea day lunch', courses: [course('Every sea day', LUNCH_CORE), course('Chef’s special today', [LUNCH_SPECIAL[day]])] })
+        for (const day of [2, 5]) out.push({ venueId: v.id, meal: 'lunch', from: '12:00', to: '13:30', templateDay: day, title: 'Sea day lunch', courses: [fill(course('Every sea day', LUNCH_CORE), 'lunch', `${v.id}|l|${day}`, 2), course('Chef’s special today', [LUNCH_SPECIAL[day]])] })
       }
       NIGHTS.forEach((n, i) => out.push({ venueId: v.id, meal: 'dinner', from: '17:30', to: '21:30', templateDay: i + 1, title: 'Dinner', theme: n.theme, formal: n.formal,
-        courses: [course('Starters & soups', n.starters), course('Entrées', n.mains), course('Desserts', n.desserts), course('Princess Favorites, every night', FAVOURITES)] }))
+        courses: [fill(course('Starters & soups', n.starters), 'starter', `${v.id}|${i}|s`, 2), fill(course('Entrées', n.mains), 'main', `${v.id}|${i}|m`, 2), fill(course('Desserts', n.desserts), 'dessert', `${v.id}|${i}|d`, 2), fill(course('Princess Favorites, every night', FAVOURITES), 'favourite', `${v.id}|${i}|f`, 1)] }))
     } else if (/eatery$/.test(v.id)) {
-      out.push({ venueId: v.id, meal: 'breakfast', from: '06:00', to: '11:00', templateDay: 0, title: 'Breakfast', courses: [course('Stations', BUFFET_BREAKFAST)] })
-      out.push({ venueId: v.id, meal: 'lunch', from: '11:30', to: '15:00', templateDay: 0, title: 'Lunch', courses: [course('Stations', BUFFET_LUNCH)] })
-      BUFFET_NIGHTS.forEach((n, i) => out.push({ venueId: v.id, meal: 'dinner', from: '17:30', to: '22:00', templateDay: i + 1, title: 'Dinner', theme: n.theme, courses: [course('Tonight’s stations', n.dishes)] }))
+      out.push({ venueId: v.id, meal: 'breakfast', from: '06:00', to: '11:00', templateDay: 0, title: 'Breakfast', courses: [fill(course('Stations', BUFFET_BREAKFAST), 'breakfast', `${v.id}|bb`, 2)] })
+      out.push({ venueId: v.id, meal: 'lunch', from: '11:30', to: '15:00', templateDay: 0, title: 'Lunch', courses: [fill(course('Stations', BUFFET_LUNCH), 'lunch', `${v.id}|bl`, 2)] })
+      BUFFET_NIGHTS.forEach((n, i) => out.push({ venueId: v.id, meal: 'dinner', from: '17:30', to: '22:00', templateDay: i + 1, title: 'Dinner', theme: n.theme, courses: [fill(course('Salads & starters', []), 'starter', `${v.id}|${i}|bs`, 2), fill(course('Tonight’s stations', n.dishes), 'main', `${v.id}|${i}|bm`, 2), fill(course('Desserts & fruit', []), 'dessert', `${v.id}|${i}|bd`, 2)] }))
     } else if (extraOf(v.id)) {
       const x = extraOf(v.id)!
       const names = x.kind === 'bar' ? (x.drinks ?? []) : (x.dishes ?? [])
-      out.push({ venueId: v.id, meal: 'allDay', from: x.kind === 'bar' ? '10:00' : '00:00', to: '24:00', templateDay: 0, title: x.kind === 'bar' ? 'Signature drinks' : 'The menu', courses: [course(x.kind === 'bar' ? 'Signatures' : 'Favourites', names)] })
+      out.push({ venueId: v.id, meal: 'allDay', from: x.kind === 'bar' ? '10:00' : '00:00', to: '24:00', templateDay: 0, title: x.kind === 'bar' ? 'Signature drinks' : 'The menu', courses: standing(x.kind === 'bar' ? [fill(course('Signatures', names), 'drink', `${v.id}|x`, 1)] : sectionsOf(dishes(names)), v.id, x.kind === 'specialty') })
     } else if (v.kind === 'bar') {
-      out.push({ venueId: v.id, meal: 'allDay', from: '10:00', to: '24:00', templateDay: 0, title: 'Signature drinks', courses: [course('Signatures', BAR_DRINKS[v.id.replace(/^(sky|sapphire)-/, '')] ?? [])] })
+      out.push({ venueId: v.id, meal: 'allDay', from: '10:00', to: '24:00', templateDay: 0, title: 'Signature drinks', courses: [fill(course('Signatures', BAR_DRINKS[v.id.replace(/^(sky|sapphire)-/, '')] ?? []), 'drink', `${v.id}|x`, 1)] })
     } else {
       const d = directory.find((x) => x.id === v.id)
-      if (d && d.dishes.length > 0) out.push({ venueId: v.id, meal: 'allDay', from: '00:00', to: '24:00', templateDay: 0, title: 'The menu', courses: [{ name: 'Favourites', dishes: d.dishes.map((x) => ({ name: x.name, contains: [...x.contains].sort(), ...(x.description ? { note: x.description } : {}) })) }] })
+      if (d && d.dishes.length > 0) out.push({ venueId: v.id, meal: 'allDay', from: '00:00', to: '24:00', templateDay: 0, title: 'The menu', courses: standing(sectionsOf(d.dishes.map((x) => ({ name: x.name, contains: [...x.contains].sort(), ...(x.description ? { note: x.description } : {}) }))), v.id, v.kind === 'specialty') })
     }
   }
+  // Every dish carries its marks, including the single chef's specials the sections above leave alone.
+  for (const m of out) for (const c of m.courses) c.dishes = c.dishes.map((d) => (d.marks ? d : { ...d, marks: marksOf(d.name, d.contains, isNas(d.name)) }))
   return out
+}
+
+const fill = (c: MenuCourse, kind: Parameters<typeof fillSection>[1], seed: string, extra: number): MenuCourse => fillSection(c, kind, seed, extra)
+
+/** A standing menu's sections, each filled out; a specialty restaurant also gets the sections it lacks, so every one has vegan, vegetarian and NAS choices. */
+function standing(sections: MenuCourse[], seed: string, all: boolean): MenuCourse[] {
+  const out = sections.map((c) => c.name === 'Signatures' ? c : fill(c, c.name === 'Starters' ? 'starter' : c.name === 'Desserts' ? 'dessert' : c.name === 'Mains' ? 'main' : kindOf(c.name, 'allDay'), `${seed}|${c.name}`, 1))
+  if (all) for (const [name, kind] of [['Starters', 'starter'], ['Mains', 'main'], ['Desserts', 'dessert']] as const) if (!out.some((c) => c.name === name)) out.push(fill({ name, dishes: [] }, kind, `${seed}|${name}`, 1))
+  const order = ['Starters', 'Mains', 'Desserts']
+  return out.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name))
 }
 
 const BAR_DRINKS: Record<string, string[]> = {
