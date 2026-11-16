@@ -124,6 +124,8 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'TourCartGuests'),
   (N'dbo', N'DiningReservations'),
   (N'dbo', N'DiningReservationGuests'),
+  (N'dbo', N'SpaAppointments'),
+  (N'dbo', N'SpaAppointmentGuests'),
   (N'dbo', N'GroupTableFriends'),
   (N'dbo', N'Waitlists'),
   (N'dbo', N'WaitlistGuests'),

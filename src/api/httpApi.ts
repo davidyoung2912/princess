@@ -576,6 +576,14 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
         move: (id, to) => inTrip('post', `/dining/reservations/${seg(id)}/move`, to),
         late: (id, minutes) => inTrip('post', `/dining/reservations/${seg(id)}/late`, { minutes }),
       },
+      spa: {
+        view: () => inBooking('/plan/spa'),
+        slots: (treatmentId, day, except) => inBooking(`/plan/spa/slots?treatment=${seg(treatmentId)}&day=${day}${except ? `&except=${seg(except)}` : ''}`),
+        reserve: (input) => inTrip('post', '/plan/spa/appointments', input),
+        move: (id, to) => inTrip('post', `/plan/spa/appointments/${seg(id)}/move`, to),
+        update: (id, changes) => inTrip('put', `/plan/spa/appointments/${seg(id)}`, changes),
+        cancel: (id) => inTrip('delete', `/plan/spa/appointments/${seg(id)}`),
+      },
       packages: {
         view: () => inBooking('/packages'),
         buy: (input, parts, challenge) => inTrip('post', '/packages/purchases', { ...input, guests: input.guests, parts, challenge }),

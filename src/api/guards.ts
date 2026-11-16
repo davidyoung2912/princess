@@ -1,4 +1,5 @@
 import type { ExplorerDay, VenueDay } from './explorerTypes'
+import type { SpaView } from './spaTypes'
 import type { CustomsView, DisembarkView, NightView, OnwardView } from './finishTypes'
 import type { BoardingView, DiningView, EmbarkView, FamilyView, FolioView, HealthView, MusterView, OnboardToday, PhotosView, PortDayView, PrintView, ProgramView, ReceiptView, RoomView } from './types'
 
@@ -47,6 +48,14 @@ export function asDiningView(raw: unknown): DiningView | null {
   const o = obj(raw)
   if (!o || !Array.isArray(o.reservations) || !obj(o.window) || !Array.isArray(o.party)) return null
   return o.reservations.every((r) => !!obj(r) && typeof obj(r)!.id === 'string' && typeof obj(r)!.venueId === 'string') ? (raw as DiningView) : null
+}
+
+export function asSpaView(raw: unknown): SpaView | null {
+  const o = obj(raw)
+  if (!o || !Array.isArray(o.treatments) || !Array.isArray(o.appointments) || !Array.isArray(o.party) || typeof o.canBook !== 'boolean') return null
+  const good = o.treatments.every((x) => !!obj(x) && typeof obj(x)!.id === 'string' && typeof obj(x)!.minutes === 'number')
+    && o.appointments.every((a) => !!obj(a) && typeof obj(a)!.id === 'string' && typeof obj(a)!.time === 'string' && !!obj(obj(a)!.cancel))
+  return good ? (raw as SpaView) : null
 }
 
 export function asFolioView(raw: unknown): FolioView | null {

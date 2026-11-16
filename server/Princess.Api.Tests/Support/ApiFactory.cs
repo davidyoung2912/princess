@@ -19,6 +19,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryJourney Journey { get; } = new();
     public InMemoryBookingStore Bookings { get; }
     public InMemoryPlanStore Plan { get; }
+    public InMemorySpaStore Spa { get; }
     public InMemoryAheadStore Ahead { get; }
     public InMemoryCheckinStore Checkin { get; }
     public InMemoryOnboardStore Onboard { get; } = new();
@@ -40,6 +41,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         SignIn = new InMemorySignInStore(Users, RefreshTokens);
         Bookings = new InMemoryBookingStore(Journey, Access);
         Plan = new InMemoryPlanStore(Journey);
+        Spa = new InMemorySpaStore(Journey);
         Ahead = new InMemoryAheadStore(Journey);
         Checkin = new InMemoryCheckinStore(Journey);
         Shipboard = new InMemoryShipboardStore(Onboard);
@@ -81,6 +83,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IDemoStore>();
             services.RemoveAll<IBookingStore>();
             services.RemoveAll<IPlanStore>();
+            services.RemoveAll<ISpaStore>();
             services.RemoveAll<IAheadStore>();
             services.RemoveAll<ICheckinStore>();
             services.RemoveAll<IOnboardStore>();
@@ -108,6 +111,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IDemoStore>(Journey);
             services.AddSingleton<IBookingStore>(Bookings);
             services.AddSingleton<IPlanStore>(Plan);
+            services.AddSingleton<ISpaStore>(Spa);
             services.AddSingleton<IAheadStore>(Ahead);
             services.AddSingleton<ICheckinStore>(Checkin);
             services.AddSingleton<IOnboardStore>(Onboard);

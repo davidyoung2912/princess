@@ -233,6 +233,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/activities-explorer', titleKey: 'route.activitiesExplorer', tab: null, phase: 0 },
   { path: '/exercise-explorer', titleKey: 'route.exerciseExplorer', tab: null, phase: 0 },
   { path: '/spa-explorer', titleKey: 'route.spaExplorer', tab: null, phase: 0 },
+  { path: '/spa-explorer/:venueId', titleKey: 'route.spaVenue', tab: null, phase: 0 },
   { path: '/shopping-today', titleKey: 'route.shoppingToday', tab: null, phase: 0 },
   { path: '/deck-plans', titleKey: 'route.deckPlans', tab: null, phase: 0 },
   { path: '/dining-today', titleKey: 'route.diningToday', tab: null, phase: 0 },

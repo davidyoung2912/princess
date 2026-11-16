@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { asExplorerDay, asVenueDay } from './guards'
+import { asExplorerDay, asSpaView, asVenueDay } from './guards'
 import { createHttpGroups } from './httpApi'
 import type { Http } from './http'
 
@@ -39,12 +39,42 @@ describe('Explorer client calls', () => {
     expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ on: true, day: 5 })
   })
 
+  it('reads and changes spa appointments through the plan routes', async () => {
+    const view = { treatments: [], appointments: [], party: [], canBook: true, cancelFreeHours: 24, lateFeePercent: 50, maxParty: 4 }
+    const { http, calls } = fake({
+      '/trips': trips, '/bookings/PC2/plan/spa': view, '/bookings/PC2/plan/spa/slots?treatment=swedish&day=3': [{ time: '10:00', left: 2 }],
+      '/bookings/PC2/plan/spa/slots?treatment=swedish&day=3&except=a1': [], '/bookings/PC2/plan/spa/appointments': view,
+      '/bookings/PC2/plan/spa/appointments/a1/move': view, '/bookings/PC2/plan/spa/appointments/a1': view,
+    })
+    const spa = createHttpGroups(http).groups.plan.spa
+    expect(await spa.view()).toEqual(view)
+    expect(await spa.slots('swedish', 3)).toEqual([{ time: '10:00', left: 2 }])
+    await spa.slots('swedish', 3, 'a1')
+    await spa.reserve({ treatmentId: 'swedish', day: 3, time: '10:00', guests: [], note: '' })
+    await spa.move('a1', { day: 4, time: '11:00' })
+    await spa.update('a1', { note: 'Light pressure' })
+    await spa.cancel('a1')
+    const sent = calls.filter((c) => c.method !== 'GET').map((c) => `${c.method} ${c.path}`)
+    expect(sent).toEqual([
+      'POST /bookings/PC2/plan/spa/appointments', 'POST /bookings/PC2/plan/spa/appointments/a1/move', 'PUT /bookings/PC2/plan/spa/appointments/a1', 'DELETE /bookings/PC2/plan/spa/appointments/a1',
+    ])
+  })
+
   it('saves pins and puts them in order through the favourites routes', async () => {
     const { http, calls } = fake({ '/me/favourites/toggle': ['screen:S1'], '/me/favourites/order': ['screen:S2', 'screen:S1'] })
     const g = createHttpGroups(http).groups
     await g.favourites.toggleFavourite('screen:S1')
     await g.favourites.reorderFavourites(['screen:S2', 'screen:S1'])
     expect(calls.find((c) => c.path === '/me/favourites/order')).toMatchObject({ method: 'PUT', body: { keys: ['screen:S2', 'screen:S1'] } })
+  })
+})
+
+describe('Spa guards', () => {
+  const view = { treatments: [{ id: 't', minutes: 50 }], appointments: [{ id: 'a', time: '10:00', cancel: { free: true, fee: 0, freeUntil: 1 } }], party: [], canBook: true }
+  it('accepts a spa view and refuses one with a broken appointment', () => {
+    expect(asSpaView(view)).not.toBeNull()
+    expect(asSpaView({ ...view, appointments: [{ id: 'a', time: '10:00' }] })).toBeNull()
+    expect(asSpaView({ ...view, canBook: undefined })).toBeNull()
   })
 })
 

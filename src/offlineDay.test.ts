@@ -33,6 +33,7 @@ const AGE_SHOWN_ELSEWHERE: Record<string, string> = {
   'src/hooks/useOnboardToday.ts': 'a hook; its screens show the copy age through `Saved`',
   'src/hooks/useExplorer.ts': 'a hook; the Explorer pages show the copy age through `Saved`',
   'src/ui/explorer/dining/diningView.ts': 'a hook; the Dining Explorer pages show the copy age through `Saved`',
+  'src/ui/explorer/spa/spaView.ts': 'a hook; the Spa Explorer pages show the copy age through `Saved`',
   'src/hooks/useStanleyMode.ts': 'a hook feeding the Right Now card; the plan screens it points to show the copy age',
 }
 

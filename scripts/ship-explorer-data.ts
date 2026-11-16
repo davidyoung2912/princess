@@ -2,7 +2,8 @@
 // restaurants. One authored copy: `npm run shipexplorer:gen` writes it to server/Princess.Api/Content/ship-explorer.json (embedded, served through
 // GET /bookings/{number}/onboard/explorer/...). `src/domain/explorer/shipExplorer.test.ts` fails when the file is stale or breaks a rule.
 //
-// So far this carries Dining for all three ships (rooms from the directory the app already has, the bars, events and menus); the other Explorers arrive in their own phases.
+// So far this carries Dining (rooms from the directory the app already has, the bars, events and menus) and Spa (spa, salon, thermal suite, sanctuary, their treatments and events) for
+// all three ships; the other Explorers arrive in their own phases.
 import '../src/testing/setup.ts'
 import { DIRECTORY, type DirectoryVenue } from '../src/domain/menus.ts'
 import { VENUES as SUN_VENUES, type Venue } from '../src/domain/dining.ts'
@@ -10,6 +11,7 @@ import type { ExplorerKind, HoursRule } from '../src/domain/explorer/types.ts'
 import type { TemplateDayKind } from '../src/domain/explorer/dayMapping.ts'
 import { shipVenueBundles } from './ship-venue-data.ts'
 import { diningBars, diningEvents, diningMenus } from './ship-explorer-dining.ts'
+import { spaEvents, spaTreatments, spaVenues } from './ship-explorer-spa.ts'
 
 export const SUN_SHIP_ID = 'sun-princess'
 
@@ -46,6 +48,19 @@ export interface ExplorerEventRow {
   capacity?: number
 }
 
+/** Something a spa venue sells by appointment. `price` is cents per person; `rooms` is how many can be given at once; `when` are the kinds of day it runs. */
+export interface SpaTreatmentRow {
+  id: string
+  venueId: string
+  title: string
+  detail: string
+  minutes: number
+  price: number
+  minAge?: number
+  rooms: number
+  when: string[]
+}
+
 export interface MealCourseRow { name: string; dishes: { name: string; contains: string[]; note?: string }[] }
 
 export interface MealMenuRow {
@@ -67,6 +82,7 @@ export interface ShipExplorerRow {
   venues: ExplorerVenueRow[]
   events: ExplorerEventRow[]
   menus: MealMenuRow[]
+  treatments: SpaTreatmentRow[]
 }
 
 /** The doc's week: embarkation, a sea day (formal), two ports, a sea day, a port, the last night. */
@@ -98,21 +114,21 @@ function diningOf(directory: readonly DirectoryVenue[], rooms: readonly Venue[])
 
 interface ShipRooms { anytime: string; crown: string; cafe: string; bar: string; pub?: string; chefsTable?: string }
 
-function shipRows(directory: readonly DirectoryVenue[], rooms: readonly Venue[], prefix: string, bars: readonly string[], ids: ShipRooms): ShipExplorerRow {
+function shipRows(shipId: string, directory: readonly DirectoryVenue[], rooms: readonly Venue[], prefix: string, bars: readonly string[], ids: ShipRooms): ShipExplorerRow {
   const dining = diningOf(directory, rooms)
-  const venues = [...dining, ...diningBars(prefix, bars, dining.length + 1)]
-  return { menuTemplate: MENU_TEMPLATE, venues, events: diningEvents(ids), menus: diningMenus(venues, directory) }
+  const venues = [...dining, ...diningBars(prefix, bars, dining.length + 1), ...spaVenues(shipId, 1)]
+  return { menuTemplate: MENU_TEMPLATE, venues, events: [...diningEvents(ids), ...spaEvents(shipId)], menus: diningMenus(venues, directory), treatments: spaTreatments(shipId) }
 }
 
 /** The Explorer content of every ship, Sun Princess first. */
 export function shipExplorerRows(): Record<string, ShipExplorerRow> {
   const out: Record<string, ShipExplorerRow> = {
-    [SUN_SHIP_ID]: shipRows(DIRECTORY, SUN_VENUES, '', ['bellinis', 'wheelhouse'], { anytime: 'eclipse', crown: 'crown', cafe: 'intl-cafe', bar: 'bellinis', pub: 'omalleys' }),
+    [SUN_SHIP_ID]: shipRows(SUN_SHIP_ID, DIRECTORY, SUN_VENUES, '', ['bellinis', 'wheelhouse'], { anytime: 'eclipse', crown: 'crown', cafe: 'intl-cafe', bar: 'bellinis', pub: 'omalleys' }),
   }
   for (const b of shipVenueBundles()) {
     const p = b.shipId === 'sky-princess' ? 'sky-' : 'sapphire-'
     const mains = b.venues.filter((v) => v.kind === 'main')
-    out[b.shipId] = shipRows(b.directory, b.venues, p, b.shipId === 'sky-princess' ? ['vines'] : ['vines', 'wheelhouse'],
+    out[b.shipId] = shipRows(b.shipId, b.directory, b.venues, p, b.shipId === 'sky-princess' ? ['vines'] : ['vines', 'wheelhouse'],
       { anytime: mains[mains.length - 1].id, crown: `${p}crown`, cafe: `${p}intl-cafe`, bar: `${p}vines`, ...(b.shipId === 'sky-princess' ? { pub: undefined, chefsTable: mains[mains.length - 1].id } : {}) })
   }
   return out
@@ -122,6 +138,6 @@ export function shipExplorerRows(): Record<string, ShipExplorerRow> {
 export function shipExplorerFileText(): string {
   const all = shipExplorerRows()
   const lines = (rows: readonly unknown[]) => (rows.length === 0 ? '[]' : '[\n' + rows.map((r) => '    ' + JSON.stringify(r)).join(',\n') + '\n  ]')
-  const ship = (id: string) => `${JSON.stringify(id)}: {\n  "menuTemplate": ${JSON.stringify(all[id].menuTemplate)},\n  "venues": ${lines(all[id].venues)},\n  "events": ${lines(all[id].events)},\n  "menus": ${lines(all[id].menus)}\n}`
+  const ship = (id: string) => `${JSON.stringify(id)}: {\n  "menuTemplate": ${JSON.stringify(all[id].menuTemplate)},\n  "venues": ${lines(all[id].venues)},\n  "events": ${lines(all[id].events)},\n  "menus": ${lines(all[id].menus)},\n  "treatments": ${lines(all[id].treatments)}\n}`
   return '{\n' + Object.keys(all).map(ship).join(',\n') + '\n}\n'
 }

@@ -1,4 +1,5 @@
 import type { ExplorerDay, VenueDay } from './explorerTypes'
+import type { SpaSlot, SpaView } from './spaTypes'
 import type { ExplorerKind } from '../domain/explorer/types'
 import type { AboardApi } from './aboardTypes'
 import type { AvatarChoice, ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi, ChatRoomsApi, ChatRoomsStaffApi } from './chatTypes'
@@ -587,6 +588,19 @@ export interface PlanApi {
     move(id: string, to: { day: number; time: string }): Promise<DiningView>
     /** Tells the restaurant the party will be late; the table is held for that long (up to 30 minutes). */
     late(id: string, minutes: number): Promise<DiningView>
+  }
+  spa: {
+    view(): Promise<SpaView>
+    /** The start times of a treatment on a day with the rooms left at each; `except` is an appointment being moved, which does not count against itself. */
+    slots(treatmentId: string, day: number, except?: string): Promise<SpaSlot[]>
+    /** Rejects `conflict` with `closed`, `full`, `clash`, `tour` or `age`; `invalid` for a bad treatment, day, time or party. */
+    reserve(input: { treatmentId: string; day: number; time: string; guests: PersonaId[]; note: string }): Promise<SpaView>
+    /** Moves an appointment to another day or time; any failure leaves it as it was. Rejects `conflict` with `unchanged`, `closed`, `full`, `clash` or `tour`. */
+    move(id: string, to: { day: number; time: string }): Promise<SpaView>
+    /** Changes who is in an appointment and the note to the therapist. */
+    update(id: string, changes: { guests?: PersonaId[]; note?: string }): Promise<SpaView>
+    /** Cancels; the appointment says beforehand what that costs (`cancel` on it). */
+    cancel(id: string): Promise<SpaView>
   }
   packages: {
     view(): Promise<PackagesView>

@@ -90,6 +90,24 @@ describe('the Explorer content of the ships', () => {
         }
       })
 
+      it('sells treatments only at spa venues that take appointments, on real kinds of day, that fit the hours of a day they run', () => {
+        const bookable = new Map(content.venues.filter((v) => v.bookable === 'spa').map((v) => [v.id, v]))
+        expect(content.venues.filter((v) => v.explorer === 'spa').length).toBeGreaterThanOrEqual(3)
+        expect(content.treatments.length).toBeGreaterThan(5)
+        expect(new Set(content.treatments.map((x) => x.id)).size).toBe(content.treatments.length)
+        for (const x of content.treatments) {
+          const v = bookable.get(x.venueId)
+          expect(v, x.id).toBeDefined()
+          expect(x.id.length).toBeLessThanOrEqual(40)
+          expect(x.minutes).toBeGreaterThan(0)
+          expect(x.price).toBeGreaterThan(0)
+          expect(x.rooms).toBeGreaterThan(0)
+          for (const k of x.when) expect(isDayKind(k)).toBe(true)
+          const fits = week.some((_, i) => x.when.some((k) => isDayKindOn(week, i + 1, k as never)) && resolveHours(v!.hours, week, i + 1, '17:00').windows.some(([a, b]) => a <= '12:00' && b >= '20:00'))
+          expect(fits, x.id).toBe(true)
+        }
+      })
+
       it('maps the sample week onto the authored week', () => {
         expect(week.map((_, i) => templateIndexFor(week, i + 1, content.menuTemplate))).toEqual([0, 1, 2, 3, 4, 5, 6, null])
       })

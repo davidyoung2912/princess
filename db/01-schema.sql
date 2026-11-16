@@ -1764,6 +1764,43 @@ CREATE TABLE dbo.DiningReservationGuests (
 CREATE INDEX IX_DiningReservationGuests_UserId_BookingId ON dbo.DiningReservationGuests (UserId, BookingId);   -- both foreign keys on the person
 END
 
+-- Spa and salon appointments (Spa Explorer, docs/explorer-harmony-plan.md phase 3). One row per appointment; the treatment, its length and its price are copied here so a later change to the
+-- ship's treatment list never rewrites what a guest booked. TimeLocal is ship time on cruise day [Day].
+IF OBJECT_ID(N'dbo.SpaAppointments', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.SpaAppointments (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SpaAppointments PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_SpaAppointments_PublicId DEFAULT NEWID() CONSTRAINT UX_SpaAppointments_PublicId UNIQUE,
+  BookingId BIGINT NOT NULL, SailingId NVARCHAR(40) NOT NULL,
+  VenueId NVARCHAR(40) NOT NULL, TreatmentId NVARCHAR(40) NOT NULL,
+  [Day] INT NOT NULL, TimeLocal TIME(0) NOT NULL, Minutes INT NOT NULL, PriceCents BIGINT NOT NULL,
+  Note NVARCHAR(300) NOT NULL CONSTRAINT DF_SpaAppointments_Note DEFAULT N'',
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_SpaAppointments_Status DEFAULT 'booked',
+  FeeCents BIGINT NULL,                         -- what a late cancellation cost, once cancelled
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_SpaAppointments_CreatedAt DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_SpaAppointments_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_SpaAppointments_Bookings FOREIGN KEY (BookingId, SailingId) REFERENCES dbo.Bookings (Id, SailingId) ON DELETE CASCADE,
+  CONSTRAINT FK_SpaAppointments_ItineraryDays FOREIGN KEY (SailingId, [Day]) REFERENCES ref.ItineraryDays (SailingId, [Day]),
+  CONSTRAINT CK_SpaAppointments_Status CHECK (Status IN ('booked','cancelled')),
+  CONSTRAINT UX_SpaAppointments_Id_BookingId UNIQUE (Id, BookingId)
+);
+CREATE INDEX IX_SpaAppointments_BookingId ON dbo.SpaAppointments (BookingId);
+CREATE INDEX IX_SpaAppointments_Treatment_Day_TimeLocal ON dbo.SpaAppointments (TreatmentId, [Day], TimeLocal) INCLUDE (Status, SailingId);   -- room capacity
+END
+
+IF OBJECT_ID(N'dbo.SpaAppointmentGuests', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.SpaAppointmentGuests (
+  AppointmentId BIGINT NOT NULL, BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_SpaAppointmentGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_SpaAppointmentGuests PRIMARY KEY (AppointmentId, UserId),
+  CONSTRAINT FK_SpaAppointmentGuests_SpaAppointments FOREIGN KEY (AppointmentId, BookingId) REFERENCES dbo.SpaAppointments (Id, BookingId) ON DELETE CASCADE,
+  CONSTRAINT FK_SpaAppointmentGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_SpaAppointmentGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
+);
+CREATE INDEX IX_SpaAppointmentGuests_UserId_BookingId ON dbo.SpaAppointmentGuests (UserId, BookingId);
+END
+
 IF OBJECT_ID(N'dbo.GroupTableFriends', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.GroupTableFriends (

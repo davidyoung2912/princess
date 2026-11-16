@@ -23,7 +23,13 @@ public sealed record MealCourse(string Name, MealDish[] Dishes);
 /// <summary>A menu of a restaurant. <see cref="TemplateDay"/> is a day of the ship's authored week (<see cref="ShipExplorer.MenuTemplate"/>); 0 is every day.</summary>
 public sealed record MealMenuDef(string VenueId, string Meal, string From, string To, int TemplateDay, string Title, string? Theme, bool Formal, MealCourse[] Courses);
 
-public sealed record ShipExplorer(string[] MenuTemplate, ExplorerVenue[] Venues, ExplorerEventDef[] Events, MealMenuDef[] Menus);
+/// <summary>A treatment or service a spa venue sells by appointment. <see cref="Price"/> is cents per person; <see cref="Rooms"/> is how many can be given at once; <see cref="When"/> are the kinds of day it runs (a port-day special runs only in port).</summary>
+public sealed record SpaTreatment(string Id, string VenueId, string Title, string Detail, int Minutes, long Price, int? MinAge, int Rooms, string[] When);
+
+public sealed record ShipExplorer(string[] MenuTemplate, ExplorerVenue[] Venues, ExplorerEventDef[] Events, MealMenuDef[] Menus, SpaTreatment[]? Treatments = null)
+{
+    public SpaTreatment[] TreatmentList => Treatments ?? [];
+}
 
 /// <summary>
 /// The venues, events and menus of every ship, from <c>Content/ship-explorer.json</c> (written by <c>npm run shipexplorer:gen</c>). A venue id belongs to one ship, so an id found anywhere names its ship;
@@ -54,6 +60,8 @@ public static class ExplorerCatalogue
     public static ShipExplorer Of(string? shipId) => For(shipId) ?? All.Value[ShipDining.SunId];
 
     public static ExplorerVenue? VenueOn(string? shipId, string? id) => Of(shipId).Venues.FirstOrDefault(v => v.Id == id);
+
+    public static SpaTreatment? TreatmentOn(string? shipId, string? id) => Of(shipId).TreatmentList.FirstOrDefault(x => x.Id == id);
 
     public static ExplorerEventDef? EventOn(string? shipId, string? id) => Of(shipId).Events.FirstOrDefault(e => e.Id == id);
 
