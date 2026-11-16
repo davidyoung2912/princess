@@ -20,6 +20,7 @@ import { BackLink } from '../../onboard/common'
 import { SendToChat } from '../../onboard/SendToChat'
 import { names } from '../../plan/people'
 import { PlanError, ReadOnly } from '../../plan/common'
+import { CreditBanner, ExcursionCart } from '../../plan/ExcursionCart'
 import { CancelDialog, ChangeDialog, GuestDialog } from '../../plan/ExcursionsScreen'
 import { portLabel } from '../../plan/portLabel'
 import { PickDateButton } from '../DateControls'
@@ -51,7 +52,6 @@ type Editing = { kind: 'change' | 'cancel'; booking: TourBooking }
 function MyDay({ view, day, reload, only }: { view: ExcursionsView; day: number; reload: () => void; only?: string }) {
   const [editing, setEditing] = useState<Editing | null>(null)
   const mine = bookingsOnDay(view, day).filter((x) => !only || x.offer.item.id === only)
-  const inCart = view.cart.length
   return (
     <section aria-labelledby="exx-mine-h">
       <h2 id="exx-mine-h">{headingCase(only ? t('exx.mineHere') : t('exx.mine'))}</h2>
@@ -76,7 +76,6 @@ function MyDay({ view, day, reload, only }: { view: ExcursionsView; day: number;
           ))}
         </ul>
       )}
-      {inCart > 0 && <p><Link to="/plan/excursions">{t('exx.cart', { count: inCart, total: formatMoney(view.cartTotal) })}</Link></p>}
       {editing?.kind === 'change' && <ChangeDialog booking={editing.booking} view={view} reload={reload} onClose={() => setEditing(null)} />}
       {editing?.kind === 'cancel' && <CancelDialog booking={editing.booking} offer={view.offers.find((o) => o.item.id === editing.booking.excursionId)!} reload={reload} onClose={() => setEditing(null)} />}
     </section>
@@ -126,6 +125,8 @@ function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDa
     <>
       <ReadOnly canDo={view.canBook} />
       <PlanError error={cart.error} />
+      <CreditBanner view={view} />
+      <ExcursionCart view={view} reload={reload} headingId="exx-cart-h" />
       <MyDay view={view} day={state.day} reload={reload} />
       <section aria-labelledby="exx-list-h">
         <h2 id="exx-list-h">{headingCase(t('exx.list'))}</h2>
@@ -215,6 +216,8 @@ function Detail({ offer, view, state, reload }: { offer: ExcursionOffer; view: E
       <PickDateButton state={state} />
       <ReadOnly canDo={view.canBook} />
       <PlanError error={cart.error} />
+      <CreditBanner view={view} />
+      <ExcursionCart view={view} reload={reload} headingId="exx-cart-h" />
       <MyDay view={view} day={offer.day} reload={reload} only={x.id} />
       <section aria-labelledby="exx-about-h">
         <h2 id="exx-about-h">{headingCase(t('exx.about'))}</h2>

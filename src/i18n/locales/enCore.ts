@@ -499,7 +499,6 @@ export const enCore = {
   'exx.mineHere': 'Your booking',
   'exx.none': 'You have no excursions booked for this day.',
   'exx.noneHere': 'You have not booked this excursion.',
-  'exx.cart': '{count} in your cart, {total}. Review and pay',
   'exx.list': 'In port',
   'exx.noTours': 'No excursions run on this day. It may be a sea day.',
   'exx.goToDay': 'Show day {day}, the nearest with excursions',

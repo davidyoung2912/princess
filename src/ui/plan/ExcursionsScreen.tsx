@@ -3,13 +3,13 @@ import { FieldLabel } from '../Field'
 import { useState } from 'react'
 import { SaveButton } from '../ahead/common'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../api/types'
-import type { PaymentPart } from '../../domain/fares'
 import { formatDate, formatTime } from '../../domain/cruise'
 import { ACTIVITIES, EXCURSIONS, filterExcursions, formatHours, guestPrice, INTERESTS, NO_FILTER, type ExcursionPort, type Filter, type Interest } from '../../domain/excursions'
 import type { PersonaId } from '../../domain/people'
 import { formatMoney } from '../../domain/money'
 import { fitTours, NO_FIT, type FitAnswers } from '../../domain/excursionFit'
 import { portLabel } from './portLabel'
+import { CreditBanner, ExcursionCart } from './ExcursionCart'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -22,7 +22,6 @@ import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
 import { StatusBadge } from '../StatusBadge'
 import { Load } from '../account/parts'
-import { PayPanel } from '../book/PayPanel'
 import { Back, GuestPicker, PlanError, ReadOnly } from './common'
 import { names } from './people'
 import { StanleyExplain } from '../ai/StanleyExplain'
@@ -55,15 +54,12 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
   const [changing, setChanging] = useState<TourBooking | null>(null)
   const [cancelling, setCancelling] = useState<TourBooking | null>(null)
   const add = useAction(async (id: string, guests: PersonaId[]) => { const v = await api.plan.excursions.addToCart(id, guests); reload(); return v })
-  const remove = useAction(async (id: string) => { const v = await api.plan.excursions.removeFromCart(id); reload(); return v })
-  const pay = useAction(async (parts: PaymentPart[], challenge: string | undefined) => { const v = await api.plan.excursions.checkout(parts, challenge); reload(); return v })
 
   const offerOf = (id: string) => view.offers.find((o) => o.item.id === id)!
   const shown = filterExcursions(view.offers.map((o) => o.item), filter).filter((x) => !suits || difficultyConcerns(x, mem.access).length === 0).map((x) => offerOf(x.id))
   const matches = fit ? fitTours(view.offers, fit) : []
   const active = view.booked.filter((b) => b.status === 'booked')
   const past = view.booked.filter((b) => b.status === 'cancelled')
-  const due = view.cartTotal - view.creditApplied
   const set = (change: Partial<Filter>) => setFilter({ ...filter, ...change })
   const toggle = (i: Interest) => set({ interests: filter.interests.includes(i) ? filter.interests.filter((x) => x !== i) : [...filter.interests, i] })
 
@@ -75,34 +71,11 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
   return (
     <>
       <ReadOnly canDo={view.canBook} />
-      {view.creditLeft > 0 && <Banner kind="info" title={t('exc.credit', { amount: formatMoney(view.creditLeft) })}><p>{t('exc.creditBody')}</p></Banner>}
-      <PlanError error={add.error ?? remove.error} />
+      <CreditBanner view={view} />
+      <PlanError error={add.error} />
       <StanleyTourCompare sailingId={sailing.id} />
 
-      {view.cart.length > 0 && (
-        <section aria-labelledby="cart-h">
-          <h2 id="cart-h">{th('exc.cart')}</h2>
-          <ul className="plain-list">
-            {view.cart.map((l) => {
-              const o = offerOf(l.excursionId)
-              return (
-                <li key={l.excursionId}>
-                  <span><strong>{o.item.name}</strong><br /><span className="muted">{formatDate(o.date)} · {names(l.guests)} · {formatMoney(l.total)}</span></span>
-                  <Button variant="tertiary" disabled={remove.busy} onClick={() => void remove.run(l.excursionId)}>{t('exc.remove')}<span className="visually-hidden"> {o.item.name}</span></Button>
-                </li>
-              )
-            })}
-          </ul>
-          <p><strong>{t('exc.total', { total: formatMoney(view.cartTotal) })}</strong>{view.creditApplied > 0 && ` · ${t('exc.creditUsed', { amount: formatMoney(view.creditApplied) })}`}</p>
-          {due > 0 ? <PayPanel due={due} pay={pay} label={t('exc.pay', { amount: formatMoney(due) })} /> : (
-            <>
-              <PlanError error={pay.error} />
-              <Button disabled={pay.busy || !view.canBook} onClick={() => void pay.run([], undefined)}>{pay.busy ? t('pay.paying') : t('exc.bookWithCredit')}</Button>
-            </>
-          )}
-          <p className="muted">{t('exc.cancelRule')}</p>
-        </section>
-      )}
+      <ExcursionCart view={view} reload={reload} />
 
       <section aria-labelledby="mine-h">
         <h2 id="mine-h">{th('exc.booked')}</h2>
