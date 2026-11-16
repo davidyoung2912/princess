@@ -14,15 +14,6 @@ import { DayIcon } from '../onboard/ItineraryScreen'
 
 const placeOf = (c: DayChoice): string => (c.atSea ? t('exp.clock.sea') : portById(c.port)?.name ?? c.port)
 
-/** The day the page shows, said plainly, and which it is when it is not the ship's day. */
-export function ChosenDayNote({ state }: { state: ExplorerDayState }) {
-  const c = state.choices[state.day - 1]
-  // The ship's own day is already said by the date bar at the top and the ship clock below it; only another day needs a note.
-  if (!c || c.isToday) return null
-  const rel = c.isPast ? ` · ${t('exp.day.past')}` : ` · ${t('exp.day.future')}`
-  return <p className="exp-chosen" role="status"><strong>{t('exp.day.viewing', { day: c.day, date: shortDate(c.date) })}</strong>{rel} · {placeOf(c)}</p>
-}
-
 /** Pick a date: a button that opens the list of sailing days, with previous, next and today beside it. */
 export function PickDateButton({ state }: { state: ExplorerDayState }) {
   const [open, setOpen] = useState(false)

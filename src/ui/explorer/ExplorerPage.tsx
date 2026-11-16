@@ -7,7 +7,7 @@ import type { ExplorerKind } from '../../domain/explorer/types'
 import { useExplorerData, useExplorerDay, type ExplorerDayState } from '../../hooks/useExplorer'
 import { t, headingCase } from '../../i18n'
 import { Saved } from '../onboard/common'
-import { ChosenDayNote, PickDateButton } from './DateControls'
+import { PickDateButton } from './DateControls'
 import { EventRow, FilterChips, HappeningNow, HoursBadge } from './Parts'
 import { MEAL } from './mealStrings'
 import { useVenuePins, type VenuePins } from '../../hooks/useVenuePins'
@@ -42,7 +42,6 @@ export function ExplorerPage({ kind, basePath, kindLabels, above }: ExplorerPage
     <div className="page">
       <ShipClockCard state={state} />
       <PickDateButton state={state} />
-      <ChosenDayNote state={state} />
       <Saved copy={copy}>
         {(data) => (
           <>

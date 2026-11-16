@@ -15,7 +15,7 @@ import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { BackLink, Saved } from '../onboard/common'
-import { ChosenDayNote, PickDateButton } from './DateControls'
+import { PickDateButton } from './DateControls'
 import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
 import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
@@ -71,7 +71,6 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
       <div className="exp-split__detail">
       <ShipClockCard state={state} />
       <PickDateButton state={state} />
-      <ChosenDayNote state={state} />
       {venueCopy.status === 'error' && venueCopy.data === null ? (
         <Banner kind="info" title={t('exp.venue.gone')} action={<LinkButton to={basePath} variant="secondary">{backLabel}</LinkButton>}><p>{t('exp.venue.goneBody')}</p></Banner>
       ) : (
@@ -110,20 +109,6 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
         <SendToChat shareRef={`venue:${v.id}`} title={v.title} />
       </Card>
       {above?.(ctx)}
-      <section aria-labelledby="exp-sum-h">
-        <h2 id="exp-sum-h">{headingCase(t('exp.venue.about'))}</h2>
-        <p>{v.short}</p>
-        {v.long !== v.short && <p>{v.long}</p>}
-        <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
-        {venue.hours.windows.length > 0 && <p>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</p>}
-        {staffedText(venue.hours) && <p>{t('exp.venue.staffed', { hours: staffedText(venue.hours) })}</p>}
-        <ul className="tour__facts">
-          {v.cover !== undefined && <li>{t('exp.venue.cover', { amount: formatMoney(v.cover) })}</li>}
-          {v.minAge !== undefined && <li>{t('exp.venue.minAge', { age: v.minAge })}</li>}
-          {v.features.map((f) => <li key={f}>{f}</li>)}
-          {v.accessibility.map((f) => <li key={f}>{f}</li>)}
-        </ul>
-      </section>
       {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
         <section aria-labelledby="exp-fam-h">
           <h2 id="exp-fam-h">{headingCase(t('exp.family.title'))}</h2>
@@ -153,6 +138,20 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
             ))}
           </ul>
         )}
+      </section>
+      <section aria-labelledby="exp-sum-h">
+        <h2 id="exp-sum-h">{headingCase(t('exp.venue.about'))}</h2>
+        <p>{v.short}</p>
+        {v.long !== v.short && <p>{v.long}</p>}
+        <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
+        {venue.hours.windows.length > 0 && <p>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</p>}
+        {staffedText(venue.hours) && <p>{t('exp.venue.staffed', { hours: staffedText(venue.hours) })}</p>}
+        <ul className="tour__facts">
+          {v.cover !== undefined && <li>{t('exp.venue.cover', { amount: formatMoney(v.cover) })}</li>}
+          {v.minAge !== undefined && <li>{t('exp.venue.minAge', { age: v.minAge })}</li>}
+          {v.features.map((f) => <li key={f}>{f}</li>)}
+          {v.accessibility.map((f) => <li key={f}>{f}</li>)}
+        </ul>
       </section>
     </>
   )
