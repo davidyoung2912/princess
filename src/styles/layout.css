@@ -2,7 +2,7 @@
  * The app frame. Phone: a top bar, the content, and a fixed five-tab bar along the bottom (primary actions in the
  * lower half). From 1024px the same five entries become a left rail. Everything respects the safe-area insets.
  */
-.shell { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
+.shell { min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
 
 .shell__top { position: sticky; top: 0; z-index: 20; }
 .topbar {
@@ -17,6 +17,8 @@
   content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 4px;
   background: linear-gradient(90deg, var(--primary), var(--teal), var(--gold), var(--pink));
 }
+/* The brand bar is not shown on phones or tablets; the desktop rail replaces it above 1024px. */
+.topbar { display: none; }
 .topbar__brand { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-title); color: var(--primary); text-decoration: none; }
 .topbar__logo { display: inline-flex; align-items: center; min-width: var(--target-min); min-height: var(--target-min); border-radius: var(--radius-button); }
 .topbar__logo img { display: block; height: 2.75rem; width: auto; }
@@ -87,7 +89,7 @@
 .shell__main { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); outline: none; }
 
 @media (min-width: 1024px) {
-  .shell { grid-template-columns: 14rem 1fr; grid-template-rows: auto 1fr; grid-template-areas: 'rail top' 'rail main'; }
+  .shell { grid-template-columns: 14rem minmax(0, 1fr); grid-template-rows: auto 1fr; grid-template-areas: 'rail top' 'rail main'; }
   .shell__top { grid-area: top; }
   .tabs {
     grid-area: rail; position: sticky; top: 0; height: 100dvh; align-self: start;
