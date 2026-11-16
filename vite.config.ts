@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react'
-import { loadEnv } from 'vite'
+import { createLogger, loadEnv } from 'vite'
 import { defineConfig, type Plugin } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -40,8 +40,23 @@ const contentSecurityPolicy = (apiUrl: string): Plugin => ({
   ],
 })
 
+/**
+ * A browser reload, a laptop sleeping or an API restart drops the live chat socket mid-write, and Vite logs a stack trace for every retry. Those
+ * two socket codes on the `/hubs` proxy are expected, so they are left out of the console; every other error is logged as usual.
+ */
+function quietDroppedSockets() {
+  const logger = createLogger()
+  const error = logger.error.bind(logger)
+  logger.error = (msg, options) => {
+    if (/ws proxy (socket )?error/.test(msg) && /\b(ECONNABORTED|ECONNRESET)\b/.test(msg)) return
+    error(msg, options)
+  }
+  return logger
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  customLogger: quietDroppedSockets(),
   server: {
     proxy: (() => {
       const target = loadEnv(mode, process.cwd(), 'VITE_').VITE_API_PROXY || 'http://localhost:5182'
