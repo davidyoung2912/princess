@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { downloadText } from '../delights/cardTools'
 import { formatTime } from '../../domain/cruise'
 import { EXPLORER_PATHS, planCalendar } from '../../domain/explorer/planItems'
+import { alternativesFor, needsAlternatives, type Alternative } from '../../domain/explorer/alternatives'
 import { clashMap, disrupted, groupByPeriod, walkHints, type Period, type PlanItem, type WalkHint } from '../../domain/explorer/planTimeline'
 import { PORTS, shipZoneAt, shipZoneOnDate } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
@@ -66,7 +67,7 @@ export function TodayPlanScreen() {
             <section key={g.period} aria-labelledby={`tp-${g.period}`}>
               <h2 id={`tp-${g.period}`}>{t(PERIOD[g.period])}</h2>
               <ul className="exp-events">
-                {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} />)}
+                {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} />)}
               </ul>
             </section>
           ))}
@@ -87,7 +88,7 @@ function changeText(i: PlanItem): string {
   return i.reason ? t('plan.today.movedWhy', { title: i.title, was, time: formatTime(i.start), reason: i.reason }) : t('plan.today.moved', { title: i.title, was, time: formatTime(i.start) })
 }
 
-function PlanRow({ item, day, clash, hint, clockAt }: { item: PlanItem; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string }) {
+function PlanRow({ item, day, clash, hint, clockAt, alternatives }: { item: PlanItem; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; alternatives: Alternative[] }) {
   const cancelled = item.status === 'cancelled'
   return (
     <li className={`exp-event${cancelled ? ' exp-event--cancelled' : ''}`}>
@@ -98,6 +99,16 @@ function PlanRow({ item, day, clash, hint, clockAt }: { item: PlanItem; day: num
       {item.status === 'moved' && <StatusBadge kind="changed" label={t('exp.event.moved', { was: formatTime(item.was ?? item.start) })} />}
       <p className="muted">{t(KIND[item.kind])}{item.venueTitle && item.venueTitle !== item.title && <> · <Link to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></>}</p>
       {clash && clash.length > 0 && <p className="exp-event__clash" role="note">{t('exp.event.clash', { title: clash[0].title })}</p>}
+      {alternatives.length > 0 && (
+        <div role="group" aria-label={t('plan.alt.title')}>
+          <p className="muted">{t(item.status === 'cancelled' ? 'plan.alt.cancelled' : item.status === 'moved' ? 'plan.alt.moved' : 'plan.alt.clash')}</p>
+          <ul className="plain-bullets">
+            {alternatives.map((a) => (
+              <li key={a.id}><Link to={`${EXPLORER_PATHS[a.explorer]}/${a.venueId}?day=${day}`}>{a.start ? t('plan.alt.event', { title: a.title, time: formatTime(a.start), venue: a.venueTitle }) : t('plan.alt.place', { title: a.title })}</Link></li>
+            ))}
+          </ul>
+        </div>
+      )}
     </li>
   )
 }

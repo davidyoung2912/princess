@@ -11,6 +11,8 @@ import type { SavedCopy } from './useSavedCopy'
 
 export interface TodayPlan {
   items: PlanItem[]
+  /** The six Explorers' answers for the day, for suggesting alternatives. */
+  explorers: ExplorerDay[]
   /** The date of the day, "YYYY-MM-DD", once the Explorers have answered. */
   date: string | null
   /** Every source answered (or has an offline copy). */
@@ -37,7 +39,7 @@ export function useTodayPlan(day: number): TodayPlan {
     atMs: (date, time) => zonedToEpoch(date, time, shipZoneOnDate(sailing, date)),
   })
   return {
-    items, date: explorers[0]?.date ?? null,
+    items, explorers, date: explorers[0]?.date ?? null,
     ready: all.every((c) => c.data !== null || c.status === 'error'),
     failed: all.some((c) => c.data === null && c.status === 'error'),
     retry: () => all.forEach((c) => c.retry()),

@@ -18,6 +18,7 @@ import { dishHits, filterDining, hasKidsMenu, NO_DINING_FILTER, sortDining, type
 import { StanleyPose } from '../StanleyPose'
 import { EXPLORER_POSE } from './venueArt'
 import { ShipClockCard } from './ShipClockCard'
+import { WhatChanged } from './WhatChanged'
 
 export interface ExplorerContext { data: ExplorerDay; state: ExplorerDayState; reload: () => void }
 
@@ -52,6 +53,7 @@ export function ExplorerPage({ kind, title, purpose, basePath, kindLabels, above
         {(data) => (
           <>
             <HappeningNow data={data} currentDay={state.currentDay} now={state.nowAt} basePath={basePath} />
+            <WhatChanged data={data} now={state.nowAt} basePath={basePath} />
             {above?.({ data, state, reload: copy.retry })}
             <VenueList data={data} state={state} basePath={basePath} kindLabels={kindLabels} />
           </>
