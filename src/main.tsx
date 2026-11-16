@@ -8,12 +8,13 @@ import './index.css'
 import App from './App.tsx'
 import { watchProblems } from './diagnostics/watch'
 import { ErrorBoundary } from './ErrorBoundary'
-import { startRuntime } from './runtime'
+import { startRuntime, warmServer } from './runtime'
 import { loadEnglishLate } from './i18n'
 import { markUpdateReady } from './runtime/update'
 import { applyLanguage, applySettings, watchDeviceTheme } from './settings/store'
 
 watchProblems()
+warmServer()
 applySettings()
 watchDeviceTheme()
 

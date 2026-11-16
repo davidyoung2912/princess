@@ -1,3 +1,4 @@
+import { ApiError } from '../api/errors'
 import { createHttpGroups, toApi } from '../api/httpApi'
 import type { Api } from '../api/types'
 import type { StanleySender } from '../ai/stanley'
@@ -353,10 +354,27 @@ export function retryReference(): void {
   loadTables()
 }
 
+/** A reference read is asked again (up to three more times, after 1 s, 2 s and 4 s) when the server was slow to wake or briefly failed, as it can be right after a deploy. */
+async function getWithRetry(path: string): Promise<unknown> {
+  for (let attempt = 0; ; attempt++) {
+    try { return await http.get<unknown>(path) } catch (e) {
+      const again = e instanceof ApiError && (e.code === 'timeout' || e.code === 'network' || e.code === 'server')
+      if (!again || attempt >= 3) throw e
+      await new Promise((done) => setTimeout(done, 1000 * 2 ** attempt))
+    }
+  }
+}
+
+/** Wakes a cold server and its database connection while the guest is still on the sign-in form. Fire and forget: the answer is never read, so no CORS is needed. */
+export function warmServer(): void {
+  if (!/^https?:\/\//i.test(API_URL) || typeof fetch === 'undefined') return
+  try { void fetch(`${new URL(API_URL).origin}/health/db`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {}) } catch { /* not worth a failure */ }
+}
+
 function loadTables(): void {
   if (!auth.current()) return
   for (const t of TABLES) {
-    void http.get<unknown>(t.path)
+    void getWithRetry(t.path)
       .then((raw) => {
         const fresh = t.normalize(raw)
         if (!fresh) { markReferenceFailed(t.kind); return }
