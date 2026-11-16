@@ -8,8 +8,8 @@ import type { ExplorerKind } from './types'
 
 const MIN = 60_000
 
-/** The screen a booked shore excursion links to. */
-export const TOURS_PATH = '/plan/excursions'
+/** The Excursions Explorer page a booked shore excursion links to, on the day it runs. */
+export const tourPath = (excursionId: string, day: number): string => `/excursions-explorer/${excursionId}?day=${day}`
 
 /** Where each Explorer lives, so a plan line links back to its venue page. */
 export const EXPLORER_PATHS: Readonly<Record<ExplorerKind, string>> = {
@@ -47,7 +47,7 @@ export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay
   }
   for (const x of o.tours ?? []) {
     if (x.day !== o.day) continue
-    items.push({ id: x.id, kind: 'tour', explorer: 'activities', venueId: '', title: x.name, venueTitle: x.port, placeId: '', start: x.start, startAt: x.startAt, endAt: x.endAt, status: 'on', link: TOURS_PATH })
+    items.push({ id: x.id, kind: 'tour', explorer: 'activities', venueId: '', title: x.name, venueTitle: x.port, placeId: '', start: x.start, startAt: x.startAt, endAt: x.endAt, status: 'on', link: tourPath(x.excursionId, x.day) })
   }
   return sortItems(items)
 }

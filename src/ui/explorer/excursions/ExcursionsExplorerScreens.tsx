@@ -17,6 +17,7 @@ import { Chip } from '../../Chip'
 import { StatusBadge } from '../../StatusBadge'
 import { Load } from '../../account/parts'
 import { BackLink } from '../../onboard/common'
+import { SendToChat } from '../../onboard/SendToChat'
 import { names } from '../../plan/people'
 import { PlanError, ReadOnly } from '../../plan/common'
 import { CancelDialog, ChangeDialog, GuestDialog } from '../../plan/ExcursionsScreen'
@@ -64,6 +65,7 @@ function MyDay({ view, day, reload, only }: { view: ExcursionsView; day: number;
                 <li>{formatTime(o.item.start)} · {portLabel(o.item.port)} · {t('exc.backBy', { time: formatTime(o.backBy) })}</li>
                 <li>{names(b.guests)} · {formatMoney(b.total)}</li>
               </ul>
+              <SendToChat shareRef={`excursion:${b.id}`} title={o.item.name} />
               {view.canBook && (
                 <div className="button-row">
                   {b.guests.length > 1 && <Button variant="secondary" onClick={() => setEditing({ kind: 'change', booking: b })}>{t('exc.changeGuests')}<span className="visually-hidden"> {o.item.name}</span></Button>}
