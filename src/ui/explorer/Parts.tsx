@@ -32,7 +32,7 @@ const AGE: Record<ExplorerEvent['age'], StringKey | null> = { all: null, kids: '
 export interface PlanControl { planned: boolean; busy: boolean; onToggle: () => void }
 
 /** One event as a row: time range, title, detail, cost, age, status badges, and (with `plan`) the toggle that adds it to the guest's plan. */
-export function EventRow({ event, now, plan, clash, compact }: { event: ExplorerEvent; now: number; plan?: PlanControl; clash?: readonly Span[]; compact?: boolean }) {
+export function EventRow({ event, now, plan, clash, compact, share }: { event: ExplorerEvent; now: number; share?: ReactNode; plan?: PlanControl; clash?: readonly Span[]; compact?: boolean }) {
   const phase = eventPhase(event, now)
   const cancelled = event.status === 'cancelled'
   const age = AGE[event.age]
@@ -59,6 +59,7 @@ export function EventRow({ event, now, plan, clash, compact }: { event: Explorer
           {plan.planned ? t('exp.plan.remove') : t('exp.plan.add')}<span className="visually-hidden"> {event.title}</span>
         </Button>
       )}
+      {share}
     </li>
   )
 }

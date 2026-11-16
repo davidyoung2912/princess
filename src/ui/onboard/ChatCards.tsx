@@ -12,7 +12,7 @@ import { Button, LinkButton } from '../Button'
 import { useShipTime } from './shipTime'
 
 const TYPE_KEY: Record<ChatCard['type'], StringKey> = {
-  excursion: 'card.type.excursion', dining: 'card.type.dining', booking: 'card.type.booking', portDay: 'card.type.portDay', place: 'card.type.place', plan: 'card.type.plan',
+  excursion: 'card.type.excursion', dining: 'card.type.dining', booking: 'card.type.booking', portDay: 'card.type.portDay', place: 'card.type.place', plan: 'card.type.plan', venue: 'card.type.venue',
 }
 
 const clock = (time: string): string => clock12(time)

@@ -11,7 +11,7 @@ import { shareError } from './ChatCards'
  * "Send to chat" on a booked excursion or dinner. It lists the guest's open conversations when first opened and sends the booking as a card: the screen names only the booking's `ref`
  * (`excursion:<id>` or `dining:<id>`), and the server builds the words from its own data, so nothing about price or booking numbers can go with it.
  */
-export function SendToChat({ shareRef, title }: { shareRef: string; title: string }) {
+export function SendToChat({ shareRef, title, kind = 'card' }: { shareRef: string; title: string; kind?: 'card' | 'plan' }) {
   const [open, setOpen] = useState(false)
   const [rows, setRows] = useState<ChatConversation[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -23,7 +23,7 @@ export function SendToChat({ shareRef, title }: { shareRef: string; title: strin
     api.chatConversations.list().then((l) => setRows(l.filter((c) => c.kind !== 'stanley' && !c.closed)), () => { asked.current = false; setFailed(true) })
   }, [open])
   const send = useAction(async (c: ChatConversation) => {
-    await api.chatConversations.sendTyped(c.id, { kind: 'card', shareRef }, newClientId())
+    await api.chatConversations.sendTyped(c.id, { kind, shareRef }, newClientId())
     setSentTo(t('sendchat.sent', { name: c.name }))
   })
   return (

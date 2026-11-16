@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
+import { spotFromQuery } from '../../domain/explorer/navigate'
 import { findCabin, type CabinLocation } from '../../deckPlans/cabinFinder'
 import { deckPlansFor, SHIP_NAMES, type DeckPlanShip } from '../../deckPlans/deckPlans'
 import { t, type StringKey } from '../../i18n'
@@ -22,9 +23,12 @@ export function DeckPlansScreen() {
 
 /** The deck plan picker and viewer, shared by the Deck Plans page and the Ship Explorer page. */
 export function DeckPlansPanel({ initialShip = 'sun' }: { initialShip?: DeckPlanShip }) {
-  const [ship, setShip] = useState<DeckPlanShip>(initialShip)
+  const [params] = useSearchParams()
+  const target = spotFromQuery(params)
+  const asked = params.get('ship') as DeckPlanShip | null
+  const [ship, setShip] = useState<DeckPlanShip>(target && asked && SHIPS.includes(asked) ? asked : initialShip)
   const plans = deckPlansFor(ship)
-  const [deck, setDeck] = useState(plans[0].deck)
+  const [deck, setDeck] = useState(target && plans.some((p) => p.deck === target.deck) ? target.deck : plans[0].deck)
   const [query, setQuery] = useState('')
   const [search, setSearch] = useState<Search>({ kind: 'none' })
   const plan = plans.find((p) => p.deck === deck) ?? plans[0]
@@ -50,6 +54,7 @@ export function DeckPlansPanel({ initialShip = 'sun' }: { initialShip?: DeckPlan
   return (
     <>
       <p>{t('dv.intro')}</p>
+      {target && <p role="status">{t('exp.nav.noteMap', { title: target.label, deck: target.deck, section: t(`map.section.${target.section}` as StringKey).toLowerCase() })}</p>}
       <form onSubmit={find} className="deckfind">
         <div className="field">
           <label htmlFor="deck-cabin">{t('dv.cabinLabel')}</label>

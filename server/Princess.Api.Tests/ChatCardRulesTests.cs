@@ -137,5 +137,24 @@ public class ChatCardRulesTests
         Assert.False(ChatCardRules.IsTyped(null));
     }
 
+    [Fact]
+    public void AVenueRefRoundTripsAndOnlyAVenueRefParses()
+    {
+        Assert.Equal("crown", ChatCardRules.ParseVenueRef(ChatCardRules.VenueRef("crown")));
+        Assert.Null(ChatCardRules.ParseVenueRef("excursion:abc"));
+        Assert.Null(ChatCardRules.ParseVenueRef("venue:"));
+        Assert.Null(ChatCardRules.ParseVenueRef(null));
+    }
+
+    [Fact]
+    public void AnExplorerEventAndItsVenueOpenTheVenuePage()
+    {
+        var ship = ExplorerCatalogue.Ships.First();
+        var ev = ExplorerCatalogue.Of(ship).Events.First();
+        var venue = ExplorerCatalogue.VenueOn(ship, ev.VenueId)!;
+        Assert.Equal($"{ExplorerCatalogue.PathOf(venue.Explorer)}/{venue.Id}", ExplorerCatalogue.VenuePath(venue));
+        Assert.Null(ProgramRules.ById(ev.Id, ship));
+    }
+
     private static string ShipPlaceId() => ShipReference.Get().Places[0].Id;
 }

@@ -19,6 +19,8 @@ import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
 import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
 import { PinButton } from './Pins'
+import { SendToChat } from '../onboard/SendToChat'
+import { navigatePath } from '../../domain/explorer/navigate'
 import { StanleyPose } from '../StanleyPose'
 import { venuePose } from './venueArt'
 import { ShipClockCard } from './ShipClockCard'
@@ -99,7 +101,9 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
         <span className="landing-pose landing-pose--clear-pin calm-hide"><StanleyPose pose={venuePose(kind, v.kind, v.title)} size={88} /></span>
         <h2 id="exp-venue-h" className="card__title">{v.title}</h2>
         <p className="muted">{v.deckLabel}</p>
+        {navigatePath(v) && <LinkButton to={navigatePath(v)!} variant="secondary">{t('exp.nav.link', { title: v.title })}</LinkButton>}
         <p role="status" className="visually-hidden">{pins.message}</p>
+        <SendToChat shareRef={`venue:${v.id}`} title={v.title} />
       </Card>
       {above?.(ctx)}
       <section aria-labelledby="exp-sum-h">
@@ -126,7 +130,7 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
         {venue.events.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : (
           <ul className="exp-events">
             {shownEvents.map((e) => (
-              <EventRow key={e.id} event={e} now={state.nowAt}
+              <EventRow key={e.id} event={e} now={state.nowAt} share={e.status === 'cancelled' ? undefined : <SendToChat kind="plan" shareRef={`${e.id}:${state.day}`} title={e.title} />}
                 clash={clashesWith(e, [...taken, ...planned])}
                 plan={past || !explorerDay ? undefined : { planned: plan.planned.has(e.id), busy: plan.busy, onToggle: () => { void plan.toggle(e.id, e.title, !plan.planned.has(e.id)) } }} />
             ))}

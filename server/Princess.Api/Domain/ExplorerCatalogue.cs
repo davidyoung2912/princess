@@ -46,6 +46,9 @@ public static class ExplorerCatalogue
         "exercise" => "/exercise-explorer", _ => "/activities-explorer",
     };
 
+    /// <summary>The page of one venue (<see cref="PathOf"/> and the venue id), the screen a shared venue or event card opens.</summary>
+    public static string VenuePath(ExplorerVenue venue) => $"{PathOf(venue.Explorer)}/{venue.Id}";
+
     public static bool ValidKind(string? kind) => kind is not null && Kinds.Contains(kind);
 
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);

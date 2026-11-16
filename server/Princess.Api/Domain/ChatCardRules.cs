@@ -20,9 +20,14 @@ public static class ChatCardRules
     public static bool CannotEdit(string? kind) => IsTyped(kind) || kind == ChatPlanningRules.Poll;
 
     // What a card can be.
-    public const string Excursion = "excursion", Dining = "dining", Booking = "booking", PortDay = "portDay", PlaceType = "place";
+    public const string Excursion = "excursion", Dining = "dining", Booking = "booking", PortDay = "portDay", PlaceType = "place", Venue = "venue";
 
     public static readonly string[] CardTypes = [Excursion, Dining, Booking, PortDay];
+
+    /// <summary>The ref of a venue card, as the app sends it back: <c>venue:&lt;venueId&gt;</c>. A venue is not booked, so it is not in the shareable list.</summary>
+    public static string VenueRef(string venueId) => $"{Venue}:{venueId}";
+
+    public static string? ParseVenueRef(string? shareRef) => shareRef is { } r && r.StartsWith(Venue + ":", StringComparison.Ordinal) && r.Length > Venue.Length + 1 ? r[(Venue.Length + 1)..] : null;
 
     /// <summary>The screen a card opens. The app shows "no longer available" when the guest cannot open what it points at.</summary>
     public static string PathOf(string type, string? portId = null) => type switch

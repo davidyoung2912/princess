@@ -1,6 +1,7 @@
 import { useCatalogue } from '../../hooks/useCatalogue'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
+import { spotFromQuery } from '../../domain/explorer/navigate'
 import { DECKS, ELEVATORS, elevatorsNear, MUSTER_STATIONS, placeById, placesOnDeck, searchPlaces, type Place, type Section } from '../../domain/deck'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -25,7 +26,9 @@ const SECTIONS: readonly Section[] = ['forward', 'midship', 'aft']
 export function DeckMapScreen() {
   useCatalogue()
   const [query, setQuery] = useState('')
-  const [deck, setDeck] = useState(7)
+  const [params] = useSearchParams()
+  const target = spotFromQuery(params)
+  const [deck, setDeck] = useState(target?.deck ?? 7)
   const [stepFree, setStepFree] = useState(false)
   const [quiet, setQuiet] = useState(false)
   const [categories, setCategories] = useState<ReadonlySet<DeckCategory>>(new Set())
@@ -38,6 +41,7 @@ export function DeckMapScreen() {
   const onDeck = placesOnDeck(deck).filter((p) => (!stepFree || p.stepFree) && inCategories(p, categories))
   return (
     <div className="page page--wide">
+      {target && <p role="status">{t('exp.nav.note', { title: target.label, deck: target.deck, section: t(`map.section.${target.section}` as StringKey).toLowerCase() })}</p>}
       <Banner kind="info" title={t('map.noLocation')}><p>{t('map.noLocationBody')}</p></Banner>
 
       <RouteFinder />
@@ -85,7 +89,7 @@ export function DeckMapScreen() {
         </div>
         <div className="deck-map__view">
           <DeckElevation deck={deck} onPick={setDeck} />
-          <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} pin={pin} categories={categories} />
+          <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} pin={pin} target={target} categories={categories} />
         </div>
         <div className="table-wrap">
           <table className="deck-table">

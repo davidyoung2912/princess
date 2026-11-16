@@ -9,7 +9,7 @@ export const NOTE_MAX = 80
 export const isExpired = (card: Pick<ChatCard, 'expired' | 'expiresAt'>, now: number): boolean => card.expired === true || (card.expiresAt !== undefined && card.expiresAt <= now)
 
 /** The screens a card may open. Anything else (a path the app does not have, or one built by something other than the server) is "no longer available". */
-const CARD_PATH = /^\/(plan\/(excursions|dining|reservations|ahead)|home\/ports\/[\w-]+)$/
+const CARD_PATH = /^\/(plan\/(excursions|dining|reservations|ahead)|home\/ports\/[\w-]+|(dining-today|entertainment|shopping-today|spa-explorer|exercise-explorer|activities-explorer)\/[\w-]+)$/
 
 /** Where a card goes, or null when it points nowhere the app knows: the card then says it is no longer available instead of linking. */
 export function cardLink(card: Pick<ChatCard, 'type' | 'path' | 'gone'>): string | null {
@@ -30,7 +30,7 @@ export function cardSummary(card: ChatCard, clock: (time: string) => string): st
   return [card.title, when, card.place && card.place !== card.title ? card.place : ''].filter(Boolean).join(' · ')
 }
 
-const TYPE_ORDER: Record<Exclude<ChatCardType, 'place' | 'plan'>, number> = { booking: 0, portDay: 1, excursion: 2, dining: 3 }
+const TYPE_ORDER: Record<Exclude<ChatCardType, 'place' | 'plan' | 'venue'>, number> = { booking: 0, portDay: 1, excursion: 2, dining: 3 }
 
 /** The share list in a steady order: the booking, then port days, excursions and dinners, each by day and time. */
 export function sortShareables(items: readonly ChatShareable[]): ChatShareable[] {

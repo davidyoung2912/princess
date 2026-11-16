@@ -51,26 +51,46 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         return list;
     }
 
+    /// <summary>An event a plan can be made of, from the daily programme or from one of the Explorers (both go in the same plan): its title, start, the words for its place and the screen it opens, and the kinds of day it runs.</summary>
+    private sealed record Plannable(string Id, string Title, string Start, string? Place, string[] When, string? Path);
+
+    private static Plannable? PlannableOn(string? shipId, string eventId)
+    {
+        if (ProgramRules.ById(eventId, shipId) is { } ev)
+            return new(ev.Id, ev.Title, ev.Start, ProgramRules.PlaceName(ev.PlaceId) is { Length: > 0 } place ? place : null, ev.When, null);
+        if (ExplorerCatalogue.EventOn(shipId, eventId) is { } x && ExplorerCatalogue.VenueOn(shipId, x.VenueId) is { } venue)
+            return new(x.Id, x.Title, x.Start, venue.Title, x.When, ExplorerCatalogue.VenuePath(venue));
+        return null;
+    }
+
     /// <summary>
-    /// The sailing whose programme the event can go on for this guest on this day, or null: no current booking, an event their ship does not run, or a day it does not run. A plan is made, and answered Going, only where this is not null.
+    /// The sailing whose programme (or Explorers) the event can go on for this guest on this day, or null: no current booking, an event their ship does not run, or a day it does not run. A plan is made, and answered Going, only where this is not null.
     /// </summary>
     public async Task<string?> ProgrammeSailingAsync(UserRecord actor, string eventId, int day, CancellationToken ct)
     {
         if (await CurrentAsync(actor, ct) is not { } booking) return null;
-        if (ProgramRules.ById(eventId, AboardPlans.ShipOfSailing(booking.SailingId)) is not { } ev) return null;
+        if (PlannableOn(AboardPlans.ShipOfSailing(booking.SailingId), eventId) is not { } ev) return null;
         var timeline = TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure));
         return day >= 1 && day <= timeline.Days.Count && DayKinds.Runs(timeline, day, ev.When) ? booking.SailingId : null;
     }
 
     /// <summary>
-    /// A plan card for a programme event on a day (<paramref name="shareRef"/> is <c>eventId:day</c> from the plannable list), built from the ship's programme: its title, day, time and place, and a short note. 400 <c>shareRef</c> when the guest's own sailing does not run it that day.
+    /// A plan card for an event on a day (<paramref name="shareRef"/> is <c>eventId:day</c>; a programme event from the plannable list, or an Explorer event from its venue page), built from the ship's own data: its title, day, time and place, and a short note.
+    /// An Explorer event's card opens its venue page. 400 <c>shareRef</c> when the guest's own sailing does not run it that day.
     /// </summary>
     public async Task<ChatCard> PlanAsync(UserRecord actor, string? shareRef, string? note, CancellationToken ct)
     {
         var (eventId, day) = ChatPlanningRules.ParsePlanRef(shareRef) ?? throw ApiException.Invalid("shareRef");
         if (await ProgrammeSailingAsync(actor, eventId, day, ct) is not { } sailing) throw ApiException.Invalid("shareRef");
-        var ev = ProgramRules.ById(eventId, AboardPlans.ShipOfSailing(sailing))!;
-        return new ChatCard(ChatCardRules.Plan, ev.Title, null, day, ev.Start, ProgramRules.PlaceName(ev.PlaceId) is { Length: > 0 } place ? place : null, Note: ChatCardRules.CleanNote(note), EventId: ev.Id);
+        var ev = PlannableOn(AboardPlans.ShipOfSailing(sailing), eventId)!;
+        return new ChatCard(ChatCardRules.Plan, ev.Title, null, day, ev.Start, ev.Place, Path: ev.Path, Note: ChatCardRules.CleanNote(note), EventId: ev.Id);
+    }
+
+    /// <summary>A venue card for a place in one of the Explorers on the guest's own ship: its name, kind and deck, opening its venue page. 400 <c>shareRef</c> for a venue the guest's ship does not have or when there is no current booking.</summary>
+    private async Task<ChatCard> VenueCardAsync(UserRecord actor, string venueId, CancellationToken ct)
+    {
+        if (await CurrentAsync(actor, ct) is not { } booking || ExplorerCatalogue.VenueOn(AboardPlans.ShipOfSailing(booking.SailingId), venueId) is not { } venue) throw ApiException.Invalid("shareRef");
+        return new ChatCard(ChatCardRules.Venue, venue.Title, venue.Short, Place: venue.DeckLabel, Path: ExplorerCatalogue.VenuePath(venue));
     }
 
     /// <summary>Every card the booking can make, keyed by its ref: the booking itself, each booked excursion and dinner, and each port day.</summary>
@@ -97,7 +117,9 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
     /// <summary>The card for a ref from <see cref="ListAsync"/>, rebuilt from the guest's own booking. 400 <c>shareRef</c> for anything that is not theirs, not booked any more, or not a ref.</summary>
     public async Task<ChatCard> CardAsync(UserRecord actor, string? shareRef, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(shareRef) || await CurrentAsync(actor, ct) is not { } booking) throw ApiException.Invalid("shareRef");
+        if (string.IsNullOrWhiteSpace(shareRef)) throw ApiException.Invalid("shareRef");
+        if (ChatCardRules.ParseVenueRef(shareRef) is { } venueId) return await VenueCardAsync(actor, venueId, ct);
+        if (await CurrentAsync(actor, ct) is not { } booking) throw ApiException.Invalid("shareRef");
         var found = (await CardsAsync(booking, ct)).FirstOrDefault(c => c.Ref == shareRef);
         return found.Card ?? throw ApiException.Invalid("shareRef");
     }

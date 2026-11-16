@@ -3,8 +3,9 @@ import { useId } from 'react'
 import { usePanZoom } from './usePanZoom'
 import { inCategories, type DeckCategory } from '../../domain/deckFilter'
 import { ELEVATORS, type Place } from '../../domain/deck'
-import { HULL_PATH, PLAN_H, PLAN_W, SECTION_DIVIDERS, SECTION_LABEL_X, placeLifts, placePlaces, type Point } from '../../domain/deckPlan'
+import { HULL_PATH, PLAN_H, PLAN_W, SECTION_DIVIDERS, SECTION_LABEL_X, hallPoint, placeLifts, placePlaces, type Point } from '../../domain/deckPlan'
 import { t, type StringKey } from '../../i18n'
+import type { VenueSpot } from '../../domain/explorer/navigate'
 
 interface Props {
   deck: number
@@ -16,6 +17,8 @@ interface Props {
   here?: Place | null
   /** The place where the guest parked a lounger or table (DL7); shown only on its deck, with a square mark and a word. */
   pin?: Place | null
+  /** Where Navigate points: a diamond with the venue's name, shown only on its deck, at its place or the middle of its section. */
+  target?: (VenueSpot & { label: string }) | null
   /** A route to draw on this deck. */
   line?: Point[]
   /** Category filter: places outside the chosen categories are dimmed (an empty set shows all). */
@@ -29,7 +32,7 @@ const NO_CATEGORIES: ReadonlySet<DeckCategory> = new Set()
  * The picture is for sighted use; every fact on it is also in the numbered key under it and in the deck table, and the plan itself is
  * described as one image. Marks never rely on colour alone: a muster station has a letter, a quiet space a ring and a step a dashed outline.
  */
-export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, pin = null, line = [], categories = NO_CATEGORIES }: Props) {
+export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, pin = null, target = null, line = [], categories = NO_CATEGORIES }: Props) {
   useCatalogue()
   const id = useId()
   const { box, zoom, setZoom, handlers } = usePanZoom()
@@ -73,6 +76,10 @@ export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, p
           {pin && pin.deck === deck && (() => {
             const spot = placed.find((p) => p.place.id === pin.id)?.at ?? { x: 320, y: 100 }
             return <g><rect x={spot.x - 18} y={spot.y - 18} width={36} height={36} rx={4} className="deck-plan__pin" /><text x={spot.x} y={spot.y + 34} textAnchor="middle" className="deck-plan__here-text">{t('dl7.spot.pin')}</text></g>
+          })()}
+          {target && target.deck === deck && (() => {
+            const spot = (target.placeId ? placed.find((p) => p.place.id === target.placeId)?.at : undefined) ?? hallPoint(target.section)
+            return <g><rect x={spot.x - 14} y={spot.y - 14} width={28} height={28} className="deck-plan__target" transform={`rotate(45 ${spot.x} ${spot.y})`} /><text x={spot.x} y={spot.y + 34} textAnchor="middle" className="deck-plan__here-text">{t('exp.nav.mark')}</text></g>
           })()}
         </svg>
       </div>

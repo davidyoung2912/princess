@@ -290,8 +290,9 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 ### Phase 11: Share, Navigate and the deck-plan pin
 - Scope (ENT-098, ENT-106, DIN-143): share to chat for events, venues and menus; a Navigate action that opens the venue on the deck plan with a pin; tours on the Today's Plan timeline if the server can serve more than today's port day.
 - Needs server work you test (share text for events and venues) and venue coordinates on the plan pictures.
-- Built: (to fill in)
-- Left for later: (to fill in)
+- Built: Share to chat. `ChatShareService` now accepts Explorer events as plan cards (`eventId:day`, same ref as programme events, so "Going" adds the event to the plan; the card opens the venue page) and a new `venue:<id>` card type (`ChatCardRules.Venue`, `VenueRef`, `ExplorerCatalogue.VenuePath`). The venue page has a Send to chat control for the venue and one on each non-cancelled event (`SendToChat` takes `kind`). Client: `venue` card type, label and card link paths for the six Explorer routes. Navigate: `src/domain/explorer/navigate.ts` reads the deck and section from the venue's place or deck label; the venue page has a "Navigate" button. On decks the schematic map lists (4, 6 to 9, 17, 18) it opens `/ship/map` with a labelled diamond (`DeckPlan` `target`); on other decks it opens that ship's deck-plan picture at the deck with a text note and no mark. Venues with no deck in their label get no button. Tests: `navigate.test.ts`, two cases in `ChatCardRulesTests.cs`. npm test, lint, `tsc -b` and build pass.
+- Not verified: the C# changes (`ChatShareService.cs`, `ChatCardRules.cs`, `ExplorerCatalogue.cs`, the new tests) were not compiled or run (project rule); please build and run them.
+- Left for later: tours on the timeline (the server serves only today's port day); true pin coordinates on the deck-plan pictures; the plan composer's event picker still lists only programme events; share-to-chat for menus (DIN-143).
 
 ### Phase 12: Event and venue detail fields
 - Scope: event performer, series, accessibility attributes, dress and arrival notes (ENT-013, 017, 019, 023, 129..130); Dining venue accessibility, children's menu and family facilities (DIN-047, 210, 214, 224). Small items that touch the same screens fit here: the "you have plans" dot on the date list.
