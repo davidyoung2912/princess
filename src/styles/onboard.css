@@ -441,3 +441,10 @@ button.chat-quote { cursor: pointer; }
 
 /* "Send to chat" under a button or a card: room above it so the two do not touch. */
 .send-chat { margin-top: var(--space-3); }
+
+/* The date row sits close under the day card: the card's own bottom margin would stack on the page gap. */
+.card:has(+ .exp-date) { margin-bottom: 0; }
+.card + .exp-date { margin-top: var(--space-3); }
+
+/* Navigate and Send to chat close the venue page. */
+.exp-venue-end { display: grid; gap: var(--space-2); justify-items: start; }

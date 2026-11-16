@@ -410,8 +410,6 @@ export const enCore = {
   'exp.event.series': 'Part of: {name}',
   'exp.event.dress': 'What to wear: {text}',
   'exp.event.arrive': 'Arriving: {text}',
-  'exp.access.label': 'Show events with',
-  'exp.access.none': 'No event here has that access.',
   'exp.family.title': 'For families',
   'exp.family.menu': 'Children’s menu',
   'exp.venue.cover': 'Cover charge {amount} a person',

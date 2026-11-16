@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router'
 import type { ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
 import { formatMoney } from '../../domain/money'
-import { ACCESS_FEATURES } from '../../domain/eventAccess'
 import { clashesWith, type Span } from '../../domain/explorer/presentation'
 import type { ExplorerKind } from '../../domain/explorer/types'
 import { useMine } from '../../hooks/useMine'
@@ -25,7 +24,7 @@ import { REMINDER_DEFAULT } from '../../domain/notifications'
 import { navigatePath } from '../../domain/explorer/navigate'
 import { StanleyPose } from '../StanleyPose'
 import { venuePose } from './venueArt'
-import { ShipClockCard } from './ShipClockCard'
+import { ShipClockCard, ShipDayInfo } from './ShipClockCard'
 
 export interface VenueContext { venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; reload: () => void }
 
@@ -92,9 +91,7 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
   const plan = usePlan(state.day, explorerDay?.mine ?? [], explorerDay?.reminders, { added: (title) => t('exp.plan.added', { title }), removed: (title) => t('exp.plan.removed', { title }) })
   const [interest, setInterest] = useState<string | null>(null)
   const interests = [...new Set(venue.events.map((e) => e.interest))]
-  const [access, setAccess] = useState<string | null>(null)
-  const accessKinds = ACCESS_FEATURES.filter((f) => venue.events.some((e) => e.access?.includes(f)))
-  const shownEvents = venue.events.filter((e) => (interest === null || e.interest === interest) && (access === null || e.access?.includes(access)))
+  const shownEvents = venue.events.filter((e) => (interest === null || e.interest === interest))
   const ctx: VenueContext = { venue, explorerDay, state, reload }
   const past = state.day < state.currentDay
   const taken = busy?.(ctx) ?? []
@@ -106,13 +103,12 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
         <span className="landing-pose landing-pose--clear-pin calm-hide"><StanleyPose pose={venuePose(kind, v.kind, v.title)} size={88} /></span>
         <h2 id="exp-venue-h" className="card__title">{v.title}</h2>
         <p className="muted">{v.deckLabel}</p>
-        {navigatePath(v) && <LinkButton to={navigatePath(v)!} variant="secondary">{t('exp.nav.link', { title: v.title })}</LinkButton>}
+        <ShipDayInfo state={state} />
         <p role="status" className="visually-hidden">{pins.message}</p>
-        <SendToChat shareRef={`venue:${v.id}`} title={v.title} />
       </Card>
-      <ShipClockCard state={state} />
       <PickDateButton state={state} />
       {above?.(ctx)}
+      <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} />
       {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
         <section aria-labelledby="exp-fam-h">
           <h2 id="exp-fam-h">{headingCase(t('exp.family.title'))}</h2>
@@ -125,15 +121,13 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
           )}
         </section>
       )}
-      <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} />
       <section aria-labelledby="exp-ev-h">
         <h2 id="exp-ev-h">{headingCase(t('exp.venue.events'))}</h2>
         <p role="status" className="visually-hidden">{plan.announcement}</p>
         {plan.failed && <p role="alert" className="field__error">{t('exp.plan.failed')}</p>}
         {past && venue.events.length > 0 && <p className="muted">{t('exp.venue.readOnly')}</p>}
         <FilterChips kinds={interests} label={t('exp.interest.label')} value={interest} onChange={setInterest} labels={Object.fromEntries(interests.map((i) => [i, t(`exp.interest.${i}` as StringKey)]))} />
-        <FilterChips kinds={accessKinds} label={t('exp.access.label')} value={access} onChange={setAccess} labels={Object.fromEntries(accessKinds.map((f) => [f, t(`evAccess.${f}` as StringKey)]))} />
-        {venue.events.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : shownEvents.length === 0 ? <p className="muted">{t('exp.access.none')}</p> : (
+        {venue.events.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : shownEvents.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : (
           <ul className="exp-events">
             {shownEvents.map((e) => (
               <EventRow key={e.id} event={e} now={state.nowAt} share={e.status === 'cancelled' ? undefined : <SendToChat kind="plan" shareRef={`${e.id}:${state.day}`} title={e.title} />}
@@ -157,6 +151,10 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
           {v.accessibility.map((f) => <li key={f}>{f}</li>)}
         </ul>
       </section>
+      <div className="exp-venue-end">
+        {navigatePath(v) && <LinkButton to={navigatePath(v)!} variant="secondary">{t('exp.nav.link', { title: v.title })}</LinkButton>}
+        <SendToChat shareRef={`venue:${v.id}`} title={v.title} />
+      </div>
     </>
   )
 }
