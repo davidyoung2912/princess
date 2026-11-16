@@ -270,8 +270,10 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 - Built: no new backend. `domain/explorer/planItems.ts` merges the planned events of all six Explorers, dinner reservations and spa appointments into one list for any cruise day, and writes the day as a calendar file; `planTimeline.ts` groups by Morning / Afternoon / Evening, flags overlaps, lists moved and cancelled items for a banner, estimates the walk between consecutive items from the deck plan (with a "leave by" time) and finds what is on now. `TodayPlanScreen` (route `/today`) now has the ship clock, Pick a Date, a ship-changed banner, the timeline with clash and walking notes, "Add this day to my calendar" and links into each Explorer for the same day. Every Explorer list page gets a Happening Now strip on the ship's own day. Offline: the six Explorer days, dining and spa views use the existing saved copies; a partial failure shows a retry banner. Removed: the old plan screen and its `plan.today.*` strings.
 - Left for later: tours (the server serves only today's port day, so they are not on the timeline); share-to-chat for events (the server builds share text only for tours and reservations); reminders for planned events still use the existing pipeline unchanged; Stanley and search already point at the Explorer routes, which did not change.
 
-### Phase 9: Hardening
+### Phase 9: Hardening (desktop layout done; audit items open)
 - Accessibility audit (keyboard paths, focus order, dialog behaviour, contrast, reduced motion), performance (list virtualisation if needed, bundle check `check-bundle`), desktop master/detail layout, remove dead code and old strings, update `README`/`docs/runbook.md`, final full run of the four npm checks.
+- Built so far: desktop master/detail. At 1024 px and wider a venue page shows the list of places beside it (a `nav` of links with `aria-current`, sticky, 44 px targets); each venue is still its own route. Test, lint, `tsc -b` and build pass.
+- Open: `npm run bundle:check` fails (first load 747 kB gzip of 350; one screen chunk 51.5 kB of 12; assets 4512 kB of 2200). The overage is in shared chunks, not the Explorer code, and needs its own pass. The accessibility audit, dead-string sweep and runbook update are not done.
 
 ---
 

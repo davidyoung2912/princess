@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import type { ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
 import { formatMoney } from '../../domain/money'
@@ -47,8 +47,22 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
   const venueCopy = useVenueData(kind, venueId, state.day)
   const dayCopy = useExplorerData(kind, state.day)
   const diets = useMyDiets()
+  const siblings = dayCopy.data?.venues ?? []
   return (
-    <div className="page">
+    <div className="page exp-split">
+      {siblings.length > 1 && (
+        <nav className="exp-split__list" aria-labelledby="exp-others-h">
+          <h2 id="exp-others-h">{t('exp.venue.others')}</h2>
+          <ul>
+            {siblings.map((s) => (
+              <li key={s.venue.id}>
+                <Link to={`${basePath}/${s.venue.id}?day=${state.day}`} aria-current={s.venue.id === venueId ? 'page' : undefined}>{s.venue.title}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      <div className="exp-split__detail">
       <ShipClockCard state={state} />
       <PickDateButton state={state} />
       <ChosenDayNote state={state} />
@@ -60,6 +74,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
         </Saved>
       )}
       <BackLink to={`${basePath}?day=${state.day}`} label={backLabel} />
+      </div>
     </div>
   )
 }

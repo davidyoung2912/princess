@@ -361,6 +361,7 @@ export const en = {
   'exp.menu.suits': 'Show only dishes that suit my diet',
   'exp.menu.ask': 'Halal and kosher cannot be confirmed from the menu. Ask the maître d’ before you order.',
   'exp.venue.about': 'About this place',
+  'exp.venue.others': 'Other places',
   'exp.venue.hours': 'Open {hours}',
   'exp.venue.cover': 'Cover charge {amount} a person',
   'exp.venue.minAge': 'Guests must be {age} or older',

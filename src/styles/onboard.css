@@ -374,3 +374,15 @@ button.chat-quote { cursor: pointer; }
 .exp-event__clash { color: var(--warning); font-weight: 600; }
 .exp-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block-start: var(--space-3); }
 @media (prefers-reduced-motion: no-preference) { .exp-days__btn { transition: border-color 0.15s; } }
+
+/* Desktop master/detail: from 1024px a venue page keeps the list of places beside it. Each is still its own route. */
+.exp-split__list { display: none; }
+@media (min-width: 1024px) {
+  .exp-split { display: grid; grid-template-columns: 16rem minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+  .exp-split__list { display: block; position: sticky; top: var(--space-4); max-height: calc(100vh - var(--space-6)); overflow-y: auto; }
+  .exp-split__list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+  .exp-split__list a { display: flex; align-items: center; min-height: var(--target-min); padding: var(--space-2) var(--space-3); border-radius: var(--radius-card); color: var(--text); text-decoration: none; border: 2px solid transparent; }
+  .exp-split__list a:hover { background: var(--explorer-tint); }
+  .exp-split__list a[aria-current='page'] { border-color: var(--explorer); background: var(--explorer-tint); font-weight: 600; }
+  .exp-split__detail { display: grid; gap: var(--space-4); min-width: 0; }
+}
