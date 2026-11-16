@@ -2,8 +2,8 @@
 // restaurants. One authored copy: `npm run shipexplorer:gen` writes it to server/Princess.Api/Content/ship-explorer.json (embedded, served through
 // GET /bookings/{number}/onboard/explorer/...). `src/domain/explorer/shipExplorer.test.ts` fails when the file is stale or breaks a rule.
 //
-// So far this carries Dining (rooms from the directory the app already has, the bars, events and menus) and Spa (spa, salon, thermal suite, sanctuary, their treatments and events) for
-// all three ships; the other Explorers arrive in their own phases.
+// So far this carries Dining (rooms from the directory the app already has, the bars, events and menus), Spa (spa, salon, thermal suite, sanctuary, their treatments and events) and
+// Entertainment (show rooms, music lounges, pool decks, Princess Live!, the casino and their events) for all three ships; the other Explorers arrive in their own phases.
 import '../src/testing/setup.ts'
 import { DIRECTORY, type DirectoryVenue } from '../src/domain/menus.ts'
 import { VENUES as SUN_VENUES, type Venue } from '../src/domain/dining.ts'
@@ -11,6 +11,7 @@ import type { ExplorerKind, HoursRule } from '../src/domain/explorer/types.ts'
 import type { TemplateDayKind } from '../src/domain/explorer/dayMapping.ts'
 import { shipVenueBundles } from './ship-venue-data.ts'
 import { diningBars, diningEvents, diningMenus } from './ship-explorer-dining.ts'
+import { entertainmentEvents, entertainmentVenues } from './ship-explorer-entertainment.ts'
 import { spaEvents, spaTreatments, spaVenues } from './ship-explorer-spa.ts'
 
 export const SUN_SHIP_ID = 'sun-princess'
@@ -116,8 +117,8 @@ interface ShipRooms { anytime: string; crown: string; cafe: string; bar: string;
 
 function shipRows(shipId: string, directory: readonly DirectoryVenue[], rooms: readonly Venue[], prefix: string, bars: readonly string[], ids: ShipRooms): ShipExplorerRow {
   const dining = diningOf(directory, rooms)
-  const venues = [...dining, ...diningBars(prefix, bars, dining.length + 1), ...spaVenues(shipId, 1)]
-  return { menuTemplate: MENU_TEMPLATE, venues, events: [...diningEvents(ids), ...spaEvents(shipId)], menus: diningMenus(venues, directory), treatments: spaTreatments(shipId) }
+  const venues = [...dining, ...diningBars(prefix, bars, dining.length + 1), ...spaVenues(shipId, 1), ...entertainmentVenues(shipId, 1)]
+  return { menuTemplate: MENU_TEMPLATE, venues, events: [...diningEvents(ids), ...spaEvents(shipId), ...entertainmentEvents(shipId)], menus: diningMenus(venues, directory), treatments: spaTreatments(shipId) }
 }
 
 /** The Explorer content of every ship, Sun Princess first. */

@@ -421,6 +421,7 @@ public class OnboardRulesTests
         Assert.True(DiningRules.IsDinnerDay(t, 14));
         Assert.False(DiningRules.IsDinnerDay(t, 15));
         Assert.Equal([2, 4, 6, 7, 9, 11, 12, 13], PostCruiseRules.DeskDays(t));
+        Assert.Equal([4, 6, 7, 9, 11, 12, 13], DayKinds.DaysOf(t, "laterSea"));
     }
 
     [Fact]

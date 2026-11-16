@@ -3,12 +3,12 @@ namespace Princess.Api.Domain;
 /// <summary>
 /// Which days of a sailing an authored event, show or desk runs on. Events say when they run with day kinds instead of day numbers, so the same programme fits a 3-night or a 31-night sailing:
 /// <c>embark</c> (day 1), <c>night</c> (every day that has a night aboard, day 1 to the last night), <c>last</c> (the last night, the evening before disembarkation),
-/// <c>sea</c> (every sea day), <c>seaMid</c> (every sea day except the last night), <c>firstSea</c>, <c>port</c> (every port of call), <c>portOdd</c> and <c>portEven</c> (the first, third... and the second, fourth... port of call) and <c>friday</c> (a calendar Friday, for the Shabbat service).
+/// <c>sea</c> (every sea day), <c>seaMid</c> (every sea day except the last night), <c>firstSea</c>, <c>laterSea</c> (every sea day after the first, except the last night), <c>port</c> (every port of call), <c>portOdd</c> and <c>portEven</c> (the first, third... and the second, fourth... port of call) and <c>friday</c> (a calendar Friday, for the Shabbat service).
 /// The client has the same rule in <c>src/domain/dayKinds.ts</c>; both are tested against the sample week.
 /// </summary>
 public static class DayKinds
 {
-    public static readonly string[] All = ["embark", "night", "last", "sea", "seaMid", "firstSea", "port", "portOdd", "portEven", "friday"];
+    public static readonly string[] All = ["embark", "night", "last", "sea", "seaMid", "firstSea", "laterSea", "port", "portOdd", "portEven", "friday"];
 
     public static bool Valid(string? kind) => kind is not null && All.Contains(kind);
 
@@ -25,6 +25,7 @@ public static class DayKinds
             case "sea": return d.Port == "sea";
             case "seaMid": return d.Port == "sea" && day < nights;
             case "firstSea": return d.Port == "sea" && timeline.Days.First(x => x.Port == "sea").Day == day;
+            case "laterSea": return d.Port == "sea" && day < nights && timeline.Days.First(x => x.Port == "sea").Day != day;
             case "port": return timeline.IsCall(d);
             case "portOdd": return timeline.IsCall(d) && timeline.Days.Count(x => x.Day <= day && timeline.IsCall(x)) % 2 == 1;
             case "portEven": return timeline.IsCall(d) && timeline.Days.Count(x => x.Day <= day && timeline.IsCall(x)) % 2 == 0;
