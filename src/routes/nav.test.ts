@@ -16,7 +16,7 @@ describe('navigation model', () => {
   it('has unique route paths and every route in a tab or the kit', () => {
     const paths = ROUTES.map((r) => r.path)
     expect(new Set(paths).size).toBe(paths.length)
-    for (const r of ROUTES) expect(r.tab !== null || r.path === '/kit' || r.path === '/welcome' || r.path === '/entertainment' || r.path === '/entertainment/:venueId' || r.path === '/weather' || r.path === '/nautical' || r.path === '/nautical/glossary' || r.path === '/today' || r.path === '/itinerary' || r.path === '/dining-today' || r.path === '/dining-today/:venueId' || r.path === '/shopping-today' || r.path === '/spa-explorer' || r.path === '/spa-explorer/:venueId' || r.path === '/exercise-explorer' || r.path === '/exercise-explorer/:venueId' || r.path === '/activities-explorer' || r.path === '/ship-explorer' || r.path === '/deck-plans' || r.path === '/tab/:slug' || r.public === true, r.path).toBe(true)
+    for (const r of ROUTES) expect(r.tab !== null || r.path === '/kit' || r.path === '/welcome' || r.path === '/entertainment' || r.path === '/entertainment/:venueId' || r.path === '/weather' || r.path === '/nautical' || r.path === '/nautical/glossary' || r.path === '/today' || r.path === '/itinerary' || r.path === '/dining-today' || r.path === '/dining-today/:venueId' || r.path === '/shopping-today' || r.path === '/shopping-today/:venueId' || r.path === '/spa-explorer' || r.path === '/spa-explorer/:venueId' || r.path === '/exercise-explorer' || r.path === '/exercise-explorer/:venueId' || r.path === '/activities-explorer' || r.path === '/ship-explorer' || r.path === '/deck-plans' || r.path === '/tab/:slug' || r.public === true, r.path).toBe(true)
   })
 
   it('finds the tab for a location, including parameterised screens', () => {

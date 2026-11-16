@@ -254,8 +254,10 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 - Server files changed: only the regenerated `server/Princess.Api/Content/ship-explorer.json`. Things to try: open the Exercise Explorer for each ship on days 1 to 7, check the gym shows as open round the clock, and add a CycleBar class to the plan.
 - Left for later: Sky has no pool venue in the doc, so it has no lap swimming or poolside Zumba; personal training and the thermal pass are not modelled; the staffed hours are in the content but not yet shown on the venue card.
 
-### Phase 6: Shopping Explorer
-- Venues: shops by ship, photo and art galleries, pop-ups; retail-hours rules (closed in port); events (auctions, jewellery events, sales, tastings). Keep order-for-pickup items as venue detail content.
+### Phase 6: Shopping Explorer (done)
+- Venues: shops by ship, photo and art galleries, pop-ups; retail-hours rules (closed in port); events (auctions, jewellery events, sales, tastings).
+- Built: no new backend (nothing is booked; plan toggles come from Phase 1). `scripts/ship-explorer-shopping.ts` adds 8 to 9 venues per ship (boutiques, the fine arts and photo gallery, the Piazza pop-up tables, the poolside market) and about 30 events each from the three 7-day schedules in `princess-shopping.md`. Hours follow the retail rules: closed alongside, open 45 minutes after sailaway until 10 pm (`sailaway` rule), 5:30 pm on embarkation day, 9:30 am to 10 pm at sea; gallery displays open round the clock with staffed hours. Champagne art auctions are listed under the gallery with the lounge in the detail. Client: `src/ui/explorer/shopping/ShoppingScreens.tsx` (the only shopping code; no reservations card), route `/shopping-today/:venueId` (screen X25). Removed: the old `ShoppingTodayScreen` and its `stoday.*` strings.
+- Left for later: order-for-pickup and gift cards stay on `/ship/shops` and are not linked from the Explorer; Days 3 and 6 share the `portOdd` kind, so both days' events appear on each such day; a "VIP" or deck-sale filter by interest.
 
 ### Phase 7: Activities Explorer
 - Venues/hubs: Piazza, Princess Live!, library and card room, sports court, Camp Discovery / teen areas, faith and community meetings; ~38 activities from the sea-vs-port catalogue in eight time bands, authored times, sea vs port variants.
