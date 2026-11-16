@@ -15,6 +15,7 @@ import { entertainmentEvents, entertainmentVenues } from './ship-explorer-entert
 import { activitiesEvents, activitiesVenues } from './ship-explorer-activities.ts'
 import { exerciseEvents, exerciseVenues } from './ship-explorer-exercise.ts'
 import { shoppingEvents, shoppingVenues } from './ship-explorer-shopping.ts'
+import { detailEvents, detailVenue } from './ship-explorer-details.ts'
 import { spaEvents, spaTreatments, spaVenues } from './ship-explorer-spa.ts'
 
 export const SUN_SHIP_ID = 'sun-princess'
@@ -35,6 +36,10 @@ export interface ExplorerVenueRow {
   order: number
   features: string[]
   accessibility: string[]
+  /** Restaurants only: seating and care for little ones. */
+  family?: string[]
+  /** Restaurants only: the dishes on the children's menu. */
+  kidsMenu?: string[]
 }
 
 export interface ExplorerEventRow {
@@ -50,6 +55,15 @@ export interface ExplorerEventRow {
   extra: number
   afterAllAboard?: boolean
   capacity?: number
+  /** Who performs, when the event is a performance. */
+  performer?: string
+  /** The name shared by showings or rounds that belong together. */
+  series?: string
+  /** Access codes (see `ACCESS_CODES`). */
+  access?: string[]
+  dress?: string
+  /** When to arrive. */
+  arrive?: string
 }
 
 /** Something a spa venue sells by appointment. `price` is cents per person; `rooms` is how many can be given at once; `when` are the kinds of day it runs. */
@@ -120,8 +134,10 @@ interface ShipRooms { anytime: string; crown: string; cafe: string; bar: string;
 
 function shipRows(shipId: string, directory: readonly DirectoryVenue[], rooms: readonly Venue[], prefix: string, bars: readonly string[], ids: ShipRooms): ShipExplorerRow {
   const dining = diningOf(directory, rooms)
-  const venues = [...dining, ...diningBars(prefix, bars, dining.length + 1), ...spaVenues(shipId, 1), ...entertainmentVenues(shipId, 1), ...exerciseVenues(shipId, 1), ...shoppingVenues(shipId, 1), ...activitiesVenues(shipId, 1)]
-  return { menuTemplate: MENU_TEMPLATE, venues, events: [...diningEvents(ids), ...spaEvents(shipId), ...entertainmentEvents(shipId), ...exerciseEvents(shipId), ...shoppingEvents(shipId), ...activitiesEvents(shipId)], menus: diningMenus(venues, directory), treatments: spaTreatments(shipId) }
+  const raw = [...dining, ...diningBars(prefix, bars, dining.length + 1), ...spaVenues(shipId, 1), ...entertainmentVenues(shipId, 1), ...exerciseVenues(shipId, 1), ...shoppingVenues(shipId, 1), ...activitiesVenues(shipId, 1)]
+  const venues = raw.map(detailVenue)
+  const events = detailEvents([...diningEvents(ids), ...spaEvents(shipId), ...entertainmentEvents(shipId), ...exerciseEvents(shipId), ...shoppingEvents(shipId), ...activitiesEvents(shipId)], venues)
+  return { menuTemplate: MENU_TEMPLATE, venues, events, menus: diningMenus(venues, directory), treatments: spaTreatments(shipId) }
 }
 
 /** The Explorer content of every ship, Sun Princess first. */

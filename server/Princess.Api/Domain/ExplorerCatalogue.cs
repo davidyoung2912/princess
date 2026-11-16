@@ -10,11 +10,12 @@ public sealed record HoursRule(string Kind, string[] When, string[][]? Windows, 
 /// <summary>One place a guest can go in one of the six Explorers. <see cref="Bookable"/> is <c>none</c>, <c>dining</c> or <c>spa</c>.</summary>
 public sealed record ExplorerVenue(
     string Id, string Explorer, string Kind, string Title, string Short, string Long, string PlaceId, string DeckLabel, HoursRule[] Hours,
-    long? Cover, int? MinAge, string Bookable, int Order, string[] Features, string[] Accessibility);
+    long? Cover, int? MinAge, string Bookable, int Order, string[] Features, string[] Accessibility, string[]? Family = null, string[]? KidsMenu = null);
 
-/// <summary>Something that happens at a venue, on the kinds of day in <see cref="When"/> (see <see cref="DayKinds"/>). <see cref="Extra"/> is cents per person. <see cref="Capacity"/> is the places there are, when limited.</summary>
+/// <summary>Something that happens at a venue, on the kinds of day in <see cref="When"/> (see <see cref="DayKinds"/>). <see cref="Extra"/> is cents per person. <see cref="Capacity"/> is the places there are, when limited. <see cref="Performer"/>, <see cref="Series"/> (the name shared by showings that belong together), <see cref="Access"/> (codes such as <c>hearingLoop</c>), <see cref="Dress"/> and <see cref="Arrive"/> are shown on the event when set.</summary>
 public sealed record ExplorerEventDef(
-    string Id, string VenueId, string[] When, string Start, int Minutes, string Title, string Detail, string Age, string Interest, long Extra, bool AfterAllAboard, int? Capacity);
+    string Id, string VenueId, string[] When, string Start, int Minutes, string Title, string Detail, string Age, string Interest, long Extra, bool AfterAllAboard, int? Capacity,
+    string? Performer = null, string? Series = null, string[]? Access = null, string? Dress = null, string? Arrive = null);
 
 public sealed record MealDish(string Name, string[] Contains, string? Note);
 

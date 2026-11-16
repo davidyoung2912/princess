@@ -11,6 +11,7 @@ import { eventPhase } from '../../domain/explorer/upcoming'
 import { t, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
+import { ACCESS_FEATURES, type AccessFeature } from '../../domain/eventAccess'
 import { EXPLORER_LEADS, REMINDER_DEFAULT } from '../../domain/notifications'
 import { StatusBadge } from '../StatusBadge'
 import { SendToChat } from '../onboard/SendToChat'
@@ -40,6 +41,22 @@ export interface PlanControl {
   onReminder?: (lead: number) => void
 }
 
+/** The access codes of an event that the app knows how to say, in the order the app uses. */
+const accessOf = (event: Pick<ExplorerEvent, 'access'>): AccessFeature[] => ACCESS_FEATURES.filter((f) => event.access?.includes(f))
+
+/** What to wear, when to arrive and what access there is, for the events that say. */
+function EventNotes({ event }: { event: ExplorerEvent }) {
+  const access = accessOf(event)
+  if (!event.dress && !event.arrive && access.length === 0) return null
+  return (
+    <ul className="tour__facts">
+      {event.dress && <li>{t('exp.event.dress', { text: event.dress })}</li>}
+      {event.arrive && <li>{t('exp.event.arrive', { text: event.arrive })}</li>}
+      {access.length > 0 && <li><span className="visually-hidden">{t('evAccess.label')}: </span>{access.map((f) => t(`evAccess.${f}` as StringKey)).join(' · ')}</li>}
+    </ul>
+  )
+}
+
 /** One event as a row: time range, title, detail, cost, age, status badges, and (with `plan`) the toggle that adds it to the guest's plan. */
 export function EventRow({ event, now, plan, clash, compact, share }: { event: ExplorerEvent; now: number; share?: ReactNode; plan?: PlanControl; clash?: readonly Span[]; compact?: boolean }) {
   const phase = eventPhase(event, now)
@@ -56,6 +73,9 @@ export function EventRow({ event, now, plan, clash, compact, share }: { event: E
       {cancelled && <StatusBadge kind="cancelled" label={event.reason ? t('exp.event.cancelledWhy', { reason: event.reason }) : t('exp.event.cancelled')} />}
       {event.status === 'moved' && <StatusBadge kind="changed" label={event.reason ? t('exp.event.movedWhy', { was: formatTime(event.was ?? event.start), reason: event.reason }) : t('exp.event.moved', { was: formatTime(event.was ?? event.start) })} />}
       {!compact && <p>{event.detail}</p>}
+      {event.performer && <p>{t('exp.event.performer', { name: event.performer })}</p>}
+      {event.series && <p className="muted">{t('exp.event.series', { name: event.series })}</p>}
+      {!compact && <EventNotes event={event} />}
       <p className="muted">
         {event.extra > 0 ? t('exp.event.cost', { amount: formatMoney(event.extra) }) : t('exp.event.included')}
         {age && <> · {t(age)}</>}

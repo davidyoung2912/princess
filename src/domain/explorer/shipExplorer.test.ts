@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { shipExplorerFileText, shipExplorerRows } from '../../../scripts/ship-explorer-data'
+import { ACCESS_FEATURES } from '../eventAccess'
 import { isDayKind, isDayKindOn, type DayShape } from '../dayKinds'
 import { resolveHours } from './hours'
 import { templateIndexFor } from './dayMapping'
@@ -38,6 +39,17 @@ describe('the Explorer content of the ships', () => {
           expect(v.short).not.toBe('')
           expect(v.long.length).toBeGreaterThanOrEqual(v.short.length)
           expect(v.placeId).not.toBe('')
+        }
+      })
+
+      it('gives events only access codes the app can say, and every restaurant its family facilities', () => {
+        for (const e of content.events) for (const a of e.access ?? []) expect(ACCESS_FEATURES).toContain(a)
+        for (const e of content.events) if (e.series) expect(e.series.length).toBeLessThanOrEqual(60)
+        for (const v of content.venues) {
+          expect(v.accessibility.length).toBeGreaterThan(0)
+          const eats = v.explorer === 'dining' && v.kind !== 'bar'
+          expect((v.family?.length ?? 0) > 0).toBe(eats)
+          expect((v.kidsMenu?.length ?? 0) > 0).toBe(eats)
         }
       })
 

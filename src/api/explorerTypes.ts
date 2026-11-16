@@ -21,6 +21,10 @@ export interface ExplorerVenueInfo {
   order: number
   features: string[]
   accessibility: string[]
+  /** Restaurants: seating and care for little ones. */
+  family?: string[]
+  /** Restaurants: the dishes on the children's menu. */
+  kidsMenu?: string[]
 }
 
 /** A venue's hours for the chosen day, worked out by the server. */
@@ -53,6 +57,13 @@ export interface ExplorerEvent {
   /** The places there are, when limited, and the places not yet taken by other guests. */
   capacity?: number
   left?: number
+  performer?: string
+  /** The name shared by showings or rounds that belong together. */
+  series?: string
+  /** Access codes (`AccessFeature` in `domain/eventAccess`). */
+  access?: string[]
+  dress?: string
+  arrive?: string
 }
 
 export interface MealDish { name: string; contains: string[]; note?: string }

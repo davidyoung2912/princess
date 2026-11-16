@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import type { ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
 import { formatMoney } from '../../domain/money'
+import { ACCESS_FEATURES } from '../../domain/eventAccess'
 import { clashesWith, type Span } from '../../domain/explorer/presentation'
 import type { ExplorerKind } from '../../domain/explorer/types'
 import { useMine } from '../../hooks/useMine'
@@ -90,7 +91,9 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
   const plan = usePlan(state.day, explorerDay?.mine ?? [], explorerDay?.reminders, { added: (title) => t('exp.plan.added', { title }), removed: (title) => t('exp.plan.removed', { title }) })
   const [interest, setInterest] = useState<string | null>(null)
   const interests = [...new Set(venue.events.map((e) => e.interest))]
-  const shownEvents = interest === null ? venue.events : venue.events.filter((e) => e.interest === interest)
+  const [access, setAccess] = useState<string | null>(null)
+  const accessKinds = ACCESS_FEATURES.filter((f) => venue.events.some((e) => e.access?.includes(f)))
+  const shownEvents = venue.events.filter((e) => (interest === null || e.interest === interest) && (access === null || e.access?.includes(access)))
   const ctx: VenueContext = { venue, explorerDay, state, reload }
   const past = state.day < state.currentDay
   const taken = busy?.(ctx) ?? []
@@ -121,6 +124,18 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
           {v.accessibility.map((f) => <li key={f}>{f}</li>)}
         </ul>
       </section>
+      {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
+        <section aria-labelledby="exp-fam-h">
+          <h2 id="exp-fam-h">{t('exp.family.title')}</h2>
+          <ul className="tour__facts">{v.family?.map((f) => <li key={f}>{f}</li>)}</ul>
+          {(v.kidsMenu?.length ?? 0) > 0 && (
+            <>
+              <h3>{t('exp.family.menu')}</h3>
+              <ul>{v.kidsMenu?.map((d) => <li key={d}>{d}</li>)}</ul>
+            </>
+          )}
+        </section>
+      )}
       <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} />
       <section aria-labelledby="exp-ev-h">
         <h2 id="exp-ev-h">{t('exp.venue.events')}</h2>
@@ -128,7 +143,8 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
         {plan.failed && <p role="alert" className="field__error">{t('exp.plan.failed')}</p>}
         {past && venue.events.length > 0 && <p className="muted">{t('exp.venue.readOnly')}</p>}
         <FilterChips kinds={interests} label={t('exp.interest.label')} value={interest} onChange={setInterest} labels={Object.fromEntries(interests.map((i) => [i, t(`exp.interest.${i}` as StringKey)]))} />
-        {venue.events.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : (
+        <FilterChips kinds={accessKinds} label={t('exp.access.label')} value={access} onChange={setAccess} labels={Object.fromEntries(accessKinds.map((f) => [f, t(`evAccess.${f}` as StringKey)]))} />
+        {venue.events.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : shownEvents.length === 0 ? <p className="muted">{t('exp.access.none')}</p> : (
           <ul className="exp-events">
             {shownEvents.map((e) => (
               <EventRow key={e.id} event={e} now={state.nowAt} share={e.status === 'cancelled' ? undefined : <SendToChat kind="plan" shareRef={`${e.id}:${state.day}`} title={e.title} />}

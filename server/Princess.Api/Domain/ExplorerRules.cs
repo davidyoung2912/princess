@@ -2,7 +2,7 @@ namespace Princess.Api.Domain;
 
 public sealed record ExplorerVenueDto(
     string Id, string ShipId, string Explorer, string Kind, string Title, string Short, string Long, string PlaceId, string DeckLabel,
-    long? Cover, int? MinAge, string Bookable, int Order, string[] Features, string[] Accessibility);
+    long? Cover, int? MinAge, string Bookable, int Order, string[] Features, string[] Accessibility, string[] Family, string[] KidsMenu);
 
 /// <summary>A venue's hours for one day, worked out here so the app only compares them with the clock. Times are ship time "HH:mm"; empty windows mean closed all day.</summary>
 public sealed record HoursDayDto(List<string[]> Windows, List<string[]> Staffed, string? ClosedBecause);
@@ -10,7 +10,8 @@ public sealed record HoursDayDto(List<string[]> Windows, List<string[]> Staffed,
 /// <summary>An event on one day with its instants and any mid-day change applied. <see cref="Left"/> is the places not yet taken by others, when the event has a limit.</summary>
 public sealed record ExplorerEventDto(
     string Id, string VenueId, int Day, string Date, string Start, int Minutes, long StartAt, long EndAt, string Title, string Detail, string Age, string Interest, long Extra,
-    string Status, string? Was, string? Reason, int? Capacity, int? Left);
+    string Status, string? Was, string? Reason, int? Capacity, int? Left,
+    string? Performer = null, string? Series = null, string[]? Access = null, string? Dress = null, string? Arrive = null);
 
 public sealed record VenueDayDto(ExplorerVenueDto Venue, HoursDayDto Hours, List<ExplorerEventDto> Events, List<MealMenuDef> Menus);
 
@@ -33,7 +34,7 @@ public static class ExplorerRules
     public const int MaxVenuePins = 10;
 
     public static ExplorerVenueDto Dto(string shipId, ExplorerVenue v) =>
-        new(v.Id, shipId, v.Explorer, v.Kind, v.Title, v.Short, v.Long, v.PlaceId, v.DeckLabel, v.Cover, v.MinAge, v.Bookable, v.Order, v.Features, v.Accessibility);
+        new(v.Id, shipId, v.Explorer, v.Kind, v.Title, v.Short, v.Long, v.PlaceId, v.DeckLabel, v.Cover, v.MinAge, v.Bookable, v.Order, v.Features, v.Accessibility, v.Family ?? [], v.KidsMenu ?? []);
 
     private static int Mins(string t) => int.Parse(t[..2]) * 60 + int.Parse(t[3..]);
 
@@ -130,7 +131,7 @@ public static class ExplorerRules
             if (e.AfterAllAboard && aboard is { } a && startAt < a) continue;
             list.Add(new ExplorerEventDto(
                 e.Id, e.VenueId, day, date.ToString("yyyy-MM-dd"), start, e.Minutes, TripRules.ToMs(startAt), TripRules.ToMs(startAt.AddMinutes(e.Minutes)), e.Title, e.Detail, e.Age, e.Interest, e.Extra,
-                change?.Kind ?? "on", change?.Kind == "moved" ? e.Start : null, change?.Reason, e.Capacity, PlacesLeft(e, day, 0)));
+                change?.Kind ?? "on", change?.Kind == "moved" ? e.Start : null, change?.Reason, e.Capacity, PlacesLeft(e, day, 0), e.Performer, e.Series, e.Access, e.Dress, e.Arrive));
         }
         return [.. list.OrderBy(e => e.StartAt).ThenBy(e => e.Title, StringComparer.InvariantCulture)];
     }
