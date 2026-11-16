@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { decideStanley } from '../stanleyDecide'
-import { LIBRARY, PAGE_QA, questionOf } from '.'
+import { LIBRARY, pageQaEntries, questionOf } from '.'
 import { HIGH_RISK_IDS, REVIEWED_ON, SHELF_MONTHS, isLive, libraryCoverage, liveLibrary, metaOf, mentionsRiskTopic, riskOf } from './governance'
 
 describe('library governance', () => {
   it('gives every entry, general and page, an owner, review and expiry dates, a risk, a scope and a fallback (entries missing metadata = 0)', () => {
     const report = libraryCoverage(Date.now())
-    expect(report.entries).toBe(LIBRARY.length + PAGE_QA.length)
+    expect(report.entries).toBe(LIBRARY.length + pageQaEntries().length)
     expect(report.missing).toEqual([])
     expect(report.byRisk.low + report.byRisk.medium + report.byRisk.high).toBe(report.entries)
     expect(report.byRisk.high).toBe(HIGH_RISK_IDS.size)
@@ -37,7 +37,7 @@ describe('library governance', () => {
   })
 
   it('treats page questions as low risk, owned by the product team', () => {
-    for (const e of PAGE_QA) expect(metaOf(e), e.id).toMatchObject({ risk: 'low', owner: 'Product', scope: 'fleet' })
+    for (const e of pageQaEntries()) expect(metaOf(e), e.id).toMatchObject({ risk: 'low', owner: 'Product', scope: 'fleet' })
   })
 
   it('stops using an expired entry: the question goes to the server instead', () => {

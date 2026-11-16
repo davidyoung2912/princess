@@ -1,4 +1,5 @@
-import { en, type StringKey } from './locales/en'
+import { enCore } from './locales/enCore'
+import type { en, StringKey } from './locales/en'
 import { LANGUAGES } from './languages'
 import { titleCase } from './titleCase'
 
@@ -8,7 +9,27 @@ export type { StringKey }
 type Catalog = Partial<Record<Raw, string>>
 type Params = Record<string, string | number>
 
-const catalogs: Record<string, Catalog> = { en }
+const catalogs: Record<string, Catalog> = { en: enCore }
+/** English text that arrives after the first script (Stanley and the tips); see `loadEnglishLate`. */
+let late: Catalog = {}
+const english = (k: string): string | undefined => (enCore as Catalog)[k as Raw] ?? late[k as Raw]
+
+/** Puts the Stanley and tip text in use. Tests call it with the file's content; the app calls `loadEnglishLate`. */
+export function registerEnglishLate(text: Catalog) {
+  late = text
+  listeners.forEach((l) => l())
+}
+
+/** Brings in the Stanley and tip text (a separate download) before the first screen is drawn. */
+export async function loadEnglishLate(): Promise<void> {
+  if (Object.keys(late).length > 0) return
+  registerEnglishLate((await import('./locales/enLate')).enLate)
+}
+
+/** Every English key, the Stanley and tip ones included once they are loaded. */
+export const englishKeys = (): string[] => [...Object.keys(enCore), ...Object.keys(late)]
+/** Whether English has text for the key. */
+export const hasText = (key: string): boolean => english(key) !== undefined
 let locale = 'en'
 
 /** Adds or extends the text for a language; keys left out fall back to English. */
@@ -49,7 +70,7 @@ const fill = (text: string, params: Params) => text.replace(/\{(\w+)\}/g, (whole
 
 /** The text for a key in the current language with `{name}` values filled in; a `count` picks the `_one` or `_other` form. */
 export function t(key: StringKey, params: Params = {}): string {
-  const pick = (k: string) => catalogs[locale]?.[k as Raw] ?? en[k as Raw]
+  const pick = (k: string) => catalogs[locale]?.[k as Raw] ?? english(k)
   let text: string | undefined
   if ('count' in params) {
     const form = new Intl.PluralRules(locale).select(Number(params.count))

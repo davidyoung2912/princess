@@ -1,4 +1,4 @@
-import { en } from '../i18n/locales/en'
+import { hasText } from '../i18n'
 import { JOURNEY_STAGES, type JourneyStage } from './hubs'
 import { nextSteps, type HomeFacts } from './stageHome'
 
@@ -172,4 +172,4 @@ export function welcomeKeys(stage: JourneyStage): string[] {
 }
 
 /** True when the English text for every key of a stage's welcome exists, so a page is never shown with bare keys. */
-export const hasWelcomeCopy = (stage: JourneyStage): boolean => welcomeKeys(stage).every((k) => k in en)
+export const hasWelcomeCopy = (stage: JourneyStage): boolean => welcomeKeys(stage).every((k) => hasText(k))

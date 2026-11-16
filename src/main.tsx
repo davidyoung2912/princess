@@ -9,6 +9,7 @@ import App from './App.tsx'
 import { watchProblems } from './diagnostics/watch'
 import { ErrorBoundary } from './ErrorBoundary'
 import { startRuntime } from './runtime'
+import { loadEnglishLate } from './i18n'
 import { markUpdateReady } from './runtime/update'
 import { applyLanguage, applySettings, watchDeviceTheme } from './settings/store'
 
@@ -22,7 +23,7 @@ const fontsReady = Promise.race([
   new Promise((done) => setTimeout(done, 1500)),
 ]).catch(() => {})
 
-void Promise.all([fontsReady, startRuntime().catch(() => {}), applyLanguage().catch(() => {})]).then(() => {
+void Promise.all([fontsReady, startRuntime().catch(() => {}), applyLanguage().catch(() => {}), loadEnglishLate().catch(() => {})]).then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ErrorBoundary>

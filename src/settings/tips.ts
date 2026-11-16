@@ -1,4 +1,4 @@
-import { en } from '../i18n/locales/en'
+import { hasText } from '../i18n'
 
 const KEY = 'princess.dismissedTips'
 const listeners = new Set<() => void>()
@@ -14,7 +14,7 @@ export function tipIdFor(screenId: string | undefined, tabKey: string | undefine
 export const tipKeyAt = (id: string, n: number): string => (n === 1 ? `tip.${id}` : `tip.${id}.${n}`)
 
 /** True when a tip is written for this page and number. */
-export const hasTip = (id: string, n = 1): boolean => tipKeyAt(id, n) in en
+export const hasTip = (id: string, n = 1): boolean => hasText(tipKeyAt(id, n))
 
 /** How many tips a page has: they are numbered without gaps from 1. */
 export function tipCount(id: string): number {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LIBRARY, PAGE_QA } from './stanleyLibrary'
+import { LIBRARY, pageQaEntries } from './stanleyLibrary'
 import { REVIEWED_ON } from './stanleyLibrary/governance'
 import { costDashboard, normalizeHandoffOutcomes, cardExpired, deviceSignals, expiresInMs, normalizeTierSummary, reviewItems, staleReport, SUGGESTION_MINUTES, TIP_MINUTES, type TierRow } from './stanleyOps'
 import type { TierCounts } from '../diagnostics/stanleyTiers'
@@ -13,7 +13,7 @@ const sum = (rows: TierRow[]) => ({ since: '', replies: 0, modelCalls: 0, inputT
 describe('review workflow', () => {
   it('lists every authored entry once, with an owner and a due date', () => {
     const items = reviewItems(at(REVIEWED_ON))
-    expect(items).toHaveLength(LIBRARY.length + PAGE_QA.length)
+    expect(items).toHaveLength(LIBRARY.length + pageQaEntries().length)
     expect(items.every((i) => i.owner.length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(i.expiresOn))).toBe(true)
   })
 

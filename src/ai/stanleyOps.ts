@@ -1,4 +1,4 @@
-import { LIBRARY, PAGE_QA } from './stanleyLibrary'
+import { LIBRARY, pageQaEntries } from './stanleyLibrary'
 import { metaOf, type Risk } from './stanleyLibrary/governance'
 import type { ChangeCard } from './stanleyChanges'
 import { freeShare, readAsked, readTiers, repeated, type AskedCounts, type TierCounts } from '../diagnostics/stanleyTiers'
@@ -22,7 +22,7 @@ const dayOf = (iso: string): number => Date.parse(`${iso}T00:00:00Z`) + DAY
 
 /** Every authored entry with its owner, expiry and how many whole days remain (negative once past). The whole expiry day still counts. */
 export function reviewItems(now: number): ReviewItem[] {
-  return [...LIBRARY, ...PAGE_QA].map((e) => {
+  return [...LIBRARY, ...pageQaEntries()].map((e) => {
     const m = metaOf(e)
     const daysLeft = Math.floor((dayOf(m.expiresOn) - now) / DAY)
     const status: ReviewStatus = daysLeft < 0 ? 'overdue' : daysLeft <= DUE_SOON_DAYS ? 'due' : 'ok'

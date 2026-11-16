@@ -1,5 +1,5 @@
 import type { JourneyStage } from '../../routes/hubs'
-import { LIBRARY, PAGE_QA } from '.'
+import { LIBRARY, pageQaEntries } from '.'
 import type { LibraryEntry } from './types'
 
 /**
@@ -92,7 +92,7 @@ export interface LibraryCoverage { entries: number; missing: string[]; expired: 
 
 /** The coverage report: how many entries there are, which have incomplete metadata, which are past expiry, and how they divide by risk. */
 export function libraryCoverage(now: number): LibraryCoverage {
-  const all = [...LIBRARY, ...PAGE_QA]
+  const all = [...LIBRARY, ...pageQaEntries()]
   const byRisk: Record<Risk, number> = { low: 0, medium: 0, high: 0 }
   for (const e of all) byRisk[metaOf(e).risk]++
   return { entries: all.length, missing: all.filter((e) => !complete(metaOf(e))).map((e) => e.id), expired: all.filter((e) => !isLive(e, now)).map((e) => e.id), byRisk }

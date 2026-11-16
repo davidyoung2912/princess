@@ -1,5 +1,4 @@
-import { t, type StringKey } from '../../i18n'
-import { en } from '../../i18n/locales/en'
+import { englishKeys, hasText, t, type StringKey } from '../../i18n'
 import type { JourneyStage } from '../../routes/hubs'
 import { BOOK } from './book'
 import { DISCOVER } from './discover'
@@ -27,12 +26,14 @@ export const answerOf = (e: LibraryEntry): string => t(`stanley.a.${e.id}` as St
  * (`H02`) or a tab landing page (`tab.plan`). They name no stage, so they show on their page at every point in the journey, and they are kept out of
  * {@link LIBRARY} so that typed questions are only ever matched against the general library.
  */
-export const PAGE_QA: readonly LibraryEntry[] = Object.keys(en).flatMap((k) => {
+let pageQa: readonly LibraryEntry[] | null = null
+/** Built on first use, once the Stanley text is loaded. */
+export const pageQaEntries = (): readonly LibraryEntry[] => (pageQa ??= englishKeys().flatMap((k) => {
   const m = /^stanley\.q\.(pg\.(.+)\.\d+)$/.exec(k)
   if (!m) return []
-  const related = `stanley.r.${m[1]}` in en ? t(`stanley.r.${m[1]}` as StringKey).split(' ').filter(Boolean) : []
+  const related = hasText(`stanley.r.${m[1]}`) ? t(`stanley.r.${m[1]}` as StringKey).split(' ').filter(Boolean) : []
   return [{ id: m[1]!, stages: [], screens: [m[2]!], ...(related.length ? { related } : {}) }]
-})
+}))
 
 /** Most chips shown at the foot of a page. */
 export const MAX_CHIPS = 4
@@ -43,7 +44,7 @@ export const MAX_CHIPS = 4
  * questions. The order is the order of writing, so a page does not shuffle between visits.
  */
 export function chipsFor(screenId: string | undefined, stage: JourneyStage, max = MAX_CHIPS): LibraryEntry[] {
-  if (screenId) return [...LIBRARY.filter((e) => e.stages.includes(stage) && e.screens.includes(screenId)), ...PAGE_QA.filter((e) => e.screens.includes(screenId))].slice(0, max)
+  if (screenId) return [...LIBRARY.filter((e) => e.stages.includes(stage) && e.screens.includes(screenId)), ...pageQaEntries().filter((e) => e.screens.includes(screenId))].slice(0, max)
   return LIBRARY.filter((e) => e.stages.includes(stage)).slice(0, max)
 }
 
