@@ -248,8 +248,11 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 - Server files changed: `server/Princess.Api/Domain/DayKinds.cs`, `server/Princess.Api.Tests/OnboardRulesTests.cs` (one `laterSea` assertion) and the regenerated `Content/ship-explorer.json`. Things to try: open an Entertainment page for each ship on days 1 to 7 and in a port (casino shows closed), toggle a show into the plan, check "Filling up" on Spellbound and the poker tournament.
 - Left for later: tech desks (Activities, Phase 7); a filter by event interest (shows, music, games...) inside a venue page.
 
-### Phase 5: Exercise Explorer
+### Phase 5: Exercise Explorer (done)
 - Venues: fitness centre (24 h, staffed hours), studios, courts, pools, running track; classes from `princess-exercise.md` by day status; free vs paid, capacity, minimum age.
+- Built: no new backend (classes are signed up for at the fitness desk, so nothing is booked in the app; plan toggles come from Phase 1). `scripts/ship-explorer-exercise.ts` adds 4 to 5 venues per ship (gym open 24 hours with staffed hours, studios, courts and tracks, pools, The Greens on Sky, the adults-only lap pool on Sapphire) and about 30 events each from the doc's 7-day calendar, with authored lengths, $30 boutique classes with 24 places and free stretches, walks, seminars and court games. Ship differences follow the doc (Dome yoga on Sun, lap swimming on Sun and Sapphire, putting at The Greens or the Lawn Court). Client: `src/ui/explorer/exercise/ExerciseScreens.tsx` (the only exercise code; no reservations card), route `/exercise-explorer/:venueId` (screen X24). Removed: the old `ExerciseExplorerScreen` and its `exex.*` strings.
+- Server files changed: only the regenerated `server/Princess.Api/Content/ship-explorer.json`. Things to try: open the Exercise Explorer for each ship on days 1 to 7, check the gym shows as open round the clock, and add a CycleBar class to the plan.
+- Left for later: Sky has no pool venue in the doc, so it has no lap swimming or poolside Zumba; personal training and the thermal pass are not modelled; the staffed hours are in the content but not yet shown on the venue card.
 
 ### Phase 6: Shopping Explorer
 - Venues: shops by ship, photo and art galleries, pop-ups; retail-hours rules (closed in port); events (auctions, jewellery events, sales, tastings). Keep order-for-pickup items as venue detail content.
