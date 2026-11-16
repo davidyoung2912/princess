@@ -44,6 +44,7 @@ It runs, in order, stopping at the first error: `00-drop-all.sql`, `01-schema.sq
 | `-Database` | `princess` | Target database. |
 | `-User`, `-Password` | none | SQL login. Without them it uses Windows authentication. |
 | `-SkipDrop` | off | Skip the drop step, for a new empty database. |
+| `-Remote` | off | Target the hosted database (`tcp:db78236.public.databaseasp.net,1433`, database and user `db78236`) instead of local SQL. The password is not in the script: give `-Password` or set `PRINCESS_REMOTE_DB_PASSWORD`. |
 
 It asks no question: it destroys all data in the Princess tables as soon as it runs, so use it on test databases only. It stores no connection string and writes nothing to disk.
 

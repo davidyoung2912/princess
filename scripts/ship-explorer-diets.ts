@@ -142,7 +142,7 @@ const toDish = ([name, contains, nas, note]: P): MenuDish => ({ name, contains: 
 /** Marks the dishes of a section, then adds from its pool until it has a vegan, a vegetarian and a NAS dish and a wider choice (`extra` more). The pick turns with `seed`, so each night and room differs. */
 export function fillSection(course: MenuCourse, kind: Kind, seed: string, extra = 1): MenuCourse {
   // A drink already on the list is never marked (wine and spirits can be fined or made with animal products); only the pool's zero-proof drinks are.
-  const dishes = course.dishes.map((d) => ({ ...d, marks: kind === 'drink' ? [] : marksOf(d.name, d.contains, isNas(d.name)) }))
+  const dishes: MenuDish[] = course.dishes.map((d) => ({ ...d, marks: kind === 'drink' ? [] : marksOf(d.name, d.contains, isNas(d.name)) }))
   const have = (m: Mark, only = false) => dishes.some((d) => d.marks?.includes(m) && (!only || !d.marks.includes('vegan')))
   const used = new Set(dishes.map((d) => d.name))
   const pool = POOLS[kind]

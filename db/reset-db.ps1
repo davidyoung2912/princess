@@ -13,6 +13,7 @@
     4. db/seed/personas/*.sql        demo users and bookings (reset, users, bookings, journey)
 
   DESTRUCTIVE: all data in those tables is lost. Use on test databases only. The database itself must already exist.
+  -Remote targets the hosted database (Server tcp:db78236.public.databaseasp.net,1433, Database db78236, User db78236, no encryption) instead of local SQL. The password is never stored in the script: pass -Password or set PRINCESS_REMOTE_DB_PASSWORD. -Server, -Database and -User still override the remote defaults.
   Windows authentication is used unless -User and -Password are given. Nothing is written to disk and no connection string is stored.
 
 .EXAMPLE
@@ -20,17 +21,31 @@
   ./db/reset-db.ps1 -Server "(localdb)\MSSQLLocalDB" -Database princess_test
   ./db/reset-db.ps1 -User sa -Password $env:SA_PASSWORD
   ./db/reset-db.ps1 -SkipDrop                        # schema and seeds only (an empty database)
+  $env:PRINCESS_REMOTE_DB_PASSWORD = '<password>'; ./db/reset-db.ps1 -Remote   # hosted database db78236 on databaseasp.net (public host)
+  ./db/reset-db.ps1 -Remote -Password '<password>'
 #>
 [CmdletBinding()]
 param(
-  [string]$Server = 'localhost',
-  [string]$Database = 'princess',
+  [string]$Server,
+  [string]$Database,
   [string]$User,
   [string]$Password,
-  [switch]$SkipDrop
+  [switch]$SkipDrop,
+  [switch]$Remote
 )
 
 $ErrorActionPreference = 'Stop'
+
+if ($Remote) {
+  if (-not $Server) { $Server = 'tcp:db78236.public.databaseasp.net,1433' }
+  if (-not $Database) { $Database = 'db78236' }
+  if (-not $User) { $User = 'db78236' }
+  if (-not $Password) { $Password = $env:PRINCESS_REMOTE_DB_PASSWORD }
+  if (-not $Password) { throw 'The remote database needs a password: pass -Password or set the PRINCESS_REMOTE_DB_PASSWORD environment variable.' }
+} else {
+  if (-not $Server) { $Server = 'localhost' }
+  if (-not $Database) { $Database = 'princess' }
+}
 
 if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) {
   throw 'sqlcmd was not found on PATH. Install the SQL Server command line tools (or go-sqlcmd) and try again.'

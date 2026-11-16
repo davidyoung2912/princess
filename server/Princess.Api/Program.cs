@@ -17,6 +17,12 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 services.AddOptions<JwtOptions>().BindConfiguration(JwtOptions.Section).ValidateDataAnnotations().ValidateOnStart();
+// Manual remote deploy: paste a random 48+ character key between the quotes before publishing from VS. Empty (the default) means it is not used.
+const string RemoteJwtSigningKeyOverride = "";
+// Manual remote deploy: host names the site answers to, ';'-separated (for example "myapp.example.com" or "*"). Empty (the default) means it is not used. Without a real host here the base file's "localhost" makes every remote request a 400.
+const string RemoteAllowedHostsOverride = "";
+if (RemoteAllowedHostsOverride.Length > 0) builder.Configuration["AllowedHosts"] = RemoteAllowedHostsOverride;
+if (RemoteJwtSigningKeyOverride.Length > 0) services.PostConfigure<JwtOptions>(o => o.SigningKey = RemoteJwtSigningKeyOverride);
 services.AddOptions<AuthOptions>().BindConfiguration(AuthOptions.Section).ValidateDataAnnotations().ValidateOnStart();
 
 services.AddMemoryCache();
@@ -34,8 +40,11 @@ services.AddPrincessDataProtection(builder.Configuration, builder.Environment);
 services.AddSingleton<UserCache>();
 services.AddSingleton<SailingCache>();
 services.AddSingleton<IClock, SystemClock>();
+// Manual remote deploy: paste a full connection string between the quotes before publishing from VS. Empty (the default) means it is not used.
+const string RemoteConnectionStringOverride = "";
 services.AddSingleton<IDbConnectionFactory>(sp =>
-    new SqlConnectionFactory(sp.GetRequiredService<IConfiguration>().GetConnectionString("Default")
+    new SqlConnectionFactory((RemoteConnectionStringOverride.Length > 0 ? RemoteConnectionStringOverride : null)
+        ?? sp.GetRequiredService<IConfiguration>().GetConnectionString("Default")
         ?? throw new InvalidOperationException("ConnectionStrings:Default is not set. Use: dotnet user-secrets set \"ConnectionStrings:Default\" \"<connection string>\"")));
 services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
 services.AddSingleton<ITokenService, TokenService>();
@@ -300,7 +309,11 @@ builder.WebHost.ConfigureKestrel(k =>
     k.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
 });
 
-var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+// Manual remote deploy: browser origins allowed to call the API, ';'-separated, no trailing slash (for example "https://princess.vercel.app"). Empty (the default) means it is not used.
+const string RemoteCorsOriginsOverride = "";
+var origins = RemoteCorsOriginsOverride.Length > 0
+    ? RemoteCorsOriginsOverride.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    : builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
 services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
 
 services.AddEndpointsApiExplorer();
