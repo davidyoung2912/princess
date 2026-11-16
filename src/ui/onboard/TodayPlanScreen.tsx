@@ -20,7 +20,7 @@ import { t, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
-import { Clock, Compass } from '../icons'
+import { Clock, MapPin } from '../icons'
 import { Plus } from 'lucide-react'
 import { InviteDialog } from './InviteDialog'
 import { Card } from '../Card'
@@ -32,7 +32,7 @@ import { LoadError } from '../discover/parts'
 const PERIOD: Record<Period, StringKey> = { morning: 'plan.today.morning', afternoon: 'plan.today.afternoon', evening: 'plan.today.evening' }
 const LINKS = [
   ['route.diningToday', EXPLORER_PATHS.dining], ['route.entertainment', EXPLORER_PATHS.entertainment], ['route.shoppingToday', EXPLORER_PATHS.shopping],
-  ['route.spaExplorer', EXPLORER_PATHS.spa], ['route.exerciseExplorer', EXPLORER_PATHS.exercise], ['route.activitiesExplorer', EXPLORER_PATHS.activities],
+  ['route.excursionsExplorer', '/excursions-explorer'], ['route.spaExplorer', EXPLORER_PATHS.spa], ['route.exerciseExplorer', EXPLORER_PATHS.exercise], ['route.activitiesExplorer', EXPLORER_PATHS.activities],
 ] as const
 
 /** Today's plan, the seventh page of the Explorer family: the ship's clock and date, then everything the guest has on that day in time order. */
@@ -115,9 +115,10 @@ function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, onRemov
     <li className={`event${cancelled ? ' event--cancelled' : ''}${item.link ? ' event--link' : ''}`}>
       {hint && <p className="muted" role="note">{t(hint.tight ? 'plan.today.walkTight' : 'plan.today.walk', { minutes: hint.minutes, place: hint.from.venueTitle, time: clockAt(hint.leaveBy) })}</p>}
       <h3 className="event__title event__title--icon">
-        {item.kind === 'tour' ? <Compass className="explorer-icon" aria-hidden="true" focusable="false" /> : <ExplorerIcon kind={item.explorer} />}
+        {item.kind === 'tour' ? <MapPin className="explorer-icon" aria-hidden="true" focusable="false" /> : <ExplorerIcon kind={item.explorer} />}
         {cancelled ? <s>{item.title}</s> : item.link ? <Link to={item.link} className="event__stretch">{item.title}</Link> : item.title}
       </h3>
+      {item.tentative && <p className="event__tags"><StatusBadge kind="waitlist" label={t('plan.today.notBooked')} /></p>}
       {(cancelled || item.status === 'moved') && <p className="event__tags">{cancelled ? <StatusBadge kind="cancelled" label={t('exp.event.cancelled')} /> : <StatusBadge kind="changed" label={t('exp.event.moved', { was: formatTime(item.was ?? item.start) })} />}</p>}
       <ul className="event__times">
         <li><Clock aria-hidden="true" focusable="false" /><time>{formatTime(item.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(item.endAt) })}</li>

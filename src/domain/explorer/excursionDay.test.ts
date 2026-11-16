@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ExcursionOffer, TourBooking } from '../../api/types'
 import type { ExcursionItem } from '../excursions'
-import { bookingsOnDay, filterDayOffers, NO_DAY_FILTER, nearestTourDay, offersOnDay } from './excursionDay'
+import { bookingsOnDay, consideredOnDay, filterDayOffers, NO_DAY_FILTER, nearestTourDay, offersOnDay } from './excursionDay'
 
 const offer = (id: string, day: number, start: string, over: Partial<ExcursionItem> = {}): ExcursionOffer => ({
   item: { id, port: 'cozumel', name: id, summary: '', hours: 4, price: 5000, activity: 'easy', wheelchair: true, family: true, interests: ['water'], rating: 4.5, reviews: 10, meeting: '', start, capacity: 20, ...over } as ExcursionItem,
@@ -21,6 +21,10 @@ describe('excursion explorer day helpers', () => {
     expect(nearestTourDay(offers, 4)).toBe(5)
     expect(nearestTourDay(offers, 1)).toBe(3)
     expect(nearestTourDay([], 1)).toBeNull()
+  })
+  it('lists saved but unbooked excursions of the day', () => {
+    const view = { offers, booked: [booking('b')] }
+    expect(consideredOnDay(view, ['excursion:a', 'excursion:b', 'excursion:c'], 3).map((o) => o.item.id)).toEqual(['a'])
   })
   it('filters by interest, level, family and access', () => {
     expect(filterDayOffers(offers, NO_DAY_FILTER)).toHaveLength(3)

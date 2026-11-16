@@ -38,3 +38,12 @@ export const filterDayOffers = (offers: readonly ExcursionOffer[], f: DayFilter)
     if (f.accessible && !x.wheelchair) return false
     return true
   })
+
+/** The key an excursion is kept under when the guest adds it to their plan without booking it. */
+export const planKey = (excursionId: string): string => `excursion:${excursionId}`
+
+/** Excursions on a day the guest has added to their plan but not booked, in start order. */
+export function consideredOnDay(view: Pick<ExcursionsView, 'offers' | 'booked'>, saved: readonly string[], day: number): ExcursionOffer[] {
+  const booked = new Set(view.booked.filter((b) => b.status === 'booked').map((b) => b.excursionId))
+  return offersOnDay(view.offers, day).filter((o) => saved.includes(planKey(o.item.id)) && !booked.has(o.item.id))
+}

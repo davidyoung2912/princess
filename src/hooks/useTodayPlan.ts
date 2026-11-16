@@ -1,8 +1,12 @@
 import type { ExplorerDay } from '../api/explorerTypes'
 import { buildPlanItems } from '../domain/explorer/planItems'
 import type { PlanItem } from '../domain/explorer/planTimeline'
-import { shipZoneOnDate } from '../domain/sailings'
-import { zonedToEpoch } from '../domain/timezones'
+import type { DayTour } from '../api/types'
+import { consideredOnDay } from '../domain/explorer/excursionDay'
+import { portById, shipZoneAt, shipZoneOnDate } from '../domain/sailings'
+import { timeIn, zonedToEpoch } from '../domain/timezones'
+import { api } from '../runtime'
+import { useMine } from './useMine'
 import { useDiningView } from '../ui/explorer/dining/diningView'
 import { useSpaView } from '../ui/explorer/spa/spaView'
 import { useSailing } from './useDemo'
@@ -32,10 +36,18 @@ export function useTodayPlan(day: number): TodayPlan {
   const dining = useDiningView()
   const spa = useSpaView()
   const tours = useDayTours(day)
+  const excursions = useMine(() => api.plan.excursions.list())
+  const saved = useMine(() => api.ahead.saved.list())
+  const considering: DayTour[] = excursions.data && saved.data
+    ? consideredOnDay(excursions.data, saved.data, day).map((o) => {
+      const startAt = zonedToEpoch(o.date, o.item.start, portById(o.item.port)?.zone ?? shipZoneOnDate(sailing, o.date))
+      return { id: `plan-${o.item.id}`, excursionId: o.item.id, name: o.item.name, port: o.item.port, meeting: o.item.meeting, day: o.day, date: o.date, start: timeIn(startAt, shipZoneAt(sailing, startAt)), startAt, endAt: startAt + Math.round(o.item.hours * 60) * 60_000 }
+    })
+    : []
   const all = [...copies, dining, spa, tours]
   const explorers = copies.map((c) => c.data).filter((d): d is ExplorerDay => d !== null)
   const items = buildPlanItems({
-    day, explorers, dining: dining.data, spa: spa.data, tours: tours.data,
+    day, explorers, dining: dining.data, spa: spa.data, tours: tours.data, considering,
     atMs: (date, time) => zonedToEpoch(date, time, shipZoneOnDate(sailing, date)),
   })
   return {

@@ -20,7 +20,7 @@ export const EXPLORER_PATHS: Readonly<Record<ExplorerKind, string>> = {
  * Everything the guest has on a day, from what the Explorers served (`mine` lists the planned events), the dinner reservations, the spa appointments and the booked shore excursions, in time order.
  * `atMs` turns a ship date and "HH:MM" into an instant. A planned event the ship has since dropped from its list simply does not appear.
  */
-export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay[]; dining: DiningView | null; spa: SpaView | null; tours?: readonly DayTour[] | null; atMs: (date: string, time: string) => number }): PlanItem[] {
+export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay[]; dining: DiningView | null; spa: SpaView | null; tours?: readonly DayTour[] | null; considering?: readonly DayTour[]; atMs: (date: string, time: string) => number }): PlanItem[] {
   const items: PlanItem[] = []
   const venues = new Map<string, { title: string; placeId: string }>()
   const date = o.explorers.find((d) => d.day === o.day)?.date ?? ''
@@ -48,6 +48,10 @@ export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay
   for (const x of o.tours ?? []) {
     if (x.day !== o.day) continue
     items.push({ id: x.id, kind: 'tour', explorer: 'activities', venueId: '', title: x.name, venueTitle: x.port, placeId: '', start: x.start, startAt: x.startAt, endAt: x.endAt, status: 'on', link: tourPath(x.excursionId, x.day) })
+  }
+  for (const x of o.considering ?? []) {
+    if (x.day !== o.day || items.some((i) => i.kind === 'tour' && i.link === tourPath(x.excursionId, x.day))) continue
+    items.push({ id: `plan-${x.excursionId}`, kind: 'tour', explorer: 'activities', venueId: '', title: x.name, venueTitle: x.port, placeId: '', start: x.start, startAt: x.startAt, endAt: x.endAt, status: 'on', link: tourPath(x.excursionId, x.day), tentative: true })
   }
   return sortItems(items)
 }

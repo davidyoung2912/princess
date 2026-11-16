@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../../api/types'
 import { formatDate, formatTime } from '../../../domain/cruise'
-import { bookingsOnDay, filterDayOffers, nearestTourDay, NO_DAY_FILTER, offersOnDay, type DayFilter } from '../../../domain/explorer/excursionDay'
+import { bookingsOnDay, planKey, filterDayOffers, nearestTourDay, NO_DAY_FILTER, offersOnDay, type DayFilter } from '../../../domain/explorer/excursionDay'
 import { ACTIVITIES, formatHours, guestPrice, INTERESTS, type Interest } from '../../../domain/excursions'
 import { formatMoney } from '../../../domain/money'
 import type { PersonaId } from '../../../domain/people'
@@ -79,6 +79,21 @@ function MyDay({ view, day, reload, only }: { view: ExcursionsView; day: number;
       {editing?.kind === 'change' && <ChangeDialog booking={editing.booking} view={view} reload={reload} onClose={() => setEditing(null)} />}
       {editing?.kind === 'cancel' && <CancelDialog booking={editing.booking} offer={view.offers.find((o) => o.item.id === editing.booking.excursionId)!} reload={reload} onClose={() => setEditing(null)} />}
     </section>
+  )
+}
+
+/** Adds an excursion to Today's Plan (as not booked yet) or takes it off again. Booking it puts it there for good. */
+function PlanToggle({ offer, view }: { offer: ExcursionOffer; view: ExcursionsView }) {
+  const saved = useMine(() => api.ahead.saved.list())
+  const key = planKey(offer.item.id)
+  const toggle = useAction(async () => { await api.ahead.saved.toggle(key); saved.retry() })
+  const booked = view.booked.some((b) => b.excursionId === offer.item.id && b.status === 'booked')
+  if (booked) return null
+  const on = saved.data?.includes(key) ?? false
+  return (
+    <Button variant="tertiary" aria-pressed={on} disabled={toggle.busy || saved.status !== 'ready'} onClick={() => void toggle.run()}>
+      {on ? t('exx.inPlan') : t('exx.addPlan')}<span className="visually-hidden"> {offer.item.name}</span>
+    </Button>
   )
 }
 
@@ -168,9 +183,12 @@ function OfferCard({ offer, view, day, busy, onAdd }: { offer: ExcursionOffer; v
       <p className="tour__price">{formatMoney(x.price)} <span className="muted">{t('exc.perAdult')}</span></p>
       <Availability offer={offer} view={view} />
       {offer.timing && <p className="field__error">{t(`exc.timing.${offer.timing}` as StringKey)}</p>}
-      {view.canBook && offer.spots > 0 && !offer.timing && (
-        <Button variant="secondary" disabled={busy || inCart} onClick={onAdd}>{inCart ? t('exc.inCart') : t('exc.add')}<span className="visually-hidden"> {x.name}</span></Button>
-      )}
+      <div className="button-row">
+        {view.canBook && offer.spots > 0 && !offer.timing && (
+          <Button variant="secondary" disabled={busy || inCart} onClick={onAdd}>{inCart ? t('exc.inCart') : t('exc.add')}<span className="visually-hidden"> {x.name}</span></Button>
+        )}
+        <PlanToggle offer={offer} view={view} />
+      </div>
     </li>
   )
 }
@@ -236,6 +254,7 @@ function Detail({ offer, view, state, reload }: { offer: ExcursionOffer; view: E
         {view.canBook && offer.spots > 0 && !offer.timing && (
           <Button disabled={cart.busy || inCart} onClick={() => void cart.pick(offer)}>{inCart ? t('exc.inCart') : t('exc.add')}<span className="visually-hidden"> {x.name}</span></Button>
         )}
+        <PlanToggle offer={offer} view={view} />
       </section>
       {cart.dialog}
     </>

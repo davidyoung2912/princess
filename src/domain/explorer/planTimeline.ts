@@ -26,6 +26,8 @@ export interface PlanItem {
   detail?: string
   /** Where the line links to when it is not an Explorer venue page (a shore excursion links to the excursions screen). */
   link?: string
+  /** An excursion the guest added to the plan but has not booked. */
+  tentative?: boolean
 }
 
 const MIN = 60_000

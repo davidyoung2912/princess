@@ -33,6 +33,12 @@ describe('buildPlanItems', () => {
     expect(items.map((i) => [i.id, i.kind])).toEqual([['t1', 'tour'], ['e1', 'event']])
     expect(items[0]).toMatchObject({ title: 'Snorkel', venueTitle: 'Cozumel', link: '/excursions-explorer/x?day=2' })
   })
+  it('lists an excursion added to the plan but not booked, marked tentative, once', () => {
+    const t = { id: 'c1', excursionId: 'z', name: 'Ruins', port: 'Cozumel', meeting: '', day: 2, date: '2027-01-02', start: '09:00', startAt: atMs('', '09:00'), endAt: atMs('', '13:00') }
+    const items = buildPlanItems({ day: 2, dining: null, spa: null, considering: [t, t], atMs, explorers: [] })
+    expect(items.filter((i) => i.tentative)).toHaveLength(1)
+    expect(items[0]).toMatchObject({ kind: 'tour', tentative: true, link: '/excursions-explorer/z?day=2' })
+  })
   it('keeps moved and cancelled planned events with their reason', () => {
     const items = buildPlanItems({ day: 2, dining: null, spa: null, atMs, explorers: [day('entertainment', [ev('e1', 5 * MIN, { status: 'cancelled', reason: 'weather' })], ['e1'])] })
     expect(items[0]).toMatchObject({ status: 'cancelled', reason: 'weather' })
