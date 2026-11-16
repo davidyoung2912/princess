@@ -19,21 +19,25 @@
 .icon-btn { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); background: transparent; border: 0; border-radius: 50%; color: var(--text); cursor: pointer; }
 .icon-btn:hover { background: var(--brand-tint); }
 
-/* Dialog and bottom sheet */
-.dialog-backdrop { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; background: var(--scrim); }
+/* Dialog: a centred panel at every size, with a margin all round (and clear of the notch and home indicator). If its content is taller than the screen the body scrolls
+   under a fixed header, so the panel always fits. */
+.dialog-backdrop {
+  position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: var(--scrim);
+  padding: max(var(--space-3), env(safe-area-inset-top)) max(var(--space-3), env(safe-area-inset-right)) max(var(--space-3), env(safe-area-inset-bottom)) max(var(--space-3), env(safe-area-inset-left));
+}
 .dialog {
-  width: 100%; max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden;
-  padding: var(--space-4) var(--gutter) calc(env(safe-area-inset-bottom) + var(--space-5));
+  width: 100%; max-width: 36rem; display: flex; flex-direction: column; overflow: hidden;
+  max-height: calc(100dvh - 2 * var(--space-3)); max-height: 100%;
+  padding: var(--space-4) var(--gutter) var(--space-5);
   background: var(--bg); color: var(--text);
-  border-radius: 24px 24px 0 0; box-shadow: var(--shadow-sheet); outline: none;
+  border-radius: var(--radius-card); box-shadow: var(--shadow-sheet); outline: none;
 }
 .dialog__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .dialog > :is(.dialog__head, .dialog-header) { flex: none; }
 .dialog__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
 .dialog__head h2 { margin: 0; }
 @media (min-width: 600px) {
-  .dialog-backdrop { align-items: center; padding: var(--space-5); }
-  .dialog { max-width: 36rem; border-radius: var(--radius-card); padding-bottom: var(--space-5); }
+  .dialog-backdrop { padding: var(--space-5); }
 }
 @media (forced-colors: active) { .dialog { border: 2px solid CanvasText; } }
 

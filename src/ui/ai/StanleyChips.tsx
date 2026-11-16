@@ -41,7 +41,7 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
   )
 }
 
-/** The bottom sheet that answers a chip: the question, the authored words, a link when there is one. */
+/** The dialog that answers a chip: the question, the authored words, a link when there is one. */
 export function StanleyAnswer({ entry, onClose, onAsk }: { entry: LibraryEntry; onClose: () => void; onAsk: () => void }) {
   return (
     <Dialog title={t('stanley.sheet.title')} onClose={onClose} header={(titleId) => (

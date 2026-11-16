@@ -13,7 +13,7 @@ interface DialogProps {
 }
 
 /**
- * A modal dialog that is a bottom sheet on a phone and a centred panel on larger screens. Focus moves in and is
+ * A modal dialog: a centred panel at every screen size, scrolling inside if its content is taller than the screen. Focus moves in and is
  * trapped, Escape and the Close button both close it, and focus returns to what opened it (see useDialog).
  * It always has a Close button, so closing never depends on a drag gesture (WCAG 2.5.7). Tapping outside does not
  * close it: a stray tap should not throw away what someone was doing.
