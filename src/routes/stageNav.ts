@@ -76,6 +76,9 @@ export const splitMe = (ids: readonly string[]): { main: string[]; settings: str
   settings: ids.filter((id) => SETTINGS_AND_HELP.includes(id)),
 })
 
+/** Reference screens a guest can open at any stage, whichever tabs the stage lists: the ports and countries guides and their lists. */
+export const ALWAYS_OPEN_SCREENS: readonly string[] = ['H09', 'H52', 'H53', 'H54']
+
 /**
  * What an address does at a stage. 'show' opens it; 'home' sends the guest Home (a stale address: a screen the stage does not use, or a tab it does not have).
  * Addresses outside the registry (the kit, public links, unknown addresses) are left to the router.
@@ -86,7 +89,7 @@ export function accessAt(pattern: string | null, pathname: string, stage: Journe
   if (!pattern) return 'show'
   const screen = screenForPath(pattern)
   if (!screen || screen.family === 'X') return 'show'
-  return stageUses(screen.id, stage) ? 'show' : 'home'
+  return ALWAYS_OPEN_SCREENS.includes(screen.id) || stageUses(screen.id, stage) ? 'show' : 'home'
 }
 
 /** The colour the shell wears for a screen, as {@link areaFor} says, or the tab's own colour on a landing page. */
@@ -113,7 +116,7 @@ export const ALL_TAB_KEYS: readonly string[] = [...new Set(JOURNEY_STAGES.flatMa
  */
 export function earlierAt(pattern: string | null, stage: JourneyStage): boolean {
   const screen = pattern ? screenForPath(pattern) : undefined
-  if (!screen || screen.family === 'X' || screen.path.includes(':') || stageUses(screen.id, stage)) return false
+  if (!screen || screen.family === 'X' || screen.path.includes(':') || ALWAYS_OPEN_SCREENS.includes(screen.id) || stageUses(screen.id, stage)) return false
   return JOURNEY_STAGES.slice(0, JOURNEY_STAGES.indexOf(stage)).some((s) => stageUses(screen.id, s))
 }
 

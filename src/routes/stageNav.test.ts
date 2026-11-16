@@ -4,7 +4,7 @@ import { TOP_TASKS } from './nav'
 import { ROUTES } from './routes'
 import { SCREEN_BY_ID, SCREEN_LIST, STAGE_TABS, stageUses } from './screens'
 import { SCREEN_WORDS, isFromEarlier, screenHits, visibleAt } from './screenWords'
-import { ALL_TAB_KEYS, EXPLORER_PATHS, shellArea, accessAt, earlierAt, groupShip, shipGroupOf, activeTabKey, areaAt, linkFor, listedScreens, navTabs, newTabLabels, tabAtPath, tabKey, tabPathFor, tabScreenIds } from './stageNav'
+import { ALL_TAB_KEYS, ALWAYS_OPEN_SCREENS, EXPLORER_PATHS, shellArea, accessAt, earlierAt, groupShip, shipGroupOf, activeTabKey, areaAt, linkFor, listedScreens, navTabs, newTabLabels, tabAtPath, tabKey, tabPathFor, tabScreenIds } from './stageNav'
 import { tabText } from '../ui/tabText'
 import { searchContent } from '../domain/searchIndex'
 
@@ -83,6 +83,11 @@ describe('stale addresses and the active tab', () => {
   it('sends a guest Home from a screen their stage does not use, a tab it does not have, and leaves the rest', () => {
     expect(accessAt('/home/quiz', '/home/quiz', 'dream')).toBe('show')
     expect(accessAt('/ship/order', '/ship/order', 'dream')).toBe('home')
+    for (const stage of JOURNEY_STAGES) {
+      for (const [pattern, path] of [['/home/ports/:id', '/home/ports/fll'], ['/home/ports', '/home/ports'], ['/home/countries/:id', '/home/countries/mx'], ['/home/countries', '/home/countries']] as const) {
+        expect(accessAt(pattern, path, stage), `${path} at ${stage}`).toBe('show')
+      }
+    }
     expect(accessAt('/plan', '/plan', 'dream')).toBe('home')
     expect(accessAt('/plan', '/plan', 'prebook')).toBe('show')
     expect(accessAt('/ship', '/ship', 'manage')).toBe('home')
@@ -94,9 +99,9 @@ describe('stale addresses and the active tab', () => {
     expect(accessAt(null, '/nowhere', 'sea')).toBe('show')
   })
 
-  it('judges a screen exactly as the registry does', () => {
+  it('judges a screen exactly as the registry does, except the always-open ports and countries screens', () => {
     for (const stage of JOURNEY_STAGES) for (const s of SCREEN_LIST) {
-      if (s.family === 'X') continue
+      if (s.family === 'X' || ALWAYS_OPEN_SCREENS.includes(s.id)) continue
       expect(accessAt(s.path, s.path, stage) === 'show', `${stage} ${s.id}`).toBe(stageUses(s.id, stage))
     }
   })

@@ -18,6 +18,7 @@ import { useTodayPlan } from '../../hooks/useTodayPlan'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
+import { ExplorerIcon } from '../explorer/ExplorerIcon'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 import { ChosenDayNote, PickDateButton } from '../explorer/DateControls'
@@ -120,9 +121,9 @@ function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, busy }:
       {alternatives.length > 0 && (
         <div role="group" aria-label={t('plan.alt.title')}>
           <p className="muted">{t(item.status === 'cancelled' ? 'plan.alt.cancelled' : item.status === 'moved' ? 'plan.alt.moved' : 'plan.alt.clash')}</p>
-          <ul className="plain-bullets">
+          <ul className="icon-list">
             {alternatives.map((a) => (
-              <li key={a.id}><Link to={`${EXPLORER_PATHS[a.explorer]}/${a.venueId}?day=${day}`}>{a.start ? t('plan.alt.event', { title: a.title, time: formatTime(a.start), venue: a.venueTitle }) : t('plan.alt.place', { title: a.title })}</Link>{a.start && <>{' '}<button type="button" className="link-button" disabled={busy} aria-label={t('exp.add.label', { title: a.title })} onClick={() => { void onAdd([{ id: a.id, title: a.title }]) }}>{t('exp.add.button')}</button></>}</li>
+              <li key={a.id}><ExplorerIcon kind={a.explorer} /><div><Link to={`${EXPLORER_PATHS[a.explorer]}/${a.venueId}?day=${day}`}>{a.start ? t('plan.alt.event', { title: a.title, time: formatTime(a.start), venue: a.venueTitle }) : t('plan.alt.place', { title: a.title })}</Link>{a.start && <div className="plan-add"><Button variant="secondary" disabled={busy} aria-label={t('exp.add.label', { title: a.title })} onClick={() => { void onAdd([{ id: a.id, title: a.title }]) }}>{t('exp.add.button')}</Button></div>}</div></li>
             ))}
           </ul>
         </div>

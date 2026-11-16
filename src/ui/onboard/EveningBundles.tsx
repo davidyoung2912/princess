@@ -5,6 +5,7 @@ import { EXPLORER_PATHS } from '../../domain/explorer/planItems'
 import type { RecommendWhy } from '../../domain/explorer/recommend'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
+import { ExplorerIcon } from '../explorer/ExplorerIcon'
 import { Card } from '../Card'
 
 const WHY: Record<RecommendWhy, StringKey> = { liked: 'exp.foryou.why.liked', similarSaved: 'exp.foryou.why.saved', pinnedVenue: 'exp.foryou.why.pinned', sameKind: 'exp.foryou.why.kind' }
@@ -20,12 +21,15 @@ export function EveningBundles({ bundles, day, clockAt, busy, onAdd }: {
         <Card key={b.kind} labelledBy={`tp-bundle-${b.kind}`}>
           <h2 id={`tp-bundle-${b.kind}`} className="card__title">{t(b.kind === 'return' ? 'plan.bundle.return' : 'plan.bundle.evening')}</h2>
           <p className="muted">{b.kind === 'return' && b.tourEndsAt !== undefined ? t('plan.bundle.returnWhy', { time: clockAt(b.tourEndsAt) }) : t('plan.bundle.eveningWhy')}</p>
-          <ul className="plain-bullets">
+          <ul className="icon-list">
             {b.steps.map((s) => (
               <li key={s.event.id}>
+                <ExplorerIcon kind={s.explorer} />
+                <div>
                 <Link to={`${EXPLORER_PATHS[s.explorer]}/${s.venueId}?day=${day}`}>{t('plan.bundle.step', { title: s.event.title, time: formatTime(s.event.start), venue: s.venueTitle })}</Link>{' '}
-                {s.why && s.about && <span className="muted">{t(WHY[s.why], { about: s.why === 'liked' || s.why === 'similarSaved' ? t(`exp.interest.${s.about}` as StringKey) : s.about })}</span>}{' '}
-                <button type="button" className="link-button" disabled={busy} aria-label={t('plan.bundle.addLabel', { title: s.event.title })} onClick={() => onAdd([{ id: s.event.id, title: s.event.title }])}>{t('plan.bundle.add')}</button>
+                {s.why && s.about && <span className="muted">{t(WHY[s.why], { about: s.why === 'liked' || s.why === 'similarSaved' ? t(`exp.interest.${s.about}` as StringKey) : s.about })}</span>}
+                <div className="plan-add"><Button variant="secondary" disabled={busy} aria-label={t('plan.bundle.addLabel', { title: s.event.title })} onClick={() => onAdd([{ id: s.event.id, title: s.event.title }])}>{t('plan.bundle.add')}</Button></div>
+                </div>
               </li>
             ))}
           </ul>
