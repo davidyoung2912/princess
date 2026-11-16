@@ -23,6 +23,7 @@ import type { Cabin } from '../domain/cabins'
 import type { BookingQuote, FareId, PayOption, PayPlan, PaymentPart, Promotion } from '../domain/fares'
 import type { Acceptance, CancelTerms, ChangeCheck } from '../domain/policy'
 import type { DietaryId, NeedId } from '../domain/account'
+import type { DietaryKind, DietaryRequest } from '../domain/dietaryRequest'
 import type { UsageWindow } from '../domain/entitlements'
 import type { ExcursionItem, TimingProblem, TourRefund } from '../domain/excursions'
 import type { DiningPlan, Slot, Window as DiningWindow } from '../domain/dining'
@@ -430,6 +431,8 @@ export interface Reservation {
   reminderOn: string
   /** Minutes the party said they would be late, or 0. */
   lateMinutes: number
+  /** Special-diet and allergy requests on this table, with the restaurant's answer to each. */
+  requests: DietaryRequest[]
 }
 
 export interface DiningView {
@@ -588,6 +591,12 @@ export interface PlanApi {
     move(id: string, to: { day: number; time: string }): Promise<DiningView>
     /** Tells the restaurant the party will be late; the table is held for that long (up to 30 minutes). */
     late(id: string, minutes: number): Promise<DiningView>
+    /**
+     * Sends or replaces a guest's special-diet or allergy request on a reservation (DIN-111, 119). Rejects `invalid` for a missing note, an unknown kind, a guest who is not at the table
+     * or an allergy process not acknowledged. The review starts again; the status is the restaurant's, never the client's.
+     */
+    setDietary(id: string, input: { guest: PersonaId; kind: DietaryKind; note: string; acknowledged: boolean }): Promise<DiningView>
+    withdrawDietary(id: string, guest: PersonaId): Promise<DiningView>
   }
   spa: {
     view(): Promise<SpaView>

@@ -1,4 +1,5 @@
 import { GroupTable } from '../aboard/GroupTable'
+import { DietaryRequests } from './DietaryRequests'
 import { Link, useParams } from 'react-router'
 import { useState } from 'react'
 import { asDiningView } from '../../api/guards'
@@ -169,6 +170,8 @@ function Detail({ r, canEdit, reload }: { r: Reservation; canEdit: boolean; relo
         <p><Link to={`/ship/venues/${r.venueId}`}>{t('res.menu')}</Link></p>
         <p className="muted">{t('res.rules')}</p>
       </Card>
+
+      <DietaryRequests r={r} canEdit={canEdit} reload={reload} />
 
       <GroupTable r={r} canEdit={canEdit} />
 

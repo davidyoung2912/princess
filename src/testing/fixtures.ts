@@ -56,7 +56,7 @@ export const PROGRAM = {
 export const DINING = {
   window: 'open', plan: 'anytime', seating: null, mealsLeft: 3, canBook: true, daysToDeparture: -2,
   party: [{ id: P, name: 'Tess Tester', age: 40, child: false }],
-  reservations: [{ id: 'r1', venueId: 'crown', day: 4, time: '19:00', guests: [P], note: '', dietary: [], covered: [P], charge: 0, at: NOW - 86_400_000, reminderOn: '2027-03-03' }],
+  reservations: [{ id: 'r1', venueId: 'crown', day: 4, time: '19:00', guests: [P], note: '', dietary: [], covered: [P], charge: 0, at: NOW - 86_400_000, reminderOn: '2027-03-03', lateMinutes: 0, requests: [] }],
 } as unknown as DiningView
 
 export const FOLIO = {

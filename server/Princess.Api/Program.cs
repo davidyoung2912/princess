@@ -59,6 +59,8 @@ services.AddScoped<IPrivacyStore, DapperPrivacyStore>();
 services.AddScoped<IDemoStore, DapperDemoStore>();
 services.AddScoped<IBookingStore, DapperBookingStore>();
 services.AddScoped<IPlanStore, DapperPlanStore>();
+services.AddScoped<IDietaryStore, DapperDietaryStore>();
+services.AddSingleton<IDiningGalley, DiningGalley>();
 services.AddScoped<ISpaStore, DapperSpaStore>();
 services.AddScoped<IAheadStore, DapperAheadStore>();
 services.AddScoped<ICheckinStore, DapperCheckinStore>();

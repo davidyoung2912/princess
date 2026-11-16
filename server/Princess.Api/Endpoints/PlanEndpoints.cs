@@ -66,6 +66,12 @@ public static class PlanEndpoints
         g.MapPost("/reservations/{id:guid}/late", async (string number, Guid id, LateRequest body, ICurrentUser me, PlanService svc, CancellationToken ct) =>
                 Results.Ok(await svc.RunningLateAsync(await me.LoadAsync(ct), number, id, body, ct)))
             .WithSummary("Tells the restaurant the party will be late (5 to 30 minutes).");
+        g.MapPut("/reservations/{id:guid}/dietary", async (string number, Guid id, DietaryRequestBody body, ICurrentUser me, PlanService svc, CancellationToken ct) =>
+                Results.Ok(await svc.SetDietaryAsync(await me.LoadAsync(ct), number, id, body, ct)))
+            .WithSummary("Sends or replaces a guest's special-diet or allergy request on a reservation. 400 unless the guest is at the table, the kind and note are good and the allergy process is acknowledged; the review starts again.");
+        g.MapDelete("/reservations/{id:guid}/dietary/{guest:guid}", async (string number, Guid id, Guid guest, ICurrentUser me, PlanService svc, CancellationToken ct) =>
+                Results.Ok(await svc.WithdrawDietaryAsync(await me.LoadAsync(ct), number, id, guest, ct)))
+            .WithSummary("Withdraws a guest's dietary request from a reservation.");
     }
 
     private static void MapPackages(RouteGroupBuilder plan)

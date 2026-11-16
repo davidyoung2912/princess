@@ -1764,6 +1764,23 @@ CREATE TABLE dbo.DiningReservationGuests (
 CREATE INDEX IX_DiningReservationGuests_UserId_BookingId ON dbo.DiningReservationGuests (UserId, BookingId);   -- both foreign keys on the person
 END
 
+-- A special-diet or allergy request on a dining reservation (Explorer phase 13, DIN-110..112, 119..120). One per guest per reservation. The status is not stored: the dining operation
+-- (IDiningGalley) answers from the request and the clock, so a real galley system can replace the simulation. AcknowledgedAt is when the guest agreed to follow the ship's allergy process.
+IF OBJECT_ID(N'dbo.DiningDietaryRequests', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.DiningDietaryRequests (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DiningDietaryRequests PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_DiningDietaryRequests_PublicId DEFAULT NEWID() CONSTRAINT UX_DiningDietaryRequests_PublicId UNIQUE,
+  ReservationId BIGINT NOT NULL, BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  Kind VARCHAR(7) NOT NULL, Note NVARCHAR(300) NOT NULL,
+  AcknowledgedAt DATETIME2(0) NOT NULL, SentAt DATETIME2(0) NOT NULL,
+  CONSTRAINT CK_DiningDietaryRequests_Kind CHECK (Kind IN ('allergy','diet','other')),
+  CONSTRAINT UX_DiningDietaryRequests_Reservation_User UNIQUE (ReservationId, UserId),
+  CONSTRAINT FK_DiningDietaryRequests_DiningReservations FOREIGN KEY (ReservationId, BookingId) REFERENCES dbo.DiningReservations (Id, BookingId) ON DELETE CASCADE,
+  CONSTRAINT FK_DiningDietaryRequests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+
 -- Spa and salon appointments (Spa Explorer, docs/explorer-harmony-plan.md phase 3). One row per appointment; the treatment, its length and its price are copied here so a later change to the
 -- ship's treatment list never rewrites what a guest booked. TimeLocal is ship time on cruise day [Day].
 IF OBJECT_ID(N'dbo.SpaAppointments', N'U') IS NULL

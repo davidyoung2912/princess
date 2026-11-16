@@ -577,6 +577,8 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
         cancel: (id) => inTrip('delete', `/dining/reservations/${seg(id)}`),
         move: (id, to) => inTrip('post', `/dining/reservations/${seg(id)}/move`, to),
         late: (id, minutes) => inTrip('post', `/dining/reservations/${seg(id)}/late`, { minutes }),
+        setDietary: (id, input) => inTrip('put', `/dining/reservations/${seg(id)}/dietary`, input),
+        withdrawDietary: (id, guest) => inTrip('delete', `/dining/reservations/${seg(id)}/dietary/${seg(guest)}`),
       },
       spa: {
         view: () => inBooking('/plan/spa'),

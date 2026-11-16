@@ -355,6 +355,29 @@ public class PlanApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task SendsADietaryRequestOnATableAndNeverShowsItApprovedBeforeTheGalleyAnswers()
+    {
+        Paid();
+        var daniel = await SignIn(Daniel);
+        var table = (await Reserve(daniel, "crown", 3, "18:30", Daniel, Priya)).Json.GetProperty("reservations")[0];
+        var id = table.GetProperty("id").GetString();
+        Assert.Equal(0, table.GetProperty("requests").GetArrayLength());
+
+        Assert.Equal("dietary", (await Put($"{Base}/dining/reservations/{id}/dietary", daniel, new { guest = Daniel.PublicId, kind = "allergy", note = "Peanuts", acknowledged = false })).ProblemTitle);
+        Assert.Equal("dietary", (await Put($"{Base}/dining/reservations/{id}/dietary", daniel, new { guest = Daniel.PublicId, kind = "allergy", note = "  ", acknowledged = true })).ProblemTitle);
+        Assert.Equal("guest", (await Put($"{Base}/dining/reservations/{id}/dietary", daniel, new { guest = Guid.NewGuid(), kind = "allergy", note = "Peanuts", acknowledged = true })).ProblemTitle);
+
+        var sent = await Put($"{Base}/dining/reservations/{id}/dietary", daniel, new { guest = Daniel.PublicId, kind = "allergy", note = "Peanuts", acknowledged = true });
+        Assert.Equal(HttpStatusCode.OK, sent.Status);
+        var req = sent.Json.GetProperty("reservations")[0].GetProperty("requests")[0];
+        Assert.Equal("received", req.GetProperty("status").GetString());
+        Assert.Equal("Peanuts", req.GetProperty("note").GetString());
+
+        var gone = await Delete($"{Base}/dining/reservations/{id}/dietary/{Daniel.PublicId}", daniel);
+        Assert.Equal(0, gone.Json.GetProperty("reservations")[0].GetProperty("requests").GetArrayLength());
+    }
+
+    [Fact]
     public async Task MovesATableInPlaceAndALostMoveLeavesTheOriginalAlone()
     {
         Paid();

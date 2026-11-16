@@ -83,6 +83,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IDemoStore>();
             services.RemoveAll<IBookingStore>();
             services.RemoveAll<IPlanStore>();
+            services.RemoveAll<IDietaryStore>();
             services.RemoveAll<ISpaStore>();
             services.RemoveAll<IAheadStore>();
             services.RemoveAll<ICheckinStore>();
@@ -111,6 +112,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IDemoStore>(Journey);
             services.AddSingleton<IBookingStore>(Bookings);
             services.AddSingleton<IPlanStore>(Plan);
+            services.AddSingleton<IDietaryStore>(new InMemoryDietaryStore());
             services.AddSingleton<ISpaStore>(Spa);
             services.AddSingleton<IAheadStore>(Ahead);
             services.AddSingleton<ICheckinStore>(Checkin);

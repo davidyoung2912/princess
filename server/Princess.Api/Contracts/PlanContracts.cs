@@ -27,8 +27,13 @@ public sealed record CheckoutRequest(List<PaymentPartDto>? Parts, string? Challe
 
 public sealed record DietaryNoteDto(string Name, string[] Needs);
 
+/// <summary>A guest's special-diet or allergy request on a reservation. <see cref="Status"/> is received, review, confirmed, contact (staff will speak with the guest first) or unable; only the dining operation moves it past review.</summary>
+public sealed record DietaryRequestDto(Guid Guest, string Kind, string Note, string Status, long SentAt);
+
+public sealed record DietaryRequestBody(Guid? Guest, string? Kind, string? Note, bool Acknowledged);
+
 public sealed record ReservationDto(
-    Guid Id, string VenueId, int Day, string Time, List<Guid> Guests, string Note, List<DietaryNoteDto> Dietary, List<Guid> Covered, long Charge, long At, string ReminderOn, int LateMinutes);
+    Guid Id, string VenueId, int Day, string Time, List<Guid> Guests, string Note, List<DietaryNoteDto> Dietary, List<Guid> Covered, long Charge, long At, string ReminderOn, int LateMinutes, List<DietaryRequestDto> Requests);
 
 public sealed record DiningViewDto(
     DiningWindowResult Window, string Plan, [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string? Seating, List<ReservationDto> Reservations,

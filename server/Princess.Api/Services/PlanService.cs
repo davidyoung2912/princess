@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// Reads are open to anyone on the booking; writes need an adult guest on it (data model section 7). Entitlements, price protection, places left and table
 /// capacity are worked out here (D15), so two bookings on the same sailing really do compete for the same spots and tables.
 /// </summary>
-public sealed class PlanService(AccessService access, ITripStore trips, IAccountStore accounts, IPlanStore plan, TripService tripService, IUserClock clock, IPaymentGateway gateway, IWeatherService weather)
+public sealed class PlanService(AccessService access, ITripStore trips, IAccountStore accounts, IPlanStore plan, TripService tripService, IUserClock clock, IPaymentGateway gateway, IWeatherService weather, IDietaryStore dietary, IDiningGalley galley)
 {
     private static DateOnly D(DateTime d) => DateOnly.FromDateTime(d);
     private static string Str(string? v, int max) => v is null ? "" : v.Trim() is var t && t.Length > max ? t[..max] : v.Trim();
@@ -322,10 +322,12 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var needs = new Dictionary<long, string[]>();
         foreach (var g in c.Party) needs[g.UserId] = [.. (await accounts.GetProfileAsync(g.UserId, ct))?.Dietary ?? []];
         var meals = c.Party.Sum(g => Math.Max(0, EntitlementsFor(c, g, ps).SpecialtyMeals - MealsUsed(tables, g)));
+        var requests = (await dietary.ListAsync([.. tables.Select(t => t.Id)], ct)).ToLookup(r => r.ReservationId);
         var reservations = tables.Select(t => new ReservationDto(
             t.PublicId, t.VenueId, t.Day, t.Time, c.Ids(t.GuestIds), t.Note,
             [.. t.GuestIds.Select(c.PersonByUser).OfType<Person>().Where(g => needs.GetValueOrDefault(g.UserId, []).Length > 0).Select(g => new DietaryNoteDto(g.Name.Split(' ')[0], needs[g.UserId]))],
-            c.Ids(t.CoveredIds), t.ChargeCents, TripRules.ToMs(t.At), PlanRules.Iso(c.Departure.AddDays(t.Day - 2)), t.LateMinutes))
+            c.Ids(t.CoveredIds), t.ChargeCents, TripRules.ToMs(t.At), PlanRules.Iso(c.Departure.AddDays(t.Day - 2)), t.LateMinutes,
+            [.. requests[t.Id].Select(r => new { r, p = c.PersonByUser(r.UserId) }).Where(x => x.p is not null).Select(x => new DietaryRequestDto(x.p!.Id, x.r.Kind, x.r.Note, galley.Answer(x.r, c.Now).Status, TripRules.ToMs(x.r.SentAt)))]))
             .OrderBy(r => r.Day).ThenBy(r => r.Time, StringComparer.Ordinal).ToList();
         var dining = c.Booking.Dining;
         return new DiningViewDto(
@@ -426,6 +428,29 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         if (body is null || body.Minutes < DiningRules.MinLateMinutes || body.Minutes > DiningRules.MaxLateMinutes) throw ApiException.Invalid("minutes");
         await plan.SetTableLateAsync(c.Booking.BookingId, t.Id, body.Minutes, ct);
         await accounts.AddHistoryAsync(actor.Id, actor.Id, "dining", $"{DiningRules.VenueById(t.VenueId)?.Name ?? t.VenueId}, night {t.Day}: running {body.Minutes} minutes late", c.Now, ct);
+        return await DiningViewAsync(c, ct);
+    }
+
+    /// <summary>Sends or replaces one guest's dietary request on a table (DIN-111, 119). The guest must be at the table and the guest must have agreed to the allergy process (DIN-110). Sending again starts the review again.</summary>
+    public async Task<DiningViewDto> SetDietaryAsync(UserRecord actor, string? number, Guid id, DietaryRequestBody? body, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        var t = await FindTableAsync(c, id, ct);
+        if (body is null || !DietaryRules.KindOk(body.Kind) || !DietaryRules.NoteOk(body.Note) || !body.Acknowledged) throw ApiException.Invalid("dietary");
+        var guest = body.Guest is { } g ? c.PersonById(g) : null;
+        if (guest is null || !t.GuestIds.Contains(guest.UserId)) throw ApiException.Invalid("guest");
+        if (DiningRules.DinnerPast(c.Timeline, t.Day, t.Time, c.Now)) throw ApiException.Conflict("closed");
+        await dietary.SaveAsync(c.Booking.BookingId, t.Id, guest.UserId, body.Kind!, DietaryRules.CleanNote(body.Note), c.Now, c.Now, ct);
+        await accounts.AddHistoryAsync(actor.Id, actor.Id, "dining", $"{DiningRules.VenueById(t.VenueId)?.Name ?? t.VenueId}, night {t.Day}: dietary request sent for {guest.Name.Split(' ')[0]}", c.Now, ct);
+        return await DiningViewAsync(c, ct);
+    }
+
+    public async Task<DiningViewDto> WithdrawDietaryAsync(UserRecord actor, string? number, Guid id, Guid guest, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        var t = await FindTableAsync(c, id, ct);
+        var p = c.PersonById(guest) ?? throw ApiException.NotFound();
+        await dietary.DeleteAsync(c.Booking.BookingId, t.Id, p.UserId, ct);
         return await DiningViewAsync(c, ct);
     }
 
