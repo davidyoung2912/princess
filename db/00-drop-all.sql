@@ -238,7 +238,8 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'Cases'),
   (N'dbo', N'PostFeedback'),
   (N'dbo', N'RebookHolds'),
-  (N'dbo', N'DeskAppointments');
+  (N'dbo', N'DeskAppointments'),
+  (N'dbo', N'DiningDietaryRequests');
 
 DECLARE @sql NVARCHAR(MAX) = N'';
 
