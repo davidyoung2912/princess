@@ -34,8 +34,9 @@ export function GuestPicker({ legend, party, value, onChange, disabled, hint }: 
 }
 
 /** The note shown to a supervised child account, which can look but not change. */
-export function ReadOnly({ canDo }: { canDo: boolean }) {
+export function ReadOnly({ canDo, sailed = false }: { canDo: boolean; /** The ship has sailed, so booking ahead is over for everyone (an adult booker too). */ sailed?: boolean }) {
   if (canDo) return null
+  if (sailed) return <Banner kind="info" title={t('plan.closed.title')}><p>{t('plan.closed.body')}</p></Banner>
   return <Banner kind="info" title={t('plan.readOnly.title')}><p>{t('plan.readOnly.body')}</p></Banner>
 }
 

@@ -70,7 +70,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
 
   return (
     <>
-      <ReadOnly canDo={view.canBook} />
+      <ReadOnly canDo={view.canBook} sailed={view.daysToDeparture < 1} />
       <CreditBanner view={view} />
       <PlanError error={add.error} />
       <StanleyTourCompare sailingId={sailing.id} />
