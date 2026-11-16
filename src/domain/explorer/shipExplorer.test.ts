@@ -6,6 +6,7 @@ import { isDayKind, isDayKindOn, type DayShape } from '../dayKinds'
 import { resolveHours } from './hours'
 import { templateIndexFor } from './dayMapping'
 import { EXPLORER_KINDS } from './types'
+import { EVENTS as PROGRAMME_EVENTS } from '../program'
 
 // The sample week: embark, sea, port, port, sea, port, sea, then the morning of disembarkation.
 const week: DayShape[] = ['home', 'sea', 'a', 'b', 'sea', 'c', 'sea', 'home'].map((port, i) => ({ port, date: `2027-03-${String(21 + i).padStart(2, '0')}` }))
@@ -28,6 +29,9 @@ describe('the Explorer content of the ships', () => {
         expect(new Set(venues).size).toBe(venues.length)
         expect(new Set(events).size).toBe(events.length)
         for (const id of [...venues, ...events]) expect(id.length).toBeLessThanOrEqual(40)
+        // The plan takes the daily programme's event first when an id is in both, so an Explorer event must never reuse a programme id (it would be refused on the days it runs).
+        const programme = new Set(PROGRAMME_EVENTS.map((e) => e.id))
+        expect(events.filter((id) => programme.has(id))).toEqual([])
         // A pin is `venue:<ship>.<venue>` and must fit the 80 characters a saved item may have.
         for (const id of venues) expect(`venue:${ship}.${id}`.length).toBeLessThanOrEqual(80)
       })

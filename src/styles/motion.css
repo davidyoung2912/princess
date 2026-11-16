@@ -86,3 +86,6 @@
 .shortcut-bar { list-style: none; }
 .shortcut-bar__chip { text-decoration: none; }
 .shortcut-bar__chip svg { color: var(--trip); }
+
+/* The lifted list cards also take the light-blue hover the linked cards have. */
+.event:hover, .conv:hover, .exp-days__btn:hover, .wx-day:hover, .schedule-card:hover, .nav-landmarks > li:hover { border-color: var(--primary); background: var(--sky-tint); }

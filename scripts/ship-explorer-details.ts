@@ -2,6 +2,7 @@
 // and children's menu. They are worked out from what each row already says (its venue kind, title, interest, cost and capacity) so one rule covers all three ships, and nothing here
 // names a person. The values are authored concept content for review, like the rest of the Explorer content: check them against the ship's own information before real use.
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
+import { eventCopy } from './event-copy.ts'
 
 type VenueFacts = Pick<ExplorerVenueRow, 'explorer' | 'kind' | 'title'>
 
@@ -90,7 +91,16 @@ export function detailEvent(e: ExplorerEventRow, v: VenueFacts): ExplorerEventRo
 /** The events of a ship, the same events with their detail fields; the order is kept. */
 export function detailEvents(events: readonly ExplorerEventRow[], venues: readonly ExplorerVenueRow[]): ExplorerEventRow[] {
   const byId = new Map(venues.map((v) => [v.id, v]))
-  return events.map((e) => { const v = byId.get(e.venueId); return v ? detailEvent(e, v) : e })
+  return events.map((e) => { const v = byId.get(e.venueId); return describe(v ? detailEvent(e, v) : e) })
+}
+
+/** An event whose `detail` only says where it is ("At The Piazza. Places are limited.") gets what it is, in a sentence or two, and keeps the notes about cost and places. */
+function describe(e: ExplorerEventRow): ExplorerEventRow {
+  if (!/^At /.test(e.detail)) return e
+  const about = eventCopy(e.title)
+  if (!about) return e
+  const notes = e.detail.replace(/^At .*?\.(?:\s|$)/, '').trim()
+  return { ...e, detail: notes ? `${about} ${notes}` : about }
 }
 
 const STEP_FREE = 'Step-free entrance'

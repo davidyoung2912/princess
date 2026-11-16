@@ -38,6 +38,7 @@ export function DayBundles({ bundles, day, clockAt, busy, onAdd }: {
                 <ul className="event__times">
                   <li><Clock aria-hidden="true" focusable="false" /><time>{formatTime(s.event.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(s.event.endAt) })}</li>
                 </ul>
+                {s.event.detail && <p className="event__detail">{s.event.detail}</p>}
                 <p className="event__where">{s.venueTitle}</p>
                 {s.why && s.about && <p className="muted">{t(WHY[s.why], { about: s.why === 'liked' || s.why === 'similarSaved' ? t(`exp.interest.${s.about}` as StringKey) : s.about })}</p>}
                 <div className="plan-add"><Button variant="secondary" disabled={busy} aria-label={t('plan.bundle.addLabel', { title: s.event.title })} onClick={() => onAdd([{ id: s.event.id, title: s.event.title }])}>{t('plan.bundle.add')}</Button></div>

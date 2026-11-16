@@ -29,7 +29,7 @@ export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay
       venues.set(`${d.explorer}:${v.venue.id}`, { title: v.venue.title, placeId: v.venue.placeId })
       for (const e of v.events) {
         if (!d.mine.includes(e.id)) continue
-        items.push({ id: e.id, kind: 'event', explorer: d.explorer, venueId: v.venue.id, title: e.title, venueTitle: v.venue.title, placeId: v.venue.placeId, start: e.start, startAt: e.startAt, endAt: e.endAt, status: e.status, was: e.was, reason: e.reason })
+        items.push({ id: e.id, kind: 'event', explorer: d.explorer, venueId: v.venue.id, title: e.title, venueTitle: v.venue.title, placeId: v.venue.placeId, start: e.start, startAt: e.startAt, endAt: e.endAt, detail: e.detail, status: e.status, was: e.was, reason: e.reason })
       }
     }
   }

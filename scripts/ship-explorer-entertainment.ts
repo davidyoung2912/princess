@@ -155,7 +155,7 @@ const sunRows = (): Row[] => [
   ['seaview-sailaway', [E], '16:00', 60, 'Sailaway deck party with resident band Xcite', 'seaview', 'music'],
   ['arena-welcome', [E], '20:30', 75, 'Welcome aboard variety showcase: comedian and vocalist', 'arena', 'shows', { cap: 1100 }],
   ['omalleys-folk', [E], '21:30', 90, 'Live Celtic folk and pub sing-along', 'live-omalleys', 'music', { age: 'adults' }],
-  ['dome-dj', [E], '22:30', 120, 'Late-night DJ kickoff party', 'dome', 'nightlife', { age: 'adults' }],
+  ['dome-dj-kickoff', [E], '22:30', 120, 'Late-night DJ kickoff party', 'dome', 'nightlife', { age: 'adults' }],
   // First sea day (formal)
   ['seaview-zumba', [F], '08:00', 45, 'Morning stretch and Zumba', 'seaview', 'wellness'],
   ['live-wake', [F], '09:00', 60, 'Live Wake Show taping and morning trivia', 'live', 'games', { cap: 150 }],

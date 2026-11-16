@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { downloadText } from '../delights/cardTools'
 import { formatTime } from '../../domain/cruise'
@@ -20,6 +21,8 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
 import { Clock, Compass } from '../icons'
+import { Plus } from 'lucide-react'
+import { InviteDialog } from './InviteDialog'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 import { PickDateButton } from '../explorer/DateControls'
@@ -82,7 +85,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
             <section key={g.period} aria-labelledby={`tp-${g.period}`}>
               <h2 id={`tp-${g.period}`}>{headingCase(t(PERIOD[g.period]))}</h2>
               <ul className="event-list">
-                {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} onAdd={addToPlan.add} busy={addToPlan.busy} />)}
+                {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} onAdd={addToPlan.add} onRemove={addToPlan.remove} busy={addToPlan.busy} />)}
               </ul>
             </section>
           ))}
@@ -105,8 +108,9 @@ function changeText(i: PlanItem): string {
   return i.reason ? t('plan.today.movedWhy', { title: i.title, was, time: formatTime(i.start), reason: i.reason }) : t('plan.today.moved', { title: i.title, was, time: formatTime(i.start) })
 }
 
-function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, busy }: { item: PlanItem; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; alternatives: Alternative[]; onAdd: (events: { id: string; title: string }[]) => Promise<boolean>; busy: boolean }) {
+function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, onRemove, busy }: { item: PlanItem; onRemove: (e: { id: string; title: string }) => Promise<boolean>; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; alternatives: Alternative[]; onAdd: (events: { id: string; title: string }[]) => Promise<boolean>; busy: boolean }) {
   const cancelled = item.status === 'cancelled'
+  const [inviting, setInviting] = useState(false)
   return (
     <li className={`event${cancelled ? ' event--cancelled' : ''}${item.link ? ' event--link' : ''}`}>
       {hint && <p className="muted" role="note">{t(hint.tight ? 'plan.today.walkTight' : 'plan.today.walk', { minutes: hint.minutes, place: hint.from.venueTitle, time: clockAt(hint.leaveBy) })}</p>}
@@ -118,6 +122,7 @@ function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, busy }:
       <ul className="event__times">
         <li><Clock aria-hidden="true" focusable="false" /><time>{formatTime(item.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(item.endAt) })}</li>
       </ul>
+      {item.detail && <p className="event__detail">{item.detail}</p>}
       {item.venueTitle && item.venueTitle !== item.title && <p className="event__where"><Link className="event__inner-link" to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></p>}
       {clash && clash.length > 0 && <p className="exp-event__clash" role="note">{t('exp.event.clash', { title: clash[0].title })}</p>}
       {alternatives.length > 0 && (
@@ -130,6 +135,13 @@ function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, busy }:
           </ul>
         </div>
       )}
+      {!cancelled && (
+        <div className="plan-add button-row">
+          <Button variant="secondary" icon={Plus} aria-label={t('plan.today.inviteLabel', { title: item.title })} onClick={() => setInviting(true)}>{t('plan.today.invite')}</Button>
+          {item.kind === 'event' && <Button variant="secondary" disabled={busy} aria-label={t('plan.today.removeLabel', { title: item.title })} onClick={() => { void onRemove({ id: item.id, title: item.title }) }}>{t('plan.today.remove')}</Button>}
+        </div>
+      )}
+      {inviting && <InviteDialog title={item.title} message={t('plan.today.inviteMessage', { title: item.title, time: formatTime(item.start), place: item.venueTitle || item.title, day: String(day) })} onClose={() => setInviting(false)} />}
     </li>
   )
 }

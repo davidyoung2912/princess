@@ -435,3 +435,6 @@ button.chat-quote { cursor: pointer; }
 
 /* A dish's menu-style description, under its title. */
 .dish-desc { display: block; margin: 2px 0 var(--space-1); color: var(--text-muted); font-style: italic; }
+
+/* An event's description under its times on a card. */
+.event__detail { margin: 0 0 var(--space-2); color: var(--text); }

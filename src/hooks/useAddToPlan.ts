@@ -5,6 +5,8 @@ import { t } from '../i18n'
 export interface AddToPlan {
   /** Put events on the plan for the day; resolves true when all went on. */
   add: (events: readonly { id: string; title: string }[]) => Promise<boolean>
+  /** Take one event off the plan for the day; resolves true when it came off. */
+  remove: (event: { id: string; title: string }) => Promise<boolean>
   busy: boolean
   /** What a screen reader hears: what was added, or that it could not be. */
   message: string
@@ -29,5 +31,21 @@ export function useAddToPlan(day: number, onDone: () => void): AddToPlan {
       if (done > 0) onDone()
     }
   }, [day, onDone])
-  return { add, busy, message }
+  const remove = useCallback(async (event: { id: string; title: string }) => {
+    setBusy(true)
+    let done = false
+    try {
+      await api.onboard.togglePlanOn(event.id, day, false)
+      done = true
+      setMessage(t('exp.plan.removed', { title: event.title }))
+      return true
+    } catch {
+      setMessage(t('exp.remove.failed'))
+      return false
+    } finally {
+      setBusy(false)
+      if (done) onDone()
+    }
+  }, [day, onDone])
+  return { add, remove, busy, message }
 }
