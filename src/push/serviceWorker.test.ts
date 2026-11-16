@@ -54,6 +54,24 @@ describe('the service worker script', () => {
     expect(sw.shown[0].options.renotify).toBe(false)
   })
 
+  it('shows at most two buttons that are links to the app and opens the one that was pressed', async () => {
+    const sw = load()
+    const actions = [{ title: 'View new time', path: '/entertainment/atrium' }, { title: 'See alternatives', path: '/entertainment' }, { title: 'Third', path: '/x' }, { title: 'Bad', path: '//evil.example' }]
+    await sw.run('push', { data: { json: () => JSON.parse(serverPayload({ critical: false, id: 'explorerChange:e1', path: '/entertainment/atrium', actions })) } })
+    expect(sw.shown[0].options.actions).toEqual([{ action: 'a0', title: 'View new time' }, { action: 'a1', title: 'See alternatives' }])
+    const data = sw.shown[0].options.data
+    await sw.run('notificationclick', { notification: { close: () => {}, data }, action: 'a1' })
+    expect(sw.posted).toContainEqual({ type: 'princess-open', path: '/entertainment', id: 'explorerChange:e1' })
+  })
+
+  it('opens the notice itself when the body is tapped, and shows no buttons when the server names none', async () => {
+    const sw = load()
+    await sw.run('push', { data: { json: () => JSON.parse(serverPayload()) } })
+    expect(sw.shown[0].options.actions).toEqual([])
+    await sw.run('notificationclick', { notification: { close: () => {}, data: sw.shown[0].options.data }, action: '' })
+    expect(sw.posted).toContainEqual({ type: 'princess-open', path: '/ship/port', id: 'allAboard:2027-03-24:30' })
+  })
+
   it('lets a suggestion fade by itself', async () => {
     const sw = load()
     await sw.run('push', { data: { json: () => JSON.parse(serverPayload({ critical: false, kind: 'payment', id: 'payment:dueSoon:x' })) } })

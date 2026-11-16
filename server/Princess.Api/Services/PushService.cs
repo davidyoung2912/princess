@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null, IPlanStore? plan = null, IChatStore? chatStore = null, IChatSmsStore? smsStore = null, IFinishStore? finish = null, IChatKeepStore? keepStore = null)
+    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null, IPlanStore? plan = null, IChatStore? chatStore = null, IChatSmsStore? smsStore = null, IFinishStore? finish = null, IChatKeepStore? keepStore = null, IDiningFeed? diningFeed = null)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -132,6 +132,12 @@ public sealed class PushService(
         var input = await InputAsync(actor, booking, departure, now, [.. Watch(subs)], ct);
         var prefs = await PrefsAsync(actor.Id, ct);
         input = input with { ExplorerLead = (int)(prefs["explorerLead"]?.GetValue<int>() ?? PushRules.DefaultExplorerLead), ExplorerPlan = await ExplorerPlanAsync(actor, booking, departure, input.DayNumber, ct) };
+        if (diningFeed is not null && booking is not null)
+        {
+            // One failing source never stops the other notices.
+            try { var feed = await diningFeed.ReadAsync(actor, booking, ct); input = input with { Booked = feed.Booked, Waitlist = feed.Waitlist, Orders = feed.Orders }; }
+            catch (Exception e) when (e is not OperationCanceledException) { }
+        }
         if (stanleyReminders is not null) input = input with { Reminders = await stanleyReminders.DueAsync(actor.Id, now, ct) };
         if (stanleyActions is not null) input = input with { HelperPrepared = [.. (await stanleyActions.WaitingFromHelperAsync(actor, ct)).Select(a => a.Id)] };
         var built = PushRules.Build(input).Select(n => PushRules.WithLink(n, booking?.Number)).ToList();
@@ -161,7 +167,7 @@ public sealed class PushService(
                     await store.AddDeliveryAsync(actor.Id, new(n.Key, n.Kind, n.Bypass, "held", decision.Reason, 0, paramsJson, now, false), now, ct);
                 continue;
             }
-            var message = new PushMessage(n.Key, n.Kind, n.Title, n.Body, n.Path, n.Bypass, n.Params);
+            var message = new PushMessage(n.Key, n.Kind, n.Title, n.Body, n.Path, n.Bypass, n.Params, Actions: PushRules.ActionsFor(n));
             var delivered = 0;
             foreach (var s in subs)
             {
@@ -281,11 +287,11 @@ public sealed class PushService(
         return NotificationRules.NormalizePrefs(stored);
     }
 
-    /// <summary>The Explorer events the guest planned for today and tomorrow, with their current start and status (a moved or cancelled one is flagged). Empty when nothing is planned.</summary>
+    /// <summary>The Explorer events the guest planned from today to the end of the cruise, with their current start and status (a moved or cancelled one is flagged). Empty when nothing is planned.</summary>
     private async Task<List<PlannedExplorerEvent>> ExplorerPlanAsync(UserRecord actor, BookingRow? booking, DateOnly? departure, int dayNumber, CancellationToken ct)
     {
         if (onboard is null || booking is null || departure is not { } dep || dayNumber < 1) return [];
-        var rows = (await onboard.ListPlanAsync(actor.Id, booking.SailingId, ct)).Where(r => r.Day >= dayNumber && r.Day <= dayNumber + 1).ToList();
+        var rows = (await onboard.ListPlanAsync(actor.Id, booking.SailingId, ct)).Where(r => r.Day >= dayNumber).ToList();
         if (rows.Count == 0) return [];
         var timeline = TimelineBook.For(booking.SailingId, dep);
         var ship = ExplorerCatalogue.Of(AboardPlans.ShipOfSailing(booking.SailingId));
@@ -294,12 +300,12 @@ public sealed class PushService(
         var list = new List<PlannedExplorerEvent>();
         foreach (var day in rows.Select(r => r.Day).Distinct())
         {
-            var ids = rows.Where(r => r.Day == day).Select(r => r.EventId).ToHashSet();
-            foreach (var e in ExplorerRules.EventsOn(ship, timeline, day, changes, feed).Where(e => ids.Contains(e.Id)))
+            var leads = rows.Where(r => r.Day == day).ToDictionary(r => r.EventId, r => r.ReminderLead);
+            foreach (var e in ExplorerRules.EventsOn(ship, timeline, day, changes, feed).Where(e => leads.ContainsKey(e.Id)))
             {
                 var venue = ship.Venues.FirstOrDefault(v => v.Id == e.VenueId);
                 if (venue is null) continue;
-                list.Add(new(e.Id, day, e.Title, venue.Title, $"{ExplorerCatalogue.PathOf(venue.Explorer)}/{venue.Id}", e.StartAt, e.Status, e.Was, e.Reason));
+                list.Add(new(e.Id, day, e.Title, venue.Title, $"{ExplorerCatalogue.PathOf(venue.Explorer)}/{venue.Id}", e.StartAt, e.Status, e.Was, e.Reason, leads[e.Id]));
             }
         }
         return list;

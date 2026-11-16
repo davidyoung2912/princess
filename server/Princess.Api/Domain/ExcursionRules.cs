@@ -69,6 +69,8 @@ public static class ExcursionRules
 
     public static ItineraryDay DayOf(Timeline timeline, Excursion x) => timeline.Days.First(d => d.Port == x.Port);
 
+    public static int StartMinutes(Excursion x) => Minutes(x.Start);
+
     private static int Minutes(TimeOnly t) => t.Hour * 60 + t.Minute;
     private static int Minutes(string hhmm) => Minutes(TimeOnly.ParseExact(hhmm, "HH:mm"));
 

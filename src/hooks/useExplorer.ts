@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { asExplorerDay, asVenueDay } from '../api/guards'
+import { asDayTours, asExplorerDay, asVenueDay } from '../api/guards'
+import type { DayTour } from '../api/types'
 import type { ExplorerDay, VenueDay } from '../api/explorerTypes'
+import { REMINDER_DEFAULT } from '../domain/notifications'
 import { dayChoices, resolveExplorerDay, stepDay, type DayChoice } from '../domain/explorer/explorerDay'
 import type { ExplorerKind } from '../domain/explorer/types'
 import { itinerary, shipZoneAt } from '../domain/sailings'
@@ -63,6 +65,12 @@ export function useVenueData(kind: ExplorerKind, venueId: string, day: number): 
   return useSavedCopy('explorer', `${me?.id ?? 'none'}:${kind}:${venueId}:${day}`, () => api.onboard.explorerVenue(kind, venueId, day), asVenueDay, [me?.id])
 }
 
+/** The shore excursions the guest has booked on one cruise day, with a copy kept for offline use. */
+export function useDayTours(day: number): SavedCopy<DayTour[]> {
+  const me = usePersona()
+  return useSavedCopy('explorer', `${me?.id ?? 'none'}:tours:${day}`, () => api.onboard.dayTours(day), asDayTours, [me?.id])
+}
+
 export interface PlanState {
   planned: ReadonlySet<string>
   busy: boolean
@@ -70,14 +78,18 @@ export interface PlanState {
   /** The words for a screen reader after the last change. */
   announcement: string
   toggle: (eventId: string, title: string, on: boolean) => Promise<void>
+  /** The reminder chosen for a planned event (minutes, 0 off), or undefined when it follows the notification preference. */
+  reminders: Readonly<Record<string, number>>
+  setReminder: (eventId: string, lead: number) => Promise<void>
 }
 
 /** The events planned for a day, starting from what the server said and following each change. */
-export function usePlan(day: number, served: readonly string[], words: { added: (title: string) => string; removed: (title: string) => string }): PlanState {
+export function usePlan(day: number, served: readonly string[], servedReminders: Readonly<Record<string, number>> | undefined, words: { added: (title: string) => string; removed: (title: string) => string }): PlanState {
   const [override, setOverride] = useState<{ day: number; base: readonly string[]; list: readonly string[] } | null>(null)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
   const [announcement, setAnnouncement] = useState('')
+  const [chosen, setChosen] = useState<{ day: number; base: unknown; map: Record<string, number> } | null>(null)
   const current = override && override.day === day && override.base === served ? override.list : served
   const toggle = useCallback(async (eventId: string, title: string, on: boolean) => {
     setBusy(true)
@@ -87,5 +99,18 @@ export function usePlan(day: number, served: readonly string[], words: { added: 
       setAnnouncement(on ? words.added(title) : words.removed(title))
     } catch { setFailed(true) } finally { setBusy(false) }
   }, [day, served, words])
-  return { planned: new Set(current), busy, failed, announcement, toggle }
+  const reminders = chosen && chosen.day === day && chosen.base === servedReminders ? chosen.map : servedReminders ?? {}
+  const remindersRef = useRef(reminders)
+  useEffect(() => { remindersRef.current = reminders })
+  const setReminder = useCallback(async (eventId: string, lead: number) => {
+    setBusy(true)
+    setFailed(false)
+    try {
+      setOverride({ day, base: served, list: await api.onboard.setPlanReminder(eventId, day, lead) })
+      const next = { ...remindersRef.current }
+      if (lead === REMINDER_DEFAULT) delete next[eventId]; else next[eventId] = lead
+      setChosen({ day, base: servedReminders, map: next })
+    } catch { setFailed(true) } finally { setBusy(false) }
+  }, [day, served, servedReminders])
+  return { planned: new Set(current), busy, failed, announcement, toggle, reminders, setReminder }
 }

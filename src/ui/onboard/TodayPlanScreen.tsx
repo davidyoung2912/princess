@@ -19,7 +19,7 @@ import { ShipClockCard } from '../explorer/ShipClockCard'
 import { LoadError } from '../discover/parts'
 
 const PERIOD: Record<Period, StringKey> = { morning: 'plan.today.morning', afternoon: 'plan.today.afternoon', evening: 'plan.today.evening' }
-const KIND: Record<PlanItem['kind'], StringKey> = { event: 'plan.today.kind.event', dining: 'plan.today.kind.dining', spa: 'plan.today.kind.spa' }
+const KIND: Record<PlanItem['kind'], StringKey> = { event: 'plan.today.kind.event', dining: 'plan.today.kind.dining', spa: 'plan.today.kind.spa', tour: 'plan.today.kind.tour' }
 const LINKS = [
   ['route.diningToday', EXPLORER_PATHS.dining], ['route.entertainment', EXPLORER_PATHS.entertainment], ['route.shoppingToday', EXPLORER_PATHS.shopping],
   ['route.spaExplorer', EXPLORER_PATHS.spa], ['route.exerciseExplorer', EXPLORER_PATHS.exercise], ['route.activitiesExplorer', EXPLORER_PATHS.activities],
@@ -96,7 +96,7 @@ function PlanRow({ item, day, clash, hint, clockAt }: { item: PlanItem; day: num
       <p className="exp-event__title"><strong>{cancelled ? <s>{item.title}</s> : item.title}</strong></p>
       {cancelled && <StatusBadge kind="cancelled" label={t('exp.event.cancelled')} />}
       {item.status === 'moved' && <StatusBadge kind="changed" label={t('exp.event.moved', { was: formatTime(item.was ?? item.start) })} />}
-      <p className="muted">{t(KIND[item.kind])}{item.venueTitle && item.venueTitle !== item.title && <> · <Link to={`${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></>}</p>
+      <p className="muted">{t(KIND[item.kind])}{item.venueTitle && item.venueTitle !== item.title && <> · <Link to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></>}</p>
       {clash && clash.length > 0 && <p className="exp-event__clash" role="note">{t('exp.event.clash', { title: clash[0].title })}</p>}
     </li>
   )

@@ -91,4 +91,6 @@ export interface ExplorerDay {
   sailawayAt?: number
   venues: VenueDay[]
   mine: string[]
+  /** The reminder chosen for a planned event (minutes ahead, 0 off); an event with none follows the notification preference. */
+  reminders?: Record<string, number>
 }

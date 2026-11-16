@@ -20,7 +20,7 @@ public static class ChatCardRules
     public static bool CannotEdit(string? kind) => IsTyped(kind) || kind == ChatPlanningRules.Poll;
 
     // What a card can be.
-    public const string Excursion = "excursion", Dining = "dining", Booking = "booking", PortDay = "portDay", PlaceType = "place", Venue = "venue";
+    public const string Excursion = "excursion", Dining = "dining", Booking = "booking", PortDay = "portDay", PlaceType = "place", Venue = "venue", Menu = "menu";
 
     public static readonly string[] CardTypes = [Excursion, Dining, Booking, PortDay];
 
@@ -28,6 +28,16 @@ public static class ChatCardRules
     public static string VenueRef(string venueId) => $"{Venue}:{venueId}";
 
     public static string? ParseVenueRef(string? shareRef) => shareRef is { } r && r.StartsWith(Venue + ":", StringComparison.Ordinal) && r.Length > Venue.Length + 1 ? r[(Venue.Length + 1)..] : null;
+
+    /// <summary>The ref of a menu card: <c>menu:&lt;venueId&gt;:&lt;meal&gt;</c>. A menu is not booked either.</summary>
+    public static string MenuRef(string venueId, string meal) => $"{Menu}:{venueId}:{meal}";
+
+    public static (string VenueId, string Meal)? ParseMenuRef(string? shareRef)
+    {
+        if (shareRef is not { } r || !r.StartsWith(Menu + ":", StringComparison.Ordinal)) return null;
+        var parts = r[(Menu.Length + 1)..].Split(':');
+        return parts.Length == 2 && parts[0].Length > 0 && parts[1].Length > 0 ? (parts[0], parts[1]) : null;
+    }
 
     /// <summary>The screen a card opens. The app shows "no longer available" when the guest cannot open what it points at.</summary>
     public static string PathOf(string type, string? portId = null) => type switch

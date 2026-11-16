@@ -17,7 +17,8 @@ public sealed record PortTodayDto(string Port, int? Day);
 public sealed record ProgramViewDto(int Day, string Date, string Port, List<DatedEvent> Events, List<string> Mine, bool Changed, bool CanEdit);
 
 /// <summary>An event is in the plan for one day: an event that runs on several days is planned day by day.</summary>
-public sealed record PlanToggleRequest(bool On, int Day);
+/// <summary><see cref="Lead"/> is the reminder choice for the event (minutes ahead, 0 off, -1 follow the notification preference); absent leaves it as it is.</summary>
+public sealed record PlanToggleRequest(bool On, int Day, int? Lead = null);
 
 public sealed record MusterGuestDto(Guid Id, string Name, long? ConfirmedAt);
 

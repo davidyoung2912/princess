@@ -8,6 +8,11 @@ public static class ExplorerEndpoints
 {
     public static void MapExplorerEndpoints(this IEndpointRouteBuilder api)
     {
+        api.MapGet("/bookings/{number}/onboard/tours", async (string number, int day, ICurrentUser me, ExplorerService svc, CancellationToken ct) =>
+                Results.Ok(await svc.ToursAsync(await me.LoadAsync(ct), number, day, ct)))
+            .WithTags("Explorers")
+            .WithSummary("The shore excursions the caller has booked on cruise day `day`, with ship-time start and end, for the Today's Plan timeline. 400 day.");
+
         var g = api.MapGroup("/bookings/{number}/onboard/explorer").WithTags("Explorers");
 
         g.MapGet("/{kind}", async (string number, string kind, int day, ICurrentUser me, ExplorerService svc, CancellationToken ct) =>

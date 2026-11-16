@@ -231,14 +231,14 @@ export interface ChatMessage {
 }
 
 /** A card or place as the server built it: a title and where it applies, never a price, cabin or booking number. `expired` is set on a place whose time has passed; `path` is the screen it opens. */
-export type ChatCardType = 'excursion' | 'dining' | 'booking' | 'portDay' | 'place' | 'plan' | 'venue'
+export type ChatCardType = 'excursion' | 'dining' | 'booking' | 'portDay' | 'place' | 'plan' | 'venue' | 'menu'
 export interface ChatCard { type: ChatCardType; title: string; subtitle?: string; day?: number; time?: string; place?: string; path?: string; expiresAt?: number; expired?: boolean; note?: string; /** What it points at was cancelled after it was sent. */ gone?: boolean }
 
 /** One pinned message in the pin bar (up to three). `fromName` is absent for your own. */
 export interface ChatPin { messageId: string; text: string; fromName?: string; at: number; kind?: 'card' | 'place' | 'plan' }
 
 /** Something you can share from the app. `ref` is sent back to share it; the server rebuilds the card from its own data. */
-export interface ChatShareable { ref: string; type: Exclude<ChatCardType, 'place' | 'plan' | 'venue'>; title: string; subtitle?: string; day?: number; time?: string }
+export interface ChatShareable { ref: string; type: Exclude<ChatCardType, 'place' | 'plan' | 'venue' | 'menu'>; title: string; subtitle?: string; day?: number; time?: string }
 /** A named place on the ship a meeting point can be dropped at. */
 export interface ChatPlace { id: string; name: string; deck: number; section: string }
 /** A programme event on a day your own sailing runs it, which a plan can be made of. `ref` (`eventId:day`) is sent back to make the plan. */

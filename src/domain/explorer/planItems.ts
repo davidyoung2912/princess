@@ -1,12 +1,15 @@
 import { buildIcsCalendar } from '../calendar'
 import type { ExplorerDay } from '../../api/explorerTypes'
 import type { SpaView } from '../../api/spaTypes'
-import type { DiningView } from '../../api/types'
+import type { DayTour, DiningView } from '../../api/types'
 import { DINNER_MINUTES } from '../groupBoard'
 import { sortItems, type PlanItem } from './planTimeline'
 import type { ExplorerKind } from './types'
 
 const MIN = 60_000
+
+/** The screen a booked shore excursion links to. */
+export const TOURS_PATH = '/plan/excursions'
 
 /** Where each Explorer lives, so a plan line links back to its venue page. */
 export const EXPLORER_PATHS: Readonly<Record<ExplorerKind, string>> = {
@@ -14,10 +17,10 @@ export const EXPLORER_PATHS: Readonly<Record<ExplorerKind, string>> = {
 }
 
 /**
- * Everything the guest has on a day, from what the Explorers served (`mine` lists the planned events), the dinner reservations and the spa appointments, in time order.
+ * Everything the guest has on a day, from what the Explorers served (`mine` lists the planned events), the dinner reservations, the spa appointments and the booked shore excursions, in time order.
  * `atMs` turns a ship date and "HH:MM" into an instant. A planned event the ship has since dropped from its list simply does not appear.
  */
-export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay[]; dining: DiningView | null; spa: SpaView | null; atMs: (date: string, time: string) => number }): PlanItem[] {
+export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay[]; dining: DiningView | null; spa: SpaView | null; tours?: readonly DayTour[] | null; atMs: (date: string, time: string) => number }): PlanItem[] {
   const items: PlanItem[] = []
   const venues = new Map<string, { title: string; placeId: string }>()
   const date = o.explorers.find((d) => d.day === o.day)?.date ?? ''
@@ -41,6 +44,10 @@ export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay
     if (a.day !== o.day) continue
     const v = venue('spa', a.venueId)
     items.push({ id: a.id, kind: 'spa', explorer: 'spa', venueId: a.venueId, title: a.title, venueTitle: v.title, placeId: v.placeId, start: a.time, startAt: a.startAt, endAt: a.startAt + a.minutes * MIN, status: 'on' })
+  }
+  for (const x of o.tours ?? []) {
+    if (x.day !== o.day) continue
+    items.push({ id: x.id, kind: 'tour', explorer: 'activities', venueId: '', title: x.name, venueTitle: x.port, placeId: '', start: x.start, startAt: x.startAt, endAt: x.endAt, status: 'on', link: TOURS_PATH })
   }
   return sortItems(items)
 }

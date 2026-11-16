@@ -14,8 +14,11 @@ public sealed record ExplorerEventDto(
 
 public sealed record VenueDayDto(ExplorerVenueDto Venue, HoursDayDto Hours, List<ExplorerEventDto> Events, List<MealMenuDef> Menus);
 
+/// <summary>A shore excursion the caller has booked on a cruise day, as one line of the day's plan: when it starts and ends (ship time, instants) and where to meet.</summary>
+public sealed record DayTourDto(string Id, string ExcursionId, string Name, string Port, string Meeting, int Day, string Date, string Start, long StartAt, long EndAt);
+
 public sealed record ExplorerDayDto(
-    string Explorer, string ShipId, int Day, int? CurrentDay, string Date, string Port, string ShipZone, long? SailawayAt, List<VenueDayDto> Venues, List<string> Mine);
+    string Explorer, string ShipId, int Day, int? CurrentDay, string Date, string Port, string ShipZone, long? SailawayAt, List<VenueDayDto> Venues, List<string> Mine, Dictionary<string, int>? Reminders = null);
 
 /// <summary>
 /// The rules of the Explorer pages: a venue's hours on a day, the events and menus of a day, and the limits on pins. Ported from <c>src/domain/explorer</c>

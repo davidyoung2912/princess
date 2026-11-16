@@ -8,10 +8,22 @@ public sealed record PushNotice(string Key, string Kind, string Category, bool B
 /// <summary>The settings a phone sends with its subscription: the unprompted-suggestions-a-day budget, calm mode and the events it wants to hear about.</summary>
 public sealed record PushSettings(int Budget, bool Calm, IReadOnlyList<string> Watch);
 
+/// <summary>A button on a phone alert: its words and the screen it opens (ENT-091). The app's own screens do the acting, so a button is a deep link and never changes anything by itself.</summary>
+public sealed record PushAction(string Title, string Path);
+
 public sealed record PushDecision(bool Send, string? Reason);
 
-/// <summary>An Explorer event the guest has planned, as the server sees it now: its (possibly moved) start and whether it still runs. <see cref="Path"/> is the venue page it opens.</summary>
-public sealed record PlannedExplorerEvent(string Id, int Day, string Title, string Venue, string Path, long StartAt, string Status, string? Was, string? Reason);
+/// <summary>An Explorer event the guest has planned, as the server sees it now: its (possibly moved) start and whether it still runs. <see cref="Path"/> is the venue page it opens. <see cref="Lead"/> is the reminder the guest chose for this event (minutes, 0 off); null follows their preference.</summary>
+public sealed record PlannedExplorerEvent(string Id, int Day, string Title, string Venue, string Path, long StartAt, string Status, string? Was, string? Reason, int? Lead = null);
+
+/// <summary>A dinner table or spa appointment the guest is in, as the server sees it now. <see cref="Kind"/> is <c>dining</c> or <c>spa</c>; <see cref="Key"/> is stable for the booking, and a moved booking has a new <see cref="StartAt"/>.</summary>
+public sealed record BookedSlot(string Key, string Kind, string Title, string Venue, string Path, long StartAt);
+
+/// <summary>A table the guest waitlisted for that is now on offer, until <see cref="ExpiresAt"/>.</summary>
+public sealed record WaitlistReady(string Id, string Venue, long ExpiresAt);
+
+/// <summary>Where one of the guest's own room-service or breakfast orders stands (<c>onTheWay</c> or <c>delivered</c>).</summary>
+public sealed record OrderUpdate(string Id, string Stage);
 
 /// <summary>What the first five notices are built from. Everything here is already known to the server.</summary>
 public sealed record PushInput(
@@ -21,8 +33,10 @@ public sealed record PushInput(
     bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null, IReadOnlyList<StanleyReminderDue>? Reminders = null, IReadOnlyList<string>? HelperPrepared = null,
     // The guest's own presence for the port day says they are off the ship (see AwayRules).
     bool GuestAway = false,
-    // The Explorer events the guest planned for today and tomorrow, and how many minutes ahead they want a reminder (0 is off).
-    IReadOnlyList<PlannedExplorerEvent>? ExplorerPlan = null, int ExplorerLead = PushRules.DefaultExplorerLead);
+    // The Explorer events the guest planned from today to the end of the cruise, and how many minutes ahead they want a reminder (0 is off).
+    IReadOnlyList<PlannedExplorerEvent>? ExplorerPlan = null, int ExplorerLead = PushRules.DefaultExplorerLead,
+    // Dinner tables and spa appointments coming up, waitlisted tables now on offer, and the guest's orders on the move (DIN-245..251).
+    IReadOnlyList<BookedSlot>? Booked = null, IReadOnlyList<WaitlistReady>? Waitlist = null, IReadOnlyList<OrderUpdate>? Orders = null);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -88,6 +102,29 @@ public static class PushRules
         _ => n,
     };
 
+    /// <summary>
+    /// The buttons of an alert (at most two): a planned event that moved or was cancelled offers its new time and the other events on that Explorer; a waitlisted table offers to take it; a reminder or an order
+    /// opens what it is about. A button is a link to a screen, so it needs no change of state from the notification itself.
+    /// </summary>
+    public static List<PushAction> ActionsFor(PushNotice n)
+    {
+        var key = n.Key;
+        var bare = n.Path.Split('?')[0];
+        var slash = bare.LastIndexOf('/');
+        var parent = slash > 0 ? bare[..slash] : null;
+        if (key.StartsWith("explorerChange:", StringComparison.Ordinal))
+        {
+            var list = new List<PushAction>();
+            if (n.Params.TryGetValue("change", out var c) && c as string == "moved") list.Add(new("View new time", n.Path));
+            if (parent is not null) list.Add(new("See alternatives", parent));
+            return list;
+        }
+        if (key.StartsWith("explorerEvent:", StringComparison.Ordinal) || key.StartsWith("booked:", StringComparison.Ordinal)) return [new("View details", n.Path)];
+        if (key.StartsWith("waitlistReady:", StringComparison.Ordinal)) return [new("Take the table", n.Path)];
+        if (key.StartsWith("order:", StringComparison.Ordinal)) return [new("Track order", n.Path)];
+        return [];
+    }
+
     private static bool Plain(string? v) => v is { Length: > 0 and <= 40 } && v.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_');
 
     /// <summary>The notices that apply now, most worth saying first. A notice that has not come true yet (for example all-aboard in three hours) is not built.</summary>
@@ -131,6 +168,7 @@ public static class PushRules
         }
 
         AddExplorerNotices(list, i);
+        AddDiningNotices(list, i);
 
         if (i.Payment is "overdue" or "dueSoon")
         {
@@ -232,11 +270,12 @@ public static class PushRules
             var link = new Dictionary<string, object> { ["event"] = e.Id, ["day"] = e.Day, ["start"] = e.StartAt };
             if (e.Status == "on")
             {
-                if (i.ExplorerLead > 0 && e.StartAt - nowMs <= i.ExplorerLead * 60_000L)
+                var lead = e.Lead ?? i.ExplorerLead;
+                if (lead > 0 && e.StartAt - nowMs <= lead * 60_000L)
                     list.Add(new($"explorerEvent:{e.Id}:{e.Day}:{e.StartAt}", "reminder", "checkin", false, 35, e.Path,
                         $"Stanley: {e.Title} is about to start", $"{e.Title} at {e.Venue} starts in about {Math.Max(1, (int)Math.Ceiling((e.StartAt - nowMs) / 60_000.0))} minutes.", link));
             }
-            else if (e.Status is "moved" or "cancelled" && !i.Watched.Contains(e.Id) && e.Day >= i.DayNumber && e.Day <= i.DayNumber + 1)
+            else if (e.Status is "moved" or "cancelled" && !i.Watched.Contains(e.Id) && e.Day >= i.DayNumber)
             {
                 var cancelled = e.Status == "cancelled";
                 link["change"] = e.Status;
@@ -245,6 +284,31 @@ public static class PushRules
                     e.Reason ?? (cancelled ? $"{e.Title} at {e.Venue} will not run." : $"{e.Title} at {e.Venue} has a new time. Open the app to see it."), link));
             }
         }
+    }
+
+    /// <summary>
+    /// Reminders for a dinner table or spa appointment, in the same lead time as a planned event (the guest's own limits apply to it like any check-in notice; once per booking and start time, so a moved one
+    /// reminds again); the moment a waitlisted table is offered; and when the guest's own order is on its way or has arrived. Nothing here repeats: each key names the occasion.
+    /// </summary>
+    public static void AddDiningNotices(List<PushNotice> list, PushInput i)
+    {
+        var nowMs = TripRules.ToMs(i.Now);
+        foreach (var b in i.Booked ?? [])
+        {
+            if (b.StartAt <= nowMs || i.ExplorerLead <= 0 || b.StartAt - nowMs > i.ExplorerLead * 60_000L) continue;
+            var minutes = Math.Max(1, (int)Math.Ceiling((b.StartAt - nowMs) / 60_000.0));
+            var what = b.Kind == "spa" ? "appointment" : "table";
+            list.Add(new($"booked:{b.Key}:{b.StartAt}", "reminder", "checkin", false, 42, b.Path, $"Stanley: your {what} at {b.Venue} is coming up",
+                $"{b.Title} at {b.Venue} starts in about {minutes} minutes.", new() { ["booking"] = b.Key, ["start"] = b.StartAt }));
+        }
+        foreach (var w in i.Waitlist ?? [])
+            if (w.ExpiresAt > nowMs)
+                list.Add(new($"waitlistReady:{w.Id}", "reservation", "checkin", false, 80, "/plan/dining", "Stanley: a table is ready for you",
+                    $"A table at {w.Venue} has come up. The offer does not last long, so open the app to take it.", new() { ["waitlist"] = w.Id }));
+        foreach (var o in i.Orders ?? [])
+            if (o.Stage is "onTheWay" or "delivered")
+                list.Add(new($"order:{o.Id}:{o.Stage}", "reminder", "checkin", false, 44, "/ship/order", o.Stage == "delivered" ? "Stanley: your order has arrived" : "Stanley: your order is on its way",
+                    o.Stage == "delivered" ? "Your order has been delivered." : "Your order has left the galley and is on its way.", new() { ["order"] = o.Id, ["stage"] = o.Stage }));
     }
 
     /// <summary>Whether the guest's own quiet hours or do-not-disturb are on. Used to hold a suggestion card (chat phase 6); it never holds a notice that bypasses.</summary>

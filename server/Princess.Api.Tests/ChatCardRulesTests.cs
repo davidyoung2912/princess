@@ -147,6 +147,17 @@ public class ChatCardRulesTests
     }
 
     [Fact]
+    public void AMenuRefRoundTripsAndOnlyAMenuRefParses()
+    {
+        Assert.Equal(("crown", "dinner"), ChatCardRules.ParseMenuRef(ChatCardRules.MenuRef("crown", "dinner")));
+        Assert.Null(ChatCardRules.ParseMenuRef("venue:crown"));
+        Assert.Null(ChatCardRules.ParseMenuRef("menu:crown"));
+        Assert.Null(ChatCardRules.ParseMenuRef("menu::dinner"));
+        Assert.Null(ChatCardRules.ParseMenuRef("menu:a:b:c"));
+        Assert.Null(ChatCardRules.ParseMenuRef(null));
+    }
+
+    [Fact]
     public void AnExplorerEventAndItsVenueOpenTheVenuePage()
     {
         var ship = ExplorerCatalogue.Ships.First();

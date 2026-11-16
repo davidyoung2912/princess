@@ -1,7 +1,7 @@
 import type { ExplorerDay, VenueDay } from './explorerTypes'
 import type { SpaView } from './spaTypes'
 import type { CustomsView, DisembarkView, NightView, OnwardView } from './finishTypes'
-import type { BoardingView, DiningView, EmbarkView, FamilyView, FolioView, HealthView, MusterView, OnboardToday, PhotosView, PortDayView, PrintView, ProgramView, ReceiptView, RoomView } from './types'
+import type { BoardingView, DayTour, DiningView, EmbarkView, FamilyView, FolioView, HealthView, MusterView, OnboardToday, PhotosView, PortDayView, PrintView, ProgramView, ReceiptView, RoomView } from './types'
 
 const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null)
 
@@ -56,6 +56,12 @@ export function asSpaView(raw: unknown): SpaView | null {
   const good = o.treatments.every((x) => !!obj(x) && typeof obj(x)!.id === 'string' && typeof obj(x)!.minutes === 'number')
     && o.appointments.every((a) => !!obj(a) && typeof obj(a)!.id === 'string' && typeof obj(a)!.time === 'string' && !!obj(obj(a)!.cancel))
   return good ? (raw as SpaView) : null
+}
+
+export function asDayTours(raw: unknown): DayTour[] | null {
+  if (!Array.isArray(raw)) return null
+  const good = raw.every((x) => { const o = obj(x); return !!o && typeof o.id === 'string' && typeof o.name === 'string' && typeof o.day === 'number' && typeof o.start === 'string' && typeof o.startAt === 'number' && typeof o.endAt === 'number' })
+  return good ? (raw as DayTour[]) : null
 }
 
 export function asFolioView(raw: unknown): FolioView | null {

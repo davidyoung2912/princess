@@ -11,6 +11,9 @@ export interface QuietHours { on: boolean; /** "HH:MM". */ from: string; to: str
 /** `dnd.until` is when the one-tap do not disturb from Chat ends (milliseconds); 0 is off. The server owns it, and it ends by itself. */
 /** `explorerLead` is how many minutes ahead of a planned Explorer event its reminder comes; 0 is off. */
 export const EXPLORER_LEADS: readonly number[] = [0, 10, 15, 30, 60]
+
+/** The reminder choice that goes back to following the notification preference. */
+export const REMINDER_DEFAULT = -1
 export interface NotificationPrefs { channels: Record<Category, ChannelPrefs>; quiet: QuietHours; dnd: { until: number }; explorerLead: number }
 
 export const DEFAULT_PREFS: NotificationPrefs = {

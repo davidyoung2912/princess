@@ -24,6 +24,15 @@ describe('buildPlanItems', () => {
     expect(items[1].endAt - items[1].startAt).toBe(90 * MIN)
     expect(items[1].title).toBe('dining venue')
   })
+  it('puts a booked shore excursion on its own day among the rest', () => {
+    const tours = [
+      { id: 't1', excursionId: 'x', name: 'Snorkel', port: 'Cozumel', meeting: 'Theater', day: 2, date: '2027-01-02', start: '08:30', startAt: atMs('', '08:30'), endAt: atMs('', '12:30') },
+      { id: 't2', excursionId: 'y', name: 'Ruins', port: 'Cozumel', meeting: 'Theater', day: 3, date: '2027-01-03', start: '08:30', startAt: atMs('', '08:30'), endAt: atMs('', '12:30') },
+    ]
+    const items = buildPlanItems({ day: 2, dining: null, spa: null, tours, atMs, explorers: [day('entertainment', [ev('e1', atMs('', '20:30'))], ['e1'])] })
+    expect(items.map((i) => [i.id, i.kind])).toEqual([['t1', 'tour'], ['e1', 'event']])
+    expect(items[0]).toMatchObject({ title: 'Snorkel', venueTitle: 'Cozumel', link: '/plan/excursions' })
+  })
   it('keeps moved and cancelled planned events with their reason', () => {
     const items = buildPlanItems({ day: 2, dining: null, spa: null, atMs, explorers: [day('entertainment', [ev('e1', 5 * MIN, { status: 'cancelled', reason: 'weather' })], ['e1'])] })
     expect(items[0]).toMatchObject({ status: 'cancelled', reason: 'weather' })

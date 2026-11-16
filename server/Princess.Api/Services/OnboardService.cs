@@ -68,7 +68,8 @@ public sealed class OnboardService(
         // An event is on the daily programme or in one of the Explorers; both go in the same plan (a plan holds an event id and a day).
         var (id, when) = ProgramRules.ById(eventId, shipId) is { } ev ? (ev.Id, ev.When) : ExplorerCatalogue.EventOn(shipId, eventId) is { } x ? (x.Id, x.When) : throw ApiException.Invalid("event");
         if (body is null || !DayKinds.Runs(c.Timeline, body.Day, when)) throw ApiException.Invalid("day");
-        await store.SetPlanAsync(actor.Id, c.Booking.SailingId, id, body.Day, body.On, ct);
+        if (body.Lead is { } lead && lead != PlanLead.Default && !PushRules.ExplorerLeadChoices.Contains(lead)) throw ApiException.Invalid("lead");
+        await store.SetPlanAsync(actor.Id, c.Booking.SailingId, id, body.Day, body.On, body.Lead, ct);
         return [.. (await store.ListPlanAsync(actor.Id, c.Booking.SailingId, ct)).Where(r => r.Day == body.Day).Select(r => r.EventId)];
     }
 

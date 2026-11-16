@@ -6,17 +6,24 @@ namespace Princess.Api.Tests.Support;
 public sealed class InMemoryOnboardStore : IOnboardStore
 {
     public HashSet<(long UserId, string SailingId, string EventId, int Day)> Plan { get; } = [];
+    public Dictionary<(long UserId, string SailingId, string EventId, int Day), int> Leads { get; } = [];
     public Dictionary<(long BookingId, long UserId), DateTime> Muster { get; } = [];
     public List<(long BookingId, FolioRow Row)> Folio { get; } = [];
     public List<(long BookingId, ServiceThreadRow Thread)> Threads { get; } = [];
     private long _next = 1;
 
     public Task<List<PlanEventRow>> ListPlanAsync(long userId, string sailingId, CancellationToken ct) =>
-        Task.FromResult(Plan.Where(p => p.UserId == userId && p.SailingId == sailingId).OrderBy(p => p.Day).Select(p => new PlanEventRow { EventId = p.EventId, Day = p.Day }).ToList());
+        Task.FromResult(Plan.Where(p => p.UserId == userId && p.SailingId == sailingId).OrderBy(p => p.Day).Select(p => new PlanEventRow { EventId = p.EventId, Day = p.Day, ReminderLead = Leads.TryGetValue(p, out var l) ? l : null }).ToList());
 
-    public Task SetPlanAsync(long userId, string sailingId, string eventId, int day, bool on, CancellationToken ct)
+    public Task SetPlanAsync(long userId, string sailingId, string eventId, int day, bool on, int? lead, CancellationToken ct)
     {
-        if (on) Plan.Add((userId, sailingId, eventId, day)); else Plan.Remove((userId, sailingId, eventId, day));
+        var key = (userId, sailingId, eventId, day);
+        if (on)
+        {
+            Plan.Add(key);
+            if (lead is { } l) { if (l == PlanLead.Default) Leads.Remove(key); else Leads[key] = l; }
+        }
+        else { Plan.Remove(key); Leads.Remove(key); }
         return Task.CompletedTask;
     }
 

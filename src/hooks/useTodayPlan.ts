@@ -6,7 +6,7 @@ import { zonedToEpoch } from '../domain/timezones'
 import { useDiningView } from '../ui/explorer/dining/diningView'
 import { useSpaView } from '../ui/explorer/spa/spaView'
 import { useSailing } from './useDemo'
-import { useExplorerData } from './useExplorer'
+import { useDayTours, useExplorerData } from './useExplorer'
 import type { SavedCopy } from './useSavedCopy'
 
 export interface TodayPlan {
@@ -20,7 +20,7 @@ export interface TodayPlan {
   retry: () => void
 }
 
-/** Everything the guest has on one cruise day: planned events from all six Explorers, dinner reservations and spa appointments. */
+/** Everything the guest has on one cruise day: planned events from all six Explorers, dinner reservations, spa appointments and booked shore excursions. */
 export function useTodayPlan(day: number): TodayPlan {
   const sailing = useSailing()
   const copies: SavedCopy<ExplorerDay>[] = [
@@ -29,10 +29,11 @@ export function useTodayPlan(day: number): TodayPlan {
   ]
   const dining = useDiningView()
   const spa = useSpaView()
-  const all = [...copies, dining, spa]
+  const tours = useDayTours(day)
+  const all = [...copies, dining, spa, tours]
   const explorers = copies.map((c) => c.data).filter((d): d is ExplorerDay => d !== null)
   const items = buildPlanItems({
-    day, explorers, dining: dining.data, spa: spa.data,
+    day, explorers, dining: dining.data, spa: spa.data, tours: tours.data,
     atMs: (date, time) => zonedToEpoch(date, time, shipZoneOnDate(sailing, date)),
   })
   return {

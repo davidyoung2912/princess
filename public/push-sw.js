@@ -4,7 +4,10 @@ self.addEventListener('push', (event) => {
   let data = null
   try { data = event.data ? event.data.json() : null } catch { data = null }
   if (!data || typeof data.title !== 'string') return
-  const path = typeof data.path === 'string' && data.path.startsWith('/') && !data.path.startsWith('//') ? data.path : '/'
+  const safe = (p) => typeof p === 'string' && p.startsWith('/') && !p.startsWith('//')
+  const path = safe(data.path) ? data.path : '/'
+  // Buttons are links to the app's own screens: a title and a path, at most two.
+  const actions = Array.isArray(data.actions) ? data.actions.filter((a) => a && typeof a.title === 'string' && safe(a.path)).slice(0, 2) : []
   event.waitUntil(Promise.all([
     self.registration.showNotification(data.title, {
       body: typeof data.body === 'string' ? data.body : '',
@@ -13,7 +16,8 @@ self.addEventListener('push', (event) => {
       renotify: typeof data.tag === 'string',
       requireInteraction: data.critical === true,
       icon: '/icon-192.png',
-      data: { path, id: typeof data.id === 'string' ? data.id : null },
+      actions: actions.map((a, i) => ({ action: `a${i}`, title: a.title })),
+      data: { path, id: typeof data.id === 'string' ? data.id : null, actions: actions.map((a) => a.path) },
     }),
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       for (const c of clients) c.postMessage({ type: 'princess-push', id: data.id, kind: data.kind })
@@ -23,7 +27,11 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const path = event.notification.data && event.notification.data.path ? event.notification.data.path : '/'
+  const data = event.notification.data || {}
+  // A button opens its own screen; a tap on the body opens the one the notice is about.
+  const pick = /^a(\d)$/.exec(event.action || '')
+  const own = pick && Array.isArray(data.actions) ? data.actions[Number(pick[1])] : null
+  const path = typeof own === 'string' ? own : data.path ? data.path : '/'
   const id = event.notification.data && typeof event.notification.data.id === 'string' ? event.notification.data.id : null
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
     for (const c of clients) {

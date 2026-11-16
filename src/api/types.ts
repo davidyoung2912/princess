@@ -1005,6 +1005,21 @@ export interface ProgramView {
   canEdit: boolean
 }
 
+/** A shore excursion the signed-in person has booked on one cruise day, with its ship-time start and end. */
+export interface DayTour {
+  id: string
+  excursionId: string
+  name: string
+  port: string
+  meeting: string
+  day: number
+  date: string
+  /** Ship time, "HH:MM". */
+  start: string
+  startAt: number
+  endAt: number
+}
+
 export interface TourToday {
   id: string
   excursionId: string
@@ -1050,6 +1065,10 @@ export interface OnboardApi {
   explorerVenue(kind: ExplorerKind, venueId: string, day: number): Promise<VenueDay>
   /** Adds an event of any Explorer (or the daily programme) to the plan of a day, or removes it; returns that day's planned event ids. Rejects `invalid` for an unknown event or a day it does not run. */
   togglePlanOn(eventId: string, day: number, on: boolean): Promise<string[]>
+  /** Sets the reminder for a planned event: minutes ahead (0 off), or `REMINDER_DEFAULT` to follow the notification preference again. Rejects `invalid` for any other number. Returns that day's planned event ids. */
+  /** The shore excursions the person has booked on a cruise day, for the Today's Plan timeline. Rejects `invalid` for a day outside the sailing. */
+  dayTours(day: number): Promise<DayTour[]>
+  setPlanReminder(eventId: string, day: number, lead: number): Promise<string[]>
   portDay(): Promise<PortDayView | null>
   muster(): Promise<MusterView>
   /** Checks guests in at the muster station; rejects `forbidden` for someone outside the booking. */

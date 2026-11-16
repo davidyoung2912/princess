@@ -158,6 +158,7 @@ services.AddScoped<BookingService>();
 services.AddScoped<PlanService>();
 services.AddScoped<ScopeLoader>();
 services.AddScoped<WaitService>();
+services.AddScoped<IDiningFeed, DiningFeed>();
 services.AddScoped<AheadService>();
 services.AddOptions<PassOptions>().BindConfiguration(PassOptions.Section).ValidateDataAnnotations().ValidateOnStart();
 services.AddSingleton<PassLookupGuard>();

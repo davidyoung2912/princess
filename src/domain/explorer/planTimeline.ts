@@ -1,10 +1,10 @@
 import { placeById, type Section } from '../deck'
 import type { EventStatus, ExplorerKind } from './types'
 
-export type PlanItemKind = 'event' | 'dining' | 'spa'
+export type PlanItemKind = 'event' | 'dining' | 'spa' | 'tour'
 export type Period = 'morning' | 'afternoon' | 'evening'
 
-/** One line of Today's Plan, whatever it came from: a planned event, a dinner reservation or a spa appointment. */
+/** One line of Today's Plan, whatever it came from: a planned event, a dinner reservation, a spa appointment or a booked shore excursion. */
 export interface PlanItem {
   id: string
   kind: PlanItemKind
@@ -22,6 +22,8 @@ export interface PlanItem {
   status: EventStatus
   was?: string
   reason?: string
+  /** Where the line links to when it is not an Explorer venue page (a shore excursion links to the excursions screen). */
+  link?: string
 }
 
 const MIN = 60_000

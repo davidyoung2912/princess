@@ -2274,6 +2274,9 @@ CREATE TABLE dbo.PlanEvents (
 );
 END
 
+-- Phase 11b: the reminder the guest chose for one planned event (minutes ahead; 0 is off). NULL follows their notification preference.
+IF COL_LENGTH(N'dbo.PlanEvents', N'ReminderLead') IS NULL ALTER TABLE dbo.PlanEvents ADD ReminderLead INT NULL;
+
 IF OBJECT_ID(N'dbo.ShowTickets', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ShowTickets (

@@ -98,8 +98,8 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
         var mayChange = sailing is not null && ChatPlanningRules.MayChangeProgramme(actor.IsSupervised);
         var inProgramme = mayChange && (await onboard.ListPlanAsync(actor.Id, sailing!, ct)).Any(r => r.EventId == card.EventId && r.Day == card.Day);
         var effect = ChatPlanningRules.Effect(previous?.Choice, previous?.AddedToPlan ?? false, next, inProgramme, mayChange);
-        if (effect.Add) await onboard.SetPlanAsync(actor.Id, sailing!, card.EventId!, card.Day!.Value, true, ct);
-        if (effect.Remove) await onboard.SetPlanAsync(actor.Id, sailing!, card.EventId!, card.Day!.Value, false, ct);
+        if (effect.Add) await onboard.SetPlanAsync(actor.Id, sailing!, card.EventId!, card.Day!.Value, true, null, ct);
+        if (effect.Remove) await onboard.SetPlanAsync(actor.Id, sailing!, card.EventId!, card.Day!.Value, false, null, ct);
         await store.SetResponseAsync(message.Id, actor.Id, next, effect.Added, now, ct);
         await TellAsync(actor, member, "plan", ct);
         return await TallyAsync(actor, member, message, now, ct);

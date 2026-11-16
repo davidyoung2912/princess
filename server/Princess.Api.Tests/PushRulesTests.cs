@@ -304,6 +304,79 @@ public class PushRulesTests
     }
 
     [Fact]
+    public void AnEventsOwnReminderChoiceOverridesThePreference()
+    {
+        Assert.Single(ExplorerNotices(15, Planned(40) with { Lead = 60 }));
+        Assert.Empty(ExplorerNotices(15, Planned(10) with { Lead = 0 }));
+        Assert.Empty(ExplorerNotices(60, Planned(40) with { Lead = 10 }));
+    }
+
+    [Fact]
+    public void AChangeAlertCoversEventsMoreThanADayAhead()
+    {
+        var far = Planned(120, "cancelled") with { Day = 7 };
+        Assert.Single(PushRules.Build(Input() with { ExplorerPlan = [far] }), n => n.Key.StartsWith("explorerChange:", StringComparison.Ordinal));
+    }
+
+    private static List<PushNotice> DiningNotices(int lead, IReadOnlyList<BookedSlot>? booked = null, IReadOnlyList<WaitlistReady>? waitlist = null, IReadOnlyList<OrderUpdate>? orders = null) =>
+        PushRules.Build(Input() with { ExplorerLead = lead, Booked = booked, Waitlist = waitlist, Orders = orders })
+            .Where(n => n.Key.StartsWith("booked:", StringComparison.Ordinal) || n.Key.StartsWith("waitlistReady:", StringComparison.Ordinal) || n.Key.StartsWith("order:", StringComparison.Ordinal)).ToList();
+
+    private static BookedSlot Table(int startInMinutes, string key = "dining:a") => new(key, "dining", "Your table", "Crown Grill", "/plan/dining", Ms(startInMinutes));
+
+    [Fact]
+    public void ATableOrAppointmentRemindsInsideTheLeadTimeOnce()
+    {
+        Assert.Single(DiningNotices(15, [Table(10)]));
+        Assert.Empty(DiningNotices(15, [Table(40)]));
+        Assert.Empty(DiningNotices(15, [Table(-5)]));
+        Assert.Empty(DiningNotices(0, [Table(5)]));
+        Assert.NotEqual(DiningNotices(15, [Table(10)])[0].Key, DiningNotices(15, [Table(12)])[0].Key);
+        Assert.Equal("/plan/dining", DiningNotices(15, [Table(10)])[0].Path);
+    }
+
+    [Fact]
+    public void ASpaAppointmentSaysAppointment()
+    {
+        var n = Assert.Single(DiningNotices(30, [new BookedSlot("spa:a", "spa", "Swedish massage", "Lotus Spa", "/spa-explorer/lotus", Ms(20))]));
+        Assert.Contains("appointment", n.Title);
+    }
+
+    [Fact]
+    public void AWaitlistOfferIsToldOnceWhileItLastsAndNeverAfter()
+    {
+        var n = Assert.Single(DiningNotices(0, waitlist: [new WaitlistReady("w1", "Crown Grill", Ms(30))]));
+        Assert.Equal("waitlistReady:w1", n.Key);
+        Assert.Empty(DiningNotices(0, waitlist: [new WaitlistReady("w1", "Crown Grill", Ms(-1))]));
+    }
+
+    [Fact]
+    public void AnOrderIsToldWhenItIsOnTheWayAndWhenItArrives()
+    {
+        Assert.Equal(["order:o1:onTheWay"], DiningNotices(0, orders: [new OrderUpdate("o1", "onTheWay")]).Select(n => n.Key));
+        Assert.Equal(["order:o1:delivered"], DiningNotices(0, orders: [new OrderUpdate("o1", "delivered")]).Select(n => n.Key));
+        Assert.Empty(DiningNotices(0, orders: [new OrderUpdate("o1", "preparing")]));
+    }
+
+    [Fact]
+    public void AMovedEventOffersItsNewTimeAndTheAlternativesAndACancelledOneOnlyTheAlternatives()
+    {
+        var moved = Assert.Single(ExplorerNotices(15, Planned(120, "moved")));
+        Assert.Equal(["View new time", "See alternatives"], PushRules.ActionsFor(moved).Select(a => a.Title));
+        Assert.Equal("/entertainment", PushRules.ActionsFor(moved)[1].Path);
+        var cancelled = Assert.Single(ExplorerNotices(15, Planned(120, "cancelled")));
+        Assert.Equal(["See alternatives"], PushRules.ActionsFor(cancelled).Select(a => a.Title));
+    }
+
+    [Fact]
+    public void AWaitlistOfferAndAnOrderHaveOneButtonEachAndOtherNoticesNone()
+    {
+        Assert.Equal(["Take the table"], PushRules.ActionsFor(DiningNotices(0, waitlist: [new WaitlistReady("w1", "Crown Grill", Ms(30))])[0]).Select(a => a.Title));
+        Assert.Equal(["Track order"], PushRules.ActionsFor(DiningNotices(0, orders: [new OrderUpdate("o1", "onTheWay")])[0]).Select(a => a.Title));
+        Assert.Empty(PushRules.ActionsFor(new PushNotice("payment:x", "payment", "payments", false, 1, "/me/payments", "t", "b", [])));
+    }
+
+    [Fact]
     public void ThePlanReminderOpensTheVenuePage()
     {
         Assert.Equal("/entertainment/atrium", ExplorerNotices(15, Planned(10))[0].Path);

@@ -20,6 +20,7 @@ import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
 import { PinButton } from './Pins'
 import { SendToChat } from '../onboard/SendToChat'
+import { REMINDER_DEFAULT } from '../../domain/notifications'
 import { navigatePath } from '../../domain/explorer/navigate'
 import { StanleyPose } from '../StanleyPose'
 import { venuePose } from './venueArt'
@@ -86,7 +87,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
 function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: { kind: ExplorerKind; venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; diets: DietaryId[]; above?: VenueDetailProps['above']; busy?: VenueDetailProps['busy']; reload: () => void }) {
   const v = venue.venue
   const pins = useVenuePins([v])
-  const plan = usePlan(state.day, explorerDay?.mine ?? [], { added: (title) => t('exp.plan.added', { title }), removed: (title) => t('exp.plan.removed', { title }) })
+  const plan = usePlan(state.day, explorerDay?.mine ?? [], explorerDay?.reminders, { added: (title) => t('exp.plan.added', { title }), removed: (title) => t('exp.plan.removed', { title }) })
   const [interest, setInterest] = useState<string | null>(null)
   const interests = [...new Set(venue.events.map((e) => e.interest))]
   const shownEvents = interest === null ? venue.events : venue.events.filter((e) => e.interest === interest)
@@ -120,7 +121,7 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
           {v.accessibility.map((f) => <li key={f}>{f}</li>)}
         </ul>
       </section>
-      <MenuPanel menus={venue.menus} diets={diets} />
+      <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} />
       <section aria-labelledby="exp-ev-h">
         <h2 id="exp-ev-h">{t('exp.venue.events')}</h2>
         <p role="status" className="visually-hidden">{plan.announcement}</p>
@@ -132,7 +133,7 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
             {shownEvents.map((e) => (
               <EventRow key={e.id} event={e} now={state.nowAt} share={e.status === 'cancelled' ? undefined : <SendToChat kind="plan" shareRef={`${e.id}:${state.day}`} title={e.title} />}
                 clash={clashesWith(e, [...taken, ...planned])}
-                plan={past || !explorerDay ? undefined : { planned: plan.planned.has(e.id), busy: plan.busy, onToggle: () => { void plan.toggle(e.id, e.title, !plan.planned.has(e.id)) } }} />
+                plan={past || !explorerDay ? undefined : { planned: plan.planned.has(e.id), busy: plan.busy, onToggle: () => { void plan.toggle(e.id, e.title, !plan.planned.has(e.id)) }, reminder: plan.reminders[e.id] ?? REMINDER_DEFAULT, onReminder: (lead) => { void plan.setReminder(e.id, lead) } }} />
             ))}
           </ul>
         )}

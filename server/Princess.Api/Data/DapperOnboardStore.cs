@@ -9,19 +9,22 @@ public sealed class DapperOnboardStore(IDbConnectionFactory db) : IOnboardStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<PlanEventRow>(Sql.Cmd(
-            "SELECT EventId, [Day] FROM dbo.PlanEvents WHERE UserId = @userId AND SailingId = @sailingId ORDER BY [Day], CreatedAt", new { userId, sailingId }, null, ct))).ToList();
+            "SELECT EventId, [Day], ReminderLead FROM dbo.PlanEvents WHERE UserId = @userId AND SailingId = @sailingId ORDER BY [Day], CreatedAt", new { userId, sailingId }, null, ct))).ToList();
     }
 
-    public async Task SetPlanAsync(long userId, string sailingId, string eventId, int day, bool on, CancellationToken ct)
+    public async Task SetPlanAsync(long userId, string sailingId, string eventId, int day, bool on, int? lead, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
+        var stored = lead is null or PlanLead.Default ? (int?)null : lead;
         await c.ExecuteAsync(Sql.Cmd(on
             ? """
               IF NOT EXISTS (SELECT 1 FROM dbo.PlanEvents WHERE UserId = @userId AND SailingId = @sailingId AND EventId = @eventId AND [Day] = @day)
-                INSERT INTO dbo.PlanEvents (UserId, SailingId, EventId, [Day]) VALUES (@userId, @sailingId, @eventId, @day);
+                INSERT INTO dbo.PlanEvents (UserId, SailingId, EventId, [Day], ReminderLead) VALUES (@userId, @sailingId, @eventId, @day, @stored)
+              ELSE IF @setLead = 1
+                UPDATE dbo.PlanEvents SET ReminderLead = @stored WHERE UserId = @userId AND SailingId = @sailingId AND EventId = @eventId AND [Day] = @day;
               """
             : "DELETE FROM dbo.PlanEvents WHERE UserId = @userId AND SailingId = @sailingId AND EventId = @eventId AND [Day] = @day",
-            new { userId, sailingId, eventId, day }, null, ct));
+            new { userId, sailingId, eventId, day, stored, setLead = lead is null ? 0 : 1 }, null, ct));
     }
 
     public async Task<Dictionary<long, DateTime>> ListMusterAsync(long bookingId, CancellationToken ct)

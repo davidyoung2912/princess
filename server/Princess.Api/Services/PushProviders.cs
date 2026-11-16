@@ -2,14 +2,15 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Princess.Api.Data;
+using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
 
 /// <summary>What a phone is told. The service worker shows <see cref="Title"/> and <see cref="Body"/> and opens <see cref="Path"/> when tapped.</summary>
-public sealed record PushMessage(string Key, string Kind, string Title, string Body, string Path, bool Critical, Dictionary<string, object> Params, string? Tag = null)
+public sealed record PushMessage(string Key, string Kind, string Title, string Body, string Path, bool Critical, Dictionary<string, object> Params, string? Tag = null, IReadOnlyList<PushAction>? Actions = null)
 {
     /// <summary>The body sent to the phone. Small, with no personal data beyond what the notice says.</summary>
-    public string ToJson() => JsonSerializer.Serialize(new { id = Key, kind = Kind, title = Title, body = Body, path = Path, critical = Critical, @params = Params, tag = Tag }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    public string ToJson() => JsonSerializer.Serialize(new { id = Key, kind = Kind, title = Title, body = Body, path = Path, critical = Critical, @params = Params, tag = Tag, actions = Actions is { Count: > 0 } ? Actions.Take(2).Select(a => new { title = a.Title, path = a.Path }) : null }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 }
 
 public enum PushResult { Delivered, Gone, Failed }

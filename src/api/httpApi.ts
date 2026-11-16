@@ -150,6 +150,8 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     explorerDay: (kind, day) => inBooking(`/onboard/explorer/${seg(kind)}?day=${day}`),
     explorerVenue: (kind, venueId, day) => inBooking(`/onboard/explorer/${seg(kind)}/${seg(venueId)}?day=${day}`),
     togglePlanOn: (eventId, day, on) => inTrip('put', `/onboard/plan/${seg(eventId)}`, { on, day }),
+    dayTours: (day) => inBooking(`/onboard/tours?day=${day}`),
+    setPlanReminder: (eventId, day, lead) => inTrip('put', `/onboard/plan/${seg(eventId)}`, { on: true, day, lead }),
     portDay: () => inBooking('/onboard/port-day'),
     muster: () => inBooking('/onboard/muster'),
     confirmMuster: (guests) => inTrip('post', '/onboard/muster', { guests: guests }),

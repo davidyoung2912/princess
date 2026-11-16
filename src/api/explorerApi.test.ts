@@ -39,6 +39,20 @@ describe('Explorer client calls', () => {
     expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ on: true, day: 5 })
   })
 
+  it('asks for the booked tours of a day', async () => {
+    const { http, calls } = fake({ '/trips': trips, '/bookings/PC2/onboard/tours?day=4': [] })
+    const g = createHttpGroups(http).groups
+    expect(await g.onboard.dayTours(4)).toEqual([])
+    expect(calls.some((c) => c.path.includes('/onboard/tours?day=4'))).toBe(true)
+  })
+
+  it('sets the reminder of a planned event', async () => {
+    const { http, calls } = fake({ '/trips': trips, '/bookings/PC2/onboard/plan/e1': ['e1'] })
+    const g = createHttpGroups(http).groups
+    await g.onboard.setPlanReminder('e1', 5, 30)
+    expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ on: true, day: 5, lead: 30 })
+  })
+
   it('reads and changes spa appointments through the plan routes', async () => {
     const view = { treatments: [], appointments: [], party: [], canBook: true, cancelFreeHours: 24, lateFeePercent: 50, maxParty: 4 }
     const { http, calls } = fake({

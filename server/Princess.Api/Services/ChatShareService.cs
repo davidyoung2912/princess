@@ -38,16 +38,22 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         return new(items, places, await EventsAsync(actor, ct));
     }
 
-    /// <summary>The programme events a plan can be made of: each event on each day the guest's own sailing runs it, by day and time. Empty without a current booking.</summary>
+    /// <summary>The events a plan can be made of: each programme event and each Explorer event on each day the guest's own sailing runs it, by day and time. Empty without a current booking.</summary>
     private async Task<List<ChatPlannableDto>> EventsAsync(UserRecord actor, CancellationToken ct)
     {
         var list = new List<ChatPlannableDto>();
         if (await CurrentAsync(actor, ct) is not { } booking) return list;
         var ship = AboardPlans.ShipOfSailing(booking.SailingId);
         var timeline = TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure));
+        var explorer = ExplorerCatalogue.Of(ship);
         for (var day = 1; day <= timeline.Days.Count && day <= Itinerary.MaxDay; day++)
-            foreach (var e in ProgramRules.On(timeline, day, false, [], ship))
-                list.Add(new ChatPlannableDto(ChatPlanningRules.PlanRef(e.Id, day), e.Title, day, e.Start, ProgramRules.PlaceName(e.PlaceId) is { Length: > 0 } place ? place : null));
+        {
+            var dayList = ProgramRules.On(timeline, day, false, [], ship)
+                .Select(e => new ChatPlannableDto(ChatPlanningRules.PlanRef(e.Id, day), e.Title, day, e.Start, ProgramRules.PlaceName(e.PlaceId) is { Length: > 0 } place ? place : null)).ToList();
+            foreach (var e in ExplorerRules.EventsOn(explorer, timeline, day, false, []))
+                dayList.Add(new ChatPlannableDto(ChatPlanningRules.PlanRef(e.Id, day), e.Title, day, e.Start, explorer.Venues.FirstOrDefault(v => v.Id == e.VenueId)?.Title));
+            list.AddRange(dayList.OrderBy(x => x.Time, StringComparer.Ordinal));
+        }
         return list;
     }
 
@@ -93,6 +99,17 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         return new ChatCard(ChatCardRules.Venue, venue.Title, venue.Short, Place: venue.DeckLabel, Path: ExplorerCatalogue.VenuePath(venue));
     }
 
+    private static readonly Dictionary<string, string> MealWords = new() { ["breakfast"] = "Breakfast", ["brunch"] = "Brunch", ["lunch"] = "Lunch", ["tea"] = "Afternoon tea", ["dinner"] = "Dinner", ["allDay"] = "All-day" };
+
+    /// <summary>A menu card for a meal a restaurant on the guest's own ship serves: the restaurant's name and "Dinner menu", opening its venue page. 400 <c>shareRef</c> for a restaurant or meal the ship does not have, or when there is no current booking.</summary>
+    private async Task<ChatCard> MenuCardAsync(UserRecord actor, string venueId, string meal, CancellationToken ct)
+    {
+        if (await CurrentAsync(actor, ct) is not { } booking) throw ApiException.Invalid("shareRef");
+        var ship = AboardPlans.ShipOfSailing(booking.SailingId);
+        if (ExplorerCatalogue.VenueOn(ship, venueId) is not { } venue || !MealWords.TryGetValue(meal, out var words) || !ExplorerCatalogue.Of(ship).Menus.Any(m => m.VenueId == venue.Id && m.Meal == meal)) throw ApiException.Invalid("shareRef");
+        return new ChatCard(ChatCardRules.Menu, venue.Title, $"{words} menu", Place: venue.DeckLabel, Path: ExplorerCatalogue.VenuePath(venue));
+    }
+
     /// <summary>Every card the booking can make, keyed by its ref: the booking itself, each booked excursion and dinner, and each port day.</summary>
     private async Task<List<(string Ref, ChatCard Card)>> CardsAsync(BookingRow booking, CancellationToken ct)
     {
@@ -119,6 +136,7 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
     {
         if (string.IsNullOrWhiteSpace(shareRef)) throw ApiException.Invalid("shareRef");
         if (ChatCardRules.ParseVenueRef(shareRef) is { } venueId) return await VenueCardAsync(actor, venueId, ct);
+        if (ChatCardRules.ParseMenuRef(shareRef) is { } menu) return await MenuCardAsync(actor, menu.VenueId, menu.Meal, ct);
         if (await CurrentAsync(actor, ct) is not { } booking) throw ApiException.Invalid("shareRef");
         var found = (await CardsAsync(booking, ct)).FirstOrDefault(c => c.Ref == shareRef);
         return found.Card ?? throw ApiException.Invalid("shareRef");

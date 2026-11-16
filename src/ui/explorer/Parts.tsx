@@ -11,7 +11,9 @@ import { eventPhase } from '../../domain/explorer/upcoming'
 import { t, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
+import { EXPLORER_LEADS, REMINDER_DEFAULT } from '../../domain/notifications'
 import { StatusBadge } from '../StatusBadge'
+import { SendToChat } from '../onboard/SendToChat'
 
 /** Open, closed or finished for the chosen day, in words and an icon, never colour alone. */
 export function HoursBadge({ hours, day, currentDay, now }: { hours: HoursDay; day: number; currentDay: number; now: string }) {
@@ -29,7 +31,14 @@ export function HoursBadge({ hours, day, currentDay, now }: { hours: HoursDay; d
 
 const AGE: Record<ExplorerEvent['age'], StringKey | null> = { all: null, kids: 'exp.age.kids', teens: 'exp.age.teens', adults: 'exp.age.adults' }
 
-export interface PlanControl { planned: boolean; busy: boolean; onToggle: () => void }
+export interface PlanControl {
+  planned: boolean
+  busy: boolean
+  onToggle: () => void
+  /** The reminder chosen for this event (minutes, 0 off, `REMINDER_DEFAULT` for the notification preference), and how it is changed. Without these there is no reminder choice. */
+  reminder?: number
+  onReminder?: (lead: number) => void
+}
 
 /** One event as a row: time range, title, detail, cost, age, status badges, and (with `plan`) the toggle that adds it to the guest's plan. */
 export function EventRow({ event, now, plan, clash, compact, share }: { event: ExplorerEvent; now: number; share?: ReactNode; plan?: PlanControl; clash?: readonly Span[]; compact?: boolean }) {
@@ -59,6 +68,15 @@ export function EventRow({ event, now, plan, clash, compact, share }: { event: E
           {plan.planned ? t('exp.plan.remove') : t('exp.plan.add')}<span className="visually-hidden"> {event.title}</span>
         </Button>
       )}
+      {plan?.planned && !cancelled && plan.onReminder && (
+        <div className="field">
+          <label htmlFor={`rem-${event.id}`}>{t('exp.remind.label')}<span className="visually-hidden"> {event.title}</span></label>
+          <select id={`rem-${event.id}`} className="field__input" value={plan.reminder ?? REMINDER_DEFAULT} disabled={plan.busy} onChange={(e) => plan.onReminder?.(Number(e.target.value))}>
+            <option value={REMINDER_DEFAULT}>{t('exp.remind.default')}</option>
+            {EXPLORER_LEADS.map((m) => <option key={m} value={m}>{m === 0 ? t('notices.explorerOff') : t('notices.explorerMinutes', { count: m })}</option>)}
+          </select>
+        </div>
+      )}
       {share}
     </li>
   )
@@ -78,7 +96,7 @@ export function FilterChips({ kinds, label, value, onChange, labels }: { kinds: 
 const MEAL: Record<MealMenu['meal'], StringKey> = { breakfast: 'exp.meal.breakfast', brunch: 'exp.meal.brunch', lunch: 'exp.meal.lunch', tea: 'exp.meal.tea', dinner: 'exp.meal.dinner', allDay: 'exp.meal.allDay' }
 
 /** The menus of a restaurant for the day, with what each dish contains and a switch that keeps only the dishes that suit the guest's diets. */
-export function MenuPanel({ menus, diets }: { menus: readonly MealMenu[]; diets: readonly DietaryId[] }) {
+export function MenuPanel({ venueId, menus, diets }: { venueId: string; menus: readonly MealMenu[]; diets: readonly DietaryId[] }) {
   const [onlyMine, setOnlyMine] = useState(true)
   if (menus.length === 0) return null
   const filtering = onlyMine && diets.length > 0
@@ -93,6 +111,7 @@ export function MenuPanel({ menus, diets }: { menus: readonly MealMenu[]; diets:
         <div key={`${m.meal}-${m.from}`} className="card">
           <h3 className="card__title">{m.theme ? `${t(MEAL[m.meal])}: ${m.theme}` : m.title}</h3>
           <p className="muted">{formatTime(m.from)} {t('exp.menu.to')} {formatTime(m.to)}{m.formal && <> · <StatusBadge kind="ready" label={t('exp.menu.formal')} /></>}</p>
+          <SendToChat shareRef={`menu:${venueId}:${m.meal}`} title={m.theme ? `${t(MEAL[m.meal])}: ${m.theme}` : m.title} />
           {m.courses.map((c) => {
             const shown = c.dishes.filter((d) => suits(d.name, d.contains))
             if (shown.length === 0) return null

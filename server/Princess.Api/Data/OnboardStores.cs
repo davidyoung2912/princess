@@ -1,9 +1,17 @@
 namespace Princess.Api.Data;
 
+/// <summary>The marker for "follow my notification preference" in a reminder choice.</summary>
+public static class PlanLead
+{
+    public const int Default = -1;
+}
+
 public sealed class PlanEventRow
 {
     public string EventId { get; set; } = "";
     public int Day { get; set; }
+    /// <summary>The minutes ahead the guest chose for this event's reminder (0 is off); null follows their notification preference.</summary>
+    public int? ReminderLead { get; set; }
 }
 
 /// <summary>A stored charge or credit on the onboard account. A line with no person is the booker's.</summary>
@@ -41,7 +49,8 @@ public interface IOnboardStore
 {
     /// <summary>The events in a person's plan on a sailing, by day.</summary>
     Task<List<PlanEventRow>> ListPlanAsync(long userId, string sailingId, CancellationToken ct);
-    Task SetPlanAsync(long userId, string sailingId, string eventId, int day, bool on, CancellationToken ct);
+    /// <summary>Adds or removes a plan item. <paramref name="lead"/> is the reminder choice for it: null leaves it as it is, <see cref="PlanLead.Default"/> goes back to the notification preference, anything else is minutes (0 is off).</summary>
+    Task SetPlanAsync(long userId, string sailingId, string eventId, int day, bool on, int? lead, CancellationToken ct);
 
     /// <summary>When each guest checked in at the muster station.</summary>
     Task<Dictionary<long, DateTime>> ListMusterAsync(long bookingId, CancellationToken ct);
