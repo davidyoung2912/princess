@@ -138,7 +138,7 @@ function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDa
   const other = today.length === 0 ? nearestTourDay(view.offers, state.day) : null
   return (
     <>
-      <ReadOnly canDo={view.canBook} sailed={view.daysToDeparture < 1} />
+      <ReadOnly canDo={view.canBook} />
       <PlanError error={cart.error} />
       <CreditBanner view={view} />
       <ExcursionCart view={view} reload={reload} headingId="exx-cart-h" />
@@ -232,7 +232,7 @@ function Detail({ offer, view, state, reload }: { offer: ExcursionOffer; view: E
         <ShipDayInfo state={state} />
       </Card>
       <PickDateButton state={state} />
-      <ReadOnly canDo={view.canBook} sailed={view.daysToDeparture < 1} />
+      <ReadOnly canDo={view.canBook} />
       <PlanError error={cart.error} />
       <CreditBanner view={view} />
       <ExcursionCart view={view} reload={reload} headingId="exx-cart-h" />

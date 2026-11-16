@@ -244,12 +244,15 @@ public class PlanApiTests : JourneyWorld
     }
 
     [Fact]
-    public async Task ToursCloseOnSailingDay()
+    public async Task ToursStayOpenOnBoardUntilTheCruiseIsOver()
     {
         SetNow(Mar21);
-        var r = await Put($"{Base}/excursions/cart/coz-snorkel", await SignIn(Daniel), new { guests = new[] { Daniel.PublicId } });
-        Assert.Equal("closed", r.ProblemTitle);
-        Assert.False((await Get($"{Base}/excursions", await SignIn(Daniel))).Json.GetProperty("canBook").GetBoolean());
+        var token = await SignIn(Daniel);
+        var r = await Put($"{Base}/excursions/cart/coz-snorkel", token, new { guests = new[] { Daniel.PublicId } });
+        Assert.NotEqual("closed", r.ProblemTitle);
+        Assert.True((await Get($"{Base}/excursions", token)).Json.GetProperty("canBook").GetBoolean());
+        SetNow(new DateTime(2027, 3, 29, 17, 0, 0, DateTimeKind.Utc));
+        Assert.False((await Get($"{Base}/excursions", token)).Json.GetProperty("canBook").GetBoolean());
     }
 
     // ---- Dining ----

@@ -2076,8 +2076,6 @@ export const enCore = {
   'plan.check.open': 'Open the checklist',
   'plan.check.allDone': 'Everything on your checklist is done.',
   'plan.readOnly.title': 'You can look, but not change',
-  'plan.closed.title': 'Booking ahead has closed',
-  'plan.closed.body': 'The ship has sailed, so shore excursions are booked on board. Open Port day to see the last-minute tours that still have seats.',
   'plan.readOnly.body': 'This account is supervised. The person who made the booking makes changes and bookings.',
 
   'plan.check.item.pay': 'Pay your cruise in full',

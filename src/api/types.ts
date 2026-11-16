@@ -409,7 +409,7 @@ export interface ExcursionsView {
   creditLeft: number
   creditApplied: number
   party: PartyMember[]
-  /** Whether the signed-in person may book (an adult, before the ship sails). */
+  /** Whether the signed-in person may book (an adult on a confirmed booking, until the cruise is over). */
   canBook: boolean
   daysToDeparture: number
 }

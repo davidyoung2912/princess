@@ -65,6 +65,12 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         if (c.Days < 1 || c.Booking.Status != "confirmed") throw ApiException.Conflict("closed");
     }
 
+    /// <summary>Shore excursions stay open on board, until the cruise is over: a tour already gone is refused one by one (see <c>CheckTourAsync</c>).</summary>
+    private static void RequireToursOpen(Ctx c)
+    {
+        if (c.Today > c.LastDay || c.Booking.Status != "confirmed") throw ApiException.Conflict("closed");
+    }
+
     /// <summary>Dining stays open on board, until the last night has passed.</summary>
     private static void RequireDiningOpen(Ctx c)
     {
@@ -181,7 +187,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
             offers.Add(new ExcursionOfferDto(x, PlanRules.Iso(day.Date), day.Day, ExcursionRules.SpotsLeft(x, c.Booking.SailingId, here), ExcursionRules.TimingProblem(x, day),
                 ExcursionRules.BackBy(x, day), ExcursionRules.DaysToTour(c.Today, c.Timeline, x), ExcursionRules.NeedsTender(x)));
         }
-        return new ExcursionsViewDto(offers, booked, cartLines, cartTotal, credit.Remaining, Math.Min(credit.Remaining, cartTotal), [.. c.Members], !c.Actor.IsSupervised && c.Days >= 1 && c.Booking.Status == "confirmed", c.Days);
+        return new ExcursionsViewDto(offers, booked, cartLines, cartTotal, credit.Remaining, Math.Min(credit.Remaining, cartTotal), [.. c.Members], !c.Actor.IsSupervised && c.Today <= c.LastDay && c.Booking.Status == "confirmed", c.Days);
     }
 
     public async Task<ExcursionsViewDto> ExcursionsAsync(UserRecord actor, string? number, CancellationToken ct) =>
@@ -191,7 +197,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     private async Task CheckTourAsync(Ctx c, Excursion x, List<Person> guests, IEnumerable<BookedTour> others, long? ignoreTourId, CancellationToken ct)
     {
         var day = ExcursionRules.DayOf(c.Timeline, x);
-        if (ExcursionRules.DaysToTour(c.Today, c.Timeline, x) < 0 || c.Days < 1) throw ApiException.Conflict("closed");
+        if (ExcursionRules.DaysToTour(c.Today, c.Timeline, x) < 0) throw ApiException.Conflict("closed");
         if (guests.Any(g => g.Age < ExcursionRules.MinAge(x)) || !guests.Any(g => g.Age >= ExcursionRules.AdultAge)) throw ApiException.Conflict("age");
         if (ExcursionRules.TimingProblem(x, day) is not null) throw ApiException.Conflict("timing");
         var here = await plan.CountTourGuestsAsync(c.Booking.SailingId, x.Id, ignoreTourId, ct);
@@ -208,7 +214,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     public async Task<ExcursionsViewDto> AddToCartAsync(UserRecord actor, string? number, string? excursionId, CartRequest? body, CancellationToken ct)
     {
         var c = await LoadAsync(actor, number, true, ct);
-        RequireOpen(c);
+        RequireToursOpen(c);
         var x = ExcursionRules.ById(excursionId) ?? throw ApiException.Invalid("tour");
         var who = GuestsIn(c, body?.Guests);
         var lines = await CartAsync(c, ct);
@@ -229,7 +235,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     public async Task<ExcursionsViewDto> CheckoutAsync(UserRecord actor, string? number, CheckoutRequest? body, CancellationToken ct)
     {
         var c = await LoadAsync(actor, number, true, ct);
-        RequireOpen(c);
+        RequireToursOpen(c);
         var lines = await CartAsync(c, ct);
         if (lines.Count == 0) throw ApiException.Invalid("emptyCart");
         var tours = await plan.ListToursAsync(c.Booking.BookingId, ct);
