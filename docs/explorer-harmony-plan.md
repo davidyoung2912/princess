@@ -280,18 +280,47 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 - Still open: share to chat for events and venues, tours on the timeline, the "you have plans" dot and posting spa prices to the folio (all need server work you test); the deck-plan pin (venues have no coordinates on the plan pictures); a VIP or deck-sale filter in Shopping (the interest filter exists, no VIP interest is authored); scenic cruising (needs a per-itinerary scenic flag, so it stays on later sea days); therapist preference, personal training, thermal pass purchase and Camp Discovery registration (features, not data); reminders: planned Explorer events have no reminder yet (reminders cover the trip, custom reminders and confirmed Stanley actions); the stretch ideas.
 - Test-only modules with no caller in the app, left alone because they are not Explorer code: `src/ai/stanleyFeedback.ts`, `src/auth/demoAccounts.ts`, `src/domain/artIds.ts`.
 
-### Outstanding issues, ranked for what to do next
-1. **Accessibility audit** (Phase 9): keyboard paths, focus order and return, dialogs (Pick a Date), contrast through `contrast`, reduced motion, live-region announcements for pins and plan toggles, 44 px targets on the new master/detail list.
-2. **(Done) Lazy-load the Stanley and tip strings** (about 140 kB gzip off first load; first load is still 747 kB against the original 350 kB aim). `t()` is synchronous, so this needs a load-before-render step.
-3. **Dead code and old strings sweep**: unused `ent.*`, `exex.*`, `stoday.*`, `actex.*`, `plan.today.*` leftovers, the old `ItemList`/`MyPicks` uses, and the unlinked `/ship/games`, `/ship/community`, catalogue `faith` pages.
-4. **README and `docs/runbook.md`** for the Explorers, pins and the shared date.
-5. **Share to chat for events and venues** (server builds share text only for tours and reservations; needs a server change you test).
-6. **Tours on the Today's Plan timeline** (the server serves only today's port day).
-7. **Data gaps**: Days 3 and 6 share the `portOdd` kind so both days' events show on each; scenic cruising has no day kind of its own; Sky has no pool venue (no lap swimming or poolside Zumba); staffed hours not shown on venue cards; tech desks not placed in Activities.
-8. **Small UI gaps**: a "you have plans" dot on the date list; the deck-plan link does not place a pin; filter by event interest inside a venue; VIP or deck-sale filter in Shopping; links from the Explorer to order-for-pickup and gift cards.
-9. **Not modelled**: therapist preference, personal training and thermal pass, Camp Discovery registration, spa price posting to the folio.
-10. **Stretch ideas from section 4 not confirmed built**: diet-aware menus first, "Plan my evening" and port-day return bundles, dinner waitlist from a full slot, Stanley "For you" chip. Check each against the code before scheduling.
-11. **Reminders** for planned events still use the old pipeline unchanged; confirm they cover Explorer events.
+### Phase 10: Event reminders and change alerts
+- Scope (ENT-084..092, DIN-245..253): a planned Explorer event gets a reminder (lead time the guest can choose), and a planned event or reservation that is moved, cancelled or sold out raises an alert. Covers the open "reminders for planned events" item from Phase 9.
+- Needs server work you test (reminder pipeline). Check first what the existing reminder pipeline covers, then extend it rather than add a second one.
+- Built: (to fill in)
+- Left for later: (to fill in)
+
+### Phase 11: Share, Navigate and the deck-plan pin
+- Scope (ENT-098, ENT-106, DIN-143): share to chat for events, venues and menus; a Navigate action that opens the venue on the deck plan with a pin; tours on the Today's Plan timeline if the server can serve more than today's port day.
+- Needs server work you test (share text for events and venues) and venue coordinates on the plan pictures.
+- Built: (to fill in)
+- Left for later: (to fill in)
+
+### Phase 12: Event and venue detail fields
+- Scope: event performer, series, accessibility attributes, dress and arrival notes (ENT-013, 017, 019, 023, 129..130); Dining venue accessibility, children's menu and family facilities (DIN-047, 210, 214, 224). Small items that touch the same screens fit here: the "you have plans" dot on the date list.
+- Mostly content and schema; the content scripts under `scripts/ship-explorer-*.ts` carry the authored values for your review.
+- Built: (to fill in)
+- Left for later: (to fill in)
+
+### Phase 13: Dietary request status
+- Scope (DIN-110..112, 119..120): a dietary request attached to a reservation with received, under review and confirmed states, shown to the guest and updated by the server. The only safety-related gap in the review.
+- Needs server work you test. The backend mocks the galley's side behind an interface.
+- Built: (to fill in)
+- Left for later: (to fill in)
+
+### Phase 14: Dining discovery
+- Scope (DIN-004, 055..058, 212): meal-period quick filters, dish search, sort, and a family-friendly filter. Mostly front end over existing data. A VIP or deck-sale filter for Shopping can ride along if the interest is authored.
+- Built: (to fill in)
+- Left for later: (to fill in)
+
+### Phase 15: Alternatives and What changed
+- Scope (ENT-047, 070, 078, DIN-030, 137, 238): suggest alternatives after a clash, a cancellation or a full slot (with a dinner waitlist if the server supports it); then the What changed summaries (ENT-080, DIN-011, 241).
+- Built: (to fill in)
+- Left for later: (to fill in)
+
+### Phase 16: Recommendations and interest profile
+- Scope (ENT-007, 148..152, DIN-258..261): an interest profile and a "For you" ordering and chip, last because the documents rank it below trust and planning. Before scheduling, check each section 4 stretch idea against the code ("Plan my evening", port-day return bundles, diet-aware menus first, Stanley "For you" chip), since some may already exist.
+- Built: (to fill in)
+- Left for later: (to fill in)
+
+### Backlog (not scheduled)
+Features, not data: therapist preference, personal training, thermal pass purchase, Camp Discovery registration, posting spa prices to the folio, and a per-itinerary scenic flag for scenic cruising. The earlier ranked "Outstanding issues" list is replaced by Phases 10 to 16 and this backlog; the Phase 9 "Still open" line records what was open at that point.
 
 ---
 
