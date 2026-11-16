@@ -21,7 +21,7 @@ public sealed class ExplorerService(ScopeLoader scopes, IOnboardStore store, IPr
         return (c, shipId, ExplorerCatalogue.Of(shipId), (await scopes.ScenariosAsync(actor, ct)).Contains("planChange"));
     }
 
-    /// <summary>Every venue of one Explorer with its hours and its events for a day (menus come with a venue's own page), and the guest's plan for the day.</summary>
+    /// <summary>Every venue of one Explorer with its hours and its events for a day (menus come with a venue's own page, except in Dining, where the list carries them so a dish can be searched for), and the guest's plan for the day.</summary>
     public async Task<ExplorerDayDto> DayAsync(UserRecord actor, string? number, string? kind, int day, CancellationToken ct)
     {
         var (c, shipId, ship, changes) = await OpenAsync(actor, number, kind, day, ct);
@@ -35,7 +35,7 @@ public sealed class ExplorerService(ScopeLoader scopes, IOnboardStore store, IPr
         long? sailAt = sail is null ? null : TripRules.ToMs(Itinerary.LocalToUtc(x.Date, TimeOnly.ParseExact(sail, "HH:mm"), c.Timeline.ShipZoneOnDate(x.Date)));
         return new ExplorerDayDto(
             kind!, shipId, day, current >= 1 && current <= c.Timeline.Days.Count ? current : null, Iso(x.Date), x.Port, c.Timeline.ShipZoneOnDate(x.Date), sailAt,
-            [.. venues.Select(v => ExplorerRules.VenueDay(shipId, ship, v, c.Timeline, day, events, withMenus: false))], mine.Ids, mine.Reminders);
+            [.. venues.Select(v => ExplorerRules.VenueDay(shipId, ship, v, c.Timeline, day, events, withMenus: kind == "dining"))], mine.Ids, mine.Reminders);
     }
 
     /// <summary>

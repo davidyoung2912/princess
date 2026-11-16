@@ -9,6 +9,7 @@ import { fillingUp, openState, type Span } from '../../domain/explorer/presentat
 import { happeningNow } from '../../domain/explorer/planTimeline'
 import { eventPhase } from '../../domain/explorer/upcoming'
 import { t, type StringKey } from '../../i18n'
+import { MEAL } from './mealStrings'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
 import { ACCESS_FEATURES, type AccessFeature } from '../../domain/eventAccess'
@@ -113,7 +114,6 @@ export function FilterChips({ kinds, label, value, onChange, labels }: { kinds: 
   )
 }
 
-const MEAL: Record<MealMenu['meal'], StringKey> = { breakfast: 'exp.meal.breakfast', brunch: 'exp.meal.brunch', lunch: 'exp.meal.lunch', tea: 'exp.meal.tea', dinner: 'exp.meal.dinner', allDay: 'exp.meal.allDay' }
 
 /** The menus of a restaurant for the day, with what each dish contains and a switch that keeps only the dishes that suit the guest's diets. */
 export function MenuPanel({ venueId, menus, diets }: { venueId: string; menus: readonly MealMenu[]; diets: readonly DietaryId[] }) {

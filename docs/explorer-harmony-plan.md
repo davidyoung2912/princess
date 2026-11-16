@@ -325,8 +325,9 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 
 ### Phase 14: Dining discovery
 - Scope (DIN-004, 055..058, 212): meal-period quick filters, dish search, sort, and a family-friendly filter. Mostly front end over existing data. A VIP or deck-sale filter for Shopping can ride along if the interest is authored.
-- Built: (to fill in)
-- Left for later: (to fill in)
+- Built: `src/domain/explorer/diningDiscovery.ts` (framework-free) and `ui/explorer/DiningDiscovery.tsx`, used by the Dining Explorer's list only. Meal chips Breakfast, Lunch, Dinner and Late night keep places whose hours that day overlap the period (06:00 to 10:30, 11:30 to 14:30, 17:00 to 22:00, 22:00 to midnight), plus a Room service link to the order screen. Idea chips: Quick meal (casual), Family-friendly (not a bar, no age limit, has family facilities or a children's menu), Special occasion (specialty), Included dining (no cover, not a bar), Open late. A Children's menu chip appears when any place has one. Kind chips stay. The search also matches dishes on the day's menus and the card says "On the menu: ..." with the matching dishes. Sort: Suggested (pins, then authored order), Open now first, Price lowest first. Clear filters button. Server: `ExplorerService.DayAsync` now returns menus for the Dining list (`withMenus: kind == "dining"`) so dishes can be searched; the wire shape is unchanged. Test: `diningDiscovery.test.ts`. npm test, lint, `tsc -b` and build pass.
+- Not verified: the one-line C# change in `ExplorerService.cs` was not compiled or run (project rule).
+- Left for later: sorts by soonest available table and by walking distance (no availability feed or reliable distances); the "Near my next activity" idea; cuisine, ambience and indoor/outdoor filters (not authored); a dietary-attribute filter on the list (it exists on a venue's own menu); Shopping's VIP and deck-sale filter.
 
 ### Phase 15: Alternatives and What changed
 - Scope (ENT-047, 070, 078, DIN-030, 137, 238): suggest alternatives after a clash, a cancellation or a full slot (with a dinner waitlist if the server supports it); then the What changed summaries (ENT-080, DIN-011, 241).
