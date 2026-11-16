@@ -4,6 +4,7 @@ import { CircleDot } from 'lucide-react'
 import { SCREEN_BY_ID } from '../../routes/screens'
 import { SCREEN_ICONS } from '../screenIcons'
 import stanley from '../../assets/stanley-small.png'
+import { artUrl } from '../../art/urls'
 import { answerOf, chipsFor, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import type { JourneyStage } from '../../routes/hubs'
 import { stanleyLevelFor } from '../../settings/settings'
@@ -27,7 +28,7 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
     <aside className="page stanley-chips no-print" aria-labelledby="stanley-chips-h">
       <div className="stanley-card">
         <div className="stanley-card__head">
-          <img className="stanley-card__face" src={stanley} alt="" width="192" height="192" />
+          <img className="stanley-card__face" src={artUrl({ kind: 'head', id: 'sherlock' }) ?? stanley} alt="" width="192" height="192" />
           <h2 id="stanley-chips-h" className="stanley-card__title">{t('stanley.chips.intro')}</h2>
         </div>
         <ul className="stanley-chips__list" aria-label={t('stanley.chips.label')}>

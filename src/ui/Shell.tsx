@@ -2,6 +2,7 @@ import { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStor
 import type { CSSProperties } from 'react'
 import logo from '../assets/princess.webp'
 import stanley from '../assets/stanley-small.png'
+import { artUrl } from '../art/urls'
 import { Link, Navigate, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router'
 import { getContext, subscribeContext } from '../account/context'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
@@ -215,7 +216,7 @@ export function Shell() {
         </Link>
         {!stanleyOff && (
           <button type="button" className="tabs__stanley" onClick={() => { dismissDot(); setStanleyOpen(true) }}>
-            <img src={stanley} alt="" width="192" height="192" />
+            <img src={artUrl({ kind: 'head', id: 'sherlock' }) ?? stanley} alt="" width="192" height="192" />
             {dot && <span className="stanley-dot" aria-hidden="true" />}
             <span>{th('stanley.button')}{dot && <span className="visually-hidden">. {t('stanley.dot')}</span>}</span>
           </button>
