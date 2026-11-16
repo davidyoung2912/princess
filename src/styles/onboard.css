@@ -420,3 +420,7 @@ button.chat-quote { cursor: pointer; }
 .ship-section > summary::before { content: '\25B8'; color: var(--primary); }
 .ship-section[open] > summary::before { content: '\25BE'; }
 .ship-section__title { margin: 0; font-size: var(--fs-h3, 1.125rem); }
+
+/* The Day Plan card's title with the Today badge to its right. */
+.tp-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.tp-title-row .card__title { margin: 0; }

@@ -58,13 +58,18 @@ function PlanDay({ details = false }: { details?: boolean }) {
     if (!plan.date) return
     downloadText(`plan-day-${state.day}.ics`, 'text/calendar', planCalendar(plan.items, { date: plan.date, zone: shipZoneOnDate(sailing, plan.date), stamp: state.nowAt, product: 'princess.concept', where: t('plan.today.calendarWhere') }))
   }
+  // Today's Plan shows the Day Plan card (date, place and what the page lists) when another day than today is chosen.
+  const dayCard = details || state.day !== state.currentDay
   return (
     <div className="page">
       <Card hero labelledBy="tp-head">
         <span className="landing-pose calm-hide"><StanleyPose head="scheduler" size={88} /></span>
-        <h2 id="tp-head" className="card__title">{headingCase(t(details ? 'route.dayDetails' : 'route.todayPlan'))}</h2>
-        {details && plan.date && <p><strong>{t('plan.day.line', { day: t('itin.day', { day: state.day }), date: formatDate(plan.date), where: portName || t('onb.atSea') })}</strong></p>}
-        <p>{t(details ? 'plan.day.purpose' : 'plan.today.purpose')}</p>
+        <div className="tp-title-row">
+          <h2 id="tp-head" className="card__title">{headingCase(t(dayCard ? 'route.dayDetails' : 'route.todayPlan'))}</h2>
+          {state.day === state.currentDay && <StatusBadge kind="booked" label={t('itin.today')} />}
+        </div>
+        {dayCard && plan.date && <p><strong>{t('plan.day.line', { day: t('itin.day', { day: state.day }), date: formatDate(plan.date), where: portName || t('onb.atSea') })}</strong></p>}
+        <p>{t(dayCard ? 'plan.day.purpose' : 'plan.today.purpose')}</p>
         {portName && <p><Link to={`/home/ports/${choice.port}`}>{t('port.guide', { port: portName })}</Link></p>}
       </Card>
       {!details && <ShipClockCard state={state} />}
