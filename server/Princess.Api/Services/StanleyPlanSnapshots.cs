@@ -63,7 +63,7 @@ public sealed class DapperStanleyPlanSnapshotStore(IDbConnectionFactory db) : IS
         await using var c = await db.OpenAsync(ct);
         var json = JsonSerializer.Serialize(plan, Json);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.StanleyPlanSnapshots AS t USING (SELECT @userId AS UserId, @sailingId AS SailingId) AS s ON t.UserId = s.UserId AND t.SailingId = s.SailingId
+            MERGE dbo.StanleyPlanSnapshots WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId, @sailingId AS SailingId) AS s ON t.UserId = s.UserId AND t.SailingId = s.SailingId
             WHEN MATCHED THEN UPDATE SET Json = @json, UpdatedAt = @now
             WHEN NOT MATCHED THEN INSERT (UserId, SailingId, Json, UpdatedAt) VALUES (@userId, @sailingId, @json, @now);
             """, new { userId, sailingId, json, now }, null, ct));

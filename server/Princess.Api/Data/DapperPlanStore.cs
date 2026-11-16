@@ -347,7 +347,7 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.PackingEdits AS t
+            MERGE dbo.PackingEdits WITH (HOLDLOCK) AS t
             USING (SELECT @bookingId AS BookingId, @ItemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.ItemId = s.ItemId
             WHEN MATCHED THEN UPDATE SET Kind = @Kind, Label = @Label, Done = @Done, TickedBy = @TickedBy, [At] = @at
             WHEN NOT MATCHED THEN INSERT (BookingId, ItemId, Kind, Label, Done, TickedBy, [At]) VALUES (@bookingId, @ItemId, @Kind, @Label, @Done, @TickedBy, @at);
@@ -379,7 +379,7 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
         await using var c = await db.OpenAsync(ct);
         var details = JsonSerializer.Serialize(new { hotel = plan.Hotel });
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.TravelPlans AS t
+            MERGE dbo.TravelPlans WITH (HOLDLOCK) AS t
             USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET ArrivalMode = @mode, ArrivalWindowId = @windowId, Details = @details, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, ArrivalMode, ArrivalWindowId, Details) VALUES (@bookingId, @mode, @windowId, @details);

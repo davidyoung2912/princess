@@ -22,7 +22,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.DisembarkChoices AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.DisembarkChoices WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET OptionCode = @option, TagsOn = @tagsOn, DecidedAt = @at, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, OptionCode, TagsOn, DecidedAt) VALUES (@bookingId, @option, @tagsOn, @at);
             """, new { bookingId, option, tagsOn, at }, tx, ct));
@@ -92,7 +92,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.Customs AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.Customs WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET Declaration = @json, SubmittedAt = @at, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, Declaration, SubmittedAt) VALUES (@bookingId, @json, @at);
             """, new { bookingId, json, at }, null, ct));
@@ -109,7 +109,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.OnwardPlans AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.OnwardPlans WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET Mode = @Mode, FlightAtLocal = CAST(NULLIF(@FlightAt, N'') AS time(0)), Flight = @Flight, Note = @Note, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, Mode, FlightAtLocal, Flight, Note) VALUES (@bookingId, @Mode, CAST(NULLIF(@FlightAt, N'') AS time(0)), @Flight, @Note);
             """, new { bookingId, plan.Mode, plan.FlightAt, plan.Flight, plan.Note }, null, ct));
@@ -125,7 +125,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.NightTicks AS t USING (SELECT @bookingId AS BookingId, @itemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.ItemId = s.ItemId
+            MERGE dbo.NightTicks WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId, @itemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.ItemId = s.ItemId
             WHEN MATCHED THEN UPDATE SET Done = @done, [At] = @at
             WHEN NOT MATCHED THEN INSERT (BookingId, ItemId, Done, [At]) VALUES (@bookingId, @itemId, @done, @at);
             """, new { bookingId, itemId, done, at }, null, ct));
@@ -144,7 +144,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.FinalBill AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.FinalBill WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET TipKeepPercent = @keepPercent, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, TipKeepPercent) VALUES (@bookingId, @keepPercent);
             """, new { bookingId, keepPercent }, tx, ct));
@@ -156,7 +156,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.FinalBill AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.FinalBill WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET EmailedAt = @at, EmailedTo = @to, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, EmailedAt, EmailedTo) VALUES (@bookingId, @at, @to);
             """, new { bookingId, at, to }, null, ct));
@@ -212,7 +212,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.PostFeedback AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.PostFeedback WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET Json = @json, SubmittedAt = @at, EditUntil = @editUntil, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, Json, SubmittedAt, EditUntil) VALUES (@bookingId, @json, @at, @editUntil);
             """, new { bookingId, json, at, editUntil }, null, ct));
@@ -380,7 +380,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
             """, new { bookingId, atLocal }, tx, ct));
         if (slot is not { } s || s.Taken >= s.Capacity) return false;
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.DeskAppointments AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.DeskAppointments WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET [At] = @atLocal, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, [At]) VALUES (@bookingId, @atLocal);
             """, new { bookingId, atLocal }, tx, ct));

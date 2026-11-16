@@ -326,7 +326,7 @@ public sealed class DapperBookingStore(IDbConnectionFactory db) : IBookingStore
             return;
         }
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.InstalmentPlans AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.InstalmentPlans WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET PaymentCount = @count, BalanceCents = @balance, AutoCard = @autoCard, AutoUserId = @autoUser, CreatedAt = @now
             WHEN NOT MATCHED THEN INSERT (BookingId, PaymentCount, BalanceCents, AutoCard, AutoUserId, CreatedAt) VALUES (@bookingId, @count, @balance, @autoCard, @autoUser, @now);
             """, new { bookingId, count = choice.Count, balance = choice.BalanceCents, autoCard = choice.AutoCard, autoUser = choice.AutoUserId, now }, null, ct));

@@ -191,7 +191,7 @@ public sealed class DapperStanleyMemoryStore(IDbConnectionFactory db) : IStanley
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.StanleyMemorySettings AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.StanleyMemorySettings WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET Enabled = @enabled
             WHEN NOT MATCHED THEN INSERT (UserId, Enabled) VALUES (@userId, @enabled);
             """, new { userId, enabled }, null, ct));
@@ -207,7 +207,7 @@ public sealed class DapperStanleyMemoryStore(IDbConnectionFactory db) : IStanley
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.StanleyMemorySettings AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.StanleyMemorySettings WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET Level = @level
             WHEN NOT MATCHED THEN INSERT (UserId, Enabled, Level) VALUES (@userId, 1, @level);
             """, new { userId, level }, null, ct));
@@ -230,7 +230,7 @@ public sealed class DapperStanleyBriefStore(IDbConnectionFactory db) : IStanleyB
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.StanleyBriefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.StanleyBriefs WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET Json = @json, UpdatedAt = @at
             WHEN NOT MATCHED THEN INSERT (UserId, Json, UpdatedAt) VALUES (@userId, @json, @at);
             """, new { userId, json, at }, null, ct));
@@ -255,7 +255,7 @@ public sealed class DapperStanleyChangeStore(IDbConnectionFactory db) : IStanley
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.StanleyChanges AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.StanleyChanges WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET Json = @json, UpdatedAt = @at
             WHEN NOT MATCHED THEN INSERT (UserId, Json, UpdatedAt) VALUES (@userId, @json, @at);
             """, new { userId, json, at }, null, ct));
@@ -274,7 +274,7 @@ public sealed class DapperStanleyTravellerStore(IDbConnectionFactory db) : IStan
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.StanleyTravellers AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.StanleyTravellers WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET Json = @json, UpdatedAt = @at
             WHEN NOT MATCHED THEN INSERT (UserId, Json, UpdatedAt) VALUES (@userId, @json, @at);
             """, new { userId, json, at }, null, ct));

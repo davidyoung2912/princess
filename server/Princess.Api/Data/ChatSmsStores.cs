@@ -43,7 +43,7 @@ public sealed class DapperChatSmsStore(IDbConnectionFactory db) : IChatSmsStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.UserPrefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.UserPrefs WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET ChatSmsOn = @on, ChatSmsIdle = @idle, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, ChatSmsOn, ChatSmsIdle) VALUES (@userId, @on, @idle);
             """, new { userId, on, idle }, null, ct));
@@ -68,7 +68,7 @@ public sealed class DapperChatSmsStore(IDbConnectionFactory db) : IChatSmsStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.ChatSmsState AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.ChatSmsState WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET LastGroupId = @groupId, UpdatedAt = @now
             WHEN NOT MATCHED THEN INSERT (UserId, LastGroupId, UpdatedAt) VALUES (@userId, @groupId, @now);
             """, new { userId, groupId, now }, null, ct));
@@ -78,7 +78,7 @@ public sealed class DapperChatSmsStore(IDbConnectionFactory db) : IChatSmsStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.ChatSmsState AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.ChatSmsState WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET BackAt = @now, UpdatedAt = @now
             WHEN NOT MATCHED THEN INSERT (UserId, BackAt, UpdatedAt) VALUES (@userId, @now, @now);
             """, new { userId, now }, null, ct));

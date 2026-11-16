@@ -109,7 +109,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.FamilyZones AS t USING (SELECT @childUserId AS ChildUserId, @bookingId AS BookingId) AS s ON t.ChildUserId = s.ChildUserId AND t.BookingId = s.BookingId
+            MERGE dbo.FamilyZones WITH (HOLDLOCK) AS t USING (SELECT @childUserId AS ChildUserId, @bookingId AS BookingId) AS s ON t.ChildUserId = s.ChildUserId AND t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET ZoneIds = @zonesJson, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (ChildUserId, BookingId, ZoneIds) VALUES (@childUserId, @bookingId, @zonesJson);
             """, new { bookingId, childUserId, zonesJson }, null, ct));
@@ -119,7 +119,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.FamilyZones AS t USING (SELECT @childUserId AS ChildUserId, @bookingId AS BookingId) AS s ON t.ChildUserId = s.ChildUserId AND t.BookingId = s.BookingId
+            MERGE dbo.FamilyZones WITH (HOLDLOCK) AS t USING (SELECT @childUserId AS ChildUserId, @bookingId AS BookingId) AS s ON t.ChildUserId = s.ChildUserId AND t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET Auth = @authJson, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (ChildUserId, BookingId, Auth) VALUES (@childUserId, @bookingId, @authJson);
             """, new { bookingId, childUserId, authJson }, null, ct));
@@ -169,7 +169,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.ReunionPlans AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.ReunionPlans WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET PlaceId = @placeId, BackupId = @backupId, Note = @note, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, PlaceId, BackupId, Note) VALUES (@bookingId, @placeId, @backupId, @note);
             """, new { bookingId, placeId, backupId, note }, null, ct));
@@ -230,7 +230,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.RoomSettings AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.RoomSettings WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET Housekeeping = @housekeepingJson, Devices = @devicesJson, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, Housekeeping, Devices) VALUES (@bookingId, @housekeepingJson, @devicesJson);
             """, new { bookingId, housekeepingJson, devicesJson }, null, ct));
@@ -470,7 +470,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.UpdateAcks AS t USING (SELECT @userId AS UserId, @scenarioId AS ScenarioId) AS s ON t.UserId = s.UserId AND t.ScenarioId = s.ScenarioId
+            MERGE dbo.UpdateAcks WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId, @scenarioId AS ScenarioId) AS s ON t.UserId = s.UserId AND t.ScenarioId = s.ScenarioId
             WHEN MATCHED THEN UPDATE SET OptionCode = @option, [At] = @at
             WHEN NOT MATCHED THEN INSERT (UserId, ScenarioId, OptionCode, [At]) VALUES (@userId, @scenarioId, @option, @at);
             """, new { userId, scenarioId, option, at }, null, ct));

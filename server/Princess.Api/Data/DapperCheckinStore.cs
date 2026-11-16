@@ -25,7 +25,7 @@ public sealed class DapperCheckinStore(IDbConnectionFactory db) : ICheckinStore
         foreach (var userId in userIds)
         {
             await c.ExecuteAsync(Sql.Cmd("""
-                MERGE dbo.CheckinGuests AS t
+                MERGE dbo.CheckinGuests WITH (HOLDLOCK) AS t
                 USING (SELECT @bookingId AS BookingId, @userId AS UserId, @step AS Step) AS s ON t.BookingId = s.BookingId AND t.UserId = s.UserId AND t.Step = s.Step
                 WHEN MATCHED THEN UPDATE SET DoneAt = @at, Data = @dataJson, UpdatedAt = SYSUTCDATETIME()
                 WHEN NOT MATCHED THEN INSERT (BookingId, UserId, Step, DoneAt, Data) VALUES (@bookingId, @userId, @step, @at, @dataJson);
@@ -45,7 +45,7 @@ public sealed class DapperCheckinStore(IDbConnectionFactory db) : ICheckinStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd($"""
-            MERGE dbo.CheckinBooking AS t
+            MERGE dbo.CheckinBooking WITH (HOLDLOCK) AS t
             USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET {set}, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, {insertColumns}) VALUES (@bookingId, {insertValues});
@@ -75,7 +75,7 @@ public sealed class DapperCheckinStore(IDbConnectionFactory db) : ICheckinStore
         foreach (var p in passes)
         {
             await c.ExecuteAsync(Sql.Cmd("""
-                MERGE dbo.BoardingPasses AS t
+                MERGE dbo.BoardingPasses WITH (HOLDLOCK) AS t
                 USING (SELECT @bookingId AS BookingId, @userId AS UserId) AS s ON t.BookingId = s.BookingId AND t.UserId = s.UserId
                 WHEN MATCHED THEN UPDATE SET Seq = @seq, Code = @code
                 WHEN NOT MATCHED THEN INSERT (BookingId, UserId, Seq, Code, InWallet, IssuedAt) VALUES (@bookingId, @userId, @seq, @code, 0, @at);
@@ -108,7 +108,7 @@ public sealed class DapperCheckinStore(IDbConnectionFactory db) : ICheckinStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.EmbarkTicks AS t
+            MERGE dbo.EmbarkTicks WITH (HOLDLOCK) AS t
             USING (SELECT @bookingId AS BookingId, @kind AS Kind, @itemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.Kind = s.Kind AND t.ItemId = s.ItemId
             WHEN MATCHED THEN UPDATE SET Done = @done
             WHEN NOT MATCHED THEN INSERT (BookingId, Kind, ItemId, Done) VALUES (@bookingId, @kind, @itemId, @done);
@@ -119,7 +119,7 @@ public sealed class DapperCheckinStore(IDbConnectionFactory db) : ICheckinStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.EmbarkProgress AS t
+            MERGE dbo.EmbarkProgress WITH (HOLDLOCK) AS t
             USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET LuggageStatus = @status, LuggageDroppedAt = @droppedAt, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, LuggageStatus, LuggageDroppedAt) VALUES (@bookingId, @status, @droppedAt);

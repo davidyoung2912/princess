@@ -195,7 +195,7 @@ public sealed class DapperAheadStore(IDbConnectionFactory db) : IAheadStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.ClubRegistrations AS t
+            MERGE dbo.ClubRegistrations WITH (HOLDLOCK) AS t
             USING (SELECT @childUserId AS ChildUserId, @bookingId AS BookingId) AS s ON t.ChildUserId = s.ChildUserId AND t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET ClubId = @clubId, EmergencyName = @emergencyName, EmergencyPhone = @emergencyPhone, Pickups = @pickups, Allergies = @allergies,
                  SignOutAlone = @signOut, Photos = @photos, [At] = @at, UpdatedAt = @at
@@ -226,7 +226,7 @@ public sealed class DapperAheadStore(IDbConnectionFactory db) : IAheadStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.Medallions AS t
+            MERGE dbo.Medallions WITH (HOLDLOCK) AS t
             USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET Stage = @stage, ActivatedAt = @activatedAt, LostAt = @lostAt, TrackingNumber = @trackingNumber, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, Stage, ActivatedAt, LostAt, TrackingNumber) VALUES (@bookingId, @stage, @activatedAt, @lostAt, @trackingNumber);
@@ -243,7 +243,7 @@ public sealed class DapperAheadStore(IDbConnectionFactory db) : IAheadStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.BagTagOrders AS t
+            MERGE dbo.BagTagOrders WITH (HOLDLOCK) AS t
             USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET Way = @way, Stage = @stage, OrderedAt = @orderedAt, HandedOverAt = @handedOverAt, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, Way, Stage, OrderedAt, HandedOverAt) VALUES (@bookingId, @way, @stage, @orderedAt, @handedOverAt);
@@ -260,7 +260,7 @@ public sealed class DapperAheadStore(IDbConnectionFactory db) : IAheadStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.PrepTicks AS t
+            MERGE dbo.PrepTicks WITH (HOLDLOCK) AS t
             USING (SELECT @bookingId AS BookingId, @itemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.ItemId = s.ItemId
             WHEN MATCHED THEN UPDATE SET Done = @done, [At] = @at
             WHEN NOT MATCHED THEN INSERT (BookingId, ItemId, Done, [At]) VALUES (@bookingId, @itemId, @done, @at);
@@ -296,7 +296,7 @@ public sealed class DapperAheadStore(IDbConnectionFactory db) : IAheadStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.MarketingConsents AS t
+            MERGE dbo.MarketingConsents WITH (HOLDLOCK) AS t
             USING (SELECT @userId AS UserId, @channel AS Channel) AS s ON t.UserId = s.UserId AND t.Channel = s.Channel
             WHEN MATCHED THEN UPDATE SET Contact = @contact, Region = @region, State = @state, CodeHash = @codeHash, AskedAt = @askedAt, ConfirmedAt = @confirmedAt, ExpiresAt = @expiresAt, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, Channel, Contact, Region, State, CodeHash, AskedAt, ConfirmedAt, ExpiresAt)

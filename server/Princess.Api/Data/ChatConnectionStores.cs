@@ -269,7 +269,7 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.UserPrefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.UserPrefs WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET ChatFindable = @findable, ChatShowPreview = @showPreview, ChatTyping = @typing, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, ChatFindable, ChatShowPreview, ChatTyping) VALUES (@userId, @findable, @showPreview, @typing);
             """, new { userId, findable, showPreview, typing }, null, ct));
@@ -280,7 +280,7 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.UserPrefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.UserPrefs WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET ChatFindable = 0, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, ChatFindable) VALUES (@userId, 0);
             """, new { userId }, tx, ct));

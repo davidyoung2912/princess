@@ -296,7 +296,7 @@ public sealed class DapperAboardStore(IDbConnectionFactory db) : IAboardStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.GameProgress AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.GameProgress WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET State = @json, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, State) VALUES (@userId, @json);
             """, new { userId, json }, null, ct));
@@ -312,7 +312,7 @@ public sealed class DapperAboardStore(IDbConnectionFactory db) : IAboardStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.TvState AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            MERGE dbo.TvState WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
             WHEN MATCHED THEN UPDATE SET State = @json, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (BookingId, State) VALUES (@bookingId, @json);
             """, new { bookingId, json }, null, ct));
@@ -328,7 +328,7 @@ public sealed class DapperAboardStore(IDbConnectionFactory db) : IAboardStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.ReadyTicks AS t USING (SELECT @bookingId AS BookingId, @day AS [Day], @itemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.[Day] = s.[Day] AND t.ItemId = s.ItemId
+            MERGE dbo.ReadyTicks WITH (HOLDLOCK) AS t USING (SELECT @bookingId AS BookingId, @day AS [Day], @itemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.[Day] = s.[Day] AND t.ItemId = s.ItemId
             WHEN MATCHED THEN UPDATE SET Done = @done, [At] = @at
             WHEN NOT MATCHED THEN INSERT (BookingId, [Day], ItemId, Done, [At]) VALUES (@bookingId, @day, @itemId, @done, @at);
             """, new { bookingId, day, itemId, done, at }, null, ct));
@@ -1151,7 +1151,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.UserPrefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.UserPrefs WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET ReceiptsOn = @on, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, ReceiptsOn) VALUES (@userId, @on);
             """, new { userId, on }, null, ct));
@@ -1179,7 +1179,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            MERGE dbo.UserPrefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            MERGE dbo.UserPrefs WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
             WHEN MATCHED THEN UPDATE SET ChatAvatar = @avatar, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, ChatAvatar) VALUES (@userId, @avatar);
             """, new { userId, avatar }, null, ct));
