@@ -15,6 +15,7 @@ import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
 import { StatusBadge } from '../StatusBadge'
 import { formatMoment } from './format'
+import { Phone } from '../icons'
 import { ActionError, Load } from './parts'
 
 /** Contact options (SUP-02): every way to reach a person, with hours and the usual wait shown before you choose, and requests you can track. */
@@ -58,7 +59,7 @@ export function ContactScreen() {
               <p><StatusBadge kind={s.open ? 'booked' : 'cancelled'} label={s.open ? t('contact.open') : t('contact.closed')} /></p>
               <p className="muted">{o.hours ? t('contact.hours', { from: o.hours[0], to: o.hours[1] }) : t('contact.always')}{s.open && s.waitMinutes !== null && o.id !== 'callback' ? ` · ${t('contact.wait', { count: s.waitMinutes })}` : ''}{o.id === 'email' ? ` · ${t('contact.emailReply')}` : ''}</p>
               {o.id === 'chat' && <LinkButton to="/chat" variant="secondary">{t('contact.startChat')}</LinkButton>}
-              {o.id === 'phone' && <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a>}
+              {o.id === 'phone' && <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}><Phone aria-hidden="true" /> {GUEST_SERVICES_NUMBER}</a>}
             </li>
           )
         })}

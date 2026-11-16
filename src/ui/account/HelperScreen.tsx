@@ -25,6 +25,7 @@ import { Dialog } from '../Dialog'
 import { Field } from '../Field'
 import { formatMoment } from './format'
 import { HelpingCard } from './HelpingCard'
+import { Phone } from '../icons'
 import { ActionError, Load } from './parts'
 
 /** Family helper (INC-01, ACT-05): someone who can manage the booking for a guest, only with that guest's consent and only for what they allow. */
@@ -42,7 +43,7 @@ export function HelperScreen() {
       <Card info labelledBy="alt-h">
         <h2 id="alt-h">{th('helper.alt.title')}</h2>
         <p>{t('helper.alt.body', { number: GUEST_SERVICES_NUMBER })}</p>
-        <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a>
+        <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}><Phone aria-hidden="true" /> {GUEST_SERVICES_NUMBER}</a>
       </Card>
     </div>
   )

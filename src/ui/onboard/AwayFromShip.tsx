@@ -23,6 +23,7 @@ import { Card } from '../Card'
 import { TakeMeBack } from '../delights/PortDelights'
 import { BackLink, Saved } from './common'
 import { Tours } from './PortTours'
+import { Phone } from '../icons'
 import { duration, useShipTime } from './shipTime'
 
 /** "Going ashore?" before the guest leaves, and a short note after they are back. Shown on Home and the port day during the hours the ship is in port. */
@@ -124,7 +125,7 @@ export function AwayFromShipPanel({ day }: { day: PortToday }) {
 
       <Card labelledBy="aship-help-h">
         <h2 id="aship-help-h" className="card__title">{th('aship.help.title')}</h2>
-        <p><a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}>{t('aship.help.call', { number: GUEST_SERVICES_NUMBER })}</a></p>
+        <p><a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}><Phone aria-hidden="true" /> {t('aship.help.call', { number: GUEST_SERVICES_NUMBER })}</a></p>
         <h3>{th('onb.late.title')}</h3>
         <ol className="plain-bullets">{LATE_STEPS.map((s) => <li key={s}>{t(`onb.late.${s}` as StringKey, { number: GUEST_SERVICES_NUMBER })}</li>)}</ol>
       </Card>

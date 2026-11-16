@@ -44,6 +44,9 @@ import { pageArt } from './pageArt'
 import { DeepLinkNote } from './DeepLinkNote'
 import { useActiveDeck } from '../hooks/useShipCatalogue'
 import { TipCard } from './TipCard'
+
+/** Pages that take no tip card: the chat list and a conversation, where the room is needed for the messages. */
+const NO_TIP_SCREENS: readonly string[] = ['C01', 'C07']
 import { StanleyCoach } from './ai/StanleyCoach'
 import { tipIdFor } from '../settings/tips'
 import { tabText } from './tabText'
@@ -235,7 +238,7 @@ export function Shell() {
         {route && !route.public && <OfflineNote path={route.path} />}
         {route && !route.public && <LocalReminders />}
         {route && !route.public && <BrowseDepthNote />}
-        {route && !route.public && <TipCard id={tipIdFor(landing ? undefined : screen?.id, landing?.key)} />}
+        {route && !route.public && !NO_TIP_SCREENS.includes(screen?.id ?? '') && <TipCard id={tipIdFor(landing ? undefined : screen?.id, landing?.key)} />}
         {route && !route.public && !landing && <StanleyCoach screenId={screen?.id} />}
         <Suspense fallback={<PageSkeleton />}>
           <Outlet />

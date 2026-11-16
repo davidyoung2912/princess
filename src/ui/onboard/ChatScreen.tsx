@@ -16,6 +16,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
 import { Phone } from '../icons'
+import { Baby, Headset, MessageSquareMore, Search, Users, type LucideIcon } from 'lucide-react'
 import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
@@ -40,12 +41,12 @@ export function ChatScreen() {
   // An older link to a conversation (`/chat?c=…`, from a notice or a toast) opens its page.
   const old = conversationFromSearch(params.toString())
   if (old) return <Navigate to={`/chat/c/${encodeURIComponent(old)}${params.get('m') ? `?m=${encodeURIComponent(params.get('m')!)}` : ''}`} replace />
-  const more: { to: string; label: StringKey; hint: StringKey; show: boolean }[] = [
-    { to: '/chat/people', label: 'chat.people', hint: 'chat.more.people', show: people },
-    { to: '/chat/rooms', label: 'room.chip', hint: 'chat.more.rooms', show: people },
-    { to: '/chat/search', label: 'csearch.chip', hint: 'chat.more.search', show: people },
-    { to: '/chat/children', label: 'guard.chip', hint: 'chat.more.children', show: guardian },
-    { to: '/chat/service', label: 'chat.service', hint: 'chat.more.service', show: service },
+  const more: { to: string; label: StringKey; hint: StringKey; show: boolean; icon: LucideIcon }[] = [
+    { to: '/chat/people', label: 'chat.people', hint: 'chat.more.people', show: people, icon: Users },
+    { to: '/chat/rooms', label: 'room.chip', hint: 'chat.more.rooms', show: people, icon: MessageSquareMore },
+    { to: '/chat/search', label: 'csearch.chip', hint: 'chat.more.search', show: people, icon: Search },
+    { to: '/chat/children', label: 'guard.chip', hint: 'chat.more.children', show: guardian, icon: Baby },
+    { to: '/chat/service', label: 'chat.service', hint: 'chat.more.service', show: service, icon: Headset },
   ]
   return (
     <div className="page">
@@ -58,7 +59,7 @@ export function ChatScreen() {
         <ul className="event-list">
           {more.filter((m) => m.show).map((m) => (
             <li key={m.to} className="event event--link">
-              <h3 className="event__title"><Link to={m.to} className="event__stretch">{t(m.label)}</Link></h3>
+              <h3 className="event__title event__title--icon"><m.icon className="explorer-icon" aria-hidden="true" focusable="false" /><Link to={m.to} className="event__stretch">{t(m.label)}</Link></h3>
               <p className="event__where">{t(m.hint)}</p>
             </li>
           ))}

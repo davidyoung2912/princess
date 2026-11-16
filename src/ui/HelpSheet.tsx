@@ -26,7 +26,7 @@ export function HelpSheet({ onClose, screenId, onAskStanley }: { onClose: () => 
         <section className="card card--info" aria-labelledby="help-call-h">
           <h3 id="help-call-h"><Phone aria-hidden="true" /> {th('help.call')}</h3>
           <p>{t('help.callNumber', { number: GUEST_SERVICES_NUMBER })}</p>
-          <a className="btn btn--primary btn--block" href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a>
+          <a className="btn btn--primary btn--block" href={`tel:${GUEST_SERVICES_NUMBER}`}><Phone aria-hidden="true" /> {GUEST_SERVICES_NUMBER}</a>
         </section>
         <section aria-labelledby="help-page-h" className="stack">
           <h3 id="help-page-h">{th('help.page')}</h3>

@@ -5,6 +5,7 @@ import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { t } from '../../i18n'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
+import { Phone } from '../icons'
 import { Field } from '../Field'
 
 /** Help centre (SUP-01): searchable answers to the questions guests ask most, each with a way to do the thing. */
@@ -20,7 +21,7 @@ export function HelpCentreScreen() {
           <p>{t('faq.none')}</p>
           <div className="button-row">
             <LinkButton to="/me/contact">{t('faq.contact')}</LinkButton>
-            <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a>
+            <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}><Phone aria-hidden="true" /> {GUEST_SERVICES_NUMBER}</a>
           </div>
         </Card>
       ) : (

@@ -131,8 +131,6 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   return (
     <section aria-labelledby="conv-h">
       <h2 id="conv-h">{heading('conv.title')}</h2>
-      <Button variant="secondary" onClick={() => setMaking(true)}>{t('cgroup.new')}</Button>
-      <DoNotDisturb />
       {making && <NewGroup onClose={() => setMaking(false)} onCreated={(g) => { setMaking(false); onOpen(g.id) }} />}
       {failed && rows && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {failed && !rows && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
@@ -155,6 +153,8 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
           </>
         )
       })())}
+      <p><Button variant="secondary" onClick={() => setMaking(true)}>{t('cgroup.new')}</Button></p>
+      <DoNotDisturb />
     </section>
   )
 }

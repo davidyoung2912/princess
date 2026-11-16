@@ -11,6 +11,7 @@ import { BUZZ, buzz } from '../../settings/haptics'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { timeIn } from '../../domain/timezones'
 import { Button, LinkButton } from '../Button'
+import { Phone } from '../icons'
 import { BackLink } from '../onboard/common'
 
 
@@ -76,7 +77,7 @@ export function StanleyModeScreen() {
       {mode === 'portDay' && (
         <p>
           <LinkButton to="/ship/safe-ashore" variant="tertiary" state={openedFrom('blue')}>{t('stanley.mode.portHelp')}</LinkButton>{' '}
-          <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}>{t('stanley.mode.portCall', { number: GUEST_SERVICES_NUMBER })}</a>
+          <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}><Phone aria-hidden="true" /> {t('stanley.mode.portCall', { number: GUEST_SERVICES_NUMBER })}</a>
         </p>
       )}
       <p className="muted">{t('stanley.mode.hint')}</p>
