@@ -2,7 +2,7 @@
 // 7-day calendar with a start time for most items; the lengths, capacities and the few missing times are authored here for review. Boutique studio classes are $30 for about 30 minutes
 // and are signed up for at the fitness desk (the doc says embarkation day), so they carry a price and a limited number of places.
 //
-// The doc's week maps onto day kinds as in the Entertainment content: Day 1 `embark`, Day 2 `firstSea`, Days 3 and 6 `portOdd`, Day 4 `portEven`, Day 5 `laterSea`, Day 7 `last`.
+// The doc's week maps onto day kinds as in the Entertainment content: Day 1 `embark`, Day 2 `firstSea`, Day 3 `earlyPortOdd`, Day 6 `lastPort`, Day 4 `portEven`, Day 5 `laterSea`, Day 7 `last`.
 import type { HoursRule } from '../src/domain/explorer/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
 
@@ -47,7 +47,7 @@ const SHIPS: Record<string, ShipSpec> = {
   },
   'sky-princess': {
     prefix: 'sky-fit-', puttingTitle: 'Putting competition at The Greens',
-    at: { yoga: 'studio', walk: 'court', putting: 'green', swim: null, poolside: null, sports: 'court' },
+    at: { yoga: 'studio', walk: 'court', putting: 'green', swim: 'pool', poolside: 'pool', sports: 'court' },
     venues: [
       { key: 'gym', kind: 'gym', title: 'Fitness Center', deck: 'Deck 17 aft', hours: gymHours(['07:00', '19:30']), short: 'A large aft-facing gym with cardio machines and weight stations, open 24 hours.',
         long: 'At the rear of the Sun Deck, this complimentary gym has treadmills, ellipticals, stationary bikes, resistance machines and a free-weight area. The doors stay unlocked all day and night, and the staffed desk is open from 7 am to 7:30 pm.',
@@ -59,6 +59,8 @@ const SHIPS: Record<string, ShipSpec> = {
         features: ['Included', ...OUTDOOR] },
       { key: 'green', kind: 'court', title: 'The Greens', deck: 'Deck 19 aft', hours: daily('08:00', '20:00'), short: 'A rooftop miniature golf putting green for gentle, low-impact play.',
         long: 'The highest aft deck, overlooking the sports court. Putters and balls are on loan from the Sports Desk until dusk, and there are scheduled putting competitions.', features: ['Included', ...OUTDOOR] },
+      { key: 'pool', kind: 'pool', title: 'Sky Pool and Fountain Pool', deck: 'Deck 16 midship', hours: daily('06:00', '22:00'), short: 'The two Lido pools, open early for lap swimming and used for poolside fitness.',
+        long: 'The Sky Pool and the Fountain Pool sit mid-ship on the Lido deck. Open lap swimming runs in the middle of the day on port days, and poolside dance and Zumba fitness take over a pool deck on sea days. Pools close at 10 pm.', features: ['Included', 'Open to all ages'], accessibility: STEP_FREE },
     ],
   },
   'sapphire-princess': {
@@ -98,7 +100,7 @@ interface Opts { extra?: number; cap?: number }
 /** One row of a ship's week: slug, kinds of day, start, minutes, title, venue key, interest, options. */
 type Row = [slug: string, when: string[], start: string, minutes: number, title: string, venue: Key, interest: Interest, opts?: Opts]
 
-const E = 'embark', F = 'firstSea', P1 = 'portOdd', P2 = 'portEven', S2 = 'laterSea', L = 'last'
+const E = 'embark', F = 'firstSea', P1 = 'earlyPortOdd', P6 = 'lastPort', P2 = 'portEven', S2 = 'laterSea', L = 'last'
 /** A boutique studio class: $30, about 24 places, signed up for at the fitness desk. */
 const CLASS: Opts = { extra: 3000, cap: 24 }
 
@@ -117,11 +119,17 @@ function week(s: ShipSpec): Row[] {
     ['hoops-f', [F], '13:30', 60, '3-on-3 basketball tournament', a.sports, 'games', { cap: 24 }],
     ['yoga-f', [F], '15:00', 30, 'YogaSix Vinyasa Flow', 'studio', 'wellness', CLASS],
     ['stretchlab-f', [F], '16:30', 30, 'StretchLab one-on-one sessions', 'studio', 'wellness', { extra: 3000, cap: 6 }],
-    // Days 3 and 6, port days
+    // Day 3, port day
     ['yoga-p1', [P1], '07:30', 30, 'Sunrise YogaSix', a.yoga, 'wellness', CLASS],
     ['pilates-p1', [P1], '08:30', 30, 'Club Pilates mat class', 'studio', 'wellness', CLASS],
     ['pickle-p1', [P1], '14:00', 90, 'Open pickleball play', a.sports, 'games'],
     ['release-p1', [P1], '17:00', 30, 'Post-excursion stretch and release', 'studio', 'wellness'],
+    // Day 6, the second port day
+    ['stretch-p6', [P6], '08:00', 30, 'Morning stretch', 'studio', 'wellness'],
+    ['barre-p6', [P6], '09:00', 30, 'Pure Barre', 'studio', 'wellness', CLASS],
+    ['volley-p6', [P6], '13:00', 90, 'Open court volleyball and soccer', a.sports, 'games'],
+    ['yoga-p6', [P6], '17:00', 30, 'YogaSix Restorative Flow', 'studio', 'wellness', CLASS],
+    ['stretchlab-p6', [P6], '18:00', 30, 'StretchLab sessions', 'studio', 'wellness', { extra: 3000, cap: 6 }],
     // Day 4, port day
     ['cycle-p2', [P2], '08:00', 30, 'CycleBar Rhythm Ride', 'studio', 'wellness', CLASS],
     ['posture-p2', [P2], '09:00', 45, 'Foot and posture wellness seminar', 'studio', 'learning'],

@@ -9,8 +9,8 @@ import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts
 
 const daily = (from: string, to: string): HoursRule[] => [{ kind: 'fixed', when: ['night'], windows: [[from, to]] }]
 
-type Kind = 'quiet' | 'talks' | 'workshop' | 'community' | 'family' | 'deck'
-type Key = 'library' | 'talks' | 'workshop' | 'meet' | 'camp' | 'teens' | 'deck'
+type Kind = 'quiet' | 'talks' | 'workshop' | 'community' | 'family' | 'deck' | 'desk'
+type Key = 'library' | 'talks' | 'workshop' | 'meet' | 'camp' | 'teens' | 'deck' | 'tech'
 
 interface VenueSpec { key: Key; kind: Kind; title: string; deck: string; short: string; long: string; hours: HoursRule[]; features?: string[]; accessibility?: string[] }
 
@@ -38,6 +38,8 @@ const SHIPS: Record<string, ShipSpec> = {
         long: 'Video game tournaments, hunts around the ship and a late-evening music night for teens. The Beach House is part of Camp Discovery, so the same registration applies.', features: ['Included', 'Ages 13 to 17'], accessibility: STEP_FREE },
       { key: 'deck', kind: 'deck', title: 'Open Decks and Viewing Areas', deck: 'Forward and upper decks', hours: daily('05:30', '24:00'), short: 'The bow, promenade and upper decks for harbor arrivals, scenic cruising and stargazing.',
         long: 'The forward observation decks and railings where guests gather for harbor pilot and docking, Glacier Bay or canal commentary and Discovery at SEA stargazing. Weather permitting; dress warmly.', features: ['Included', 'Outdoors, weather permitting'] },
+      { key: 'tech', kind: 'desk', title: 'OceanFront Tech Desk', deck: 'Near Guest Services', hours: daily('08:00', '21:00'), short: 'Help with MedallionNet Wi-Fi, the Princess app, boarding passes and your Medallion.',
+        long: 'The staffed tech desk sets up MedallionNet Wi-Fi, helps with the Princess app and photos, prints airline boarding passes, and on the last day helps with Medallion keepsakes and folio questions. Opening hours follow the day: the desk reopens after sailaway on port days.', features: FREE, accessibility: STEP_FREE },
     ],
   },
   'sky-princess': {
@@ -57,6 +59,8 @@ const SHIPS: Record<string, ShipSpec> = {
         long: 'Video game tournaments, hunts around the ship and a late-evening music night for teens. The Beach House is part of Camp Discovery, so the same registration applies.', features: ['Included', 'Ages 13 to 17'], accessibility: STEP_FREE },
       { key: 'deck', kind: 'deck', title: 'Open Decks and Viewing Areas', deck: 'Forward and upper decks', hours: daily('05:30', '24:00'), short: 'The bow, promenade and upper decks for harbor arrivals, scenic cruising and stargazing.',
         long: 'The forward observation decks and railings where guests gather for harbor pilot and docking, Glacier Bay or fjord commentary and Discovery at SEA stargazing. Weather permitting; dress warmly.', features: ['Included', 'Outdoors, weather permitting'] },
+      { key: 'tech', kind: 'desk', title: 'OceanFront Tech Desk', deck: 'Near Guest Services', hours: daily('08:00', '21:00'), short: 'Help with MedallionNet Wi-Fi, the Princess app, boarding passes and your Medallion.',
+        long: 'The staffed tech desk sets up MedallionNet Wi-Fi, helps with the Princess app and photos, prints airline boarding passes, and on the last day helps with Medallion keepsakes and folio questions. Opening hours follow the day: the desk reopens after sailaway on port days.', features: FREE, accessibility: STEP_FREE },
     ],
   },
   'sapphire-princess': {
@@ -76,6 +80,8 @@ const SHIPS: Record<string, ShipSpec> = {
         long: 'Video game tournaments, hunts around the ship and a late-evening music night for teens. The Beach House is part of Camp Discovery, so the same registration applies.', features: ['Included', 'Ages 13 to 17'], accessibility: STEP_FREE },
       { key: 'deck', kind: 'deck', title: 'Open Decks and Viewing Areas', deck: 'Forward and upper decks', hours: daily('05:30', '24:00'), short: 'The bow, promenade and upper decks for harbor arrivals, scenic cruising and stargazing.',
         long: 'The forward observation decks, Promenade Deck 7 and the Sun Deck, where guests gather for harbor pilot and docking, Alaska, fjord or canal commentary and Discovery at SEA stargazing. Weather permitting; dress warmly.', features: ['Included', 'Outdoors, weather permitting'] },
+      { key: 'tech', kind: 'desk', title: 'OceanFront Tech Desk', deck: 'Near Guest Services', hours: daily('08:00', '21:00'), short: 'Help with MedallionNet Wi-Fi, the Princess app, boarding passes and your Medallion.',
+        long: 'The staffed tech desk sets up MedallionNet Wi-Fi, helps with the Princess app and photos, prints airline boarding passes, and on the last day helps with Medallion keepsakes and folio questions. Opening hours follow the day: the desk reopens after sailaway on port days.', features: FREE, accessibility: STEP_FREE },
     ],
   },
 }
@@ -103,6 +109,13 @@ const DAYS = ['seaMid', 'port', 'last']
 
 /** The programme is the same on all three ships, at the venues each ship has. */
 const WEEK: Row[] = [
+  // The tech desk (docs/princess-spa-casino.md)
+  ['tech-setup', [E], '11:30', 90, 'MedallionNet Wi-Fi setup at the tech desk', 'tech', 'learning', { detail: 'Set up MedallionNet Wi-Fi on your phone, tablet and laptop with a specialist.' }],
+  ['tech-clinic', [E], '19:00', 120, 'Evening Wi-Fi and app clinic', 'tech', 'learning', { detail: 'Help with the Wi-Fi, the Princess app and your Medallion.' }],
+  ['tech-am', ['earlyPortOdd'], '08:00', 120, 'Tech desk morning hours', 'tech', 'learning', { detail: 'Wi-Fi, app and Medallion help before most guests go ashore.' }],
+  ['tech-photo', ['portEven'], '16:30', 90, 'Tech desk reopens for photo and app support', 'tech', 'learning', { detail: 'Help with photos and the app once the ship is under way.' }],
+  ['tech-pass', [L], '09:00', 120, 'Boarding pass printing and Wi-Fi account wrap-up', 'tech', 'learning', { detail: 'Print airline boarding passes and close out your Wi-Fi account before you leave.' }],
+  ['tech-keepsake', [L], '16:00', 120, 'Medallion keepsake and folio support', 'tech', 'learning', { detail: 'Questions about your Medallion keepsake and your onboard account.' }],
   // Open decks: arrivals, scenic cruising, stargazing, ship-wide hunts
   ['gangway', [PORT], '06:30', 60, 'Harbor arrival and gangway viewing', 'deck', 'family', { detail: 'Watch the pilot come aboard and the ship dock from the forward decks.' }],
   ['scenic', [S2], '07:00', 120, 'Scenic cruising with naturalist narration', 'deck', 'learning', { detail: 'On itineraries with scenic cruising, such as Glacier Bay, a fjord or the Panama Canal. Hot drinks are served on deck.' }],

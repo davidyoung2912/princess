@@ -6,7 +6,7 @@
 // 5:30 pm. The gallery displays are open round the clock; its desk is staffed 9 am to 10 pm at sea and 5 pm to 10 pm after a port. Champagne art auctions are held in a lounge (Princess Live!,
 // Vista or Explorers Lounge) but listed under the gallery, since the Fine Arts Gallery runs them.
 //
-// The doc's week maps onto day kinds as in the Entertainment content: Day 1 `embark`, Day 2 `firstSea`, Days 3 and 6 `portOdd` (both days' events are listed, at different times), Day 4
+// The doc's week maps onto day kinds as in the Entertainment content: Day 1 `embark`, Day 2 `firstSea`, Day 3 `earlyPortOdd` and Day 6 `lastPort`, Day 4
 // `portEven`, Day 5 `laterSea`, Day 7 `last`. On a port day every event starts after the sailaway reopening.
 import type { HoursRule } from '../src/domain/explorer/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
@@ -131,7 +131,7 @@ type Interest = 'shows' | 'games' | 'learning' | 'family'
 /** One row of a ship's week: slug, kinds of day, start, minutes, title, venue key, interest, and a detail that overrides "At <venue>." (a tasting is for adults). */
 type Row = [slug: string, when: string[], start: string, minutes: number, title: string, venue: Key, interest: Interest, detail?: string]
 
-const E = 'embark', F = 'firstSea', P1 = 'portOdd', P2 = 'portEven', S2 = 'laterSea', L = 'last'
+const E = 'embark', F = 'firstSea', P1 = 'earlyPortOdd', P6 = 'lastPort', P2 = 'portEven', S2 = 'laterSea', L = 'last'
 const ALL = ['embark', 'night']
 
 const WEEKS: Record<string, Row[]> = {
@@ -150,9 +150,9 @@ const WEEKS: Record<string, Row[]> = {
     ['souvenir-p1', [P1], '18:00', 90, 'Destination souvenir and magnet feature', 'shops', 'family'],
     ['glow-p1', [P1], '18:30', 45, 'Glow at Sea skincare masterclass', 'beauty', 'learning'],
     ['bijoux-p1', [P1], '19:30', 90, 'Pop-up $10 bijoux and evening clutch table', 'piazza', 'family'],
-    ['artisan-p1', [P1], '18:00', 120, 'Local destination artisan pop-up market', 'piazza', 'family', 'On a day 6 call, local artisans sell regional crafts on the Piazza.'],
-    ['unveil-p1', [P1], '20:00', 60, 'Gala formal night VIP diamond unveiling', 'effy', 'shows'],
-    ['portrait-p1', [P1], '19:00', 120, 'Formal night platinum portrait sessions', 'gallery', 'family'],
+    ['artisan-p6', [P6], '18:00', 120, 'Local destination artisan pop-up market', 'piazza', 'family', 'On the second formal port day, local artisans sell regional crafts on the Piazza.'],
+    ['unveil-p6', [P6], '20:00', 60, 'Gala formal night VIP diamond unveiling', 'effy', 'shows'],
+    ['portrait-p6', [P6], '19:00', 120, 'Formal night platinum portrait sessions', 'gallery', 'family'],
     ['canvas-p2', [P2], '18:00', 90, 'Port portrait and canvas print promotion', 'gallery', 'family'],
     ['tanzanite-p2', [P2], '18:30', 60, 'Rare tanzanite and coloured gemstone trunk show', 'effy', 'shows'],
     ['resort-p2', [P2], '19:00', 60, 'Resort wear mix-and-match sale', 'fashion', 'family'],
@@ -182,9 +182,9 @@ const WEEKS: Record<string, Row[]> = {
     ['gala-f', [F], '20:00', 90, 'Sip and sale: Effy jewelry and Swiss watches', 'facets', 'shows'],
     ['skincare-p1', [P1], '18:30', 60, 'Dior and Chanel skincare consultation night', 'essence', 'learning'],
     ['bags-p1', [P1], '19:00', 90, '$15 evening bag and costume jewelry pop-up', 'piazza', 'family'],
-    ['artisan-p1', [P1], '18:00', 120, 'Regional artisan and craft pop-up', 'piazza', 'family', 'On a day 6 call, local artisans sell regional crafts on the Piazza.'],
-    ['vip-p1', [P1], '20:00', 60, 'Second formal night VIP diamond and estate jewelry event', 'facets', 'shows'],
-    ['viewing-p1', [P1], '19:00', 120, 'Formal portrait viewing and canvas deals', 'gallery', 'family'],
+    ['artisan-p6', [P6], '18:00', 120, 'Regional artisan and craft pop-up', 'piazza', 'family', 'On the second formal port day, local artisans sell regional crafts on the Piazza.'],
+    ['vip-p6', [P6], '20:00', 60, 'Second formal night VIP diamond and estate jewelry event', 'facets', 'shows'],
+    ['viewing-p6', [P6], '19:00', 120, 'Formal portrait viewing and canvas deals', 'gallery', 'family'],
     ['apparel-p2', [P2], '18:00', 90, 'Destination apparel and outerwear feature', 'limelight', 'family'],
     ['seminar-p2', [P2], '18:30', 60, 'Tanzanite and emerald gemstone seminar', 'facets', 'learning'],
     ['chocolate-p2', [P2], '19:00', 60, 'Swiss chocolate and confectionery tasting', 'calypso', 'learning'],
@@ -214,9 +214,9 @@ const WEEKS: Record<string, Row[]> = {
     ['gala-f', [F], '20:00', 90, 'Sip and sale: Effy and Citizen and Bulova watch night', 'facets', 'shows'],
     ['makeover-p1', [P1], '18:30', 60, 'Lancôme and Clinique beauty makeover evening', 'essence', 'learning'],
     ['jewelry-p1', [P1], '19:00', 90, 'Pop-up $10 jewelry and scarf sale', 'piazza', 'family'],
-    ['artisan-p1', [P1], '18:00', 120, 'Local port artisan and keepsake pop-up', 'piazza', 'family', 'On a day 6 call, local artisans sell regional crafts on the Piazza.'],
-    ['gala-p1', [P1], '20:00', 60, 'Formal night VIP fine jewelry and watch gala', 'facets', 'shows'],
-    ['portrait-p1', [P1], '19:00', 120, 'Formal night portrait packages', 'gallery', 'family'],
+    ['artisan-p6', [P6], '18:00', 120, 'Local port artisan and keepsake pop-up', 'piazza', 'family', 'On the second formal port day, local artisans sell regional crafts on the Piazza.'],
+    ['gala-p6', [P6], '20:00', 60, 'Formal night VIP fine jewelry and watch gala', 'facets', 'shows'],
+    ['portrait-p6', [P6], '19:00', 120, 'Formal night portrait packages', 'gallery', 'family'],
     ['souvenir-p2', [P2], '18:00', 90, 'Regional souvenir and destination apparel showcase', 'calypso', 'family'],
     ['upgrade-p2', [P2], '18:30', 60, 'Rare gemstone and diamond ring upgrade event', 'facets', 'shows'],
     ['swarovski-p2', [P2], '19:00', 60, 'Swarovski crystal and Brighton trunk show', 'meridian', 'shows'],

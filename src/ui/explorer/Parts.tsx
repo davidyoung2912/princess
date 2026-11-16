@@ -9,7 +9,7 @@ import { fillingUp, openState, type Span } from '../../domain/explorer/presentat
 import { happeningNow } from '../../domain/explorer/planTimeline'
 import { eventPhase } from '../../domain/explorer/upcoming'
 import { t, type StringKey } from '../../i18n'
-import { Button } from '../Button'
+import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
 import { StatusBadge } from '../StatusBadge'
 
@@ -165,6 +165,18 @@ export function HappeningNow({ data, currentDay, now, basePath }: { data: Explor
           </li>
         ))}
       </ul>
+    </section>
+  )
+}
+
+/** Links from an Explorer to pages on board that it does not list: ordering for pickup, gift cards, games and services. */
+export function MoreLinks({ links }: { links: readonly { to: string; label: string }[] }) {
+  return (
+    <section aria-labelledby="exp-more-h">
+      <h2 id="exp-more-h">{t('exp.more.title')}</h2>
+      <div className="exp-actions">
+        {links.map((l) => <LinkButton key={l.to} to={l.to} variant="secondary">{l.label}</LinkButton>)}
+      </div>
     </section>
   )
 }

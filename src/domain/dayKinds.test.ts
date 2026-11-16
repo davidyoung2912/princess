@@ -20,6 +20,8 @@ describe('day kinds', () => {
     expect(daysOf(WEEK, 'seaMid', 'portOdd')).toEqual([2, 3, 5, 6])
     expect(daysOf(WEEK, 'last', 'portEven')).toEqual([4, 7])
     expect(daysOf(WEEK, 'friday')).toEqual([6])
+    expect(daysOf(WEEK, 'earlyPortOdd')).toEqual([3])
+    expect(daysOf(WEEK, 'lastPort')).toEqual([5])
   })
   it('follow a 14-night sailing', () => {
     expect(daysOf(LONG, 'sea')).toEqual([2, 4, 6, 7, 9, 11, 12, 13])
@@ -28,6 +30,8 @@ describe('day kinds', () => {
     expect(daysOf(LONG, 'port')).toEqual([3, 5, 8, 10, 14])
     expect(daysOf(LONG, 'night')).toHaveLength(14)
     expect(daysOf(LONG, 'portOdd')).toEqual([3, 8, 14])
+    expect(daysOf(LONG, 'lastPort')).toEqual([14])
+    expect(daysOf(LONG, 'earlyPortOdd')).toEqual([3, 8])
   })
   it('follow a 3-night sailing, and nothing runs off the end', () => {
     expect(daysOf(SHORT, 'last')).toEqual([3])

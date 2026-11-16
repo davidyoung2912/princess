@@ -1,6 +1,7 @@
 import type { StringKey } from '../../../i18n'
 import { t } from '../../../i18n'
 import { ExplorerPage } from '../ExplorerPage'
+import { MoreLinks } from '../Parts'
 import { VenueDetailPage } from '../VenueDetailPage'
 
 const BASE = '/shopping-today'
@@ -10,7 +11,7 @@ const kindLabels = (): Record<string, string> => Object.fromEntries(Object.entri
 
 /** The Shopping Explorer: the boutiques, the gallery and the pop-up markets, each with its hours (closed in port) and the sales, trunk shows and auctions on next. Nothing is booked here, so there is no reservations list. */
 export function ShoppingExplorerScreen() {
-  return <ExplorerPage kind="shopping" title={t('shex.title')} purpose={t('shex.purpose')} basePath={BASE} kindLabels={kindLabels()} />
+  return <ExplorerPage kind="shopping" title={t('shex.title')} purpose={t('shex.purpose')} basePath={BASE} kindLabels={kindLabels()} above={() => <MoreLinks links={[{ to: '/ship/shops', label: t('exp.more.shops') }]} />} />
 }
 
 /** One shop, gallery or market: its hours for the day and every event there, each with a toggle that adds it to your plan. */

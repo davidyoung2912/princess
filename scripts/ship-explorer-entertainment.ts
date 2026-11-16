@@ -2,7 +2,7 @@
 // and the casino, and the events that run there on each kind of day. The docs give each event as Morning / Noon / Night, so the start times and lengths are authored here for review.
 // A bar that is also in Dining (Wheelhouse, O'Malley's) appears here as its own "live music" venue, so its music is in Entertainment and its drinks stay in Dining.
 //
-// The doc's week maps onto day kinds: Day 1 `embark`, Day 2 `firstSea` (formal), Days 3 and 6 `portOdd`, Day 4 `portEven`, Day 5 `laterSea`, Day 7 `last`. A day kind repeats on a longer sailing.
+// The doc's week maps onto day kinds: Day 1 `embark`, Day 2 `firstSea` (formal), Day 3 `earlyPortOdd`, Day 6 `lastPort`, Day 4 `portEven`, Day 5 `laterSea`, Day 7 `last`. A day kind repeats on a longer sailing.
 import type { HoursRule } from '../src/domain/explorer/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
 
@@ -113,7 +113,7 @@ export function entertainmentVenues(shipId: string, firstOrder: number): Explore
 type Interest = 'shows' | 'music' | 'games' | 'wellness' | 'learning' | 'family' | 'nightlife'
 interface Opts { age?: ExplorerEventRow['age']; extra?: number; cap?: number }
 
-const E = 'embark', F = 'firstSea', P1 = 'portOdd', P2 = 'portEven', S2 = 'laterSea', L = 'last', PORT = 'port'
+const E = 'embark', F = 'firstSea', P1 = 'earlyPortOdd', P6 = 'lastPort', P2 = 'portEven', S2 = 'laterSea', L = 'last', PORT = 'port'
 
 /** One row of a ship's week: slug, kinds of day, start, minutes, title, venue key, interest, options. */
 type Row = [slug: string, when: string[], start: string, minutes: number, title: string, venue: string, interest: Interest, opts?: Opts]
@@ -134,6 +134,8 @@ const casinoRows = (): Row[] => [
   ['casino-hotseat', [F], '23:00', 30, 'Late-night hot seat cash drawings', 'casino', 'games', { age: 'adults' }],
   ['casino-spin', [P1], '19:30', 60, '$500 spin-to-win slot tournament', 'casino', 'games', { age: 'adults', cap: 60 }],
   ['casino-craps', [P1], '22:00', 90, 'Craps and roulette hot-streak challenge', 'casino', 'games', { age: 'adults' }],
+  ['casino-gala6', [P6], '20:30', 90, 'Gala formal night $2,500 lotto and bingo jackpot', 'casino', 'games', { age: 'adults', cap: 80 }],
+  ['casino-roller', [P6], '22:00', 90, 'High-roller blackjack and baccarat challenge', 'casino', 'games', { age: 'adults' }],
   ['casino-holdem', [P2], '20:00', 120, '$500 Texas Hold’em no-limit tournament', 'casino', 'games', { age: 'adults', extra: 5000, cap: 30 }],
   ['casino-mystery', [P2], '22:30', 30, 'Midnight mystery jackpot drawings', 'casino', 'games', { age: 'adults' }],
   ['casino-bloody', [S2], '09:00', 90, 'Morning slots and Bloody Mary bar', 'casino', 'games', { age: 'adults' }],
@@ -210,6 +212,18 @@ const sunRows = (): Row[] => [
   ['dome-artbeat', [L], '21:30', 60, 'Cirque Éloize encore: ArtBeat', 'dome', 'shows', { cap: 700 }],
   ['omalleys-farewell', [L], '22:00', 90, 'Last-night farewell sing-along', 'live-omalleys', 'music'],
   ['seaview-midnight', [L], '22:30', 90, 'Midnight Movies Under the Stars', 'seaview', 'family'],
+  // Day 6, the second formal port day
+  ['piazza-harp', [P6], '09:15', 45, 'Morning harp and flute duet', 'piazza', 'music'],
+  ['live-trivia6', [P6], '10:30', 45, 'General knowledge trivia challenge', 'live', 'games'],
+  ['dome-crossover', [P6], '14:00', 60, 'Afternoon classical crossover concert', 'dome', 'music', { cap: 700 }],
+  ['piazza-tango', [P6], '15:00', 45, 'Tango and salsa dance workshop', 'piazza', 'learning'],
+  ['seaview-concert', [P6], '15:00', 120, 'Afternoon concert screening on the big screen', 'seaview', 'music'],
+  ['arena-fiera-1', [P6], '19:00', 60, 'Production show: Fiera!, early showing', 'arena', 'shows', { cap: 1100 }],
+  ['arena-fiera-2', [P6], '21:15', 60, 'Production show: Fiera!, late showing', 'arena', 'shows', { cap: 1100 }],
+  ['spell-p6-1', [P6], '19:30', 45, 'Magic parlour seating, first', 'spellbound', 'shows', { age: 'adults', extra: 2500, cap: 30 }],
+  ['spell-p6-2', [P6], '21:00', 45, 'Magic parlour seating, second', 'spellbound', 'shows', { age: 'adults', extra: 2500, cap: 30 }],
+  ['piazza-balloon', [P6], '21:30', 90, 'Balloon drop gala party with the resident band Xcite', 'piazza', 'nightlife'],
+  ['live-majority', [P6], '22:15', 60, 'Majority Rules adult game show', 'live', 'games', { age: 'adults', cap: 150 }],
   ...casinoRows(),
 ]
 
@@ -277,6 +291,17 @@ const skyRows = (): Row[] => [
   ['takefive-gala', [L], '21:30', 75, 'Farewell jazz gala', 'takefive', 'music', { cap: 90 }],
   ['crooners-final', [L], '22:00', 90, 'Final night piano sing-along', 'crooners', 'music', { age: 'adults' }],
   ['pool-midnight', [L], '22:30', 90, 'Late-night Movies Under the Stars', 'pool', 'family'],
+  // Day 6, the second formal port day
+  ['piazza-harp', [P6], '09:15', 45, 'Morning classical harp and violin', 'piazza', 'music'],
+  ['live-trivia6', [P6], '10:30', 45, 'General knowledge trivia', 'live', 'games'],
+  ['takefive-swing', [P6], '14:00', 60, 'Afternoon swing dance workshop', 'takefive', 'learning'],
+  ['piazza-acrobat', [P6], '15:00', 45, 'Pop-up acrobat and juggling variety act', 'piazza', 'shows'],
+  ['pool-film6', [P6], '15:00', 120, 'Afternoon blockbuster movie', 'pool', 'family'],
+  ['theater-spotlight-1', [P6], '19:00', 60, 'Production show: Spotlight Bar, early showing', 'theater', 'shows', { cap: 900 }],
+  ['theater-spotlight-2', [P6], '21:15', 60, 'Production show: Spotlight Bar, late showing', 'theater', 'shows', { cap: 900 }],
+  ['piazza-balloon', [P6], '21:30', 90, 'Gala balloon drop party and live band', 'piazza', 'nightlife'],
+  ['takefive-cool', [P6], '21:45', 75, 'Classic cool jazz and craft cocktails', 'takefive', 'music'],
+  ['vista-comedy6', [P6], '22:30', 90, 'Adult comedy and late-night clubbing', 'vista', 'nightlife', { age: 'adults' }],
   ...casinoRows(),
 ]
 
@@ -344,6 +369,17 @@ const sapphireRows = (): Row[] => [
   ['fusion-grand', [L], '21:15', 90, 'Princess Pop Star grand finale and karaoke', 'fusion', 'games'],
   ['crooners-final', [L], '22:00', 90, 'Farewell piano sing-along', 'crooners', 'music', { age: 'adults' }],
   ['pool-midnight', [L], '22:30', 90, 'Late-night Movies Under the Stars', 'pool', 'family'],
+  // Day 6, the second formal port day
+  ['piazza-violin', [P6], '09:15', 45, 'Morning violin and piano recital', 'piazza', 'music'],
+  ['explorers-trivia6', [P6], '10:30', 45, 'General knowledge trivia', 'explorers', 'games'],
+  ['fusion-swing', [P6], '14:00', 60, 'Swing and salsa dance workshop', 'fusion', 'learning'],
+  ['skywalkers-tea', [P6], '15:00', 90, 'Scenic observation and tea service', 'skywalkers', 'learning'],
+  ['pool-film6', [P6], '15:00', 120, 'Afternoon feature film', 'pool', 'family'],
+  ['theater-encore-1', [P6], '19:00', 60, 'Production show: Encore, early showing', 'theater', 'shows', { cap: 800 }],
+  ['theater-encore-2', [P6], '21:15', 60, 'Production show: Encore, late showing', 'theater', 'shows', { cap: 800 }],
+  ['piazza-balloon', [P6], '21:30', 90, 'Gala balloon drop party and live orchestra', 'piazza', 'nightlife'],
+  ['explorers-majority', [P6], '22:00', 60, 'Majority Rules adult game show', 'explorers', 'games', { age: 'adults' }],
+  ['skywalkers-dj6', [P6], '22:30', 90, 'Formal night DJ clubbing', 'skywalkers', 'nightlife', { age: 'adults' }],
   ...casinoRows(),
 ]
 

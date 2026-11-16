@@ -226,6 +226,14 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
         return Task.FromResult(list.ToList());
     }
 
+    public Task<List<string>> ReorderFavouritesAsync(long userId, IReadOnlyList<string> keys, CancellationToken ct)
+    {
+        var current = Favourites.GetValueOrDefault(userId)?.ToList() ?? [];
+        var order = keys.Distinct().Where(current.Contains).Concat(current.Where(k => !keys.Contains(k))).ToList();
+        Favourites[userId] = order;
+        return Task.FromResult(order.ToList());
+    }
+
     public List<(long UserId, JourneyEventRow Row)> JourneyEvents { get; } = [];
 
     public Task AddJourneyEventAsync(long userId, string kind, string? sailingId, DateTime at, CancellationToken ct)

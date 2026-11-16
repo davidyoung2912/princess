@@ -4,11 +4,11 @@
  *
  * `embark` day 1 · `night` every day with a night aboard (day 1 to the last night) · `last` the last night · `sea` every sea day ·
  * `seaMid` every sea day except the last night · `firstSea` the first sea day · `laterSea` every sea day after the first except the last night · `port` every port of call · `portOdd` and `portEven` the first, third...
- * and the second, fourth... port of call · `friday` a calendar Friday (the Shabbat service).
+ * and the second, fourth... port of call · `earlyPortOdd` the first, third... port of call except the last · `lastPort` the last port of call · `friday` a calendar Friday (the Shabbat service).
  */
-export type DayKind = 'embark' | 'night' | 'last' | 'sea' | 'seaMid' | 'firstSea' | 'laterSea' | 'port' | 'portOdd' | 'portEven' | 'friday'
+export type DayKind = 'embark' | 'night' | 'last' | 'sea' | 'seaMid' | 'firstSea' | 'laterSea' | 'port' | 'portOdd' | 'portEven' | 'earlyPortOdd' | 'lastPort' | 'friday'
 
-export const DAY_KINDS: readonly DayKind[] = ['embark', 'night', 'last', 'sea', 'seaMid', 'firstSea', 'laterSea', 'port', 'portOdd', 'portEven', 'friday']
+export const DAY_KINDS: readonly DayKind[] = ['embark', 'night', 'last', 'sea', 'seaMid', 'firstSea', 'laterSea', 'port', 'portOdd', 'portEven', 'earlyPortOdd', 'lastPort', 'friday']
 
 export const isDayKind = (v: unknown): v is DayKind => (DAY_KINDS as readonly unknown[]).includes(v)
 
@@ -16,6 +16,8 @@ export const isDayKind = (v: unknown): v is DayKind => (DAY_KINDS as readonly un
 export interface DayShape { port: string; date: string }
 
 const isCall = (days: readonly DayShape[], day: number): boolean => days[day - 1].port !== 'sea' && day !== 1 && day !== days.length
+
+const callCount = (days: readonly DayShape[]): number => days.filter((_, i) => isCall(days, i + 1)).length
 
 const callNumber = (days: readonly DayShape[], day: number): number => {
   let n = 0
@@ -38,6 +40,8 @@ export function isDayKindOn(days: readonly DayShape[], day: number, kind: DayKin
     case 'port': return isCall(days, day)
     case 'portOdd': return isCall(days, day) && callNumber(days, day) % 2 === 1
     case 'portEven': return isCall(days, day) && callNumber(days, day) % 2 === 0
+    case 'earlyPortOdd': return isCall(days, day) && callNumber(days, day) % 2 === 1 && callNumber(days, day) < callCount(days)
+    case 'lastPort': return isCall(days, day) && callNumber(days, day) === callCount(days)
     case 'friday': return new Date(`${at.date}T00:00:00Z`).getUTCDay() === 5
   }
 }
