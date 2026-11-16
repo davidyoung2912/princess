@@ -33,6 +33,7 @@ import { StanleyDialog } from './ai/StanleyDialog'
 import { subscribeStanleyRequest, takeStanleyRequest } from '../ai/stanleyOpen'
 import { dismissDot, dotVisible, subscribeDot } from '../ai/stanleyDot'
 import { StanleyChips } from './ai/StanleyChips'
+import { PhoneMenu } from './PhoneMenu'
 import { stanleyLevelFor } from '../settings/settings'
 import { useSettings } from '../hooks/useSettings'
 import { PageHeader } from './PageHeader'
@@ -192,7 +193,7 @@ export function Shell() {
             <img src={logo} alt="" width="512" height="512" />
           </Link>
         </header>
-        <TestBar />
+        <TestBar menu={<PhoneMenu stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
       </div>
       <nav className="tabs no-print" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
         <Link to="/account" className="tabs__logo" aria-label={t('account.logo')}>

@@ -14,8 +14,9 @@ const placeOf = (c: DayChoice): string => (c.atSea ? t('exp.clock.sea') : portBy
 /** The day the page shows, said plainly, and which it is when it is not the ship's day. */
 export function ChosenDayNote({ state }: { state: ExplorerDayState }) {
   const c = state.choices[state.day - 1]
-  if (!c) return null
-  const rel = c.isToday ? '' : c.isPast ? ` · ${t('exp.day.past')}` : ` · ${t('exp.day.future')}`
+  // The ship's own day is already said by the date bar at the top and the ship clock below it; only another day needs a note.
+  if (!c || c.isToday) return null
+  const rel = c.isPast ? ` · ${t('exp.day.past')}` : ` · ${t('exp.day.future')}`
   return <p className="exp-chosen" role="status"><strong>{t('exp.day.viewing', { day: c.day, date: shortDate(c.date) })}</strong>{rel} · {placeOf(c)}</p>
 }
 

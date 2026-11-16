@@ -13,7 +13,7 @@ const kindLabels = (): Record<string, string> => Object.fromEntries(Object.entri
 
 /** The Activities Explorer: the card tables, talks, workshops, meet-ups, Camp Discovery and the open decks, each with its hours and what is on next. Nothing is booked here, so there is no reservations list. */
 export function ActivitiesExplorerScreen() {
-  return <ExplorerPage kind="activities" title={t('acex.title')} purpose={t('acex.purpose')} basePath={BASE} kindLabels={kindLabels()} above={() => <MoreLinks links={[{ to: '/ship/games', label: t('route.games') }, { to: '/ship/community', label: t('route.community') }]} />} />
+  return <ExplorerPage kind="activities" basePath={BASE} kindLabels={kindLabels()} above={() => <MoreLinks links={[{ to: '/ship/games', label: t('route.games') }, { to: '/ship/community', label: t('route.community') }]} />} />
 }
 
 /** One activity hub: its hours for the day and every event there, each with a toggle that adds it to your plan. */

@@ -17,7 +17,7 @@ export function SpaExplorerScreen() {
   const view = useSpaView()
   return (
     <ExplorerPage
-      kind="spa" title={t('spa.title')} purpose={t('spa.purpose')} basePath={BASE} kindLabels={kindLabels()}
+      kind="spa" basePath={BASE} kindLabels={kindLabels()}
       above={({ data, state }) => (
         <Saved copy={view}>
           {(v) => <SpaReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} />}

@@ -360,6 +360,12 @@ button.chat-quote { cursor: pointer; }
 .exp-clock { margin: 0; }
 .exp-chosen { margin: var(--space-2) 0; }
 .exp-date { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-3) 0; }
+/* Phones: previous, Pick a Date, next and Today stay on one line; the Pick a Date button takes the room that is left. */
+@media (max-width: 599px) {
+  .exp-date { flex-wrap: nowrap; gap: var(--space-1); }
+  .exp-date .btn { flex: none; padding-inline: var(--space-2); white-space: nowrap; }
+  .exp-date .btn--secondary { flex: 1 1 auto; min-width: 0; }
+}
 .exp-days { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 .exp-days__btn { display: grid; gap: 2px; width: 100%; min-height: var(--target-min); padding: var(--space-3) var(--space-4); text-align: start; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: var(--radius-card); cursor: pointer; }
 .exp-days__btn[aria-pressed='true'] { border-color: var(--explorer); background: var(--explorer-tint); }
@@ -369,6 +375,7 @@ button.chat-quote { cursor: pointer; }
 .exp-card:has(.exp-card__link:focus-visible) { outline: 3px solid var(--explorer); outline-offset: 2px; }
 .exp-events { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-3); }
 .exp-now { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.exp-sum { margin: var(--space-2) 0 0; padding-inline-start: 1.25rem; display: grid; gap: var(--space-1); }
 .exp-event { padding-block-start: var(--space-2); border-block-start: 1px solid var(--border); }
 .exp-event p { margin: 0 0 var(--space-1); }
 .exp-event--cancelled { color: var(--text-muted); }

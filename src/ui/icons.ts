@@ -11,6 +11,7 @@ export {
   LifeBuoy as Help,
   ArrowLeft,
   ChevronLeft,
+  Menu,
   ChevronRight,
   WifiOff,
   RefreshCw as Sync,

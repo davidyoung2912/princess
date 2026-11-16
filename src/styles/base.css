@@ -66,6 +66,9 @@ img, svg { max-width: 100%; }
     calc(env(safe-area-inset-bottom) + var(--space-6))
     calc(env(safe-area-inset-left) + var(--gutter));
 }
+/* A minimum gap between the blocks of a screen, so cards, sections, button rows and lists never touch. Vertical margins collapse, so where a block already has a larger
+   margin below it nothing changes. It sits early in the cascade, so a later rule that sets its own top margin still wins. */
+.page > * + * { margin-block-start: var(--space-4); }
 
 
 .card {

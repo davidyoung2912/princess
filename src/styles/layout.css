@@ -250,10 +250,30 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .welcome__need--done .welcome__tick span { text-decoration: line-through; opacity: 0.75; }
 .welcome__open { white-space: nowrap; }
 
+/* The menu button (Search, Ask Stanley, Help, account) stands in for the top bar and the side nav below 1024px. */
+.testbar__menu { margin-inline-start: var(--space-2); align-self: center; order: 3; }
+.phone-menu__button {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; min-height: 2rem; padding: 0;
+  border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); background: transparent; color: var(--primary); cursor: pointer;
+}
+.phone-menu__button:hover { border-color: var(--primary); }
+.phone-menu__button .lucide { width: 1.25rem; height: 1.25rem; }
+.phone-menu__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.phone-menu__item {
+  display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: var(--target-min); padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); background: transparent; color: var(--primary); font: inherit; font-weight: 600; text-decoration: none; text-align: start; cursor: pointer;
+}
+.phone-menu__item:hover { border-color: var(--primary); }
+.phone-menu__item .lucide { width: 1.5rem; height: 1.5rem; flex: none; }
+.phone-menu__item img { width: 2rem; height: 2rem; flex: none; object-fit: cover; border-radius: 50%; }
+@media (min-width: 1024px) { .testbar__menu { display: none; } }
+
 /* Phones: the date and time share the first row; the ship information links are a carousel on a second row, with arrows that page it and show it can be dragged. Targets stay 2rem, above the 24px minimum. */
 .testbar__carousel { display: contents; }
 .testbar__arrow { display: none; }
 @media (max-width: 599px) {
+  /* On a phone the menu button stays in the first row, at the far right beside the time; the carousel wraps below it. */
+  .testbar__menu { order: 0; margin-inline-start: auto; }
   .testbar { flex-wrap: wrap; align-items: center; row-gap: var(--space-1); column-gap: var(--space-2); padding-block: var(--space-1); }
   .testbar__item { min-height: 0; padding: 0 var(--space-1); font-size: var(--fs-small, 0.875rem); line-height: 1.2; white-space: nowrap; flex: none; }
   .testbar__pick { min-height: 0; padding: 0; }

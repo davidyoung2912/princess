@@ -6,7 +6,6 @@ import { upcomingEvents } from '../../domain/explorer/upcoming'
 import type { ExplorerKind } from '../../domain/explorer/types'
 import { useExplorerData, useExplorerDay, type ExplorerDayState } from '../../hooks/useExplorer'
 import { t } from '../../i18n'
-import { Card } from '../Card'
 import { Saved } from '../onboard/common'
 import { ChosenDayNote, PickDateButton } from './DateControls'
 import { EventRow, FilterChips, HappeningNow, HoursBadge } from './Parts'
@@ -15,9 +14,8 @@ import { useVenuePins, type VenuePins } from '../../hooks/useVenuePins'
 import { PinButton } from './Pins'
 import { DiningControls } from './DiningDiscovery'
 import { dishHits, filterDining, hasKidsMenu, NO_DINING_FILTER, sortDining, type DiningFilter, type DiningSort } from '../../domain/explorer/diningDiscovery'
-import { StanleyPose } from '../StanleyPose'
-import { EXPLORER_POSE } from './venueArt'
 import { ShipClockCard } from './ShipClockCard'
+import { DaySummaryCard } from './DaySummaryCard'
 import { WhatChanged } from './WhatChanged'
 import { ForYou } from './ForYou'
 import { forYouFirst, recommendEvents, recommendVenues } from '../../domain/explorer/recommend'
@@ -28,9 +26,6 @@ export interface ExplorerContext { data: ExplorerDay; state: ExplorerDayState; r
 
 interface ExplorerPageProps {
   kind: ExplorerKind
-  /** The heading of the page's first card and its one-line purpose. */
-  title: string
-  purpose: string
   /** Where a venue's page is: `${basePath}/${venueId}`. */
   basePath: string
   /** The words for each kind of venue, for the filter chips. */
@@ -40,22 +35,18 @@ interface ExplorerPageProps {
 }
 
 /** The page every Explorer shares: header card, ship clock, date controls, anything the Explorer puts above the list, filters, and the venue cards with pinned venues first. */
-export function ExplorerPage({ kind, title, purpose, basePath, kindLabels, above }: ExplorerPageProps) {
+export function ExplorerPage({ kind, basePath, kindLabels, above }: ExplorerPageProps) {
   const state = useExplorerDay()
   const copy = useExplorerData(kind, state.day)
   return (
     <div className="page">
-      <Card hero labelledBy="exp-head-h">
-        <span className="landing-pose calm-hide"><StanleyPose pose={EXPLORER_POSE[kind]} size={88} /></span>
-        <h2 id="exp-head-h" className="card__title">{title}</h2>
-        <p>{purpose}</p>
-      </Card>
       <ShipClockCard state={state} />
       <PickDateButton state={state} />
       <ChosenDayNote state={state} />
       <Saved copy={copy}>
         {(data) => (
           <>
+            <DaySummaryCard kind={kind} data={data} state={state} />
             <HappeningNow data={data} currentDay={state.currentDay} now={state.nowAt} basePath={basePath} />
             <WhatChanged data={data} now={state.nowAt} basePath={basePath} />
             {above?.({ data, state, reload: copy.retry })}

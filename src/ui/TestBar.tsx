@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router'
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import { getContext, subscribeContext } from '../account/context'
 import { jumpTo } from '../demo/store'
 import { dayLabel, dayLabelLong, timeIn, zonedToEpoch } from '../domain/timezones'
@@ -41,13 +41,13 @@ function dayText(stage: string, day: DayOfStage | null): string {
  * The ship date with the guest's stage under it (the stage opens the stage welcome page). For demo accounts only, the date and a time block (whose clock it is under it) open a
  * picker that moves the testing date, which changes the guest's stage and what every screen shows. Demo accounts only.
  */
-export function TestBar() {
+export function TestBar({ menu }: { menu?: ReactNode }) {
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
   if (!context) return null
-  return <TestBarBody isDemo={context.isDemo === true} />
+  return <TestBarBody isDemo={context.isDemo === true} menu={menu} />
 }
 
-function TestBarBody({ isDemo }: { isDemo: boolean }) {
+function TestBarBody({ isDemo, menu }: { isDemo: boolean; menu?: ReactNode }) {
   const position = useJourneyPosition()
   const now = useNow()
   const { pathname } = useLocation()
@@ -120,6 +120,7 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
           <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
         </button>
       )}
+      {menu && <div className="testbar__menu">{menu}</div>}
       <div className="testbar__carousel">
         <button type="button" className="testbar__arrow" aria-label={t('testbar.at.prev')} disabled={!edges.start} onClick={() => step(-1)}><ChevronLeft aria-hidden="true" /></button>
         <nav className="testbar__at" ref={track} aria-label={t('testbar.at.label')}>

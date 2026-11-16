@@ -12,7 +12,7 @@ const kindLabels = (): Record<string, string> => Object.fromEntries(Object.entri
 
 /** The Exercise Explorer: the gym, studios, courts, tracks and pools, each with its hours and the classes and games on next. Classes are signed up for at the fitness desk, so there is no reservations list. */
 export function ExerciseExplorerScreen() {
-  return <ExplorerPage kind="exercise" title={t('exex.title')} purpose={t('exex.purpose')} basePath={BASE} kindLabels={kindLabels()} />
+  return <ExplorerPage kind="exercise" basePath={BASE} kindLabels={kindLabels()} />
 }
 
 /** One exercise venue: its hours for the day and every class or game there, each with a toggle that adds it to your plan. */

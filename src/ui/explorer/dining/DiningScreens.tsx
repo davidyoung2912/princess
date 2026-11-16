@@ -20,7 +20,7 @@ export function DiningExplorerScreen() {
   const view = useDiningView()
   return (
     <ExplorerPage
-      kind="dining" title={t('exp.dining.title')} purpose={t('exp.dining.purpose')} basePath={BASE} kindLabels={kindLabels()}
+      kind="dining" basePath={BASE} kindLabels={kindLabels()}
       above={({ data, state }) => (
         <Saved copy={view}>
           {(v) => <DiningReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} />}
