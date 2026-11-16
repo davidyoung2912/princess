@@ -4,6 +4,7 @@ import { channelById, chatState, ESCALATE_AFTER_MINUTES, replyAt, SLOW_FACTOR } 
 import { DECKS, ELEVATORS, MUSTER_STATIONS, musterByLabel, placeById, PLACES, searchPlaces } from './deck'
 import { buildFolio, filterFolio, folioTotals, NO_FOLIO_FILTER, runningTotals, type FolioGuest } from './folio'
 import { computeEntitlements } from './entitlements'
+import { dishCopy } from './dishCopy'
 import { dishesFor, dishSuits, DIRECTORY, directoryVenue, hoursText, openAt } from './menus'
 import { eventsOn, filterEvents, NO_EVENT_FILTER, nowAndNext, overlapping, PLAN_CHANGES, sortEvents } from './program'
 import { emergencyCard, isEmergencyCard } from './safety'
@@ -154,16 +155,16 @@ describe('menus and diets', () => {
     const soleil = directoryVenue('soleil')!
     const names = (diets: Parameters<typeof dishesFor>[1]) => dishesFor(soleil, diets).map((d) => d.name)
     expect(names([])).toHaveLength(soleil.dishes.length)
-    expect(names(['shellfishAllergy'])).not.toContain('Shrimp cocktail')
-    expect(names(['nutAllergy'])).not.toContain('Chocolate lava cake')
-    expect(names(['vegetarian'])).toEqual(expect.arrayContaining(['French onion soup', 'Vegetable wellington']))
-    expect(names(['vegetarian'])).not.toContain('Seared sea bass')
-    expect(names(['vegan'])).not.toContain('French onion soup')
-    expect(names(['glutenFree', 'dairyFree'])).not.toContain('French onion soup')
+    expect(names(['shellfishAllergy'])).not.toContain(dishCopy('Shrimp cocktail').name)
+    expect(names(['nutAllergy'])).not.toContain(dishCopy('Chocolate lava cake').name)
+    expect(names(['vegetarian'])).toEqual(expect.arrayContaining([dishCopy('French onion soup').name, dishCopy('Vegetable wellington').name]))
+    expect(names(['vegetarian'])).not.toContain(dishCopy('Seared sea bass').name)
+    expect(names(['vegan'])).not.toContain(dishCopy('French onion soup').name)
+    expect(names(['glutenFree', 'dairyFree'])).not.toContain(dishCopy('French onion soup').name)
   })
 
   it('applies every diet in the list together', () => {
-    const fish = DIRECTORY.flatMap((v) => v.dishes).find((d) => d.name === 'Seared sea bass')!
+    const fish = DIRECTORY.flatMap((v) => v.dishes).find((d) => d.name === dishCopy('Seared sea bass').name)!
     expect(dishSuits(fish, 'glutenFree')).toBe(true)
     expect(dishSuits(fish, 'vegetarian')).toBe(false)
     expect(dishesFor(directoryVenue('soleil')!, ['vegetarian', 'glutenFree']).every((d) => !d.contains.includes('gluten') && !d.contains.includes('fish'))).toBe(true)

@@ -27,7 +27,6 @@ import { ItineraryDayInfo } from './ItineraryScreen'
 import { LoadError } from '../discover/parts'
 
 const PERIOD: Record<Period, StringKey> = { morning: 'plan.today.morning', afternoon: 'plan.today.afternoon', evening: 'plan.today.evening' }
-const KIND: Record<PlanItem['kind'], StringKey> = { event: 'plan.today.kind.event', dining: 'plan.today.kind.dining', spa: 'plan.today.kind.spa', tour: 'plan.today.kind.tour' }
 const LINKS = [
   ['route.diningToday', EXPLORER_PATHS.dining], ['route.entertainment', EXPLORER_PATHS.entertainment], ['route.shoppingToday', EXPLORER_PATHS.shopping],
   ['route.spaExplorer', EXPLORER_PATHS.spa], ['route.exerciseExplorer', EXPLORER_PATHS.exercise], ['route.activitiesExplorer', EXPLORER_PATHS.activities],
@@ -109,26 +108,24 @@ function changeText(i: PlanItem): string {
 function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, busy }: { item: PlanItem; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; alternatives: Alternative[]; onAdd: (events: { id: string; title: string }[]) => Promise<boolean>; busy: boolean }) {
   const cancelled = item.status === 'cancelled'
   return (
-    <li className={`event${cancelled ? ' event--cancelled' : ''}`}>
+    <li className={`event${cancelled ? ' event--cancelled' : ''}${item.link ? ' event--link' : ''}`}>
       {hint && <p className="muted" role="note">{t(hint.tight ? 'plan.today.walkTight' : 'plan.today.walk', { minutes: hint.minutes, place: hint.from.venueTitle, time: clockAt(hint.leaveBy) })}</p>}
-      <p className="event__time">
+      <h3 className="event__title event__title--icon">
         {item.kind === 'tour' ? <Compass className="explorer-icon" aria-hidden="true" focusable="false" /> : <ExplorerIcon kind={item.explorer} />}
-        <strong>{t(KIND[item.kind])}</strong>
-        {cancelled && <span className="event__today"><StatusBadge kind="cancelled" label={t('exp.event.cancelled')} /></span>}
-        {item.status === 'moved' && <span className="event__today"><StatusBadge kind="changed" label={t('exp.event.moved', { was: formatTime(item.was ?? item.start) })} /></span>}
-      </p>
-      <h3 className="event__title">{item.link ? <Link to={item.link}>{item.title}</Link> : item.title}</h3>
+        {cancelled ? <s>{item.title}</s> : item.link ? <Link to={item.link} className="event__stretch">{item.title}</Link> : item.title}
+      </h3>
+      {(cancelled || item.status === 'moved') && <p className="event__tags">{cancelled ? <StatusBadge kind="cancelled" label={t('exp.event.cancelled')} /> : <StatusBadge kind="changed" label={t('exp.event.moved', { was: formatTime(item.was ?? item.start) })} />}</p>}
       <ul className="event__times">
         <li><Clock aria-hidden="true" focusable="false" /><time>{formatTime(item.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(item.endAt) })}</li>
       </ul>
-      {item.venueTitle && item.venueTitle !== item.title && <p className="event__where"><Link to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></p>}
+      {item.venueTitle && item.venueTitle !== item.title && <p className="event__where"><Link className="event__inner-link" to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></p>}
       {clash && clash.length > 0 && <p className="exp-event__clash" role="note">{t('exp.event.clash', { title: clash[0].title })}</p>}
       {alternatives.length > 0 && (
         <div role="group" aria-label={t('plan.alt.title')}>
           <p className="muted">{t(item.status === 'cancelled' ? 'plan.alt.cancelled' : item.status === 'moved' ? 'plan.alt.moved' : 'plan.alt.clash')}</p>
           <ul className="icon-list">
             {alternatives.map((a) => (
-              <li key={a.id}><ExplorerIcon kind={a.explorer} /><div><Link to={`${EXPLORER_PATHS[a.explorer]}/${a.venueId}?day=${day}`}>{a.start ? t('plan.alt.event', { title: a.title, time: formatTime(a.start), venue: a.venueTitle }) : t('plan.alt.place', { title: a.title })}</Link>{a.start && <div className="plan-add"><Button variant="secondary" disabled={busy} aria-label={t('exp.add.label', { title: a.title })} onClick={() => { void onAdd([{ id: a.id, title: a.title }]) }}>{t('exp.add.button')}</Button></div>}</div></li>
+              <li key={a.id}><ExplorerIcon kind={a.explorer} /><div><Link className="event__inner-link" to={`${EXPLORER_PATHS[a.explorer]}/${a.venueId}?day=${day}`}>{a.start ? t('plan.alt.event', { title: a.title, time: formatTime(a.start), venue: a.venueTitle }) : t('plan.alt.place', { title: a.title })}</Link>{a.start && <div className="plan-add"><Button variant="secondary" disabled={busy} aria-label={t('exp.add.label', { title: a.title })} onClick={() => { void onAdd([{ id: a.id, title: a.title }]) }}>{t('exp.add.button')}</Button></div>}</div></li>
             ))}
           </ul>
         </div>

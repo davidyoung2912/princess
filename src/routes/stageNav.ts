@@ -83,13 +83,17 @@ export const ALWAYS_OPEN_SCREENS: readonly string[] = ['H06', 'H07', 'H08', 'H09
  * What an address does at a stage. 'show' opens it; 'home' sends the guest Home (a stale address: a screen the stage does not use, or a tab it does not have).
  * Addresses outside the registry (the kit, public links, unknown addresses) are left to the router.
  */
+const CHAT_PAGES: readonly string[] = ['C02', 'C03', 'C04', 'C05', 'C06', 'C07']
+
 export function accessAt(pattern: string | null, pathname: string, stage: JourneyStage): 'show' | 'home' {
   if (pattern === '/tab/:slug') return tabAtPath(pathname, stage) ? 'show' : 'home'
   if (pattern === '/plan' || pattern === '/ship') return tabAtPath(pattern, stage) ? 'show' : 'home'
   if (!pattern) return 'show'
   const screen = screenForPath(pattern)
   if (!screen || screen.family === 'X') return 'show'
-  return ALWAYS_OPEN_SCREENS.includes(screen.id) || stageUses(screen.id, stage) ? 'show' : 'home'
+  // The pages reached from Chat (people, rooms, search, children, Guest Services, one conversation) are open wherever Chat is.
+  const id = CHAT_PAGES.includes(screen.id) ? 'C01' : screen.id
+  return ALWAYS_OPEN_SCREENS.includes(id) || stageUses(id, stage) ? 'show' : 'home'
 }
 
 /** The colour the shell wears for a screen, as {@link areaFor} says, or the tab's own colour on a landing page. */

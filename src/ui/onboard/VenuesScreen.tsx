@@ -124,7 +124,7 @@ function Menu({ v, diets, filtered, setFiltered }: { v: DirectoryVenue; diets: D
           {shown.map((d) => (
             <li key={d.name}>
               <strong>{d.name}</strong>
-              <br />
+              {d.description ? <span className="dish-desc">{d.description}</span> : <br />}
               <span className="muted">{d.contains.length === 0 ? t('ven.containsNone') : t('ven.contains', { list: d.contains.map((c) => t(`ven.c.${c}` as StringKey)).join(', ') })}</span>
               {diets.some((x) => !dishSuits(d, x)) && <span className="tag">{t('ven.notForYou')}</span>}
               <FavouriteButton venueId={v.id} dish={d.name} />

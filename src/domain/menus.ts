@@ -2,13 +2,14 @@ import type { DietaryId } from './account'
 import { VENUES, venueById } from './dining'
 import type { Cents } from './money'
 import { registerContent } from './content'
+import { dishCopy } from './dishCopy'
 
 /** The venue directory with hours, price and menus tagged for allergens and diets (DIN-01, DIN-03). Dishes and hours are authored concept values. */
 export type Contains = 'meat' | 'pork' | 'fish' | 'shellfish' | 'dairy' | 'egg' | 'gluten' | 'nuts'
 
 export const CONTAINS: readonly Contains[] = ['meat', 'pork', 'fish', 'shellfish', 'dairy', 'egg', 'gluten', 'nuts']
 
-export interface Dish { name: string; contains: readonly Contains[] }
+export interface Dish { name: string; /** A line that describes the dish as a menu would. */ description?: string; contains: readonly Contains[] }
 
 export type DayType = 'sea' | 'port'
 export type Hours = readonly (readonly [string, string])[]
@@ -28,7 +29,7 @@ export interface DirectoryVenue {
   unavailableSince?: string
 }
 
-const d = (name: string, ...contains: Contains[]): Dish => ({ name, contains })
+const d = (plain: string, ...contains: Contains[]): Dish => ({ ...dishCopy(plain), contains })
 const ALL: Hours = [['00:00', '24:00']]
 
 export const DIRECTORY: readonly DirectoryVenue[] = [

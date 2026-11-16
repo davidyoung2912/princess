@@ -88,7 +88,7 @@ describe('the Explorer content of the ships', () => {
       it('tags every dish and keeps eggplant from counting as egg', () => {
         const dishes = content.menus.flatMap((m) => m.courses.flatMap((c) => c.dishes))
         expect(dishes.length).toBeGreaterThan(50)
-        expect(dishes.find((d) => d.name === 'Eggplant Parmigiana')?.contains).not.toContain('egg')
+        expect(dishes.find((d) => d.name === 'Aubergine Parmigiana')?.contains).not.toContain('egg')
       })
 
       it('starts every event inside the hours of its venue on a day it runs', () => {

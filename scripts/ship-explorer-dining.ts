@@ -1,6 +1,7 @@
 // The Dining Explorer content that goes with the dining rooms (docs/princess-restuarants.md, princess-bars.md, princess-special-events.md): the bars, the events that run
 // at them (winemaker dinners, tastings, afternoon tea, the pub lunch) and the menus. Authored concept content, with start times the docs leave out chosen here for review.
 import type { DirectoryVenue } from '../src/domain/menus.ts'
+import { dishCopy } from '../src/domain/dishCopy.ts'
 import type { HoursRule } from '../src/domain/explorer/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow, MealCourseRow, MealMenuRow } from './ship-explorer-data.ts'
 
@@ -24,7 +25,7 @@ export const tagsOf = (name: string): Contains[] => {
   return [...out].sort()
 }
 
-const dishes = (names: string[]) => names.map((name) => ({ name, contains: tagsOf(name) }))
+const dishes = (names: string[]) => names.map((plain) => { const c = dishCopy(plain); return { name: c.name, contains: tagsOf(plain), ...(c.description ? { note: c.description } : {}) } })
 const course = (name: string, names: string[]): MealCourseRow => ({ name, dishes: dishes(names) })
 
 // The doc's seven evenings (docs/princess-restuarants.md "7-Day Rotating MDR Dinner Menu"). Days 2 and 6 are the formal nights.
@@ -83,7 +84,7 @@ export function diningMenus(venues: readonly ExplorerVenueRow[], directory: read
       out.push({ venueId: v.id, meal: 'allDay', from: '10:00', to: '24:00', templateDay: 0, title: 'Signature drinks', courses: [course('Signatures', BAR_DRINKS[v.id.replace(/^(sky|sapphire)-/, '')] ?? [])] })
     } else {
       const d = directory.find((x) => x.id === v.id)
-      if (d && d.dishes.length > 0) out.push({ venueId: v.id, meal: 'allDay', from: '00:00', to: '24:00', templateDay: 0, title: 'The menu', courses: [{ name: 'Favourites', dishes: d.dishes.map((x) => ({ name: x.name, contains: [...x.contains].sort() })) }] })
+      if (d && d.dishes.length > 0) out.push({ venueId: v.id, meal: 'allDay', from: '00:00', to: '24:00', templateDay: 0, title: 'The menu', courses: [{ name: 'Favourites', dishes: d.dishes.map((x) => ({ name: x.name, contains: [...x.contains].sort(), ...(x.description ? { note: x.description } : {}) })) }] })
     }
   }
   return out

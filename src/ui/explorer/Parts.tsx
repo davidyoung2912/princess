@@ -139,7 +139,7 @@ export function MenuPanel({ venueId, menus, diets }: { venueId: string; menus: r
               <div key={c.name}>
                 <h4>{c.name}</h4>
                 <ul className="plain-bullets">
-                  {shown.map((d) => <li key={d.name}>{d.name}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}
+                  {shown.map((d) => <li key={d.name}><strong>{d.name}</strong>{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}
                 </ul>
               </div>
             )

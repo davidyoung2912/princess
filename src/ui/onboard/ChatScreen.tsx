@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
 import type { ServiceThread } from '../../api/types'
 import { channelById, CHANNELS, ESCALATE_AFTER_MINUTES, MAX_MESSAGE, type ChannelId } from '../../domain/chat'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
@@ -14,56 +14,70 @@ import { t, th as heading, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
-import { Chip } from '../Chip'
 import { Field, TextArea } from '../Field'
 import { Phone } from '../icons'
 import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
-import { People, RequestsBanner } from './ChatPeople'
-import { Rooms } from './ChatRooms'
-import { ChatSearch } from './ChatSearch'
+import { RequestsBanner } from './ChatPeople'
 import { Conversations } from './ChatConversations'
-import { Children } from './ChatGuardian'
 import { canFindPeople, canUseGuestServices } from '../../domain/chatKeep'
+import { conversationFromSearch } from '../../domain/chatThread'
 
-type Mode = 'chats' | 'people' | 'rooms' | 'search' | 'service' | 'children'
-
-/** Chat (MSG-01, MSG-02, SUP-08): free messages with the travel party, and Guest Services by topic with visible response times and a phone call when waiting is too long. */
+/** Chat (MSG-01, MSG-02): free messages with the travel party. People, Rooms, Search, the children's view and Guest Services are pages of their own, reached from the links here (`/chat/people`, `/chat/rooms`, `/chat/search`, `/chat/children`, `/chat/service`). */
 export function ChatScreen() {
-  const [params, setParams] = useSearchParams()
-  // A chat notice for a request opens straight on People (`?mode=people`).
-  const [mode, setMode] = useState<Mode>(params.get('mode') === 'people' ? 'people' : 'chats')
-  // Only someone who supervises a child sees the guardian view; a failed check (offline, or acting as a child) just hides it.
+  const [params] = useSearchParams()
+  const nav = useNavigate()
+  // Only someone who supervises a child sees the guardian link; a failed check (offline, or acting as a child) just hides it.
   const kids = useMine(() => api.chatGuardian.children())
   const guardian = (kids.data?.length ?? 0) > 0
   // Before a booking is confirmed there is nobody on a sailing to chat with: Stanley is here, and the people part waits. A failed check leaves everything shown (the server still decides).
   const eligibility = useMine(() => api.chatConnections.eligibility())
   const people = canFindPeople(eligibility.data)
   const service = canUseGuestServices(eligibility.data)
-  const shown: Mode = (!people && (mode === 'people' || mode === 'rooms' || mode === 'search')) || (!service && mode === 'service') ? 'chats' : mode
+  // A chat notice for a request used to open People on this page (`?mode=people`); it is a page of its own now.
+  if (params.get('mode') === 'people') return <Navigate to="/chat/people" replace />
+  // An older link to a conversation (`/chat?c=…`, from a notice or a toast) opens its page.
+  const old = conversationFromSearch(params.toString())
+  if (old) return <Navigate to={`/chat/c/${encodeURIComponent(old)}${params.get('m') ? `?m=${encodeURIComponent(params.get('m')!)}` : ''}`} replace />
+  const more: { to: string; label: StringKey; hint: StringKey; show: boolean }[] = [
+    { to: '/chat/people', label: 'chat.people', hint: 'chat.more.people', show: people },
+    { to: '/chat/rooms', label: 'room.chip', hint: 'chat.more.rooms', show: people },
+    { to: '/chat/search', label: 'csearch.chip', hint: 'chat.more.search', show: people },
+    { to: '/chat/children', label: 'guard.chip', hint: 'chat.more.children', show: guardian },
+    { to: '/chat/service', label: 'chat.service', hint: 'chat.more.service', show: service },
+  ]
   return (
     <div className="page">
       <p>{t('chat.free')}</p>
       {!people && <Card info><p>{t('chat.beforeBooking')}</p></Card>}
-      {people && mode !== 'people' && <RequestsBanner onOpen={() => setMode('people')} />}
-      <div className="chip-row" role="group" aria-label={t('chat.who')}>
-        <Chip pressed={shown === 'chats'} onToggle={() => setMode('chats')}>{t('chat.chats')}</Chip>
-        {people && <Chip pressed={shown === 'people'} onToggle={() => setMode('people')}>{t('chat.people')}</Chip>}
-        {people && <Chip pressed={shown === 'rooms'} onToggle={() => setMode('rooms')}>{t('room.chip')}</Chip>}
-        {people && <Chip pressed={shown === 'search'} onToggle={() => setMode('search')}>{t('csearch.chip')}</Chip>}
-        {guardian && <Chip pressed={shown === 'children'} onToggle={() => setMode('children')}>{t('guard.chip')}</Chip>}
-        {service && <Chip pressed={shown === 'service'} onToggle={() => setMode('service')}>{t('chat.service')}</Chip>}
-      </div>
-      {shown === 'chats' ? <Conversations /> : shown === 'people' ? <People /> : shown === 'rooms' ? <Rooms onOpen={(id) => { setMode('chats'); setParams({ c: id }) }} /> : shown === 'search' ? <ChatSearch onPick={(h) => { setMode('chats'); setParams({ c: h.conversationId, m: h.messageId }) }} /> : shown === 'children' ? <Children /> : <Service />}
-      <Card info>
-        <p><Phone aria-hidden="true" /> {t('chat.urgent', { number: GUEST_SERVICES_NUMBER })} <a href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a></p>
-      </Card>
+      {people && <RequestsBanner onOpen={() => { void nav('/chat/people') }} />}
+      <Conversations />
+      <section aria-labelledby="chat-more-h">
+        <h2 id="chat-more-h">{heading('chat.more.title')}</h2>
+        <ul className="event-list">
+          {more.filter((m) => m.show).map((m) => (
+            <li key={m.to} className="event event--link">
+              <h3 className="event__title"><Link to={m.to} className="event__stretch">{t(m.label)}</Link></h3>
+              <p className="event__where">{t(m.hint)}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <UrgentCard />
     </div>
   )
 }
 
-function Service() {
+function UrgentCard() {
+  return (
+    <Card info>
+      <p><Phone aria-hidden="true" /> {t('chat.urgent', { number: GUEST_SERVICES_NUMBER })} <a href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a></p>
+    </Card>
+  )
+}
+
+export function Service() {
   const me = usePersona()
   const [channel, setChannel] = useState<ChannelId>('guestServices')
   const channels = useMine(() => api.service.channels())

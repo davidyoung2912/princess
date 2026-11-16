@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
@@ -75,10 +75,18 @@ import { canPost, isPlan, isPoll, readAnswerJob, type AnswerJob } from '../../do
  * so back returns to the list and an alert opens the right one. Each conversation has its own history and its own unread count.
  */
 export function Conversations() {
-  const [params, setParams] = useSearchParams()
-  const open = conversationFromSearch(params.toString())
-  const target = messageFromSearch(params.toString())
-  return open ? <Thread key={open} id={open} jumpTo={target} onBack={() => setParams({})} /> : <ConversationList onOpen={(id) => setParams({ c: id })} />
+  const nav = useNavigate()
+  return <ConversationList onOpen={(id) => { void nav(`/chat/c/${encodeURIComponent(id)}`) }} />
+}
+
+/** One conversation (a group, a person, a room, or Stanley) on a page of its own: `/chat/c/:id`, with `?m=` to scroll to a message. */
+export function ConversationPage() {
+  const { id = '' } = useParams()
+  const [params] = useSearchParams()
+  const nav = useNavigate()
+  const open = conversationFromSearch(`c=${encodeURIComponent(id)}`)
+  if (!open) return <Navigate to="/chat" replace />
+  return <Thread key={open} id={open} jumpTo={messageFromSearch(params.toString())} onBack={() => { void nav('/chat') }} />
 }
 
 /** Conversations this device has already said it received messages for (by id and last message time), so a refresh of the list does not ask again. */

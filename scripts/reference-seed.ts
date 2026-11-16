@@ -135,7 +135,7 @@ export function buildTables(): Table[] {
   const dishId = (venue: string, name: string) => `${venue}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
   const menuRows: Cell[][] = [
     ...MENU.map((m) => [m.id, null, m.group, m.name, '', m.cents, [...m.contains], true, null, m.alcohol, m.packaged, [...m.on], m.substitute ?? null] as Cell[]),
-    ...DIRECTORY.flatMap((v) => v.dishes.map((dish) => [dishId(v.id, dish.name), v.id, 'mains', dish.name, '', 0, [...dish.contains], false, null, false, false, [], null] as Cell[])),
+    ...DIRECTORY.flatMap((v) => v.dishes.map((dish) => [dishId(v.id, dish.name), v.id, 'mains', dish.name, dish.description ?? '', 0, [...dish.contains], false, null, false, false, [], null] as Cell[])),
   ]
   add('03-dining', 'ref.MenuItems', ['Id'],
     [t('Id', 'str'), t('VenueId', 'str'), t('MenuGroup', 'str'), t('Name', 'str'), t('Description', 'str'), t('PriceCents', 'int'), t('Dietary', 'json'), t('Orderable', 'bit'), t('Stock', 'int'), t('Alcohol', 'bit'), t('Packaged', 'bit'), t('OnMenus', 'json'), t('SubstituteId', 'str')],

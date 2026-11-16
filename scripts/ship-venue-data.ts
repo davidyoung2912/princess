@@ -4,6 +4,7 @@
 // Concept sample data in the same honest way as Sun's (docs/content-verification.md): plausible rooms in the right class, not the real ship's list.
 import '../src/testing/setup.ts'
 import { DIRECTORY, type DirectoryVenue, type Dish } from '../src/domain/menus.ts'
+import { dishCopy } from '../src/domain/dishCopy.ts'
 import { MENU, type MenuItem } from '../src/domain/orders.ts'
 import { VENUES as SUN_VENUES, type Venue } from '../src/domain/dining.ts'
 import { q, shipPrefix, type CatalogueSource, type ShipVenueRows } from './catalogue.ts'
@@ -16,7 +17,7 @@ export interface ShipVenueBundle {
   deliveryZones: string[]
 }
 
-const d = (name: string, ...contains: Dish['contains'][number][]): Dish => ({ name, contains })
+const d = (plain: string, ...contains: Dish['contains'][number][]): Dish => ({ ...dishCopy(plain), contains })
 
 /** Sun's directory entry for a room every ship has (the buffet, the pool grill, the café, Alfredo's, Crown Grill, Sabatini's), moved to this ship's venue id and deck. */
 function shared(prefix: string, sunId: string, deck: string): DirectoryVenue {
