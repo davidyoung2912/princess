@@ -265,4 +265,63 @@ public class PushRulesTests
         Assert.Equal(["a"], PushRules.FallbackDue(log, Now));
         Assert.Empty(PushRules.FallbackDue([Sent("a", Now.AddMinutes(-11)), Sent("email:a", Now.AddMinutes(-1))], Now));
     }
+
+    private static long Ms(int minutesFromNow) => new DateTimeOffset(Now.AddMinutes(minutesFromNow)).ToUnixTimeMilliseconds();
+    private static PlannedExplorerEvent Planned(int startInMinutes, string status = "on", string id = "ev1") =>
+        new(id, 4, "Trivia", "Atrium", "/entertainment/atrium", Ms(startInMinutes), status, null, null);
+    private static List<PushNotice> ExplorerNotices(int lead, params PlannedExplorerEvent[] plan) =>
+        PushRules.Build(Input() with { ExplorerPlan = plan, ExplorerLead = lead }).Where(n => n.Key.StartsWith("explorer", StringComparison.Ordinal)).ToList();
+
+    [Fact]
+    public void APlannedEventRemindsInsideTheGuestsLeadTimeOnly()
+    {
+        Assert.Single(ExplorerNotices(15, Planned(10)));
+        Assert.Empty(ExplorerNotices(15, Planned(40)));
+        Assert.Empty(ExplorerNotices(15, Planned(-5)));
+        Assert.Single(ExplorerNotices(60, Planned(40)));
+    }
+
+    [Fact]
+    public void ALeadTimeOfZeroTurnsTheReminderOffButNotTheChangeAlert()
+    {
+        Assert.Empty(ExplorerNotices(0, Planned(5)));
+        Assert.Single(ExplorerNotices(0, Planned(120, "cancelled")));
+    }
+
+    [Fact]
+    public void ACancelledEventNeverRemindsAndRaisesOneAlert()
+    {
+        var notices = ExplorerNotices(15, Planned(5, "cancelled"));
+        var n = Assert.Single(notices);
+        Assert.StartsWith("explorerChange:", n.Key);
+        Assert.Equal("critical", n.Category);
+    }
+
+    [Fact]
+    public void AMovedEventRemindsAgainAtItsNewTime()
+    {
+        Assert.NotEqual(ExplorerNotices(15, Planned(10))[0].Key, ExplorerNotices(15, Planned(12))[0].Key);
+    }
+
+    [Fact]
+    public void ThePlanReminderOpensTheVenuePage()
+    {
+        Assert.Equal("/entertainment/atrium", ExplorerNotices(15, Planned(10))[0].Path);
+    }
+
+    [Fact]
+    public void AChangeAlreadyCoveredByTheProgrammeWatchIsNotRepeated()
+    {
+        var input = Input(watch: ["ev1"]) with { ExplorerPlan = [Planned(120, "moved")] };
+        Assert.DoesNotContain(PushRules.Build(input), n => n.Key.StartsWith("explorerChange:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheLeadTimePreferenceIsKeptWhenValidAndDefaultsOtherwise()
+    {
+        Assert.Equal(30, (int)Prefs("""{"explorerLead":30}""")["explorerLead"]!);
+        Assert.Equal(0, (int)Prefs("""{"explorerLead":0}""")["explorerLead"]!);
+        Assert.Equal(15, (int)Prefs("""{"explorerLead":7}""")["explorerLead"]!);
+        Assert.Equal(15, (int)Prefs()["explorerLead"]!);
+    }
 }

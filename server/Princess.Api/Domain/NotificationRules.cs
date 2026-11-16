@@ -47,8 +47,13 @@ public static partial class NotificationRules
             ["quiet"] = new JsonObject { ["on"] = Flag(q?["on"], false), ["from"] = Time(q?["from"], "22:00"), ["to"] = Time(q?["to"], "07:00") },
             // One-tap do-not-disturb from Chat: the end time in milliseconds, 0 when off. It ends by itself (see ChatUrgencyRules.DndOn).
             ["dnd"] = new JsonObject { ["until"] = Millis((o?["dnd"] as JsonObject)?["until"]) },
+            // Minutes ahead of a planned Explorer event for its reminder; 0 is off.
+            ["explorerLead"] = Lead(o?["explorerLead"]),
         };
     }
+
+    private static int Lead(JsonNode? n) =>
+        n is JsonValue v && v.TryGetValue<int>(out var m) && PushRules.ExplorerLeadChoices.Contains(m) ? m : PushRules.DefaultExplorerLead;
 
     private static long Millis(JsonNode? n) =>
         n is JsonValue v && v.TryGetValue<long>(out var l) && l > 0 ? l : 0;

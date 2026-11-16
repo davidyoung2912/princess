@@ -39,6 +39,13 @@ public static class ExplorerCatalogue
 {
     public static readonly string[] Kinds = ["dining", "entertainment", "shopping", "spa", "exercise", "activities"];
 
+    /// <summary>The page each Explorer lives at in the app (the venue id follows), used for the link a reminder opens. Matches <c>EXPLORER_PATHS</c> in the front end.</summary>
+    public static string PathOf(string explorer) => explorer switch
+    {
+        "dining" => "/dining-today", "entertainment" => "/entertainment", "shopping" => "/shopping-today", "spa" => "/spa-explorer",
+        "exercise" => "/exercise-explorer", _ => "/activities-explorer",
+    };
+
     public static bool ValidKind(string? kind) => kind is not null && Kinds.Contains(kind);
 
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { HelpTip } from '../HelpTip'
 import { FieldLabel } from '../Field'
-import { CATEGORIES, CHANNELS, type Category, type Channel, type NotificationPrefs } from '../../domain/notifications'
+import { CATEGORIES, CHANNELS, EXPLORER_LEADS, type Category, type Channel, type NotificationPrefs } from '../../domain/notifications'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
@@ -110,6 +110,16 @@ function Prefs({ prefs, onSaved }: { prefs: NotificationPrefs; onSaved: () => vo
           <div className="field"><label htmlFor="q-to">{t('notices.quietTo')}</label><input id="q-to" className="field__input" type="time" value={draft.quiet.to} disabled={!draft.quiet.on} onChange={(e) => quiet({ to: e.target.value })} /></div>
         </div>
         <p className="muted">{t('notices.quietHint')}</p>
+      </fieldset>
+      <fieldset>
+        <legend>{t('notices.explorer')}</legend>
+        <div className="field">
+          <label htmlFor="explorer-lead">{t('notices.explorerLead')}</label>
+          <select id="explorer-lead" className="field__input" value={draft.explorerLead} onChange={(e) => { setSaved(false); setDraft({ ...draft, explorerLead: Number(e.target.value) }) }}>
+            {EXPLORER_LEADS.map((m) => <option key={m} value={m}>{m === 0 ? t('notices.explorerOff') : t('notices.explorerMinutes', { count: m })}</option>)}
+          </select>
+        </div>
+        <p className="muted">{t('notices.explorerHint')}</p>
       </fieldset>
       <ActionError error={save.error} />
       <Button disabled={save.busy} onClick={async () => { if (await save.run(draft)) { setSaved(true); onSaved() } }}>{save.busy ? t('account.saving') : t('account.save')}</Button>

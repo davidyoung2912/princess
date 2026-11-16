@@ -9,7 +9,9 @@ export const CHANNELS: readonly Channel[] = ['push', 'email', 'sms']
 export type ChannelPrefs = Record<Channel, boolean>
 export interface QuietHours { on: boolean; /** "HH:MM". */ from: string; to: string }
 /** `dnd.until` is when the one-tap do not disturb from Chat ends (milliseconds); 0 is off. The server owns it, and it ends by itself. */
-export interface NotificationPrefs { channels: Record<Category, ChannelPrefs>; quiet: QuietHours; dnd: { until: number } }
+/** `explorerLead` is how many minutes ahead of a planned Explorer event its reminder comes; 0 is off. */
+export const EXPLORER_LEADS: readonly number[] = [0, 10, 15, 30, 60]
+export interface NotificationPrefs { channels: Record<Category, ChannelPrefs>; quiet: QuietHours; dnd: { until: number }; explorerLead: number }
 
 export const DEFAULT_PREFS: NotificationPrefs = {
   channels: {
@@ -21,6 +23,7 @@ export const DEFAULT_PREFS: NotificationPrefs = {
   },
   quiet: { on: false, from: '22:00', to: '07:00' },
   dnd: { until: 0 },
+  explorerLead: 15,
 }
 
 const time = (v: unknown, fallback: string) => (typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : fallback)
@@ -38,7 +41,7 @@ export function normalizePrefs(raw: unknown): NotificationPrefs {
   channels.critical = { push: true, email: true, sms: true }
   const d = o.dnd && typeof o.dnd === 'object' ? (o.dnd as Record<string, unknown>) : {}
   const until = typeof d.until === 'number' && Number.isFinite(d.until) && d.until > 0 ? d.until : 0
-  return { channels, quiet: { on: q.on === true, from: time(q.from, DEFAULT_PREFS.quiet.from), to: time(q.to, DEFAULT_PREFS.quiet.to) }, dnd: { until } }
+  return { channels, quiet: { on: q.on === true, from: time(q.from, DEFAULT_PREFS.quiet.from), to: time(q.to, DEFAULT_PREFS.quiet.to) }, dnd: { until }, explorerLead: typeof o.explorerLead === 'number' && EXPLORER_LEADS.includes(o.explorerLead) ? o.explorerLead : DEFAULT_PREFS.explorerLead }
 }
 
 /** Whether a time of day ("HH:MM") falls in quiet hours, which can span midnight. Critical notices ignore quiet hours. */

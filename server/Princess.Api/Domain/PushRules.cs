@@ -10,6 +10,9 @@ public sealed record PushSettings(int Budget, bool Calm, IReadOnlyList<string> W
 
 public sealed record PushDecision(bool Send, string? Reason);
 
+/// <summary>An Explorer event the guest has planned, as the server sees it now: its (possibly moved) start and whether it still runs. <see cref="Path"/> is the venue page it opens.</summary>
+public sealed record PlannedExplorerEvent(string Id, int Day, string Title, string Venue, string Path, long StartAt, string Status, string? Was, string? Reason);
+
 /// <summary>What the first five notices are built from. Everything here is already known to the server.</summary>
 public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
@@ -17,7 +20,9 @@ public sealed record PushInput(
     InstalmentPayment? Instalment = null, (string Port, string Date, string Band, int Percent)? Tender = null, (string Flight, string Date, string State, int DelayMinutes)? Flight = null,
     bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null, IReadOnlyList<StanleyReminderDue>? Reminders = null, IReadOnlyList<string>? HelperPrepared = null,
     // The guest's own presence for the port day says they are off the ship (see AwayRules).
-    bool GuestAway = false);
+    bool GuestAway = false,
+    // The Explorer events the guest planned for today and tomorrow, and how many minutes ahead they want a reminder (0 is off).
+    IReadOnlyList<PlannedExplorerEvent>? ExplorerPlan = null, int ExplorerLead = PushRules.DefaultExplorerLead);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -28,6 +33,9 @@ public static class PushRules
     public static readonly int[] BudgetChoices = [0, 1, 3, 5];
     public const int DefaultBudget = 3;
     public const int MaxWatch = 20;
+    /// <summary>The minutes ahead of a planned Explorer event the guest can ask to be reminded; 0 turns the reminder off.</summary>
+    public static readonly int[] ExplorerLeadChoices = [0, 10, 15, 30, 60];
+    public const int DefaultExplorerLead = 15;
     public const int MaxDevices = 5;
     public const int MaxLog = 50;
     public const int MaxEndpoint = 450;
@@ -122,6 +130,8 @@ public static class PushRules
                 new() { ["event"] = c.EventId, ["change"] = c.Kind, ["start"] = c.Start ?? "" }));
         }
 
+        AddExplorerNotices(list, i);
+
         if (i.Payment is "overdue" or "dueSoon")
         {
             var overdue = i.Payment == "overdue";
@@ -206,6 +216,35 @@ public static class PushRules
         }
 
         return [.. list.OrderByDescending(n => n.Bypass).ThenByDescending(n => n.Priority)];
+    }
+
+    /// <summary>
+    /// Reminders and change alerts for the Explorer events the guest planned. A reminder goes once, in the lead time the guest chose, only while the event still runs (a cancelled event never
+    /// reminds, and a removed one is not in the plan at all); an event that moved is a new key, so it reminds again at its new time. A moved or cancelled event raises one alert, unless the
+    /// programme watch already covers the same event. The reminder is the guest's own, so it keeps to their limits like any other check-in notice.
+    /// </summary>
+    public static void AddExplorerNotices(List<PushNotice> list, PushInput i)
+    {
+        var nowMs = TripRules.ToMs(i.Now);
+        foreach (var e in i.ExplorerPlan ?? [])
+        {
+            if (e.StartAt <= nowMs) continue;
+            var link = new Dictionary<string, object> { ["event"] = e.Id, ["day"] = e.Day, ["start"] = e.StartAt };
+            if (e.Status == "on")
+            {
+                if (i.ExplorerLead > 0 && e.StartAt - nowMs <= i.ExplorerLead * 60_000L)
+                    list.Add(new($"explorerEvent:{e.Id}:{e.Day}:{e.StartAt}", "reminder", "checkin", false, 35, e.Path,
+                        $"Stanley: {e.Title} is about to start", $"{e.Title} at {e.Venue} starts in about {Math.Max(1, (int)Math.Ceiling((e.StartAt - nowMs) / 60_000.0))} minutes.", link));
+            }
+            else if (e.Status is "moved" or "cancelled" && !i.Watched.Contains(e.Id) && e.Day >= i.DayNumber && e.Day <= i.DayNumber + 1)
+            {
+                var cancelled = e.Status == "cancelled";
+                link["change"] = e.Status;
+                list.Add(new($"explorerChange:{e.Id}:{e.Day}:{e.Status}:{e.StartAt}", "scheduleChange", "critical", false, 78, e.Path,
+                    cancelled ? "Stanley: an event you planned is cancelled" : "Stanley: an event you planned has moved",
+                    e.Reason ?? (cancelled ? $"{e.Title} at {e.Venue} will not run." : $"{e.Title} at {e.Venue} has a new time. Open the app to see it."), link));
+            }
+        }
     }
 
     /// <summary>Whether the guest's own quiet hours or do-not-disturb are on. Used to hold a suggestion card (chat phase 6); it never holds a notice that bypasses.</summary>

@@ -130,6 +130,8 @@ public sealed class PushService(
         var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(now, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById(zone));
 
         var input = await InputAsync(actor, booking, departure, now, [.. Watch(subs)], ct);
+        var prefs = await PrefsAsync(actor.Id, ct);
+        input = input with { ExplorerLead = (int)(prefs["explorerLead"]?.GetValue<int>() ?? PushRules.DefaultExplorerLead), ExplorerPlan = await ExplorerPlanAsync(actor, booking, departure, input.DayNumber, ct) };
         if (stanleyReminders is not null) input = input with { Reminders = await stanleyReminders.DueAsync(actor.Id, now, ct) };
         if (stanleyActions is not null) input = input with { HelperPrepared = [.. (await stanleyActions.WaitingFromHelperAsync(actor, ct)).Select(a => a.Id)] };
         var built = PushRules.Build(input).Select(n => PushRules.WithLink(n, booking?.Number)).ToList();
@@ -139,7 +141,6 @@ public sealed class PushService(
         var notices = built.Select(PushRules.Redact).ToList();
         if (notices.Count == 0) return;
 
-        var prefs = await PrefsAsync(actor.Id, ct);
         // Several phones: the strictest limit applies, so one phone's calm mode is not undone by another.
         var settings = new PushSettings(subs.Min(s => s.Budget), subs.Any(s => s.Calm), [.. Watch(subs)]);
         var log = await store.ListDeliveriesAsync(actor.Id, 200, ct);
@@ -278,6 +279,30 @@ public sealed class PushService(
             try { stored = JsonNode.Parse(json); } catch (System.Text.Json.JsonException) { }
         }
         return NotificationRules.NormalizePrefs(stored);
+    }
+
+    /// <summary>The Explorer events the guest planned for today and tomorrow, with their current start and status (a moved or cancelled one is flagged). Empty when nothing is planned.</summary>
+    private async Task<List<PlannedExplorerEvent>> ExplorerPlanAsync(UserRecord actor, BookingRow? booking, DateOnly? departure, int dayNumber, CancellationToken ct)
+    {
+        if (onboard is null || booking is null || departure is not { } dep || dayNumber < 1) return [];
+        var rows = (await onboard.ListPlanAsync(actor.Id, booking.SailingId, ct)).Where(r => r.Day >= dayNumber && r.Day <= dayNumber + 1).ToList();
+        if (rows.Count == 0) return [];
+        var timeline = TimelineBook.For(booking.SailingId, dep);
+        var ship = ExplorerCatalogue.Of(AboardPlans.ShipOfSailing(booking.SailingId));
+        var changes = (await scopes.ScenariosAsync(actor, ct)).Contains("planChange");
+        var feed = program.Current();
+        var list = new List<PlannedExplorerEvent>();
+        foreach (var day in rows.Select(r => r.Day).Distinct())
+        {
+            var ids = rows.Where(r => r.Day == day).Select(r => r.EventId).ToHashSet();
+            foreach (var e in ExplorerRules.EventsOn(ship, timeline, day, changes, feed).Where(e => ids.Contains(e.Id)))
+            {
+                var venue = ship.Venues.FirstOrDefault(v => v.Id == e.VenueId);
+                if (venue is null) continue;
+                list.Add(new(e.Id, day, e.Title, venue.Title, $"{ExplorerCatalogue.PathOf(venue.Explorer)}/{venue.Id}", e.StartAt, e.Status, e.Was, e.Reason));
+            }
+        }
+        return list;
     }
 
     private async Task<PushInput> InputAsync(UserRecord actor, BookingRow? booking, DateOnly? departure, DateTime now, IReadOnlyCollection<string> watched, CancellationToken ct)
