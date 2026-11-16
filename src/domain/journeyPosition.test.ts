@@ -57,6 +57,12 @@ describe('journeyPosition', () => {
     expect(pos(at('2027-03-19', '12:00')).stage).toBe('getToShip')
   })
 
+  it('shows ship time from the start of boarding day, before the guest is aboard', () => {
+    const p = pos(at('2027-03-21', '08:05'))
+    expect(p).toMatchObject({ onBoard: false, clock: 'ship', day: { kind: 'daysToDeparture', days: 0 } })
+    expect(pos(at('2027-03-20', '23:00')).clock).toBe('local')
+  })
+
   it('is on board from embarkation, on ship time, with the cruise day', () => {
     const p = pos(at('2027-03-21', '12:00'))
     expect(p).toMatchObject({ onBoard: true, clock: 'ship', stage: 'embark', day: { kind: 'cruiseDay', day: 1, of: 8 } })

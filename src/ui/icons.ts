@@ -83,4 +83,6 @@ export {
   Star,
   QrCode,
   Printer,
+  LogIn as Arrive,
+  LogOut as Depart,
 } from 'lucide-react'

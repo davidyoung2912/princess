@@ -2913,6 +2913,7 @@ export const enCore = {
   'ship.wx.day.detail': '{rain}% chance of rain · wind {wind} from the {from}',
   'naut.intro': 'Everything the ship knows about where it is, how it is moving and the sea and sky around it, in one place. Speed is in knots and distance in nautical miles, with your own unit beside them.',
   'naut.jump': 'Parts of this page',
+  'shipex.jump': 'Parts of this page',
   'naut.position': 'Position and course',
   'naut.voyage': 'Voyage and ports',
   'naut.clocks': 'Clocks',

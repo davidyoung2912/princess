@@ -5,7 +5,7 @@ import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useSailing } from '../../hooks/useDemo'
 import { t } from '../../i18n'
 import { StatusBadge } from '../StatusBadge'
-import { Anchor, Clock, Plane, Ship, Waves } from '../icons'
+import { Anchor, Arrive, Clock, Depart, Plane, Ship, Waves } from '../icons'
 
 /** The icon for the kind of day: boarding, at sea, in port, or going home. */
 const DayIcon = ({ day, last, sea }: { day: number; last: boolean; sea: boolean }) => {
@@ -30,9 +30,9 @@ export function ItineraryScreen() {
               <h3 className="event__title">{d.port === 'sea' ? t('onb.atSea') : <Link to={`/home/ports/${d.port}`} className="event__inner-link">{PORTS[d.port]?.name ?? d.port}</Link>}</h3>
               {d.port !== 'sea' && (d.arrive || d.depart) && (
                 <ul className="event__times">
-                  {d.arrive && <li><Anchor aria-hidden="true" focusable="false" />{t('itin.arrive', { time: formatTime(d.arrive) })}</li>}
+                  {d.arrive && <li><Arrive aria-hidden="true" focusable="false" />{t('itin.arrive', { time: formatTime(d.arrive) })}</li>}
                   {d.arrive && d.allAboard && <li><Clock aria-hidden="true" focusable="false" />{t('itin.aboard', { time: formatTime(d.allAboard) })}</li>}
-                  {d.depart && <li><Ship aria-hidden="true" focusable="false" />{t('itin.departs', { depart: formatTime(d.depart) })}</li>}
+                  {d.depart && <li><Depart aria-hidden="true" focusable="false" />{t('itin.departs', { depart: formatTime(d.depart) })}</li>}
                 </ul>
               )}
             </li>

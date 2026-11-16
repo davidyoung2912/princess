@@ -8,25 +8,30 @@ import { LinkButton } from '../Button'
 
 const number = new Intl.NumberFormat('en-US')
 
-/** Ship Explorer: the guest's ship in detail (facts, highlights, accessibility, stateroom types) with the deck plans below. */
+/** Ship Explorer: the guest's ship in detail (facts, highlights, the detail sections and stateroom types), with a link to the deck plans and the accessibility summary at the end. */
 export function ShipExplorerScreen() {
   const ship = useShip()
   const isSun = ship.id === SUN_SHIP.id
   const first = ship.id.split('-')[0]
   const plansFor: DeckPlanShip | undefined = first in SHIP_NAMES ? (first as DeckPlanShip) : undefined
   const highlights = ship.highlights.length > 0 ? ship.highlights : isSun ? SHIP_HIGHLIGHTS : []
+  const parts = [
+    ...(highlights.length > 0 ? [{ id: 'sx-hl', title: th('discover.onboard') }] : []),
+    ...ship.sections.map((sec, i) => ({ id: `sx-s${i}`, title: headingCase(sec.title) })),
+    ...(isSun ? [{ id: 'sx-rooms', title: th('discover.rooms') }, { id: 'sx-acc', title: th('discover.accessibility') }] : []),
+  ]
   return (
     <div className="page page--wide">
       {ship.id === '' ? <p>{t('shipex.noShip')}</p> : (
         <>
           <h2>{ship.name}</h2>
           <p>{ship.intro}</p>
-          {isSun && (
-            <Card info labelledBy="sx-acc">
-              <h2 id="sx-acc">{th('discover.accessibility')}</h2>
-              <ul>{SHIP_ACCESSIBILITY.map((x) => <li key={x}>{x}</li>)}</ul>
-            </Card>
-          )}
+          <p><LinkButton to={plansFor ? `/deck-plans?ship=${plansFor}` : '/deck-plans'} variant="secondary">{th('shipex.deckPlans')}</LinkButton></p>
+          <nav aria-label={t('shipex.jump')}>
+            <ul className="naut-jump">
+              {parts.map((x) => <li key={x.id}><a href={`#${x.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(x.id)?.scrollIntoView({ block: 'start' }); document.getElementById(x.id)?.focus() }}>{x.title}</a></li>)}
+            </ul>
+          </nav>
           <dl className="facts">
             <div><dt>{t('discover.ship.class')}</dt><dd>{ship.className}</dd></div>
             {ship.entered !== undefined && <div><dt>{t('discover.ship.entered')}</dt><dd>{ship.entered}</dd></div>}
@@ -39,24 +44,24 @@ export function ShipExplorerScreen() {
             {ship.facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
           </dl>
           {highlights.length > 0 && (
-            <section aria-labelledby="sx-hl">
-              <h2 id="sx-hl">{th('discover.onboard')}</h2>
+            <section id="sx-hl" tabIndex={-1} aria-labelledby="sx-hl-h">
+              <h2 id="sx-hl-h">{th('discover.onboard')}</h2>
               <ul className="card-grid">
                 {highlights.map((h) => <li key={h.title} className="card"><h3>{h.title}</h3><p>{h.body}</p></li>)}
               </ul>
             </section>
           )}
-          {ship.sections.map((sec) => (
-            <details key={sec.title} className="card ship-section" open={sec.open}>
-              <summary><h2 className="ship-section__title">{headingCase(sec.title)}</h2></summary>
+          {ship.sections.map((sec, i) => (
+            <section key={sec.title} id={`sx-s${i}`} tabIndex={-1} aria-labelledby={`sx-s${i}-h`}>
+              <h2 id={`sx-s${i}-h`}>{headingCase(sec.title)}</h2>
               <ul className="plain-bullets">
-                {sec.items.map((i) => <li key={`${i.title ?? ''}${i.body}`}>{i.title && <strong>{i.title}. </strong>}{i.body}</li>)}
+                {sec.items.map((it) => <li key={`${it.title ?? ''}${it.body}`}>{it.title && <strong>{it.title}. </strong>}{it.body}</li>)}
               </ul>
-            </details>
+            </section>
           ))}
           {isSun && (
-            <section aria-labelledby="sx-rooms">
-              <h2 id="sx-rooms">{th('discover.rooms')}</h2>
+            <section id="sx-rooms" tabIndex={-1} aria-labelledby="sx-rooms-h">
+              <h2 id="sx-rooms-h">{th('discover.rooms')}</h2>
               <ul className="card-grid">
                 {CATEGORIES.map((c) => (
                   <li key={c.id} className="card">
@@ -69,9 +74,16 @@ export function ShipExplorerScreen() {
               <p className="muted">{t('discover.accessibleRooms', { count: SUN_SHIP.accessibleStaterooms })}</p>
             </section>
           )}
+          {isSun && (
+            <div id="sx-acc" tabIndex={-1}>
+            <Card info labelledBy="sx-acc-h">
+              <h2 id="sx-acc-h">{th('discover.accessibility')}</h2>
+              <ul>{SHIP_ACCESSIBILITY.map((x) => <li key={x}>{x}</li>)}</ul>
+            </Card>
+            </div>
+          )}
         </>
       )}
-      <p><LinkButton to={plansFor ? `/deck-plans?ship=${plansFor}` : '/deck-plans'} variant="secondary">{th('shipex.deckPlans')}</LinkButton></p>
       <p><Link to="/ship/venues">{t('shipex.venues')}</Link></p>
     </div>
   )

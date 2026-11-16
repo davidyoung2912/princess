@@ -64,7 +64,9 @@ function journeyPositionByClock({ hasBooking, sailing, now, phoneZone }: Positio
   // On board from embarkation until midday on the morning of arrival.
   const leaves = zonedToEpoch(lastDay.date, '12:00', shipZone)
   const onBoard = now >= boarding && now < leaves
-  const zone = onBoard ? shipZone : phoneZone
+  // The ship's clock rules from the start of boarding day (midnight ship time on day one), a little before the guest is aboard, so the top bar and the ship clock agree.
+  const onShipClock = onBoard || (now >= zonedToEpoch(days[0].date, '00:00', shipZone) && now < boarding)
+  const zone = onShipClock ? shipZone : phoneZone
   const date = dateIn(now, zone)
   let day: DayOfStage
   if (onBoard) {
@@ -75,5 +77,5 @@ function journeyPositionByClock({ hasBooking, sailing, now, phoneZone }: Positio
   } else {
     day = { kind: 'daysSinceReturn', days: Math.max(0, daysBetween(addDays(lastDay.date, 0), date)) }
   }
-  return { stage: JOURNEY_OF_STAGE[sailingStage], stageReason: null, focusSailingId: null, sailingStage, day, onBoard, clock: onBoard ? 'ship' : 'local', zone, date }
+  return { stage: JOURNEY_OF_STAGE[sailingStage], stageReason: null, focusSailingId: null, sailingStage, day, onBoard, clock: onShipClock ? 'ship' : 'local', zone, date }
 }
