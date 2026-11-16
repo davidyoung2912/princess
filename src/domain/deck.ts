@@ -67,7 +67,7 @@ export const placeById = (id: unknown): Place | undefined => PLACES.find((p) => 
  */
 const OTHER_SHIPS_ROOM: Readonly<Record<string, readonly string[]>> = {
   arena: ['princess-theater'],
-  eclipse: ['allegro', 'santa-fe'],
+  eclipse: ['cielo', 'santa-fe'],
   dome: ['seawalk'],
   americana: [],
 }

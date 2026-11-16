@@ -16,7 +16,7 @@ const SPECS: readonly ShipSpec[] = [
     changes: {
       'welcome-show': { place: 'princess-theater' },
       trivia: { place: 'explorers-lounge' },
-      cooking: { place: 'allegro' },
+      cooking: { place: 'cielo' },
       bingo: { place: 'explorers-lounge' },
       'stage-show': { place: 'princess-theater' },
       'stage-early': { place: 'princess-theater' },

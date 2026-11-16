@@ -76,9 +76,9 @@ describe('rooms that only Sun has (AB5)', () => {
   it('maps Sun-only rooms to the focused ship\'s own and drops those it lacks', async () => {
     const { replaceDeck, roomId, roomIds } = await import('./deck')
     const els = [{ bank: 'A' as const, section: 'forward' as const, side: 'port' as const }]
-    replaceDeck({ places: plan(['princess-theater', 'allegro', 'seawalk', 'lido-pool']), elevators: els, muster: [] })
+    replaceDeck({ places: plan(['princess-theater', 'cielo', 'seawalk', 'lido-pool']), elevators: els, muster: [] })
     expect(roomId('arena')).toBe('princess-theater')
-    expect(roomId('eclipse')).toBe('allegro')
+    expect(roomId('eclipse')).toBe('cielo')
     expect(roomId('dome')).toBe('seawalk')
     expect(roomId('americana')).toBeUndefined()
     expect(roomId('lido-pool')).toBe('lido-pool')

@@ -148,9 +148,9 @@ export function shipExplorerRows(): Record<string, ShipExplorerRow> {
   }
   for (const b of shipVenueBundles()) {
     const p = b.shipId === 'sky-princess' ? 'sky-' : 'sapphire-'
-    const mains = b.venues.filter((v) => v.kind === 'main')
+    const anytime = `${p}${b.shipId === 'sky-princess' ? 'cielo' : 'santa-fe'}`
     out[b.shipId] = shipRows(b.shipId, b.directory, b.venues, p, b.shipId === 'sky-princess' ? ['vines'] : ['vines', 'wheelhouse'],
-      { anytime: mains[mains.length - 1].id, crown: `${p}crown`, cafe: `${p}intl-cafe`, bar: `${p}vines`, ...(b.shipId === 'sky-princess' ? { pub: undefined, chefsTable: mains[mains.length - 1].id } : {}) })
+      { anytime, crown: `${p}crown`, cafe: `${p}intl-cafe`, bar: `${p}vines`, ...(b.shipId === 'sky-princess' ? { pub: undefined, chefsTable: anytime } : {}) })
   }
   return out
 }

@@ -125,7 +125,7 @@ public class SharedRoomTests
     [InlineData("sun-princess", "arena", "arena")]
     [InlineData("sky-princess", "arena", "princess-theater")]
     [InlineData("sapphire-princess", "eclipse", "santa-fe")]
-    [InlineData("sky-princess", "eclipse", "allegro")]
+    [InlineData("sky-princess", "eclipse", "cielo")]
     [InlineData("sky-princess", "dome", "seawalk")]
     [InlineData("sky-princess", "lido-pool", "lido-pool")]
     public void SunOnlyRoomsMapToTheShipsOwn(string ship, string id, string expected) => Assert.Equal(expected, AboardPlans.Room(ship, id));
@@ -155,7 +155,7 @@ public class SharedRoomTests
         var sun = OnboardFeedRules.Pulse(timeline, 1_800_000_000_000, "sun-princess");
         Assert.True(sky.Venues.ContainsKey("princess-theater") && !sky.Venues.ContainsKey("arena"));
         Assert.Equal(sun.Venues["arena"].Observed, sky.Venues["princess-theater"].Observed);
-        Assert.Equal("allegro", DayPlanRules.Build(timeline, 2, new DayWishDto([], [], "any", false, null), "sky-princess").Items.Single(i => i.Kind == "dinner").Id);
+        Assert.Equal("cielo", DayPlanRules.Build(timeline, 2, new DayWishDto([], [], "any", false, null), "sky-princess").Items.Single(i => i.Kind == "dinner").Id);
     }
 }
 

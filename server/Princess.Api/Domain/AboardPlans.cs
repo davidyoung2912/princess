@@ -47,7 +47,7 @@ public static class AboardPlans
     private static readonly Dictionary<string, Dictionary<string, string?>> Rooms = new()
     {
         ["arena"] = new() { ["sun-princess"] = "arena", ["sky-princess"] = "princess-theater", ["sapphire-princess"] = "princess-theater" },
-        ["eclipse"] = new() { ["sun-princess"] = "eclipse", ["sky-princess"] = "allegro", ["sapphire-princess"] = "santa-fe" },
+        ["eclipse"] = new() { ["sun-princess"] = "eclipse", ["sky-princess"] = "cielo", ["sapphire-princess"] = "santa-fe" },
         ["dome"] = new() { ["sun-princess"] = "dome", ["sky-princess"] = "seawalk", ["sapphire-princess"] = null },
         ["americana"] = new() { ["sun-princess"] = "americana", ["sky-princess"] = null, ["sapphire-princess"] = null },
     };
@@ -108,8 +108,9 @@ public static class AboardPlans
         P("bellinis", "Bellini’s Cocktail Bar", 5, "midship", "bar"),
         P("shops", "Shops of Princess", 6, "midship", "shop"),
         P("excursions-desk", "Shore Excursions desk", 6, "midship", "service"),
-        P("allegro", "Allegro Dining Room", 6, "aft", "dining"),
-        P("concerto", "Concerto Dining Room", 7, "aft", "dining"),
+        P("soleil", "Soleil Dining Room", 5, "aft", "dining"),
+        P("cielo", "Cielo Dining Room", 6, "aft", "dining"),
+        P("estrella", "Estrella Dining Room", 6, "midship", "dining"),
         P("princess-theater", "Princess Theater", 7, "forward", "show", true, "Wheelchair spaces on both sides; ask an usher"),
         P("explorers-lounge", "Explorers Lounge", 7, "midship", "show"),
         P("crown", "Crown Grill", 7, "aft", "dining"),
@@ -140,8 +141,8 @@ public static class AboardPlans
         new("B", "Princess Theater, starboard side", "princess-theater", 7),
         new("C", "The Piazza, port side", "piazza", 5),
         new("D", "The Piazza, starboard side", "piazza", 5),
-        new("E", "Concerto Dining Room", "concerto", 7),
-        new("F", "Allegro Dining Room", "allegro", 6),
+        new("E", "Estrella Dining Room", "estrella", 6),
+        new("F", "Soleil Dining Room", "soleil", 5),
     ];
 
     // ---- Sapphire Princess (Gem class, concept sample) ----
@@ -163,8 +164,10 @@ public static class AboardPlans
         P("intl-cafe", "International Café", 5, "midship", "dining"),
         P("shops", "Shops of Princess", 5, "aft", "shop"),
         P("excursions-desk", "Shore Excursions desk", 6, "midship", "service"),
-        P("santa-fe", "Santa Fe Dining Room", 5, "aft", "dining"),
-        P("vivaldi", "Vivaldi Dining Room", 6, "aft", "dining"),
+        P("international", "International Dining Room", 6, "midship", "dining"),
+        P("pacific-moon", "Pacific Moon Dining Room", 6, "aft", "dining"),
+        P("santa-fe", "Santa Fe Dining Room", 6, "aft", "dining"),
+        P("vivaldi", "Vivaldi Dining Room", 5, "aft", "dining"),
         P("princess-theater", "Princess Theater", 6, "forward", "show", true, "Wheelchair spaces at the back and sides; ask an usher"),
         P("explorers-lounge", "Explorers Lounge", 6, "midship", "show"),
         P("crown", "Crown Grill", 6, "midship", "dining"),
@@ -195,8 +198,8 @@ public static class AboardPlans
         new("B", "Princess Theater, starboard side", "princess-theater", 6),
         new("C", "The Piazza, port side", "piazza", 5),
         new("D", "The Piazza, starboard side", "piazza", 5),
-        new("E", "Vivaldi Dining Room", "vivaldi", 6),
-        new("F", "Santa Fe Dining Room", "santa-fe", 5),
+        new("E", "Vivaldi Dining Room", "vivaldi", 5),
+        new("F", "Santa Fe Dining Room", "santa-fe", 6),
     ];
 
     // Declared after the plans it reads, so the static fields are set when it first runs.

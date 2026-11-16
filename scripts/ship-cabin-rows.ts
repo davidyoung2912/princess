@@ -7,8 +7,8 @@ const bit = (v: boolean) => (v ? '1' : '0')
 
 /** The sample muster stations of the other ships (as `AboardPlans.cs`): letter, place, deck. Sun Princess's are seeded by 01-ship.sql. */
 const MUSTER_SAMPLE: Record<string, readonly (readonly [string, string, number])[]> = {
-  'sky-princess': [['A', 'Princess Theater, port side', 7], ['B', 'Princess Theater, starboard side', 7], ['C', 'The Piazza, port side', 5], ['D', 'The Piazza, starboard side', 5], ['E', 'Concerto Dining Room', 7], ['F', 'Allegro Dining Room', 6]],
-  'sapphire-princess': [['A', 'Princess Theater, port side', 6], ['B', 'Princess Theater, starboard side', 6], ['C', 'The Piazza, port side', 5], ['D', 'The Piazza, starboard side', 5], ['E', 'Vivaldi Dining Room', 6], ['F', 'Santa Fe Dining Room', 5]],
+  'sky-princess': [['A', 'Princess Theater, port side', 7], ['B', 'Princess Theater, starboard side', 7], ['C', 'The Piazza, port side', 5], ['D', 'The Piazza, starboard side', 5], ['E', 'Estrella Dining Room', 6], ['F', 'Soleil Dining Room', 5]],
+  'sapphire-princess': [['A', 'Princess Theater, port side', 6], ['B', 'Princess Theater, starboard side', 6], ['C', 'The Piazza, port side', 5], ['D', 'The Piazza, starboard side', 5], ['E', 'Vivaldi Dining Room', 5], ['F', 'Santa Fe Dining Room', 6]],
 }
 
 /** The sample staterooms, decks and muster stations of the ships other than Sun Princess (AB2): the same generator the server runs, so the rows match `CabinRules`. */

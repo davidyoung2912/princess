@@ -200,7 +200,7 @@ public class StanleyPacketTests
     [Fact]
     public void TheRouteChangesDecksAndHonoursStepFree()
     {
-        var steps = StanleyReadTools.RouteBetween(new("Allegro", 6, "aft"), new("Eatery", 16, "midship"), stepFree: true);
+        var steps = StanleyReadTools.RouteBetween(new("Cielo", 6, "aft"), new("Eatery", 16, "midship"), stepFree: true);
         Assert.Contains("up 10 decks", steps[1]);
         Assert.DoesNotContain("stairs", steps[0]);
         Assert.Contains("stairs", StanleyReadTools.RouteBetween(new("A", 6, "aft"), new("B", 7, "aft"), false)[0]);
