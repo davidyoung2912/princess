@@ -4,7 +4,7 @@ import { formatDate, formatTime } from '../../domain/cruise'
 import { EXPLORER_PATHS, planCalendar } from '../../domain/explorer/planItems'
 import { alternativesFor, needsAlternatives, type Alternative } from '../../domain/explorer/alternatives'
 import { clashMap, disrupted, groupByPeriod, walkHints, type Period, type PlanItem, type WalkHint } from '../../domain/explorer/planTimeline'
-import { PORTS, shipZoneAt, shipZoneOnDate } from '../../domain/sailings'
+import { PORTS, itinerary, shipZoneAt, shipZoneOnDate } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
 import { useExplorerDay } from '../../hooks/useExplorer'
 import { useSailing } from '../../hooks/useDemo'
@@ -22,7 +22,7 @@ import { ExplorerIcon } from '../explorer/ExplorerIcon'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 import { ChosenDayNote, PickDateButton } from '../explorer/DateControls'
-import { ShipClockCard } from '../explorer/ShipClockCard'
+import { ItineraryDayCard } from './ItineraryScreen'
 import { LoadError } from '../discover/parts'
 
 const PERIOD: Record<Period, StringKey> = { morning: 'plan.today.morning', afternoon: 'plan.today.afternoon', evening: 'plan.today.evening' }
@@ -58,6 +58,8 @@ function PlanDay({ details = false }: { details?: boolean }) {
     if (!plan.date) return
     downloadText(`plan-day-${state.day}.ics`, 'text/calendar', planCalendar(plan.items, { date: plan.date, zone: shipZoneOnDate(sailing, plan.date), stamp: state.nowAt, product: 'princess.concept', where: t('plan.today.calendarWhere') }))
   }
+  const days = itinerary(sailing)
+  const itineraryDay = days[state.day - 1]
   // Today's Plan shows the Day Plan card (date, place and what the page lists) when another day than today is chosen.
   const dayCard = details || state.day !== state.currentDay
   return (
@@ -72,7 +74,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
         <p>{t(dayCard ? 'plan.day.purpose' : 'plan.today.purpose')}</p>
         {portName && <p><Link to={`/home/ports/${choice.port}`}>{t('port.guide', { port: portName })}</Link></p>}
       </Card>
-      {!details && <ShipClockCard state={state} />}
+      {!details && itineraryDay && <ol className="event-list"><ItineraryDayCard d={itineraryDay} last={state.day === days.length} today={state.day === state.currentDay} /></ol>}
       <PickDateButton state={state} />
       <ChosenDayNote state={state} />
       {changed.length > 0 && (
