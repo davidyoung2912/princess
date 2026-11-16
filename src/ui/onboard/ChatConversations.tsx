@@ -86,7 +86,7 @@ export function ConversationPage() {
   const nav = useNavigate()
   const open = conversationFromSearch(`c=${encodeURIComponent(id)}`)
   if (!open) return <Navigate to="/chat" replace />
-  return <Thread key={open} id={open} jumpTo={messageFromSearch(params.toString())} onBack={() => { void nav('/chat') }} />
+  return <div className="page"><Thread key={open} id={open} jumpTo={messageFromSearch(params.toString())} onBack={() => { void nav('/chat') }} /></div>
 }
 
 /** Conversations this device has already said it received messages for (by id and last message time), so a refresh of the list does not ask again. */

@@ -448,3 +448,11 @@ button.chat-quote { cursor: pointer; }
 
 /* Navigate and Send to chat close the venue page. */
 .exp-venue-end { display: grid; gap: var(--space-2); justify-items: start; }
+
+/* On the venue pages the blocks sit in a grid with its own gap; take that gap off the date row so it sits as close under the card as on the Day Plan page. */
+.exp-split__detail > .card + .exp-date { margin-top: calc(var(--space-3) - var(--space-4)); }
+
+/* Radar and landmark cards: the title sits at the top of the card (no heading margin above it), with its icon beside it. */
+.nav-landmarks h3, .nav-landmarks h4 { margin: 0 0 var(--space-1); }
+.nav-landmarks__title { display: flex; align-items: center; gap: var(--space-2); }
+.nav-landmarks__title svg { flex: none; width: 1.25rem; height: 1.25rem; color: var(--primary); }

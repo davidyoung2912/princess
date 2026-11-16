@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { Anchor, Car, Container, Fish, Fuel, Sailboat, Ship, type LucideIcon } from 'lucide-react'
 import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
 import { Compass, LandmarkList, TimeCard } from './NavigationScreens'
@@ -289,6 +290,9 @@ function Bridge({ n }: { n: Nautical }) {
   )
 }
 
+/** An icon for each kind of vessel on the radar. */
+const VESSEL_ICONS: Record<string, LucideIcon> = { cargo: Container, tanker: Fuel, cruise: Ship, fishing: Fish, sailing: Sailboat, ferry: Car, tug: Anchor }
+
 function Radar({ n }: { n: Nautical }) {
   return (
     <Part id="radar" title="naut.radar">
@@ -298,7 +302,7 @@ function Radar({ n }: { n: Nautical }) {
           <ul className="nav-landmarks">
             {n.traffic.map((v, i) => (
               <li key={`${v.kind}-${i}`}>
-                <h4>{t(`naut.kind.${v.kind}` as StringKey)}{v.alert && <> <strong>{t('naut.radar.alert')}</strong></>}</h4>
+                <h4 className="nav-landmarks__title">{(() => { const Icon = VESSEL_ICONS[v.kind] ?? Ship; return <Icon aria-hidden="true" /> })()}{t(`naut.kind.${v.kind}` as StringKey)}{v.alert && <> <strong>{t('naut.radar.alert')}</strong></>}</h4>
                 <p>{t('naut.radar.line', { bearing: headingText(v.bearingDegrees), nm: v.distanceNm.toFixed(1) })}</p>
                 <p className="muted">{t('naut.radar.course', { course: headingText(v.courseDegrees), knots: v.speedKnots })}</p>
                 <p className="muted">{t('naut.radar.cpa', { nm: v.closestApproachNm.toFixed(1), minutes: v.minutesToClosest })}</p>
