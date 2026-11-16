@@ -194,7 +194,15 @@ for (const b of BOOKINGS) {
   const all = cabinsFor(REF.id, b.category)
   const taken = new Set(cabinNumbers.values())
   const pick = (b.accessible ? all.filter((c) => c.accessible) : all.filter((c) => !c.accessible)).find((c) => !taken.has(c.number))
-  cabinNumbers.set(b.key, pick?.number ?? all[0].number)
+  // A room type has only a few sample cabins; once they are all taken, invent unused numbers on its first deck so each booking still gets its own cabin.
+  let spare = 0
+  const extra = () => {
+    for (;;) {
+      const n = `${all[0].deck}${String(100 + ((spare++ * 13 + 7) % 400)).padStart(3, '0')}`
+      if (!taken.has(n) && !all.some((c) => c.number === n)) return n
+    }
+  }
+  cabinNumbers.set(b.key, pick?.number ?? extra())
 }
 
 // ---------------------------------------------------------------- file builders
