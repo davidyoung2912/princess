@@ -45,6 +45,24 @@ public interface IChatHuddleStore
     Task AddCardAsync(long groupId, long by, string kind, string title, string payload, DateTime asOf, DateTime now, CancellationToken ct);
     /// <summary>Removes a card the person added (anyone may remove their own; the creator may remove any: <paramref name="any"/>). False when none matched.</summary>
     Task<bool> RemoveCardAsync(long groupId, Guid cardId, long by, bool any, CancellationToken ct);
+    /// <summary>When each of these people joined the huddle (their current window's start).</summary>
+    Task<List<DateTime>> JoinTimesAsync(long groupId, IReadOnlyCollection<long> userIds, CancellationToken ct);
+    /// <summary>The members who said OK to carry the history over.</summary>
+    Task<HashSet<long>> ListCarryAsync(long groupId, CancellationToken ct);
+    Task SetCarryAsync(long groupId, long userId, bool agree, DateTime now, CancellationToken ct);
+    /// <summary>The caller's confirmed booking (by number, else the latest) that they booked, with the users on it, or null.</summary>
+    Task<HuddleBookingRow?> FindBookingAsync(long bookerId, string? number, CancellationToken ct);
+    /// <summary>
+    /// One transaction: makes the booking's party chat if there is none, adds the members going there, copies the huddle's text from <paramref name="carryFrom"/> (only from those members, never a photo) when
+    /// <paramref name="carryHistory"/>, then turns the huddle into an ordinary group (<paramref name="keepGroup"/>) or deletes it. Returns the party chat's public id.
+    /// </summary>
+    Task<Guid> ConvertAsync(long groupId, long bookingId, IReadOnlyCollection<long> party, bool carryHistory, DateTime carryFrom, bool keepGroup, string line, DateTime now, CancellationToken ct);
+}
+
+public sealed class HuddleBookingRow
+{
+    public long BookingId { get; set; }
+    public List<long> UserIds { get; set; } = [];
 }
 
 public sealed class DapperChatHuddleStore(IDbConnectionFactory db) : IChatHuddleStore
@@ -175,6 +193,66 @@ public sealed class DapperChatHuddleStore(IDbConnectionFactory db) : IChatHuddle
     {
         await using var c = await db.OpenAsync(ct);
         return await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatHuddleShortlist WHERE GroupId = @groupId AND PublicId = @cardId AND (@any = 1 OR AddedBy = @by)", new { groupId, cardId, by, any }, null, ct)) > 0;
+    }
+
+    public async Task<List<DateTime>> JoinTimesAsync(long groupId, IReadOnlyCollection<long> userIds, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<DateTime>(Sql.Cmd("SELECT JoinedAt FROM dbo.ChatGroupMembers WHERE GroupId = @groupId AND Status = 'active' AND UserId IN @userIds", new { groupId, userIds }, null, ct))).ToList();
+    }
+
+    public async Task<HashSet<long>> ListCarryAsync(long groupId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<long>(Sql.Cmd("SELECT UserId FROM dbo.ChatHuddleCarry WHERE GroupId = @groupId", new { groupId }, null, ct))).ToHashSet();
+    }
+
+    public async Task SetCarryAsync(long groupId, long userId, bool agree, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd(agree
+            ? "IF NOT EXISTS (SELECT 1 FROM dbo.ChatHuddleCarry WHERE GroupId = @groupId AND UserId = @userId) INSERT INTO dbo.ChatHuddleCarry (GroupId, UserId, AgreedAt) VALUES (@groupId, @userId, @now)"
+            : "DELETE FROM dbo.ChatHuddleCarry WHERE GroupId = @groupId AND UserId = @userId", new { groupId, userId, now }, null, ct));
+    }
+
+    public async Task<HuddleBookingRow?> FindBookingAsync(long bookerId, string? number, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var id = await c.ExecuteScalarAsync<long?>(Sql.Cmd("""
+            SELECT TOP 1 Id FROM dbo.Bookings WHERE BookerUserId = @bookerId AND Status = 'confirmed' AND (@number IS NULL OR Number = @number) ORDER BY Id DESC
+            """, new { bookerId, number }, null, ct));
+        if (id is not { } bookingId) return null;
+        var users = (await c.QueryAsync<long>(Sql.Cmd("SELECT UserId FROM dbo.BookingGuests WHERE BookingId = @bookingId", new { bookingId }, null, ct))).ToList();
+        return new() { BookingId = bookingId, UserIds = users };
+    }
+
+    public async Task<Guid> ConvertAsync(long groupId, long bookingId, IReadOnlyCollection<long> party, bool carryHistory, DateTime carryFrom, bool keepGroup, string line, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        var partyId = await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT Id FROM dbo.ChatGroups WHERE Kind = 'party' AND BookingId = @bookingId", new { bookingId }, tx, ct))
+            ?? await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name, Kind, BookingId) OUTPUT INSERTED.Id VALUES (N'My group', 'party', @bookingId)", new { bookingId }, tx, ct));
+        // Everyone going, once. A person who left the party chat before keeps that choice.
+        await c.ExecuteAsync(Sql.Cmd("""
+            INSERT INTO dbo.ChatGroupMembers (GroupId, UserId)
+            SELECT @partyId, u FROM (SELECT DISTINCT UserId AS u FROM dbo.ChatGroupMembers WHERE GroupId = @groupId AND Status = 'active' AND UserId IN @party) x
+            WHERE NOT EXISTS (SELECT 1 FROM dbo.ChatGroupMembers m WHERE m.GroupId = @partyId AND m.UserId = x.u)
+            """, new { partyId, groupId, party }, tx, ct));
+        if (carryHistory)
+            await c.ExecuteAsync(Sql.Cmd("""
+                INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], IsSystem, [At])
+                SELECT @partyId, m.FromUserId, m.[Text], 0, m.[At] FROM dbo.ChatMessages m
+                WHERE m.GroupId = @groupId AND m.IsSystem = 0 AND m.Kind = 'text' AND m.DeletedAt IS NULL AND m.Photo IS NULL AND m.FromUserId IN @party AND m.[At] >= @carryFrom
+                ORDER BY m.[At], m.Id
+                """, new { partyId, groupId, party, carryFrom }, tx, ct));
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], IsSystem, [At]) SELECT @partyId, CreatedByUserId, @line, 1, @now FROM dbo.ChatGroups WHERE Id = @groupId", new { partyId, groupId, line, now }, tx, ct));
+        if (keepGroup)
+            await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroups SET Kind = 'group' WHERE Id = @groupId AND Kind = 'huddle'; DELETE FROM dbo.ChatHuddleInvites WHERE GroupId = @groupId; DELETE FROM dbo.ChatHuddleCarry WHERE GroupId = @groupId;", new { groupId }, tx, ct));
+        else
+            await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatGroups WHERE Id = @groupId AND Kind = 'huddle'", new { groupId }, tx, ct));
+        var publicId = await c.ExecuteScalarAsync<Guid>(Sql.Cmd("SELECT PublicId FROM dbo.ChatGroups WHERE Id = @partyId", new { partyId }, tx, ct));
+        await tx.CommitAsync(ct);
+        return publicId;
     }
 }
 

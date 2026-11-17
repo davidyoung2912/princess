@@ -35,8 +35,9 @@ public static partial class ChatStanleyRules
     /// Why Stanley's help is not offered in a conversation, or null when it is. Only a conversation between people has it: not Stanley's own chat, and not a channel or room (other guests' public words).
     /// Not where a supervised child is a member (their guardian already decides who they talk to, and nothing about a child's chat is summarised), and not where the creator switched it off.
     /// </summary>
-    public static string? Unavailable(string kind, bool anyChildMember, bool switchedOff) =>
-        kind is not (ChatConversationRules.Party or ChatConversationRules.Direct or ChatConversationRules.Group) ? KindOff
+    public static string? Unavailable(string kind, bool anyChildMember, bool switchedOff, string role = "R1") =>
+        kind == ChatHuddleRules.Kind && !ChatHuddleRules.StanleyMay(role) ? KindOff   // a huddle gets only the roles its rules name
+        : kind is not (ChatConversationRules.Party or ChatConversationRules.Direct or ChatConversationRules.Group or ChatHuddleRules.Kind) ? KindOff
         : anyChildMember ? ChildOff
         : switchedOff ? SwitchedOff
         : null;
@@ -46,7 +47,7 @@ public static partial class ChatStanleyRules
     /// The one switch covers asking him in the thread (<c>@Stanley</c>) and the catch-up.
     /// </summary>
     public static bool MayConfigure(string kind, long actorId, long? createdBy) =>
-        kind == ChatConversationRules.Direct || (kind == ChatConversationRules.Group && createdBy is { } c && c == actorId);
+        kind == ChatConversationRules.Direct || ((kind is ChatConversationRules.Group or ChatHuddleRules.Kind) && createdBy is { } c && c == actorId);
 
     /// <summary>The line the conversation shows when his help is switched off or on, so nobody is surprised by his silence.</summary>
     public static string SwitchLine(bool off) => off ? "Stanley's help was turned off in this chat." : "Stanley's help was turned on in this chat.";

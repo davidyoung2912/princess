@@ -28,8 +28,8 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
         return new(member, people, await uses.IsOffAsync(member.GroupId, ct));
     }
 
-    private static string? ReasonFor(Room r) =>
-        ChatStanleyRules.Unavailable(r.Member.Kind, r.People.Any(p => p.Status == ChatConversationRules.Active && p.IsSupervised), r.Off);
+    private static string? ReasonFor(Room r, string role = "R1") =>
+        ChatStanleyRules.Unavailable(r.Member.Kind, r.People.Any(p => p.Status == ChatConversationRules.Active && p.IsSupervised), r.Off, role);
 
     /// <summary>Whether Stanley's help is on in a conversation, and whether the caller may switch it. 404 when the caller is not a member.</summary>
     public async Task<ChatStanleyTapDto> TapAsync(UserRecord actor, Guid conversationId, CancellationToken ct)
@@ -64,11 +64,11 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
         return await TapAsync(actor, conversationId, ct);
     }
 
-    private async Task<Room> RequireOnAsync(UserRecord actor, Guid conversationId, bool roleOn, CancellationToken ct)
+    private async Task<Room> RequireOnAsync(UserRecord actor, Guid conversationId, bool roleOn, string role, CancellationToken ct)
     {
         if (!roleOn) throw ApiException.Forbidden(StanleySwitches.Stopped);
         var room = await OpenAsync(actor, conversationId, ct);
-        if (ReasonFor(room) is { } reason) throw ApiException.Forbidden(reason);
+        if (ReasonFor(room, role) is { } reason) throw ApiException.Forbidden(reason);
         return room;
     }
 
@@ -78,7 +78,7 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
     /// </summary>
     public async Task<ChatCatchUpDto> CatchUpAsync(UserRecord actor, Guid conversationId, CancellationToken ct)
     {
-        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatCatchUp, ct);
+        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatCatchUp, "R3", ct);
         var now = await clock.NowAsync(actor, ct);
         if (!ChatStanleyRules.UnderCap(await uses.CountUsesAsync(actor.Id, now - ChatStanleyRules.CapWindow, ct))) throw ApiException.TooMany("catchUpLimit");
         var rows = ChatStanleyRules.Window(await store.ListMessagesAsync(room.Member.GroupId, actor.Id, null, ReadAtMost, ct), room.Member.Kind, room.Member.JoinedAt, room.Member.LeftAt, now);
@@ -109,7 +109,7 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
     /// </summary>
     public async Task<ChatPlanPreviewDto> MakePlanAsync(UserRecord actor, Guid conversationId, ChatPlanBody? body, CancellationToken ct)
     {
-        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatPlan, ct);
+        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatPlan, "R4", ct);
         var (chosen, earlier) = await ChosenAsync(actor, room, body?.MessageId ?? Guid.Empty, ct);
         var poll = ChatStanleyRules.PlanFrom(chosen.Text, earlier) ?? throw ApiException.Invalid("noPlan");
         return new(poll.Question, poll.Options);
@@ -118,7 +118,7 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
     /// <summary>The cruise words in one message the caller can read, from the library (never a model). An empty list when there are none. 400 <c>notMessage</c>; 403 <c>kind|child|off</c>; 404.</summary>
     public async Task<ChatTermsDto> ExplainAsync(UserRecord actor, Guid conversationId, ChatPlanBody? body, CancellationToken ct)
     {
-        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatWords, ct);
+        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatWords, "R8", ct);
         var (chosen, _) = await ChosenAsync(actor, room, body?.MessageId ?? Guid.Empty, ct);
         return new([.. ChatStanleyRules.Explain(chosen.Text).Select(t => new ChatTermDto(t.Word, t.Meaning))]);
     }

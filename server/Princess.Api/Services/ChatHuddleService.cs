@@ -51,7 +51,8 @@ public sealed class ChatHuddleService(IChatHuddleStore store, IChatGroupStore gr
         return new(g.PublicId, g.Name,
             [.. people.Select(p => new ChatHuddleMemberDto(p.PublicId, Short(p), p.UserId == actor.Id, p.UserId == g.CreatedByUserId))],
             [.. cards.Select(c => new ChatHuddleCardDto(c.PublicId, c.Kind, c.Title, Fields(c.Payload), Shipboard.Ms(c.AsOf), c.AddedBy == actor.Id))],
-            creator, ChatHuddleRules.MaxMembers, Math.Max(0, ChatHuddleRules.MaxMembers - people.Count), Shipboard.Ms(ChatHuddleRules.DeleteOn(last)), ChatHuddleRules.Stage(last, now) == ChatHuddleRules.WarnStage, until);
+            creator, ChatHuddleRules.MaxMembers, Math.Max(0, ChatHuddleRules.MaxMembers - people.Count), Shipboard.Ms(ChatHuddleRules.DeleteOn(last)), ChatHuddleRules.Stage(last, now) == ChatHuddleRules.WarnStage, until,
+            (await store.ListCarryAsync(g.Id, ct)).Contains(actor.Id));
     }
 
     private static Dictionary<string, string> Fields(string payload)
@@ -118,6 +119,37 @@ public sealed class ChatHuddleService(IChatHuddleStore store, IChatGroupStore gr
         var g = await MemberAsync(actor, id, ct);
         var name = ChatConnectionRules.ShortName(actor.FirstName, actor.LastName);
         await groups.RemoveMemberAsync(g.Id, actor.Id, "left", $"{name} left", await userClock.NowAsync(actor, ct), ct);
+    }
+
+    // ---- When someone books ----
+
+    /// <summary>The caller's own OK (or taking it back) to carry the history into the party chat. It changes nothing until the booker makes the party chat. 404.</summary>
+    public async Task<ChatHuddleDto> SetCarryAsync(UserRecord actor, Guid id, ChatHuddleCarryBody? body, CancellationToken ct)
+    {
+        var g = await MemberAsync(actor, id, ct);
+        await store.SetCarryAsync(g.Id, actor.Id, body?.Agree == true, await userClock.NowAsync(actor, ct), ct);
+        return await ViewAsync(actor, g, ct);
+    }
+
+    /// <summary>
+    /// "Make this the party chat." Only the booker, for their own confirmed booking, with a member of the huddle on it. Members on the booking join the booking's party chat; the others stay, and the huddle becomes an ordinary group
+    /// (deleted if nobody is left outside the booking). The history is copied only if every member going to the party chat said OK, and only text sent since the last of them joined, from those members. 403 booker; 404 noBooking.
+    /// </summary>
+    public async Task<ChatHuddleConvertedDto> ConvertAsync(UserRecord actor, Guid id, ChatHuddleConvertBody? body, CancellationToken ct)
+    {
+        var g = await MemberAsync(actor, id, ct);
+        var booking = await store.FindBookingAsync(actor.Id, string.IsNullOrWhiteSpace(body?.BookingNumber) ? null : body!.BookingNumber!.Trim(), ct) ?? throw ApiException.NotFound(ChatHuddleRules.NoBooking);
+        var active = await groups.ListActiveAsync(g.Id, ct);
+        var agreed = await store.ListCarryAsync(g.Id, ct);
+        var members = active.Select(p => new HuddleMember(p.UserId, booking.UserIds.Contains(p.UserId), agreed.Contains(p.UserId))).ToList();
+        if (!ChatHuddleRules.MayConvert(true, members)) throw ApiException.NotFound(ChatHuddleRules.NoBooking);
+        var plan = ChatHuddleRules.ToPartyChat(members);
+        var carry = ChatHuddleRules.CarriesHistory(plan);
+        var joined = await store.JoinTimesAsync(g.Id, plan.Party, ct);
+        var now = await userClock.NowAsync(actor, ct);
+        var name = ChatConnectionRules.ShortName(actor.FirstName, actor.LastName);
+        var party = await store.ConvertAsync(g.Id, booking.BookingId, plan.Party, carry, joined.Count == 0 ? now : ChatHuddleRules.CarryFrom(joined), ChatHuddleRules.KeepsGroup(plan), $"{name} made this chat from a trip huddle", now, ct);
+        return new(party, plan.Party.Count, plan.Stay.Count, carry, ChatHuddleRules.KeepsGroup(plan) ? g.PublicId : null);
     }
 
     // ---- The shortlist ----

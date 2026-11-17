@@ -32,6 +32,12 @@ public static class ChatHuddleEndpoints
         h.MapPost("/{id:guid}/leave", async (Guid id, ICurrentUser me, ChatHuddleService svc, CancellationToken ct) => { await svc.LeaveAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
             .WithSummary("The caller leaves at once. They read nothing said after, and the rest see a line in the thread.");
 
+        h.MapPut("/{id:guid}/carry", async (Guid id, ChatHuddleCarryBody body, ICurrentUser me, ChatHuddleService svc, CancellationToken ct) => Results.Ok(await svc.SetCarryAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("The caller's own OK, or taking it back, to carry the huddle's history into the party chat. Off until they say so. 404.");
+
+        h.MapPost("/{id:guid}/convert", async (Guid id, ChatHuddleConvertBody body, ICurrentUser me, ChatHuddleService svc, CancellationToken ct) => Results.Ok(await svc.ConvertAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("\"Make this the party chat\", by the booker for their own confirmed booking. Members on the booking join its party chat; the others stay and the huddle becomes an ordinary group (deleted when no one is left outside the booking). The history is copied only if every member going to the party chat said OK, only text from those members and only from when the last of them joined. 404 noBooking.");
+
         h.MapPost("/{id:guid}/shortlist", async (Guid id, ChatHuddleCardBody body, ICurrentUser me, ChatHuddleService svc, CancellationToken ct) => Results.Ok(await svc.AddCardAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("Adds a public card (sailing, cabinType, port or costBreakdown) with its \"as of\" time. 400 card (an unknown kind, no title or time, or a field about a person's own money or a booking, cabin or document number) or blocked; 409 full (12 cards).");
 

@@ -3905,3 +3905,15 @@ CREATE TABLE dbo.ChatHuddleShortlist (
 CREATE INDEX IX_ChatHuddleShortlist_Group ON dbo.ChatHuddleShortlist (GroupId, CreatedAt);
 END
 GO
+
+-- A huddle member's own OK to carry the huddle's history into the booking's party chat (phase 15c). No row means no.
+IF OBJECT_ID(N'dbo.ChatHuddleCarry', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatHuddleCarry (
+  GroupId BIGINT NOT NULL, UserId BIGINT NOT NULL, AgreedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT PK_ChatHuddleCarry PRIMARY KEY (GroupId, UserId),
+  CONSTRAINT FK_ChatHuddleCarry_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatHuddleCarry_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id)
+);
+END
+GO

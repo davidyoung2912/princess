@@ -169,4 +169,36 @@ public sealed class ChatHuddleRulesTests
         Assert.Equal(ChatHuddleRules.DeleteStage, ChatHuddleRules.Stage(last, last.AddDays(60)));
         Assert.Equal(last.AddDays(60), ChatHuddleRules.DeleteOn(last));
     }
+
+    [Fact]
+    public void HistoryIsCarriedOnlyWhenEveryoneGoingToThePartyChatAgreed()
+    {
+        Assert.True(ChatHuddleRules.CarriesHistory(ChatHuddleRules.ToPartyChat([new(1, true, true), new(2, true, true), new(3, false, false)])));
+        Assert.False(ChatHuddleRules.CarriesHistory(ChatHuddleRules.ToPartyChat([new(1, true, true), new(2, true, false)])));   // one said no
+        Assert.False(ChatHuddleRules.CarriesHistory(ChatHuddleRules.ToPartyChat([new(1, false, true)])));                       // nobody going
+    }
+
+    [Fact]
+    public void HistoryStartsWhenTheLastOfThemJoined() =>
+        Assert.Equal(new DateTime(2026, 11, 5), ChatHuddleRules.CarryFrom([new DateTime(2026, 11, 1), new DateTime(2026, 11, 5), new DateTime(2026, 11, 3)]));
+
+    [Fact]
+    public void TheHuddleCarriesOnAsAGroupOnlyWhileSomeoneIsOffTheBooking()
+    {
+        Assert.True(ChatHuddleRules.KeepsGroup(ChatHuddleRules.ToPartyChat([new(1, true, false), new(2, false, false)])));
+        Assert.False(ChatHuddleRules.KeepsGroup(ChatHuddleRules.ToPartyChat([new(1, true, false), new(2, true, false)])));
+    }
+
+    [Fact]
+    public void StanleyInAHuddleHasOnlyHisFourRoles()
+    {
+        Assert.Null(Princess.Api.Domain.ChatStanleyRules.Unavailable("huddle", false, false, "R1"));
+        Assert.Null(Princess.Api.Domain.ChatStanleyRules.Unavailable("huddle", false, false, "R4"));
+        Assert.Null(Princess.Api.Domain.ChatStanleyRules.Unavailable("huddle", false, false, "R9"));
+        Assert.NotNull(Princess.Api.Domain.ChatStanleyRules.Unavailable("huddle", false, false, "R3"));   // no catch-up
+        Assert.NotNull(Princess.Api.Domain.ChatStanleyRules.Unavailable("huddle", false, false, "R8"));
+        Assert.Null(Princess.Api.Domain.ChatStanleyRules.Unavailable("group", false, false, "R3"));       // a made group is unchanged
+        Assert.True(Princess.Api.Domain.ChatStanleyRules.MayConfigure("huddle", 5, 5));
+        Assert.False(Princess.Api.Domain.ChatStanleyRules.MayConfigure("huddle", 6, 5));
+    }
 }

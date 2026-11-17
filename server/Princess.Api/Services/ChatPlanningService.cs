@@ -12,7 +12,7 @@ namespace Princess.Api.Services;
 public sealed class ChatPlanningService(IChatStore store, ChatShareService share, IOnboardStore onboard, IUserClock clock, ChatNotifier notifier)
 {
     /// <summary>Whether the member is an admin of the conversation: only a made group has them (its creator, and the one other person the creator named).</summary>
-    public static bool AdminOf(ChatMemberRow member, long userId) => member.Kind == ChatConversationRules.Group && ChatPlanningRules.IsAdmin(member.CreatedByUserId == userId, member.IsAdmin);
+    public static bool AdminOf(ChatMemberRow member, long userId) => (member.Kind is ChatConversationRules.Group or ChatHuddleRules.Kind) && ChatPlanningRules.IsAdmin(member.CreatedByUserId == userId, member.IsAdmin);
 
     /// <summary>The answers to a poll or plan as <paramref name="reader"/> sees them, or null for any other message.</summary>
     public static ChatTallyDto? TallyOf(ChatMessageRow m, IReadOnlyCollection<ChatResponseRow> rows, long reader, DateTime now, bool isAdmin, IReadOnlyDictionary<long, ChatPeerRow> byId, ISet<long> blocked)

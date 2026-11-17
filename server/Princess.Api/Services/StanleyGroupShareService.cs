@@ -61,7 +61,7 @@ public sealed class StanleyGroupShareService(IChatStore store, ChatService chat,
     public async Task<GroupStanleyDto> GroupStanleyAsync(UserRecord actor, Guid groupId, CancellationToken ct)
     {
         var member = await store.GetMemberAsync(actor.Id, groupId, ct) ?? throw ApiException.NotFound();
-        if (member.Status != ChatConversationRules.Active || member.Kind != ChatConversationRules.Group) throw ApiException.NotFound();
+        if (member.Status != ChatConversationRules.Active || member.Kind is not (ChatConversationRules.Group or ChatHuddleRules.Kind)) throw ApiException.NotFound();
         return new(await store.GetGroupStanleyAsync(member.GroupId, ct), ChatPlanningService.AdminOf(member, actor.Id));
     }
 
@@ -69,7 +69,7 @@ public sealed class StanleyGroupShareService(IChatStore store, ChatService chat,
     public async Task<GroupStanleyDto> SetGroupStanleyAsync(UserRecord actor, Guid groupId, GroupStanleyRequest? body, DateTime now, CancellationToken ct)
     {
         var member = await store.GetMemberAsync(actor.Id, groupId, ct) ?? throw ApiException.NotFound();
-        if (member.Status != ChatConversationRules.Active || member.Kind != ChatConversationRules.Group) throw ApiException.NotFound();
+        if (member.Status != ChatConversationRules.Active || member.Kind is not (ChatConversationRules.Group or ChatHuddleRules.Kind)) throw ApiException.NotFound();
         if (!ChatPlanningService.AdminOf(member, actor.Id)) throw ApiException.Forbidden(ChatGroupMomentRules.NotAdmin);
         await store.SetGroupStanleyAsync(member.GroupId, body?.On == true, actor.Id, now, ct);
         return new(body?.On == true, true);

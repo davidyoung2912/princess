@@ -113,6 +113,19 @@ public static class ChatHuddleRules
         [.. members.Where(m => !m.OnBooking).Select(m => m.UserId)],
         [.. members.Where(m => m.OnBooking && m.AgreedToCarry).Select(m => m.UserId)]);
 
+    /// <summary>
+    /// The history is copied into the party chat only when every member going there said OK, and only from the moment the last of them joined the huddle: the party chat shows everyone the same thing, so a message is carried only if
+    /// each of them could already read it. Words from anyone who is not going to the party chat are never copied.
+    /// </summary>
+    public static bool CarriesHistory(HuddleConversion c) => c.Party.Count > 0 && c.HistoryCarried.Count == c.Party.Count;
+
+    public static DateTime CarryFrom(IEnumerable<DateTime> joinedAt) => joinedAt.Max();
+
+    /// <summary>The huddle carries on as an ordinary group only while someone who is not on the booking is still in it; otherwise it is deleted and the party chat is all there is.</summary>
+    public static bool KeepsGroup(HuddleConversion c) => c.Stay.Count > 0;
+
+    public const string NotBooker = "booker", NoBooking = "noBooking";
+
     /// <summary>Only the booker may offer it, and only for a booking that has at least one huddle member on it.</summary>
     public static bool MayConvert(bool isBooker, IReadOnlyList<HuddleMember> members) => isBooker && members.Any(m => m.OnBooking);
 

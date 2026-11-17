@@ -17,7 +17,7 @@ public sealed record ChatHuddleCardBody(string? Kind, string? Title, Dictionary<
 /// <summary>
 /// A huddle as a member sees it. <c>DeleteOn</c> is when it is deleted if nobody speaks (60 days after the last message), and <c>Warn</c> is true from day 50. <c>LinkUntil</c> is when the live link ends, shown only to the creator.
 /// </summary>
-public sealed record ChatHuddleDto(Guid Id, string Name, List<ChatHuddleMemberDto> Members, List<ChatHuddleCardDto> Shortlist, bool IsCreator, int Max, int SeatsLeft, long DeleteOn, bool Warn, long? LinkUntil);
+public sealed record ChatHuddleDto(Guid Id, string Name, List<ChatHuddleMemberDto> Members, List<ChatHuddleCardDto> Shortlist, bool IsCreator, int Max, int SeatsLeft, long DeleteOn, bool Warn, long? LinkUntil, bool Carry = false);
 
 /// <summary>A link just made. The token is shown once and is kept only as a hash, so it cannot be shown again; making another replaces it.</summary>
 public sealed record ChatHuddleLinkDto(string Token, long ExpiresAt);
@@ -27,3 +27,12 @@ public sealed record ChatHuddlePreviewDto(List<string> Members, int SeatsLeft);
 
 /// <summary>The huddle just joined.</summary>
 public sealed record ChatHuddleJoinedDto(Guid Id);
+
+/// <summary>The caller's own OK to carry the huddle's history into the booking's party chat. Off until they say so; they may take it back before it is made.</summary>
+public sealed record ChatHuddleCarryBody(bool Agree);
+
+/// <summary>"Make this the party chat", by the booker. <c>BookingNumber</c> picks the booking when they have more than one; otherwise their latest confirmed one.</summary>
+public sealed record ChatHuddleConvertBody(string? BookingNumber);
+
+/// <summary>What happened: how many members went to the party chat, how many are not on the booking, whether the history was carried, and the huddle's own id if it carries on as an ordinary group (null when everyone was on the booking and it was deleted).</summary>
+public sealed record ChatHuddleConvertedDto(Guid PartyId, int Moved, int Stayed, bool HistoryCarried, Guid? GroupId);

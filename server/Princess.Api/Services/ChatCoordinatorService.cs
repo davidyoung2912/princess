@@ -25,7 +25,7 @@ public sealed class ChatCoordinatorService(IChatStore store, IChatStanleyStore u
     {
         if (!options.Value.Switches.ChatCoordinator) throw ApiException.Forbidden(StanleySwitches.Stopped);
         var member = await store.GetMemberAsync(actor.Id, groupId, ct) ?? throw ApiException.NotFound();
-        if (member.Status != ChatConversationRules.Active || member.Kind != ChatConversationRules.Group) throw ApiException.NotFound();
+        if (member.Status != ChatConversationRules.Active || member.Kind is not (ChatConversationRules.Group or ChatHuddleRules.Kind)) throw ApiException.NotFound();
         var active = (await store.ListMembersAsync(member.GroupId, ct)).Where(p => p.Status == ChatConversationRules.Active).ToList();
         var admin = ChatPlanningService.AdminOf(member, actor.Id);
         var on = await store.GetGroupStanleyAsync(member.GroupId, ct) && !await uses.IsOffAsync(member.GroupId, ct);
@@ -178,7 +178,7 @@ public sealed class ChatCoordinatorService(IChatStore store, IChatStanleyStore u
     public async Task<ChatRemindersDto> RemindersAsync(UserRecord actor, Guid groupId, CancellationToken ct)
     {
         var member = await store.GetMemberAsync(actor.Id, groupId, ct) ?? throw ApiException.NotFound();
-        if (member.Status != ChatConversationRules.Active || member.Kind != ChatConversationRules.Group) throw ApiException.NotFound();
+        if (member.Status != ChatConversationRules.Active || member.Kind is not (ChatConversationRules.Group or ChatHuddleRules.Kind)) throw ApiException.NotFound();
         return new((await coordinator.RemindersMutedAsync(member.GroupId, ct)).Contains(actor.Id));
     }
 
@@ -186,7 +186,7 @@ public sealed class ChatCoordinatorService(IChatStore store, IChatStanleyStore u
     public async Task<ChatRemindersDto> SetRemindersMutedAsync(UserRecord actor, Guid groupId, ChatRemindersMuteBody? body, CancellationToken ct)
     {
         var member = await store.GetMemberAsync(actor.Id, groupId, ct) ?? throw ApiException.NotFound();
-        if (member.Status != ChatConversationRules.Active || member.Kind != ChatConversationRules.Group) throw ApiException.NotFound();
+        if (member.Status != ChatConversationRules.Active || member.Kind is not (ChatConversationRules.Group or ChatHuddleRules.Kind)) throw ApiException.NotFound();
         var muted = body?.Muted ?? throw ApiException.Invalid("muted");
         await coordinator.SetRemindersMutedAsync(member.GroupId, actor.Id, muted, ct);
         return new(muted);
