@@ -3952,11 +3952,13 @@ IF OBJECT_ID(N'dbo.ChatIntroOptIns', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ChatIntroOptIns (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatIntroOptIns PRIMARY KEY,
-  UserId BIGINT NOT NULL, Interest VARCHAR(12) NOT NULL,
+  UserId BIGINT NOT NULL, GroupId BIGINT NOT NULL, Interest VARCHAR(12) NOT NULL,   -- GroupId: the room it was asked in; only people in the same room are matched
   AskedAt DATETIME2(0) NOT NULL, EndsAt DATETIME2(0) NOT NULL, WithdrawnAt DATETIME2(0) NULL,
-  CONSTRAINT FK_ChatIntroOptIns_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_ChatIntroOptIns_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatIntroOptIns_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE
 );
 CREATE INDEX IX_ChatIntroOptIns_User ON dbo.ChatIntroOptIns (UserId, AskedAt);
+CREATE INDEX IX_ChatIntroOptIns_Group ON dbo.ChatIntroOptIns (GroupId, EndsAt);
 END
 GO
 
@@ -3973,23 +3975,12 @@ CREATE TABLE dbo.ChatIntroductions (
 END
 GO
 
--- A member's own "mute Stanley here" for one room or group.
-IF OBJECT_ID(N'dbo.ChatHostMutes', N'U') IS NULL
-BEGIN
-CREATE TABLE dbo.ChatHostMutes (
-  GroupId BIGINT NOT NULL, UserId BIGINT NOT NULL, MutedAt DATETIME2(0) NOT NULL,
-  CONSTRAINT PK_ChatHostMutes PRIMARY KEY (GroupId, UserId),
-  CONSTRAINT FK_ChatHostMutes_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_ChatHostMutes_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id)
-);
-END
-GO
-
 -- A flag a member asked Stanley to send to staff. It holds ids and a reason, never the words; staff read the post from the room itself. Staff decide; the flag changes nothing by itself.
 IF OBJECT_ID(N'dbo.ChatHostFlags', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ChatHostFlags (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatHostFlags PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ChatHostFlags_PublicId DEFAULT NEWID() CONSTRAINT UQ_ChatHostFlags_PublicId UNIQUE,
   GroupId BIGINT NOT NULL, MessageId BIGINT NOT NULL, FlaggedBy BIGINT NOT NULL,
   Reason VARCHAR(6) NOT NULL, CreatedAt DATETIME2(0) NOT NULL, DecidedAt DATETIME2(0) NULL,
   CONSTRAINT FK_ChatHostFlags_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,

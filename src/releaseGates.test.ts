@@ -530,3 +530,40 @@ describe('Huddle gates (chat phase 15): a chat before anyone has booked', () => 
   })
 })
 
+
+describe('Host gates (chat phase 12): Stanley as host for strangers and room host', () => {
+  const read2 = (f: string): string => read(`server/Princess.Api/${f}`)
+
+  it('Stanley never takes a staff action in the host service', () => {
+    const svc = read2('Services/ChatHostService.cs')
+    expect(svc).not.toMatch(/RemoveMessageAsync|MuteMemberAsync|RemoveMemberAsync|PinAsync|SetClosedAsync|SetSlowAsync|SetRulesAsync/)
+    expect(read2('Domain/ChatHostRules.cs')).toContain('StaffOnlyActions')
+  })
+
+  it('a meet-up is posted through the ordinary send and a decline is never counted', () => {
+    const svc = read2('Services/ChatHostService.cs')
+    expect(svc).toContain('chatService.SendAsync(actor, id')
+    const store = read2('Data/ChatHostStores.cs')
+    expect(store).toContain("a.Answer = 'in'")
+    expect(store).toContain("a.Answer = 'maybe'")
+    expect(store).not.toMatch(/Answer = 'no'/)
+  })
+
+  it('an introduction reads only the opt-in, and both guests must have asked', () => {
+    const svc = read2('Services/ChatHostService.cs')
+    expect(svc).toContain('ChatHostRules.Match(')
+    expect(svc).not.toMatch(/IBookingStore|StanleyMoneyService|ListConversationsAsync|ListMembersAsync/)
+  })
+
+  it('room answers come from the library and the host service never logs or audits words', () => {
+    const svc = read2('Services/ChatHostService.cs')
+    expect(svc).toContain('ChatHostRules.FindAnswer(text)')
+    expect(svc).not.toMatch(/\blog\.|ILogger/)
+    expect(svc).not.toMatch(/Detail\s*=/)
+  })
+
+  it('the room host is off until moderation is proven', () => {
+    expect(read2('Services/ChatHostService.cs')).toMatch(/RoomHostOn \{ get; set; \}\s*\n/)
+    expect(read2('Services/ChatHostService.cs')).not.toMatch(/RoomHostOn \{ get; set; \} = true/)
+  })
+})
