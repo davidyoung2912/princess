@@ -310,3 +310,7 @@ AUT-02 also sets one reminder at 9 am ship time two weeks before sailing ("Two w
 ### Dining plan reminder (phase P10a, fifth part)
 
 AUT-02 also sets one reminder at 9 am ship time five days before sailing ("Your dining plan freezes in 3 days. The dining screen is where to change it."), key `aut02:dining:<date>`, only when the booking is not made by an agent and the freeze date (three days before sailing) has not passed. It reads only the sailing date and today's date, nothing about any table. Same limits, receipt and undo as the others. AUT-05 and AUT-07 are still to do.
+
+### All aboard reminder (phase P10a, sixth part)
+
+AUT-02 also sets one reminder an hour before all aboard on each port day ("All aboard in <port> is in an hour. Time to head back to the ship."), key `aut02:aboard:<date>`, from the published port schedule only. It reads no location and no booking. Same limits (30 per trip in all), receipt and two-hour undo as the others; those further off than the reminders' horizon wait for a later run. All of the AUT-02 dates are now covered; AUT-05 and AUT-07 are still to do.
