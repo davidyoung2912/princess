@@ -190,7 +190,7 @@ describe('onboard screens', () => {
     expect(one).toContain('Sabatini’s')
     expect(one).toContain('Veal Milanese')
     expect(one).toContain(t('ven.allergyNote'))
-    expect(one).toContain('href="/plan/dining"')
+    expect(one).toContain('href="/dining-today"')
   })
 
   it('says plainly when a restaurant does not exist, with a way on', () => {

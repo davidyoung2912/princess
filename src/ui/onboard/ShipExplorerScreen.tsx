@@ -4,6 +4,7 @@ import { useShip } from '../../hooks/useShipCatalogue'
 import { headingCase, t, th } from '../../i18n'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
+import { ExplorerTiles } from '../explorer/ExplorerTiles'
 
 const number = new Intl.NumberFormat('en-US')
 
@@ -29,6 +30,7 @@ export function ShipExplorerScreen() {
             <LinkButton to="/ship/venues" variant="secondary">{th('shipex.venues')}</LinkButton>{' '}
             <LinkButton to={plansFor ? `/deck-plans?ship=${plansFor}` : '/deck-plans'} variant="secondary">{th('shipex.deckPlans')}</LinkButton>
           </p>
+          <ExplorerTiles />
           <nav aria-label={t('shipex.jump')}>
             <ul className="naut-jump">
               {parts.map((x) => <li key={x.id}><a href={`#${x.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(x.id)?.scrollIntoView({ block: 'start' }); document.getElementById(x.id)?.focus() }}>{x.title}</a></li>)}

@@ -14,6 +14,9 @@ import { Dialog } from '../../Dialog'
 import { PlanError } from '../../plan/common'
 import { useAction } from '../../../hooks/useAction'
 import { names } from '../../plan/people'
+import { diningBookingCard } from '../../../domain/explorer/bookingState'
+import { useExplorerStage } from '../../../hooks/useExplorerStage'
+import { lineWords } from '../lineWords'
 import { ReservationList, type ReservationItem } from '../Parts'
 
 const VENUE_BASE = '/dining-today'
@@ -32,6 +35,8 @@ interface Props {
 /** The guest's dinner reservations for the chosen day, with Change, Cancel and a button to reserve, wired to the dining service. */
 export function DiningReservations({ venues, day, venueId, view, reload, basePath }: Props) {
   const sailing = useSailing()
+  const { stage } = useExplorerStage()
+  const card = diningBookingCard(view, stage)
   const days = itinerary(sailing)
   const navigate = useNavigate()
   // Reserving and moving are their own page: `reserve=new` or `reserve=<reservation id>` on this screen's address (see DiningScreens).
@@ -47,10 +52,10 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
   return (
     <>
       <ReservationList
-        heading={venueId ? t('exp.res.hereTitle') : t('exp.res.title')} items={items} empty={venueId ? t('exp.res.noneHere') : t('exp.res.none')} readOnly={!view.canBook}
+        heading={venueId ? t('exp.res.hereTitle') : t('exp.res.title')} items={items} empty={venueId ? t('exp.res.noneHere') : t('exp.res.none')} readOnly={!view.canBook || stage === 'after'}
         onChange={(id) => { const r = mine.find((x) => x.id === id); if (r) openEditor(r.id) }}
         onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
-        action={view.canBook && <Button onClick={() => openEditor('new')}>{t('exp.res.new')}</Button>}
+        action={card.canReserve ? <Button onClick={() => openEditor('new')}>{t('exp.res.new')}</Button> : view.canBook || stage === 'after' ? <p className="muted">{lineWords(card.detail ?? card.headline)}</p> : null}
       />
       {cancelling && <CancelDialog r={cancelling} name={title(cancelling.venueId)} onClose={() => setCancelling(null)} onDone={() => { setCancelling(null); reload() }} />}
     </>

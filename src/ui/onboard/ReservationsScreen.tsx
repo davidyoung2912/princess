@@ -45,7 +45,7 @@ export function ReservationsScreen() {
             <>
               {v.seating && <p>{t('res.fixed', { time: formatTime(v.seating) })}</p>}
               {v.reservations.length === 0 ? <p className="muted">{t('dine.none')}</p> : <ul className="card-grid">{v.reservations.map((r) => <DinnerCard key={r.id} r={r} date={addDays(s.departure, r.day - 1)} canEdit={v.canBook} reload={dining.retry} />)}</ul>}
-              <p><LinkButton to="/plan/dining" variant="secondary">{t('res.find')}</LinkButton></p>
+              <p><LinkButton to="/dining-today" variant="secondary">{t('res.find')}</LinkButton></p>
             </>
           )}
         </Saved>

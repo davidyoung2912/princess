@@ -88,7 +88,7 @@ export function VenueScreen() {
               <li>{DRESS_NOTES[v.dress]}</li>
               <li><StateText v={v} day={day} time={time} /></li>
             </ul>
-            {reservableVenue(v) && <p><LinkButton to="/plan/dining" variant="secondary">{t('ven.reserve')}</LinkButton></p>}
+            {reservableVenue(v) && <p><LinkButton to="/dining-today" variant="secondary">{t('ven.reserve')}</LinkButton></p>}
           </Card>
           {!reservableVenue(v) && v.id !== 'soleil' && <QueueControl venueId={v.id} />}
           <section aria-labelledby="hours-h">

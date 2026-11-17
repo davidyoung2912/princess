@@ -10,6 +10,7 @@ import { itinerary, shipZoneAt } from '../domain/sailings'
 import { timeIn } from '../domain/timezones'
 import { api } from '../runtime'
 import { useCurrentDay } from './useDayPlan'
+import { useExplorerStage } from './useExplorerStage'
 import { useNow, usePersona, useSailing } from './useDemo'
 import { useSavedCopy, type SavedCopy } from './useSavedCopy'
 
@@ -38,7 +39,10 @@ export function useExplorerDay(): ExplorerDayState {
   const sailing = useSailing()
   const days = itinerary(sailing)
   const total = days.length
-  const currentDay = useCurrentDay()
+  const { stage } = useExplorerStage()
+  const shipDay = useCurrentDay()
+  // Before sailing no day is "now" (0, so every day is ahead of us and nothing says "open now"); after it every day is behind us.
+  const currentDay = stage === 'ahead' ? 0 : stage === 'after' ? total + 1 : shipDay
   const nowAt = useNow()
   const [params, setParams] = useSearchParams()
   const day = resolveExplorerDay({ requested: params.get('day'), remembered, currentDay, total })

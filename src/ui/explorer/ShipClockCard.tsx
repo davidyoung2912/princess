@@ -2,6 +2,7 @@ import type { ExplorerDayState } from '../../hooks/useExplorer'
 import { itinerary, shipClockChanges } from '../../domain/sailings'
 import { useSailing } from '../../hooks/useDemo'
 import { t, headingCase } from '../../i18n'
+import { useExplorerStage } from '../../hooks/useExplorerStage'
 import { Card } from '../Card'
 import { ItineraryDayInfo } from '../onboard/ItineraryScreen'
 
@@ -12,10 +13,11 @@ export function ShipDayInfo({ state }: { state: ExplorerDayState }) {
   const sailing = useSailing()
   const days = itinerary(sailing)
   const day = days[state.day - 1]
+  const { stage } = useExplorerStage()
   const change = shipClockChanges(sailing).find((c) => c.at > state.nowAt && c.at - state.nowAt <= DAY_MS)
   return (
     <>
-      {day && <ItineraryDayInfo d={day} last={state.day === days.length} today={state.day === state.currentDay} />}
+      {day && <ItineraryDayInfo d={day} last={state.day === days.length} today={stage === 'aboard' && state.day === state.currentDay} />}
       {change && <p className="muted">{change.hours >= 0 ? t('exp.clock.forward', { count: change.hours }) : t('exp.clock.back', { count: -change.hours })}</p>}
     </>
   )
@@ -23,9 +25,12 @@ export function ShipDayInfo({ state }: { state: ExplorerDayState }) {
 
 /** The day under the header of every Explorer, in its own card. */
 export function ShipClockCard({ state }: { state: ExplorerDayState }) {
+  const { stage, sailsIn } = useExplorerStage()
   return (
     <Card labelledBy="exp-clock-h">
       <h2 id="exp-clock-h" className="visually-hidden">{headingCase(t('exp.clock.title'))}</h2>
+      {stage === 'ahead' && <p><strong>{t('exp.clock.sailsIn', { count: sailsIn })}</strong></p>}
+      {stage === 'after' && <p><strong>{t('exp.clock.finished')}</strong></p>}
       <ShipDayInfo state={state} />
     </Card>
   )

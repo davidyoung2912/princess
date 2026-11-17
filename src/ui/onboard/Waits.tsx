@@ -103,7 +103,7 @@ export function WaitsList() {
           </li>
         ))}
       </ul>
-      <p><Link to="/plan/dining">{t('res.find')}</Link></p>
+      <p><Link to="/dining-today">{t('res.find')}</Link></p>
     </section>
   )
 }

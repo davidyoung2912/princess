@@ -1,3 +1,4 @@
+import type { DiningView } from '../../../api/types'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import type { StringKey } from '../../../i18n'
 import { zonedToEpoch } from '../../../domain/timezones'
@@ -5,6 +6,9 @@ import { shipZoneOnDate } from '../../../domain/sailings'
 import { useSailing } from '../../../hooks/useDemo'
 import { t } from '../../../i18n'
 import { Saved } from '../../onboard/common'
+import { diningBookingCard } from '../../../domain/explorer/bookingState'
+import { useExplorerStage } from '../../../hooks/useExplorerStage'
+import { BookingCard } from '../BookingCard'
 import { ExplorerPage } from '../ExplorerPage'
 import { VenueDetailPage } from '../VenueDetailPage'
 import { DiningReservations } from './DiningReservations'
@@ -27,11 +31,22 @@ export function DiningExplorerScreen() {
       kind="dining" basePath={BASE} kindLabels={kindLabels()}
       above={({ data, state }) => (
         <Saved copy={view}>
-          {(v) => <DiningReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} />}
+          {(v) => (
+            <>
+              <DiningBooking view={v} />
+              <DiningReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} />
+            </>
+          )}
         </Saved>
       )}
     />
   )
+}
+
+/** Whether the guest can reserve, and why not when they cannot (window, plan, seating, meals left). */
+function DiningBooking({ view }: { view: DiningView }) {
+  const { stage } = useExplorerStage()
+  return <BookingCard model={diningBookingCard(view, stage)} labelledBy="dine-book-h" />
 }
 
 /** One place to eat or drink: its menu for the day, its events and your reservations there. */
