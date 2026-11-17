@@ -17,7 +17,8 @@ import { PlanError } from '../../plan/common'
 import { useAction } from '../../../hooks/useAction'
 import { names } from '../../plan/people'
 import { diningBookingCard } from '../../../domain/explorer/bookingState'
-import { useExplorerStage } from '../../../hooks/useExplorerStage'
+import { useAheadInput, useExplorerStage } from '../../../hooks/useExplorerStage'
+import { aheadOnly } from '../../../domain/explorer/finished'
 import { lineWords } from '../lineWords'
 import { ReservationList, type ReservationItem } from '../Parts'
 
@@ -40,6 +41,7 @@ interface Props {
 export function DiningReservations({ venues, day, venueId, view, reload, basePath, scope = 'day' }: Props) {
   const sailing = useSailing()
   const { stage } = useExplorerStage()
+  const ahead = useAheadInput(day)
   const card = diningBookingCard(view, stage)
   const days = itinerary(sailing)
   const navigate = useNavigate()
@@ -48,7 +50,8 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
   const [cancelling, setCancelling] = useState<Reservation | null>(null)
   const title = (id: string) => venues.find((v) => v.venue.id === id)?.venue.title ?? id
   const whole = scope === 'trip' && !venueId
-  const mine = view.reservations.filter((r) => (whole || r.day === day) && (!venueId || r.venueId === venueId)).sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
+  const all = view.reservations.filter((r) => (whole || r.day === day) && (!venueId || r.venueId === venueId)).sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
+  const { shown: mine, earlier } = whole ? { shown: all, earlier: 0 } : aheadOnly(all, ahead)
   const item = (r: Reservation): ReservationItem => ({
     id: r.id, title: title(r.venueId), name: `${title(r.venueId)}, ${formatTime(r.time)}`, to: basePath && !venueId ? `${basePath}/${r.venueId}?day=${r.day}` : undefined,
     when: `${shortDate(days[r.day - 1]?.date ?? days[0].date)}, ${formatTime(r.time)}`,
@@ -95,6 +98,7 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
         onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
         action={card.canReserve ? <Button onClick={() => openEditor('new')}>{t('exp.res.new')}</Button> : view.canBook || stage === 'after' ? <p className="muted">{lineWords(card.detail ?? card.headline)}</p> : null}
       />
+      {earlier > 0 && <p className="muted">{t('exp.earlier', { count: earlier })}</p>}
       {dialog}
     </>
   )

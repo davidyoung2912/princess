@@ -47,16 +47,17 @@ export function Shortlist() {
   const items = shortlistItems(keys, {
     shipId: venues[0]?.shipId ?? ship.id, venues, treatments: spa?.treatments ?? [], tours: (tours?.offers ?? []).map((o) => ({ id: o.item.id, name: o.item.name })),
   })
+  const over = stage === 'remember'
   const gate = actionGate('dining', { hasBooking: true, finished: stage === 'remember', canBook: dining?.canBook ?? null, window: dining ? { open: dining.window.open, opensOn: dining.window.opensOn } : null })
   return (
     <section aria-labelledby="short-h">
-      <h2 id="short-h">{t('short.heading')}</h2>
-      <p className="muted">{t('short.intro')}</p>
+      <h2 id="short-h">{over ? t('short.nextTime') : t('short.heading')}</h2>
+      <p className="muted">{over ? t('short.nextTimeIntro') : t('short.intro')}</p>
       {items.length === 0 ? <p>{t('short.empty')}</p> : (
         <ul className="card-grid">
           {items.map((i) => (
             <li key={i.key} className="card">
-              <h3 className="card__title"><Link to={i.bookTo}>{i.title}</Link></h3>
+              <h3 className="card__title">{over ? i.title : <Link to={i.bookTo}>{i.title}</Link>}</h3>
               <p className="muted">{t(`short.kind.${i.kind}`)}</p>
               {gate.status === 'opensOn' && gate.opensOn && i.explorer === 'dining' && (
                 <>

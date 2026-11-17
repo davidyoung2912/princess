@@ -15,6 +15,7 @@ import type { PersonaId } from '../../../domain/people'
 import { useAction } from '../../../hooks/useAction'
 import { useExplorerDay, type ExplorerDayState } from '../../../hooks/useExplorer'
 import { useSailing } from '../../../hooks/useDemo'
+import { lockedWhenOver } from '../../../domain/explorer/finished'
 import { useExplorerStage } from '../../../hooks/useExplorerStage'
 import { useMemory } from '../../../hooks/useMemory'
 import { useMine } from '../../../hooks/useMine'
@@ -190,11 +191,12 @@ function DayHeading({ state }: { state: ExplorerDayState }) {
 /** The Excursions Explorer: your shore excursions for the day you pick, then what runs in port that day. */
 export function ExcursionsExplorerScreen() {
   const state = useExplorerDay()
+  const { stage } = useExplorerStage()
   const view = useMine(() => api.plan.excursions.list())
   return (
     <div className="page">
       <DayHeading state={state} />
-      <Load state={view}>{(v) => <List view={v} state={state} reload={view.retry} />}</Load>
+      <Load state={view}>{(v) => <List view={lockedWhenOver(v, stage)} state={state} reload={view.retry} />}</Load>
     </div>
   )
 }
@@ -284,12 +286,13 @@ function OfferCard({ offer, view, day, busy, onAdd, concerns }: { offer: Excursi
 export function ExcursionsVenueScreen() {
   const { venueId = '' } = useParams()
   const state = useExplorerDay()
+  const { stage } = useExplorerStage()
   const view = useMine(() => api.plan.excursions.list())
   return (
     <div className="page">
       <Load state={view}>{(v) => {
         const offer = v.offers.find((o) => o.item.id === venueId)
-        return offer ? <Detail offer={offer} view={v} state={state} reload={view.retry} /> : <Gone state={state} />
+        return offer ? <Detail offer={offer} view={lockedWhenOver(v, stage)} state={state} reload={view.retry} /> : <Gone state={state} />
       }}</Load>
       <BackLink to={`${BASE}?day=${state.day}`} label={t('route.excursionsExplorer')} />
     </div>

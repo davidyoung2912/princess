@@ -10,7 +10,8 @@ import { dinnerDays } from '../../../domain/dining'
 import { spaBookingCard } from '../../../domain/explorer/bookingState'
 import { groupByDay, type ReservationScope } from '../../../domain/explorer/reservationsByDay'
 import { itinerary, PORTS } from '../../../domain/sailings'
-import { useExplorerStage } from '../../../hooks/useExplorerStage'
+import { useAheadInput, useExplorerStage } from '../../../hooks/useExplorerStage'
+import { aheadOnly } from '../../../domain/explorer/finished'
 import { lineWords } from '../lineWords'
 import { useAction } from '../../../hooks/useAction'
 import { useSailing } from '../../../hooks/useDemo'
@@ -42,6 +43,7 @@ const BASE = '/spa-explorer'
 export function SpaReservations({ venues, day, venueId, view, reload, basePath, scope = 'day' }: Props) {
   const sailing = useSailing()
   const { stage } = useExplorerStage()
+  const ahead = useAheadInput(day)
   const card = spaBookingCard(view, stage)
   const days = itinerary(sailing)
   const navigate = useNavigate()
@@ -50,7 +52,8 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
   const [cancelling, setCancelling] = useState<SpaAppointment | null>(null)
   const title = (id: string) => venues.find((v) => v.venue.id === id)?.venue.title ?? id
   const whole = scope === 'trip' && !venueId
-  const mine = view.appointments.filter((a) => (whole || a.day === day) && (!venueId || a.venueId === venueId)).sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
+  const all = view.appointments.filter((a) => (whole || a.day === day) && (!venueId || a.venueId === venueId)).sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
+  const { shown: mine, earlier } = whole ? { shown: all, earlier: 0 } : aheadOnly(all, ahead)
   const item = (a: SpaAppointment): ReservationItem => ({
     id: a.id, title: a.title, name: `${a.title}, ${formatTime(a.time)}`, to: basePath && !venueId ? `${basePath}/${a.venueId}?day=${a.day}` : undefined,
     when: `${shortDate(days[a.day - 1]?.date ?? days[0].date)}, ${formatTime(a.time)}`,
@@ -98,6 +101,7 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
         onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
         action={card.canReserve ? <Button onClick={() => openEditor('new')}>{t('spa.new')}</Button> : reason}
       />
+      {earlier > 0 && <p className="muted">{t('exp.earlier', { count: earlier })}</p>}
       {here.length > 0 && (
         <section aria-labelledby="spa-here-h">
           <h2 id="spa-here-h">{headingCase(t('spa.treatmentsHere'))}</h2>
