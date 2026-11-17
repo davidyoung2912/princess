@@ -512,3 +512,7 @@ button.chat-quote { cursor: pointer; }
 
 /* Clear filters sits above the venue cards with a gap between. */
 .btn.exp-clear { margin-bottom: var(--space-4); }
+
+.recap-part { margin-block: var(--space-2); }
+.recap-photos { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.recap-photo { max-width: 8rem; max-height: 8rem; border-radius: var(--radius-1, 0.25rem); }

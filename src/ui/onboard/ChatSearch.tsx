@@ -94,6 +94,7 @@ function HitList({ hits, query, shipTime, onPick }: { hits: ChatSearchHit[]; que
 
 /** Saves the chat the guest is reading as a plain text file on their device (their own chats only; a photo is named, never included). */
 export function SaveChat({ conversationId }: { conversationId: string }) {
+  const keep = useMine(() => api.chatConversations.keep(conversationId), [conversationId])
   const save = useAction(async () => {
     const chat = await api.chatConversations.exportChat(conversationId)
     downloadText(exportFileName(chat.name, chat.at), 'text/plain;charset=utf-8', exportText(chat))
@@ -103,6 +104,7 @@ export function SaveChat({ conversationId }: { conversationId: string }) {
     <>
       <div className="button-row"><Button variant="secondary" disabled={save.busy} onClick={() => void save.run()}>{t('csearch.save')}</Button></div>
       <p className="muted">{t('csearch.saveBody')}</p>
+      {keep.data?.available && (keep.data.deleteOn ?? keep.data.standardDeleteOn) != null && <p className="muted">{t('csearch.retain', { date: new Date((keep.data.kept ? keep.data.deleteOn : keep.data.standardDeleteOn) ?? 0).toLocaleDateString() })}</p>}
       <ActionError error={save.error} />
     </>
   )

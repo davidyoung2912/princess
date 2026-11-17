@@ -57,6 +57,7 @@ import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
+import { GetPersonButton, RecapCard } from './ChatRelay'
 import { CoordinatorButton, CoordinatorProvider, RemainingCard, RemindersSwitch } from './ChatCoordinator'
 import { RoomDetails, RulesDialog } from './ChatRooms'
 import { ChatSearch, SaveChat } from './ChatSearch'
@@ -656,7 +657,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       )}
       {conversation && !permanent && !room && phase === 'ready' && <StanleyTapNote conversationId={id} tap={tap} onChanged={setTap} />}
       {conversation && !permanent && !room && phase === 'ready' && !offline && showCatchUp(tap, unreadAfter(messages, firstUnread, mine)) && <CatchUpButton conversationId={id} />}
-      {conversation && !permanent && !room && <Options conversation={conversation} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      {conversation && !permanent && !room && <Options conversation={conversation} messages={messages} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
       </details>
       {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
       {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
@@ -1232,8 +1233,8 @@ function ChatMenu({ conversation, messages, now, busy, onMute, onArchive, onBloc
 }
 
 /** Everything that is not the message itself: mute, read receipts, a plan card, a photo, and who you have hidden. */
-function Options({ conversation, awayBusy, onAway, mentionsBusy, onMentionsOnly, onSent, blockedVersion, reload }: {
-  conversation: ChatConversation; awayBusy: boolean; onAway: (on: boolean) => void; mentionsBusy: boolean; onMentionsOnly: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
+function Options({ conversation, messages, awayBusy, onAway, mentionsBusy, onMentionsOnly, onSent, blockedVersion, reload }: {
+  conversation: ChatConversation; messages: ChatMessage[]; awayBusy: boolean; onAway: (on: boolean) => void; mentionsBusy: boolean; onMentionsOnly: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
 }) {
   const receipts = useMine(() => api.messages.receipts())
   const [shown, setShown] = useState<boolean | null>(null)
@@ -1261,6 +1262,8 @@ function Options({ conversation, awayBusy, onAway, mentionsBusy, onMentionsOnly,
       {conversation.kind === 'group' && <GroupStanleySwitch groupId={conversation.id} />}
       {conversation.kind === 'group' && <RemainingCard />}
       {conversation.kind === 'group' && <RemindersSwitch groupId={conversation.id} />}
+      {conversation.kind === 'group' && <RecapCard groupId={conversation.id} />}
+      {conversation.kind !== 'direct' || !conversation.closed ? <GetPersonButton conversationId={conversation.id} messages={messages} /> : null}
       <div className="chip-row">
         <Chip pressed={on} onToggle={() => void flip.run(!on)}>{t('chat.receipts')}</Chip>
       </div>

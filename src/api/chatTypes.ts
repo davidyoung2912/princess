@@ -277,6 +277,14 @@ export interface GroupStanley { on: boolean; canChange: boolean }
 
 /** Phase 11: what an admin sees before posting a tally or sending a reminder. `shareText` and `reminderText` are exactly what would be posted and sent; `willRemind` is a count (nobody is named); `reason` says why a reminder cannot go now. */
 export interface ChatCoordinatorPreview { status: string; compromise?: string; shareText: string; reminderText: string; willRemind: number; canRemind: boolean; reason?: 'closed' | 'tooSoon' | 'none' }
+/** Phase 13: the text of a hand-off made only from the messages the guest chose. Nothing is sent by asking for it. */
+export interface ChatRelayDraft { text: string; count: number; skipped: number; max: number }
+export type RecapDecision = 'pending' | 'approved' | 'declined'
+export interface ChatRecapPlan { messageId: string; title: string; day?: number; time?: string; place?: string; mine: boolean; decision: RecapDecision }
+export interface ChatRecapPhoto { messageId: string; from?: string; mine: boolean; decision: RecapDecision }
+/** The group recap as the caller may see it: before it is shared only their own parts and a count; after, only the approved parts. */
+export interface ChatRecap { id: string; shared: boolean; startedAt: number; sharedAt?: number; decided: number; total: number; progress: string; plans: ChatRecapPlan[]; photos: ChatRecapPhoto[]; canShare: boolean; shareRefusal?: string }
+export interface ChatRecapChoice { messageId: string; at: number; chosen: boolean }
 export interface ChatReminded { reminded: number; line: string }
 /** One poll or plan still waiting for someone: counts only. */
 export interface ChatRemainingItem { messageId: string; kind: 'poll' | 'plan'; title: string; answered: number; total: number; closed: boolean; closesAt?: number }
@@ -361,6 +369,22 @@ export interface ChatConversationsApi {
   remindGroup(groupId: string, messageId: string): Promise<ChatReminded>
   /** Admin only: the open polls and plans that still wait for someone, in counts. */
   remaining(groupId: string): Promise<ChatRemaining>
+  /** Get a person: the hand-off text from the chosen messages (one to ten). Sends nothing. Rejects `invalid` (`none`, `tooMany`), `forbidden` (`child`, `notChat`) or `notFound`. */
+  relayDraft(id: string, messageIds: string[]): Promise<ChatRelayDraft>
+  /** The group's recap, or rejects `notFound` when there is none yet. */
+  recap(groupId: string): Promise<ChatRecap>
+  /** Starts it (or returns it). Rejects `forbidden` (`notGroup`, `child`, `small`). */
+  startRecap(groupId: string): Promise<ChatRecap>
+  /** Your own photo messages you could add. */
+  recapChoices(groupId: string): Promise<ChatRecapChoice[]>
+  /** Which of your photos are in (at most six). Rejects `invalid` (`tooMany`, `notYours`) or `conflict` (`shared`). */
+  setRecapPhotos(groupId: string, messageIds: string[]): Promise<ChatRecap>
+  /** Approve or decline one of your own parts. Rejects `invalid` (`decision`), `notFound` or `conflict` (`shared`). */
+  decideRecapPart(groupId: string, messageId: string, decision: 'approved' | 'declined'): Promise<ChatRecap>
+  /** Shares it once every part is decided and one is approved. Rejects `conflict` (`waiting`, `empty`, `shared`). */
+  shareRecap(groupId: string): Promise<ChatRecap>
+  /** One approved photo of a shared recap as a data URL. */
+  recapPhoto(groupId: string, messageId: string): Promise<string>
   /** Whether you switched Stanley's reminders off in this group. */
   remindersMuted(groupId: string): Promise<boolean>
   setRemindersMuted(groupId: string, muted: boolean): Promise<boolean>
