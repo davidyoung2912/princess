@@ -1,10 +1,10 @@
 import { Link } from 'react-router'
 import { gamesOf } from '../../../domain/games/catalogue'
 import { t, headingCase } from '../../../i18n'
-import { BinairoGame, FutoshikiGame, CodewordGame, HitoriGame, WordSearchGame, KakuroGame, KenKenGame, DiagonalSudokuGame, JigsawSudokuGame, KillerSudokuGame, SudokuGame, WordGame } from '../../icons'
+import { BinairoGame, FutoshikiGame, CodewordGame, HitoriGame, WordSearchGame, SlitherlinkGame, KakuroGame, KenKenGame, DiagonalSudokuGame, JigsawSudokuGame, KillerSudokuGame, SudokuGame, WordGame } from '../../icons'
 import { MoreLinks } from '../Parts'
 
-const ICONS: Record<string, typeof WordGame> = { 'cruise-wordle': WordGame, sudoku: SudokuGame, 'diagonal-sudoku': DiagonalSudokuGame, 'jigsaw-sudoku': JigsawSudokuGame, 'killer-sudoku': KillerSudokuGame, binairo: BinairoGame, futoshiki: FutoshikiGame, kenken: KenKenGame, kakuro: KakuroGame, codeword: CodewordGame, hitori: HitoriGame, 'word-search': WordSearchGame }
+const ICONS: Record<string, typeof WordGame> = { 'cruise-wordle': WordGame, sudoku: SudokuGame, 'diagonal-sudoku': DiagonalSudokuGame, 'jigsaw-sudoku': JigsawSudokuGame, 'killer-sudoku': KillerSudokuGame, binairo: BinairoGame, futoshiki: FutoshikiGame, kenken: KenKenGame, kakuro: KakuroGame, codeword: CodewordGame, hitori: HitoriGame, 'word-search': WordSearchGame, slitherlink: SlitherlinkGame }
 
 /** The Games Explorer: every game has a page of its own, listed here under games for one player and games for a group. */
 export function GamesExplorerScreen() {

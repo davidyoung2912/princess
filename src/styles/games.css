@@ -364,3 +364,22 @@
 .ws-word { font-weight: 700; letter-spacing: 0.06em; font-size: var(--fs-caption); }
 .ws-word--found { text-decoration: line-through; color: var(--text-muted); font-weight: 400; }
 @media (prefers-reduced-motion: no-preference) { .ws-cell { transition: background-color 0.12s; } }
+
+/* Slitherlink: an SVG drawing with a ring of large invisible buttons over the edges, so a thumb can hit a line; crosses and lines differ by shape, not only colour. */
+.sl-board { position: relative; width: min(100%, 32rem); aspect-ratio: 1; touch-action: manipulation; user-select: none; }
+.sl-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sl-dot { fill: var(--text); }
+.sl-dot--bad { fill: var(--sd-error); }
+.sl-clue { font-size: 5.2px; font-weight: 700; fill: var(--text); font-variant-numeric: tabular-nums; }
+.sl-clue--met { fill: var(--text-muted, var(--text)); opacity: 0.55; }
+.sl-clue--bad { fill: var(--sd-error); }
+.sl-line { stroke: var(--primary); stroke-width: 1.7; stroke-linecap: round; }
+.sl-line--bad { stroke: var(--sd-error); }
+.sl-cross { stroke: var(--text); stroke-width: 0.5; stroke-linecap: round; opacity: 0.6; fill: none; }
+.sl-hint { stroke: color-mix(in srgb, var(--warning) 60%, transparent); stroke-width: 3.6; stroke-linecap: round; }
+.sl-hit { position: absolute; box-sizing: border-box; padding: 0; margin: 0; border: 0; border-radius: 0.4rem; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sl-hit:hover { background: color-mix(in srgb, var(--primary) 18%, transparent); }
+.sl-hit--selected { box-shadow: 0 0 0 2px var(--primary); }
+.sl-hit:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; z-index: 2; }
+.sl-pad__swatch { display: grid; place-items: center; width: 1.7rem; height: 1.7rem; box-sizing: border-box; font-weight: 700; font-size: 1.2rem; line-height: 1; }
+.sl-pad__swatch--line { height: 0.4rem; margin: 0.65rem 0; border-radius: 0.2rem; background: var(--primary); }

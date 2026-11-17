@@ -95,6 +95,7 @@ export {
   Binary as CodewordGame,
   Contrast as HitoriGame,
   TextSearch as WordSearchGame,
+  Spline as SlitherlinkGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,

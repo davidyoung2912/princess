@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42). All twelve games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42) and **Slitherlink** (X43). All thirteen games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -108,7 +108,10 @@ Built with this answer rule: the grid has no filler. Every square is covered by 
 - Needs a themed word list (cruise and travel, plus common words) in a lazy module, as for Codeword. Generator: pack words into a grid to cover every square (search with a step budget, retry), place the answer letters in the squares left over.
 - Drag or tap-first-then-last to select; keyboard cursor with Shift-arrows; found words struck off the list; a hint highlights the first letter of a word. Levels by grid size and word length.
 
-### G11: Slitherlink (X43)
+### G11: Slitherlink (X43) — built
+
+Built as planned. `slitherlink.ts` grows a random region of squares (joined, no holes, no pinch points, about 50 to 65% of the board) and takes its boundary as the loop, writes a number in every square, then removes numbers one at a time while plain logic still finds the whole loop, so the answer is unique with no guessing (Easy removes at most 30% of the numbers, Medium 60%, Hard and Expert as many as possible). Logic rules, also used for hints: a number with all its lines crosses the rest, a number that needs every open side draws them, a dot with two lines crosses the rest, a dot with one line and one way on continues, a dot with no line and one way is crossed, two adjacent 3s, 1 and 3 in a corner, never close a small loop while other lines remain, and cross everything once the loop is closed and every number met. Levels: Easy 5x5, Medium 7x7, Hard 8x8, Expert 10x10 (generates in about 10 ms or less). `SlitherlinkScreen.tsx` draws the dots, numbers and lines in SVG with an overlay of invisible buttons over each edge (roving tab stop, arrow keys step to the nearest edge, L, X, Space, Backspace); tap cycles empty, line, cross; Line and Cross buttons; red for a dot with three lines or a dead end, a number over-filled or out of reach, and a closed loop that is not the whole answer; numbers are read out in the label of each edge beside them.
+
 
 - Dot grid with numbers in some squares; draw one single closed loop along the dot lines so every number says how many of its four sides the loop uses. Levels 5x5 to 10x10 squares.
 - Generator: grow a random loop (random region of squares with a single boundary, no holes), write the numbers, remove clues while a logic solver (3s and 0s, adjacent 3s, corner rules, degree-two and degree-one dots, loop-closing) still finishes. Uniqueness comes from the logic solver, no guessing.
