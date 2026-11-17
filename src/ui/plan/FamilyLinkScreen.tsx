@@ -147,7 +147,7 @@ export function FamilyLinkScreen() {
       <section aria-labelledby="home-cards-h">
         <h2 id="home-cards-h">{th('home.cards')}</h2>
         <p>{t('home.cards.intro')}</p>
-        <Field label={t('home.cards.note')} value={note} maxLength={MAX_POSTCARD_NOTE} onChange={(e) => setNote(e.target.value)} />
+        <Field prose label={t('home.cards.note')} value={note} maxLength={MAX_POSTCARD_NOTE} onChange={(e) => setNote(e.target.value)} />
         {!child && (
           <div>
             <h3>{th('media.postcard.title')}</h3>

@@ -193,7 +193,7 @@ export function MemoryScreen() {
                   </ul>
                   {group.length > 0 && <p><strong>{t('memory.group', { names: group.join(', ') })}</strong></p>}
                   <Field label={t('memory.contactName')} value={name} maxLength={CONTACT_NAME_MAX} onChange={(e) => setName(e.target.value)} />
-                  <Field label={t('memory.contactNote')} hint={t('memory.contactNoteHint')} value={note} maxLength={CONTACT_NOTE_MAX} onChange={(e) => setNote(e.target.value)} />
+                  <Field prose label={t('memory.contactNote')} hint={t('memory.contactNoteHint')} value={note} maxLength={CONTACT_NOTE_MAX} onChange={(e) => setNote(e.target.value)} />
                   <label className="choice"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>{t('memory.contactConsent')}</span></label>
                   {contactErr && <p role="alert" className="field__error">{contactErr}</p>}
                   <Button variant="secondary" onClick={addContact}>{t('memory.contactAdd')}</Button>

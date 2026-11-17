@@ -174,7 +174,7 @@ export function FarewellScreen() {
         </div>
         <p className="muted">{t('farewell.ratingHint')}</p></Card>
       <Card labelledBy="fw-n"><h2 id="fw-n" className="card__title">{th('farewell.more')}</h2>
-        <Field label={t('farewell.note')} hint={t('farewell.noteHint')} value={fw.note} maxLength={200} onChange={(e) => set((x) => ({ ...x, farewell: { ...x.farewell, note: e.target.value } }))} />
+        <Field prose label={t('farewell.note')} hint={t('farewell.noteHint')} value={fw.note} maxLength={200} onChange={(e) => set((x) => ({ ...x, farewell: { ...x.farewell, note: e.target.value } }))} />
         {farewellDone(fw) && <p role="status">{t('farewell.done')}</p>}
         <p><LinkButton to="/me/feedback" variant="tertiary">{t('farewell.full')}</LinkButton></p></Card>
     </Page>
@@ -259,7 +259,7 @@ export function GentleScreen() {
     <Page intro="gentle.intro" back={ME}>
       <Card labelledBy="gn-h"><h2 id="gn-h" className="card__title">{th('gentle.title')}</h2>
         <label className="choice"><input type="checkbox" checked={f.gentle} onChange={(e) => set((x) => ({ ...x, gentle: e.target.checked }))} /><span>{t('gentle.wording')}<small>{t('gentle.onHint')}</small></span></label>
-        <Field label={t('gentle.memorial')} hint={t('gentle.memorialHint')} value={f.memorial} maxLength={80} onChange={(e) => set((x) => ({ ...x, memorial: e.target.value }))} />
+        <Field prose label={t('gentle.memorial')} hint={t('gentle.memorialHint')} value={f.memorial} maxLength={80} onChange={(e) => set((x) => ({ ...x, memorial: e.target.value }))} />
         {f.gentle && <p role="status">{t('gentle.on.said')}</p>}</Card>
       <Card labelledBy="gn-q"><h2 id="gn-q" className="card__title">{th('gentle.quiet')}</h2>
         <p>{t('gentle.quietBody')}</p>

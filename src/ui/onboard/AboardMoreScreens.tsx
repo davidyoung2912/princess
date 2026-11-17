@@ -261,7 +261,7 @@ export function LostFoundScreen() {
   return (
     <Page intro="lost.intro">
       <Banner kind="info" title={t('lost.local')} />
-      <Field label={t('lost.what')} help={t('helptip.lostWhat')} value={what} maxLength={80} onChange={(e) => setWhat(e.target.value)} />
+      <Field prose label={t('lost.what')} help={t('helptip.lostWhat')} value={what} maxLength={80} onChange={(e) => setWhat(e.target.value)} />
       <Field label={t('lost.where')} help={t('helptip.lostWhere')} value={where} maxLength={80} onChange={(e) => setWhere(e.target.value)} />
       <Button disabled={!what.trim() || a.lost.length >= LOST_MAX} onClick={() => { set((x) => ({ ...x, lost: [...x.lost, { id: newMemoryId(), what: what.trim(), where: where.trim(), at: now }] })); setWhat(''); setWhere('') }}>{t('lost.save')}</Button>
       {a.lost.map((r) => {

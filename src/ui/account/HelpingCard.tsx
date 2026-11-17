@@ -130,7 +130,7 @@ function GuestStanley({ guest }: { guest: HelpedGuest }) {
       </label>
       {kind === 'create_poll' && (
         <>
-          <Field label={t('helping.stanley.question')} value={question} maxLength={120} onChange={(e) => setQuestion(e.target.value)} />
+          <Field prose label={t('helping.stanley.question')} value={question} maxLength={120} onChange={(e) => setQuestion(e.target.value)} />
           <Field label={t('helping.stanley.options')} value={options} maxLength={300} onChange={(e) => setOptions(e.target.value)} />
         </>
       )}

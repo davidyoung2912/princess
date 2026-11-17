@@ -50,7 +50,7 @@ export function SlotWatch() {
       <p className="muted">{t('watch.promise')}</p>
       <label htmlFor="sw-kind">{t('watch.kind')}</label>
       <select id="sw-kind" className="field__input" value={kind} onChange={(e) => setKind(e.target.value as WatchKind)}>{WATCH_KINDS.map((k) => <option key={k} value={k}>{t(`watch.kind.${k}` as StringKey)}</option>)}</select>
-      <Field label={t('watch.what')} help={t('helptip.watchWhat')} value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} error={problem === 'title' ? t('watch.err.title') : undefined} />
+      <Field prose label={t('watch.what')} help={t('helptip.watchWhat')} value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} error={problem === 'title' ? t('watch.err.title') : undefined} />
       <label htmlFor="sw-when">{t('watch.when')}</label>
       <select id="sw-when" className="field__input" value={hours} onChange={(e) => setHours(Number(e.target.value))}>{AHEAD.map((h) => <option key={h} value={h}>{t('watch.inHours', { count: h })}</option>)}</select>
       <Field label={t('watch.price')} help={t('helptip.watchPrice')} type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />

@@ -11,6 +11,7 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Load } from '../account/parts'
+import { MoreLinks } from '../explorer/Parts'
 import { AboardError, Back } from './common'
 import { useState } from 'react'
 import { portById } from '../../domain/sailings'
@@ -142,6 +143,7 @@ export function GamesScreen() {
           )
         }}
       </Load>
+      <MoreLinks links={[{ to: '/games-explorer', label: t('route.gamesExplorer') }, { to: '/ship/community', label: t('route.community') }]} />
       <Back to="/ship" label={t('route.ship')} />
     </div>
   )

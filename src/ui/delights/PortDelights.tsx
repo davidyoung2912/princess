@@ -100,7 +100,7 @@ export function PinAndDayCard({ day }: { day: Day }) {
       <h2 id="dl8-pin-h" className="card__title">{th('dl8.pin.title', { port: name })}</h2>
       <p>{t('dl8.pin.body')}</p>
       <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) { update((s) => ({ ...s, ports: { ...s.ports, pins: addPin(s.ports.pins, { id: newMemoryId(), port: day.port, note, at: Date.now() }) } })); setNote('') } }}>
-        <Field label={t('dl8.pin.note')} value={note} maxLength={80} onChange={(e) => setNote(e.target.value)} />
+        <Field prose label={t('dl8.pin.note')} value={note} maxLength={80} onChange={(e) => setNote(e.target.value)} />
         <Button type="submit" variant="secondary" disabled={!note.trim()}>{t('dl8.pin.add')}</Button>
       </form>
       {pins.length > 0 && (
@@ -187,7 +187,7 @@ export function LastLook() {
       <h2 id="dl8-look-h" className="card__title">{th('dl8.look.title')}</h2>
       <p>{t('dl8.look.body')}</p>
       <label className="choice"><input type="checkbox" checked={look.done} onChange={(e) => update((s) => ({ ...s, ports: { ...s.ports, lastLook: { ...s.ports.lastLook, done: e.target.checked } } }))} /><span>{t('dl8.look.done')}</span></label>
-      {look.done && <Field label={t('dl8.look.note')} value={look.note} maxLength={LAST_LOOK_NOTE_MAX} onChange={(e) => update((s) => ({ ...s, ports: { ...s.ports, lastLook: { ...s.ports.lastLook, note: e.target.value } } }))} />}
+      {look.done && <Field prose label={t('dl8.look.note')} value={look.note} maxLength={LAST_LOOK_NOTE_MAX} onChange={(e) => update((s) => ({ ...s, ports: { ...s.ports, lastLook: { ...s.ports.lastLook, note: e.target.value } } }))} />}
     </Card>
   )
 }

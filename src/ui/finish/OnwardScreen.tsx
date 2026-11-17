@@ -63,7 +63,7 @@ function Onward({ v, reload }: { v: OnwardView; reload: () => void }) {
           <legend>{t('onw.flight')}</legend>
           <Field label={t('onw.flightAt')} hint={t('onw.flightAtHint')} type="time" value={flightAt} onChange={(e) => setFlightAt(e.target.value)} />
           <Field label={t('onw.flightNo')} maxLength={8} value={flight} onChange={(e) => setFlight(e.target.value)} />
-          <Field label={t('onw.note')} maxLength={ONWARD_NOTE_MAX} value={note} onChange={(e) => setNote(e.target.value)} />
+          <Field prose label={t('onw.note')} maxLength={ONWARD_NOTE_MAX} value={note} onChange={(e) => setNote(e.target.value)} />
         </fieldset>
         <ExtraError error={save.error} />
         {v.canEdit && <Button type="submit" disabled={save.busy}>{save.busy ? t('account.saving') : t('onw.save')}</Button>}

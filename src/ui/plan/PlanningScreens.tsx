@@ -184,7 +184,7 @@ export function SurprisesScreen() {
   const demo = [{ id: 'd1', title: 'Dinner at 7' }, ...p.surprises.map((s) => ({ id: s.id, title: s.text }))]
   return (
     <Page intro="surp.intro">
-      <Field label={t('surp.add')} hint={t('surp.hint')} value={text} maxLength={80} onChange={(e) => setText(e.target.value)} />
+      <Field prose label={t('surp.add')} hint={t('surp.hint')} value={text} maxLength={80} onChange={(e) => setText(e.target.value)} />
       <Button disabled={!text.trim()} onClick={() => { set((s) => ({ ...s, surprises: [...s.surprises, { id: newMemoryId(), text: text.trim() }].slice(0, 10) })); setText('') }}>{t('surp.addButton')}</Button>
       <ul className="plain-list">{p.surprises.map((s) => <li key={s.id}>{s.text} <Button variant="tertiary" onClick={() => set((x) => ({ ...x, surprises: x.surprises.filter((y) => y.id !== s.id) }))}>{t('poll.remove')}</Button></li>)}</ul>
       <Card labelledBy="surp-view">
@@ -369,7 +369,7 @@ export function TraditionsScreen() {
   const [carried, setCarried] = useState(false)
   return (
     <Page intro="trad.intro">
-      <Field label={t('trad.add')} value={text} maxLength={80} onChange={(e) => setText(e.target.value)} />
+      <Field prose label={t('trad.add')} value={text} maxLength={80} onChange={(e) => setText(e.target.value)} />
       <Button disabled={!text.trim()} onClick={() => { set((s) => ({ ...s, traditions: addTradition(s.traditions, newMemoryId(), text) })); setText('') }}>{t('trad.addButton')}</Button>
       <ul className="plain-list">
         {p.traditions.map((x) => (

@@ -47,7 +47,7 @@ function NewPoll({ initialQuestion, onMade }: { initialQuestion: string; onMade:
   return (
     <fieldset className="plain-fieldset">
       <legend>{t('spoll.new')}</legend>
-      <Field label={t('spoll.question')} value={question} maxLength={120} onChange={(e) => setQuestion(e.target.value)} />
+      <Field prose label={t('spoll.question')} value={question} maxLength={120} onChange={(e) => setQuestion(e.target.value)} />
       <Field label={t('spoll.options')} hint={t('poll.optionsHint')} value={options} maxLength={300} onChange={(e) => setOptions(e.target.value)} error={bad ? t('poll.problem') : undefined} />
       <label>{t('spoll.days')}{' '}
         <select value={days} onChange={(e) => setDays(Number(e.target.value))}>{POLL_DAYS.map((d) => <option key={d} value={d}>{t('poll9.closes.days', { count: d })}</option>)}</select>

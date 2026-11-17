@@ -118,7 +118,7 @@ function AddReminder() {
         </div>
       ) : (
         <form onSubmit={(e) => { e.preventDefault(); void ask() }}>
-          <Field label={t('stanleyReminders.add.what')} maxLength={80} value={what} onChange={(e) => setWhat(e.target.value)} />
+          <Field prose label={t('stanleyReminders.add.what')} maxLength={80} value={what} onChange={(e) => setWhat(e.target.value)} />
           <Field label={t('stanleyReminders.add.date')} hint={t('stanleyReminders.add.dateHint')} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           <Field label={t('stanleyReminders.add.time')} type="time" value={at} onChange={(e) => setAt(e.target.value)} />
           {failed && <p role="alert" className="field__error">{t('stanleyReminders.add.failed')}</p>}
@@ -195,7 +195,7 @@ function EditForm({ item, busy, onSave, onCancel }: { item: StanleyReminder; bus
   }
   return (
     <form className="stanley-reminders__edit" onSubmit={(e) => { e.preventDefault(); if (changed && text.trim()) save() }}>
-      <Field label={t('stanleyReminders.add.what')} maxLength={80} value={text} onChange={(e) => setText(e.target.value)} />
+      <Field prose label={t('stanleyReminders.add.what')} maxLength={80} value={text} onChange={(e) => setText(e.target.value)} />
       {anchored ? (
         <div className="field">
           <label htmlFor={leadId}>{t('stanleyReminders.leadLabel')}</label>

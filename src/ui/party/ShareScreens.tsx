@@ -94,7 +94,7 @@ function Links({ number }: { number: string }) {
                     {l.kind === 'caregiver' && (
                       <>
                         <p>{l.lastCheckInAt ? t('links.lastFine', { date: day(l.lastCheckInAt), note: l.note }) : t('links.noFine')}</p>
-                        <Field label={t('links.note')} value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} />
+                        <Field prose label={t('links.note')} value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} />
                         <Button variant="secondary" disabled={checkIn.busy} onClick={async () => { if ((await checkIn.run(l.id, note)) !== undefined) { setNote(''); list.retry() } }}>{t('links.fine')}</Button>
                       </>
                     )}

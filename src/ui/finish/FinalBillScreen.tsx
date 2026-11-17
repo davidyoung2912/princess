@@ -123,7 +123,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
               {charges.map((l) => <option key={l.id} value={l.id}>{l.description} · {formatMoney(l.cents)}</option>)}
             </select>
           </div>
-          <Field label={t('fb.why')} help={t('helptip.billWhy')} maxLength={CASE_TEXT_MAX} value={why} onChange={(e) => setWhy(e.target.value)} />
+          <Field prose label={t('fb.why')} help={t('helptip.billWhy')} maxLength={CASE_TEXT_MAX} value={why} onChange={(e) => setWhy(e.target.value)} />
           <ExtraError error={query.error} />
           <Button type="submit" variant="secondary" disabled={query.busy || !picked || why.trim().length < 5}>{query.busy ? t('account.saving') : t('fb.send')}</Button>
         </form>

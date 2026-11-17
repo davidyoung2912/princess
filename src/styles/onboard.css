@@ -662,7 +662,11 @@ button.chat-quote { cursor: pointer; }
 :root[data-motion='reduced'] .chat-picker__btn:is(:hover, :focus-visible, :active) { transform: none; }
 
 /* The attach-photos button sits beside Send in the message row. */
-.composer--chat > .chat-attach { order: 3; flex: none; min-height: var(--target-min); min-width: var(--target-min); }
+.composer--chat > .composer__actions { order: 3; flex: none; display: flex; flex-direction: column; gap: var(--space-2); align-self: stretch; justify-content: flex-end; }
+.composer__actions > .btn { min-height: var(--target-min); padding-inline: var(--space-4); }
+.composer__actions > .chat-attach { min-height: 2.25rem; padding-inline: var(--space-3); font-size: var(--fs-caption); }
+/* Wider screens have the room to put Photos and Send side by side; a phone stacks them so the message box keeps the width. */
+@media (min-width: 640px) { .composer--chat > .composer__actions { flex-direction: row; align-items: flex-end; } }
 .chat-attach:disabled { opacity: 0.6; cursor: progress; }
 
 /* Photos attached to the message being written. */
@@ -672,3 +676,12 @@ button.chat-quote { cursor: pointer; }
 .chat-draft-photos__item img { display: block; width: 4.5rem; height: 4.5rem; object-fit: cover; border: 2px solid var(--primary); border-radius: var(--radius-card); }
 .chat-draft-photos__remove { position: absolute; top: -0.4rem; inset-inline-end: -0.4rem; display: inline-grid; place-items: center; min-width: 1.6rem; min-height: 1.6rem; padding: 0; border: 2px solid var(--primary); border-radius: 50%; background: var(--bg); color: var(--text); cursor: pointer; }
 .chat-draft-photos__remove svg { width: 0.9rem; height: 0.9rem; }
+/* The remove button on a draft photo glows and grows on hover and focus, like the message card buttons. */
+.chat-draft-photos__remove { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease); }
+.chat-draft-photos__remove:is(:hover, :focus-visible) { transform: scale(1.12); background: var(--brand-tint); box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 10px color-mix(in srgb, var(--primary-bright, var(--primary)) 40%, transparent); }
+.chat-draft-photos__remove:active { transform: scale(0.94); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .chat-draft-photos__remove { transition: none; } .chat-draft-photos__remove:is(:hover, :focus-visible, :active) { transform: none; } }
+:root[data-motion='reduced'] .chat-draft-photos__remove:is(:hover, :focus-visible, :active) { transform: none; }
+/* No rule between the message history and the message box: the history's own border already marks the edge. */
+.composer--chat { border-top: 0; }
+.composer--chat > .chat-cancel { flex: none; justify-self: start; }

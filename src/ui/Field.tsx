@@ -10,10 +10,12 @@ interface FieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   help?: string
   /** An error message; shows with an icon and is announced with the field. */
   error?: string
+  /** The guest is writing in their own words (a note, a question), not entering a name, code or number: turns on spell checking, autocorrect and a capital at the start of a sentence. */
+  prose?: boolean
 }
 
 /** A text field with a visible label above it, optional hint, and an inline error. Never uses the placeholder as the label. */
-export function Field({ label, hint, help, error, ...rest }: FieldProps) {
+export function Field({ label, hint, help, error, prose, ...rest }: FieldProps) {
   const id = useId()
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
@@ -25,7 +27,7 @@ export function Field({ label, hint, help, error, ...rest }: FieldProps) {
         {help && <HelpTip about={label}>{help}</HelpTip>}
       </div>
       {hint && <p id={hintId} className="field__hint">{hint}</p>}
-      <input id={id} className="field__input" aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...rest} />
+      <input id={id} className="field__input" aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...(prose ? { spellCheck: true, autoCorrect: 'on', autoCapitalize: 'sentences' } : {})} {...rest} />
       {error && (
         <p id={errorId} className="field__error">
           <CircleAlert aria-hidden="true" />
@@ -76,7 +78,7 @@ interface TextAreaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>
   help?: string
 }
 
-/** A multi-line field with a visible label and optional hint. */
+/** A multi-line field with a visible label and optional hint. It holds the guest's own words, so spell checking, autocorrect and sentence capitals are on (a caller can override). */
 export function TextArea({ label, hint, help, ...rest }: TextAreaProps) {
   const id = useId()
   return (
@@ -86,7 +88,7 @@ export function TextArea({ label, hint, help, ...rest }: TextAreaProps) {
         {help && <HelpTip about={label}>{help}</HelpTip>}
       </div>
       {hint && <p id={`${id}-hint`} className="field__hint">{hint}</p>}
-      <textarea id={id} className="field__input" rows={3} aria-describedby={hint ? `${id}-hint` : undefined} {...rest} />
+      <textarea id={id} className="field__input" rows={3} aria-describedby={hint ? `${id}-hint` : undefined} spellCheck autoCorrect="on" autoCapitalize="sentences" {...rest} />
     </div>
   )
 }

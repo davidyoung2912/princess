@@ -1,5 +1,5 @@
-import { useRef, useState, type ChangeEvent } from 'react'
-import { ImagePlus, X } from 'lucide-react'
+import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
+import { Camera, X } from 'lucide-react'
 import { FieldLabel } from '../Field'
 import { MAX_PHOTO_BYTES, PHOTO_MIN_AGE, PHOTO_TYPES, REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import type { PersonaId } from '../../domain/people'
@@ -73,7 +73,7 @@ export interface StagedPhoto { type: string; bytes: number; dataUrl: string }
  * Attach photos to a chat message being written (MSG-01, phase 9b): a button beside Send that can be used again and again, up to ten in all.
  * Each photo is shrunk on the device and added to the draft; nothing is sent here. JPEG, PNG or WebP, adults only.
  */
-export function PhotoAttach({ photos, onChange }: { photos: readonly StagedPhoto[]; onChange: (next: StagedPhoto[]) => void }) {
+export function PhotoAttach({ photos, onChange, children }: { photos: readonly StagedPhoto[]; onChange: (next: StagedPhoto[]) => void; /** The Send button: it sits with this one, side by side or stacked on a phone, so the message box keeps the width. */ children: ReactNode }) {
   const me = usePersona()
   const input = useRef<HTMLInputElement>(null)
   const [note, setNote] = useState<{ badType: number; over: number; big: number } | null>(null)
@@ -88,7 +88,7 @@ export function PhotoAttach({ photos, onChange }: { photos: readonly StagedPhoto
     setNote((n) => (n ? { ...n, big } : n))
     if (ready.length > 0) onChange([...photos, ...ready].slice(0, MAX_PHOTOS_PER_MESSAGE))
   })
-  if (!me || me.age < PHOTO_MIN_AGE) return null
+  if (!me || me.age < PHOTO_MIN_AGE) return <div className="composer__actions">{children}</div>
   const pick = (e: ChangeEvent<HTMLInputElement>) => {
     const files = [...(e.target.files ?? [])]
     e.target.value = ''
@@ -101,9 +101,10 @@ export function PhotoAttach({ photos, onChange }: { photos: readonly StagedPhoto
   return (
     <>
       <input ref={input} type="file" multiple hidden tabIndex={-1} accept={PHOTO_TYPES.join(',')} onChange={pick} />
-      <button type="button" className="chat-quick__btn chat-attach" aria-label={t('safe.photo')} title={t('safe.photoHint', { mb: MAX_PHOTO_BYTES / 1_000_000, max: MAX_PHOTOS_PER_MESSAGE })} disabled={prepare.busy || photos.length >= MAX_PHOTOS_PER_MESSAGE} onClick={() => input.current?.click()}>
-        <ImagePlus aria-hidden="true" />
-      </button>
+      <div className="composer__actions">
+        <Button variant="secondary" className="chat-attach" icon={Camera} title={t('safe.photoHint', { mb: MAX_PHOTO_BYTES / 1_000_000, max: MAX_PHOTOS_PER_MESSAGE })} disabled={prepare.busy || photos.length >= MAX_PHOTOS_PER_MESSAGE} onClick={() => input.current?.click()}>{t('cphoto.add')}</Button>
+        {children}
+      </div>
       {prepare.busy && <p role="status" className="muted">{t('cphoto.preparing')}</p>}
       {note && note.badType > 0 && <p role="alert" className="field__error">{t('safe.badType')}</p>}
       {note && note.over > 0 && <p role="alert" className="field__error">{t('cphoto.tooMany', { max: MAX_PHOTOS_PER_MESSAGE })}</p>}

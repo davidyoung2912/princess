@@ -42,7 +42,7 @@ export function CabinPhotos({ category }: { category: CategoryId }) {
           {CABIN_KINDS.map((k) => <option key={k} value={k}>{t(`media.kind.${k}` as StringKey)}</option>)}
         </select>
       </div>
-      <Field label={t('media.cabin.caption')} value={caption} maxLength={140} onChange={(e) => setCaption(e.target.value)} />
+      <Field prose label={t('media.cabin.caption')} value={caption} maxLength={140} onChange={(e) => setCaption(e.target.value)} />
       <label className="choice"><input type="checkbox" checked={stayed} onChange={(e) => setStayed(e.target.checked)} /><span>{t('media.cabin.stayed')}</span></label>
       <PicturePicker purpose="cabin" reference={category} kind={kind} caption={caption} ready={stayed} blockedWhy={t('media.cabin.needStay')} onSaved={() => { setCaption(''); reload() }} />
     </Card>

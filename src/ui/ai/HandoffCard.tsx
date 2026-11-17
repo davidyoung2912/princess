@@ -140,8 +140,8 @@ export function HandoffCard({ messages, initialTopic }: { messages: readonly { r
       </fieldset>
       {screened === 'medical' && <p className="muted">{t('handoff.medical')}</p>}
       <TextArea label={t('handoff.preview')} hint={t('handoff.previewHint')} value={text} maxLength={HANDOFF_MAX} rows={8} onChange={(e) => { setEdited(e.target.value); setAgreed(false) }} />
-      <Field label={t('handoff.outcome')} hint={t('handoff.outcomeHint')} value={outcome} maxLength={200} onChange={(e) => { setOutcome(e.target.value); setAgreed(false) }} />
-      <Field label={t('handoff.tried')} hint={t('handoff.triedHint')} value={tried} maxLength={300} onChange={(e) => { setTried(e.target.value); setAgreed(false) }} />
+      <Field prose label={t('handoff.outcome')} hint={t('handoff.outcomeHint')} value={outcome} maxLength={200} onChange={(e) => { setOutcome(e.target.value); setAgreed(false) }} />
+      <Field prose label={t('handoff.tried')} hint={t('handoff.triedHint')} value={tried} maxLength={300} onChange={(e) => { setTried(e.target.value); setAgreed(false) }} />
       <div>
         <label htmlFor="ai-hand-photo">{t('handoff.photo')}</label>
         <input id="ai-hand-photo" type="file" accept="image/jpeg,image/png" disabled={photoBusy || photo !== null} onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = '' }} />

@@ -810,14 +810,13 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && problem !== 'held' && <p className="muted">{t('chat.kept')}</p>}
           <HelpMeReword problem={problem} text={text} onUse={putInBox} />
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
-          {!room && conversation?.kind !== 'huddle' && <PhotoAttach photos={draftPhotos} onChange={setDraftPhotos} />}
-          <Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button>
-          {(text.trim() !== '' || draftPhotos.length > 0) && <Button type="button" variant="tertiary" onClick={cancelDraft}>{t('conv.cancelDraft')}</Button>}
+          {!room && conversation?.kind !== 'huddle' ? <PhotoAttach photos={draftPhotos} onChange={setDraftPhotos}><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></PhotoAttach> : <div className="composer__actions"><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></div>}
           <DraftPhotos photos={draftPhotos} onChange={setDraftPhotos} />
           <ActionError error={sendDraftPhotos.error} />
           {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">
             {QUICK_REPLY_KEYS.map((k) => { const Icon = QUICK_ICONS[k]; return <button key={k} type="button" className="chat-quick__btn" aria-label={t(`conv.quick.${k}`)} title={t(`conv.quick.${k}`)} onClick={() => void submit(t(`conv.quick.${k}`))}><Icon aria-hidden="true" /></button> })}
           </div>}
+          {(text.trim() !== '' || draftPhotos.length > 0) && <Button type="button" variant="secondary" className="chat-cancel" onClick={cancelDraft}>{t('conv.cancelDraft')}</Button>}
         </form>
         {!room && <ShareChooser conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
         {!room && conversation!.kind !== 'direct' && <PlanTools conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
