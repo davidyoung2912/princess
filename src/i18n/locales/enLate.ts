@@ -5931,4 +5931,10 @@ export const enLate = {
   'exp.trip.kind.dining': 'Dinner',
   'exp.trip.kind.spa': 'Treatment',
   'exp.trip.kind.tour': 'Tour',
+  'bk.spa.open': 'Treatments can be booked now, before you sail and on board',
+  'bk.spa.needsBooking': 'Booking a treatment opens once your cruise booking is confirmed',
+  'bk.spa.finished': 'Your cruise has finished, so appointments are read only',
+  'bk.spa.party': 'Up to {max} people in one appointment',
+  'exp.trip.bookSpa': 'Book a treatment',
+  'spa.explorerLink': 'Book a treatment, or see your appointments, in the Spa Explorer',
 } as const

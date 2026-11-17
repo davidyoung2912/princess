@@ -1,7 +1,13 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import type { StringKey } from '../../../i18n'
 import { t } from '../../../i18n'
+import type { SpaView } from '../../../api/spaTypes'
+import { spaBookingCard } from '../../../domain/explorer/bookingState'
+import { useExplorerStage } from '../../../hooks/useExplorerStage'
+import { useReservationScope } from '../../../hooks/useReservationScope'
 import { Saved } from '../../onboard/common'
+import { BookingCard } from '../BookingCard'
+import { ReservationScope } from '../ReservationScope'
 import { ExplorerPage } from '../ExplorerPage'
 import { VenueDetailPage } from '../VenueDetailPage'
 import { SpaReservations } from './SpaReservations'
@@ -18,17 +24,30 @@ const kindLabels = (): Record<string, string> => Object.fromEntries(Object.entri
 export function SpaExplorerScreen() {
   const view = useSpaView()
   const [params] = useSearchParams()
+  const [scope, setScope] = useReservationScope()
   if (params.get('book')) return <BookPage />
   return (
     <ExplorerPage
       kind="spa" basePath={BASE} kindLabels={kindLabels()}
       above={({ data, state }) => (
         <Saved copy={view}>
-          {(v) => <SpaReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} />}
+          {(v) => (
+            <>
+              <SpaBooking view={v} />
+              <ReservationScope scope={scope} onChange={setScope} />
+              <SpaReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} scope={scope} />
+            </>
+          )}
         </Saved>
       )}
     />
   )
+}
+
+/** Whether the guest can book a treatment, the cancellation rule and the party limit. */
+function SpaBooking({ view }: { view: SpaView }) {
+  const { stage } = useExplorerStage()
+  return <BookingCard model={spaBookingCard(view, stage)} labelledBy="spa-book-h" />
 }
 
 /** One spa venue: its hours, its treatments, what is on there and your appointments. */

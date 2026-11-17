@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { DiningView } from '../../api/types'
-import { diningBookingCard } from './bookingState'
+import type { SpaView } from '../../api/spaTypes'
+import { diningBookingCard, spaBookingCard } from './bookingState'
 
 const view = (o: Partial<DiningView> = {}): DiningView => ({
   window: { open: true }, plan: 'anytime', seating: null, reservations: [], party: [], mealsLeft: 2, canBook: true, daysToDeparture: 20, ...o,
@@ -45,5 +46,30 @@ describe('diningBookingCard', () => {
     const m = diningBookingCard(null, 'ahead')
     expect(m.status).toBe('closed')
     expect(m.canReserve).toBe(false)
+  })
+})
+
+const spa = (o: Partial<SpaView> = {}): SpaView => ({ treatments: [], appointments: [], party: [], canBook: true, cancelFreeHours: 24, lateFeePercent: 50, maxParty: 4, ...o })
+
+describe('spaBookingCard', () => {
+  it('is open before sailing with no window, and shows the cancellation rule and party limit', () => {
+    const m = spaBookingCard(spa(), 'ahead')
+    expect(m.status).toBe('open')
+    expect(m.canReserve).toBe(true)
+    expect(m.compact).toBe(false)
+    expect(m.facts).toEqual([{ key: 'spa.policy', params: { hours: 24, percent: 50 } }, { key: 'bk.spa.party', params: { max: 4 } }])
+  })
+  it('collapses aboard when nothing needs attention', () => {
+    expect(spaBookingCard(spa(), 'aboard').compact).toBe(true)
+  })
+  it('is read only, with the reason, for someone who cannot book', () => {
+    const m = spaBookingCard(spa({ canBook: false }), 'ahead')
+    expect(m.status).toBe('readOnly')
+    expect(m.canReserve).toBe(false)
+    expect(m.detail?.key).toBe('plan.readOnly.body')
+  })
+  it('is finished after the cruise and never open while the server has not answered', () => {
+    expect(spaBookingCard(spa(), 'after').status).toBe('finished')
+    expect(spaBookingCard(null, 'ahead').canReserve).toBe(false)
   })
 })

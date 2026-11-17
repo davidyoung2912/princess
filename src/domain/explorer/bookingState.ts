@@ -1,3 +1,4 @@
+import type { SpaView } from '../../api/spaTypes'
 import type { DiningView } from '../../api/types'
 import type { StringKey } from '../../i18n/locales/en'
 import { actionGate, type GateStatus } from './actionGate'
@@ -41,4 +42,24 @@ export function diningBookingCard(view: DiningView | null, stage: ExplorerStage)
     status: gate.status, headline: { key: HEADLINE[gate.status] }, detail, facts, canReserve: gate.status === 'open',
     compact: stage === 'aboard' && gate.status === 'open', paymentsLink: gate.status === 'opensOn',
   }
+}
+
+const SPA_HEADLINE: Record<GateStatus, StringKey> = {
+  open: 'bk.spa.open', opensOn: 'bk.spa.open', needsBooking: 'bk.spa.needsBooking', readOnly: 'plan.readOnly.title', closed: 'explorers.closed', finished: 'bk.spa.finished',
+}
+
+/**
+ * The spa booking card: whether the guest can book, the cancellation rule and the party limit. The spa has no booking window today (plan open question 1),
+ * so it is open to anyone who can book, before sailing and aboard alike; a window would arrive on the view and go through `actionGate` like dining's.
+ */
+export function spaBookingCard(view: SpaView | null, stage: ExplorerStage): BookingCardModel {
+  const gate = actionGate('spa', { hasBooking: true, finished: stage === 'after', canBook: view ? view.canBook : null })
+  const facts: TileLine[] = view ? [
+    { key: 'spa.policy', params: { hours: view.cancelFreeHours, percent: view.lateFeePercent } },
+    { key: 'bk.spa.party', params: { max: view.maxParty } },
+  ] : []
+  const detail: TileLine | null = gate.status === 'readOnly' ? { key: 'plan.readOnly.body' }
+    : gate.status === 'needsBooking' ? { key: 'explorers.afterBooking' }
+    : null
+  return { status: gate.status, headline: { key: SPA_HEADLINE[gate.status] }, detail, facts, canReserve: gate.status === 'open', compact: stage === 'aboard' && gate.status === 'open', paymentsLink: false }
 }

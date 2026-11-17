@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { itemsIn } from '../../domain/catalogue'
 import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
@@ -9,6 +10,7 @@ export function SpaScreen() {
   return (
     <div className="page">
       <p>{t('spa.intro')}</p>
+      <p><Link to="/spa-explorer">{t('spa.explorerLink')}</Link></p>
       <MyPicks groups={['spa', 'fitness']} />
       <h2>{th('spa.treatments')}</h2>
       <ItemList items={itemsIn('spa')} />
