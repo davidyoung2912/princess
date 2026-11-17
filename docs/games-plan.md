@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37) and **KenKen** (X38). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39) and **Codeword** (X40). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -63,13 +63,17 @@ Built as planned. `kenken.ts` reuses `latinSquare` and `linesOf` from Futoshiki.
 - Generator: Latin square, random cage partition, choose an operation that suits each cage, solve for uniqueness. Hints name the cage and the combinations left.
 - Reuses the Futoshiki and Killer pieces (cage outlines, Latin-square rules, notes).
 
-### G6: Kakuro (X39)
+### G6: Kakuro (X39) — built
+
+Built as planned. `kakuro.ts` makes a point-symmetric layout (first row and column black, runs 2 to the level's longest, white squares joined), fills it by backtracking, reads the sums off, then reveals digits until plain logic finishes and takes back any that are not needed (the best of up to 24 layouts, fewest givens), so the answer is unique with no guessing. Logic is the combination tables per run plus a run-by-run reach pass (a small DP over used-digit sets, exact for runs up to 9) repeated across crossing runs. Hint tiers: last empty square in a run, crossing runs' digit lists meeting in one digit, then the deeper pass; the text shows each run as "16 in 2 squares can only be 7 and 9". Levels: Easy 6x6 (runs to 4), Medium 8x8 (5), Hard 9x9 (7), Expert 10x10 (9); easy and medium keep a few givens. `KakuroScreen.tsx`: diagonal clue squares, selected square's two runs tinted, notes, digit pad, red squares for broken runs and dead squares.
 
 - Crossword-style grid. Clue cells carry a down and an across sum in a diagonally split cell; white cells take 1 to 9 with no repeat in a run, and each run adds to its sum. Levels by grid size (6x6 to 10x10) and run length.
 - Generator: random symmetric black-cell layout with runs of 2 to 9, fill with digits, compute sums, solve for uniqueness; add given digits or re-roll the layout when it is not unique. Logic: the combination tables for a sum and length, intersection of two runs.
 - Hint shows the combination (for example "16 in 2 cells is 7 and 9"). Highest-risk generator, so build and test it first.
 
-### G7: Codeword (X40)
+### G7: Codeword (X40) — built
+
+Built as planned. `codewordWords.ts` holds about 1,680 words of 2 to 7 letters (the Wordle list minus place names plus common and cruise words, a few KB in the lazy chunk). `codeword.ts` makes a point-symmetric layout (the black share and longest word set per level), fills it by a forward-checking search with a step budget (failed layouts are cheap, so it just retries), gives each letter a random number from 1 to 26, then reveals the most common numbers until word-list logic finishes and takes back any that are not needed (never below the level's minimum, so easy and medium keep several). Logic is arc-style pruning: every word that fits a slot with one letter per number and no letter shared by two numbers, repeated with the rule that a number with one letter frees that letter everywhere. Hint tiers: a slot with only one fitting word, a number the fitting words pin down, then the grid-wide step; the text shows the pattern like `_ A _ E R`. Levels: Easy 7x7, Medium 9x9, Hard 11x11, Expert 13x13. `CodewordScreen.tsx`: numbered squares, typing a letter fills every square with that number, an A to Z key strip showing each letter's number, red squares for one letter on two numbers, no Notes mode.
 
 - Crossword grid where every letter is a number 1 to 26; a few letters are revealed. The player works out the code, with an A to Z key strip that shows which number each letter has and which are used.
 - Needs a word source: curate a compact English word list (common words of 2 to 7 letters, plus cruise and travel words) as a TypeScript module, checking the bundle size; load the Codeword screen lazily as the other screens are.

@@ -91,6 +91,8 @@ export {
   CircleDot as BinairoGame,
   ChevronsLeftRight as FutoshikiGame,
   Grid2x2 as KenKenGame,
+  Grid3x3 as KakuroGame,
+  Binary as CodewordGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,

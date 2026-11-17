@@ -250,6 +250,8 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/games-explorer/binairo', titleKey: 'route.binairo', tab: null, phase: 0 },
   { path: '/games-explorer/futoshiki', titleKey: 'route.futoshiki', tab: null, phase: 0 },
   { path: '/games-explorer/kenken', titleKey: 'route.kenken', tab: null, phase: 0 },
+  { path: '/games-explorer/kakuro', titleKey: 'route.kakuro', tab: null, phase: 0 },
+  { path: '/games-explorer/codeword', titleKey: 'route.codeword', tab: null, phase: 0 },
   { path: '/exercise-explorer', titleKey: 'route.exerciseExplorer', tab: null, phase: 0 },
   { path: '/exercise-explorer/:venueId', titleKey: 'route.exerciseVenue', tab: null, phase: 0 },
   { path: '/spa-explorer', titleKey: 'route.spaExplorer', tab: null, phase: 0 },
