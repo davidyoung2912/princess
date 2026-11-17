@@ -518,3 +518,6 @@ button.chat-quote { cursor: pointer; }
 .recap-photo { max-width: 8rem; max-height: 8rem; border-radius: var(--radius-1, 0.25rem); }
 
 #hud-link { width: 100%; }
+
+/* Stanley's welcome at the top of a room's details: set apart a little from the rules below it. */
+.chost-welcome { margin: var(--space-2) 0; padding: var(--space-2); border-radius: var(--radius-2, 8px); background: var(--surface-2, rgba(0, 0, 0, 0.04)); }

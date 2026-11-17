@@ -13,6 +13,7 @@ import { Dialog } from '../Dialog'
 import { TextArea } from '../Field'
 import { ActionError, Load } from '../account/parts'
 import { useShipTime } from './shipTime'
+import { HostPanel } from './ChatHost'
 
 /** Words for a join or suggestion that failed, or the general error when there is no sentence for it. */
 function Problem({ error }: { error: ApiError | null }) {
@@ -160,6 +161,7 @@ export function RoomDetails({ conversation, onClose, onLeft }: { conversation: C
       <h3>{headingCase(t('room.rules'))}</h3>
       <p>{room?.rules}</p>
       <p className="muted">{t('room.history')}</p>
+      {!channel && <HostPanel conversation={conversation} />}
       <Button variant="secondary" onClick={() => setLeaving(true)}>{t(channel ? 'room.unfollow' : 'room.leave')}</Button>
       {leaving && (
         <Dialog title={t(channel ? 'room.unfollowTitle' : 'room.leaveTitle', { name: conversation.name })} onClose={() => setLeaving(false)}>

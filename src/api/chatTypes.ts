@@ -582,7 +582,38 @@ export interface ChatRoomsApi {
   acceptRules(id: string): Promise<void>
   /** Suggests a question for the room's popular ones. Rejects `invalid` (`text`, `contactInfo`, `blocked`), `forbidden` (`child`), `notFound` or `tooMany`. */
   suggestQuestion(id: string, text: string): Promise<void>
+
+  // ---- Stanley as host (phase 12) ----
+
+  /** The meet-ups of a room or made group, newest first. */
+  meetUps(id: string): Promise<ChatMeetUp[]>
+  /** Starts a meet-up, posted as the guest's own words. Rejects `invalid` (`text`), `forbidden` (`supervised`), `conflict` (`off`, `closed` and the room's own refusals), `notFound` or `tooMany` (`limit`). */
+  startMeetUp(id: string, title: string, place?: string): Promise<ChatMeetUp>
+  /** Answers in, maybe or no; it can change. */
+  answerMeetUp(meetUpId: string, answer: MeetUpAnswer): Promise<ChatMeetUp>
+  /** Where "introduce me" stands in this room. */
+  introStatus(id: string): Promise<ChatIntro>
+  /** Asks to be introduced. Rejects `invalid` (`unknown`), `forbidden` (`supervised`, `notAdult`), `conflict` (`off`, `notRoom`), `notFound` or `tooMany` (`limit`). */
+  introOptIn(id: string, interest: string): Promise<ChatIntro>
+  /** Takes back every live request. */
+  introWithdraw(): Promise<void>
+  /** The welcome line (null when Stanley is quiet here), the rules and what he can answer. */
+  welcome(id: string): Promise<ChatHostWelcome>
+  /** A question in a room: a library answer (also posted to the room) or the plain "ask Guest Services" words. */
+  askRoom(id: string, text: string): Promise<ChatHostAnswer>
+  /** Flags a post to staff. Rejects `invalid` (`unknown`), `forbidden` (`supervised`), `notFound` or `tooMany` (`limit`). */
+  flag(messageId: string, reason: HostFlagReason): Promise<void>
 }
+
+/** Phase 12: Stanley as host for strangers and room host. */
+export type MeetUpAnswer = 'in' | 'maybe' | 'no'
+/** In and maybe are counted; a decline is never counted or shown. `mine` is the caller's own answer. */
+export interface ChatMeetUp { id: string; title: string; place?: string; in: number; maybe: number; mine?: MeetUpAnswer; started: boolean; at: number }
+export type IntroState = 'none' | 'waiting' | 'introduced'
+export interface ChatIntro { state: IntroState; interest?: string; endsAt?: number; name?: string; interests: string[] }
+export interface ChatHostWelcome { line?: string; rules: string; topics: string[] }
+export interface ChatHostAnswer { answered: boolean; text: string }
+export type HostFlagReason = 'spam' | 'unsafe' | 'rude' | 'other'
 
 // ---- Staff screens for channels and rooms (phase 8c; administrators only) ----
 

@@ -61,6 +61,7 @@ import { GetPersonButton, RecapCard } from './ChatRelay'
 import { HuddleDetails, StartHuddle } from './ChatHuddle'
 import { CoordinatorButton, CoordinatorProvider, RemainingCard, RemindersSwitch } from './ChatCoordinator'
 import { RoomDetails, RulesDialog } from './ChatRooms'
+import { FlagToStaff, HostPanel } from './ChatHost'
 import { ChatSearch, SaveChat } from './ChatSearch'
 import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWrite, Icebreakers, PolishDraft, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
 import { showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
@@ -988,6 +989,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
       {photoCountOf(m) > 0 && <MessagePhotos conversationId={conversationId} message={m} name={m.fromName ?? ''} you={t('chat.you')} />}
       {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
+      {!own && (kind === 'room' || kind === 'group') && <FlagToStaff messageId={m.id} />}
       {m.reactions && m.reactions.length > 0 && (
         <ul className="chat-reactions" aria-label={t('conv.reactions')}>
           {m.reactions.map((r) => <ReactionChip key={r.emoji} r={r} you={you} disabled={!canAct || !onReact} onPick={() => onReact?.(m.id, r.emoji)} />)}
@@ -1267,6 +1269,7 @@ function Options({ conversation, messages, awayBusy, onAway, mentionsBusy, onMen
       {(conversation.kind === 'group' || conversation.kind === 'huddle') && <RemainingCard />}
       {(conversation.kind === 'group' || conversation.kind === 'huddle') && <RemindersSwitch groupId={conversation.id} />}
       {conversation.kind === 'group' && <RecapCard groupId={conversation.id} />}
+      {conversation.kind === 'group' && <HostPanel conversation={conversation} />}
       {conversation.kind !== 'huddle' && (conversation.kind !== 'direct' || !conversation.closed) ? <GetPersonButton conversationId={conversation.id} messages={messages} /> : null}
       <div className="chip-row">
         <Chip pressed={on} onToggle={() => void flip.run(!on)}>{t('chat.receipts')}</Chip>

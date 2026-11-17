@@ -313,6 +313,15 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     leave: async (id) => { await send('post', `/me/chat/rooms/${seg(id)}/leave`) },
     acceptRules: async (id) => { await send('post', `/me/chat/rooms/${seg(id)}/rules`) },
     suggestQuestion: async (id, text) => { await send('post', `/me/chat/rooms/${seg(id)}/questions`, { text }) },
+    meetUps: (id) => get(`/me/chat/host/${seg(id)}/meetups`),
+    startMeetUp: (id, title, place) => send('post', `/me/chat/host/${seg(id)}/meetups`, { title, place }),
+    answerMeetUp: (meetUpId, answer) => send('put', `/me/chat/host/meetups/${seg(meetUpId)}/answer`, { answer }),
+    introStatus: (id) => get(`/me/chat/host/${seg(id)}/intro`),
+    introOptIn: (id, interest) => send('post', `/me/chat/host/${seg(id)}/intro`, { interest }),
+    introWithdraw: async () => { await send('delete', '/me/chat/host/intro') },
+    welcome: (id) => get(`/me/chat/host/${seg(id)}/welcome`),
+    askRoom: (id, text) => send('post', `/me/chat/host/${seg(id)}/ask`, { text }),
+    flag: async (messageId, reason) => { await send('post', `/me/chat/host/messages/${seg(messageId)}/flag`, { reason }) },
   }
   const chatRoomsStaff: HttpGroups['chatRoomsStaff'] = {
     posts: (id) => get(`/admin/chat/rooms/${seg(id)}/posts`),
