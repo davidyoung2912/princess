@@ -65,10 +65,10 @@ public class StanleyPermissionTests
     [Fact]
     public void ARowWhoseAbilityIsNotBuiltClaimsNothing()
     {
-        var doc = new StanleyPermissionDoc(4, new() { ["CL-01"] = true, ["CL-08"] = true });
+        var doc = new StanleyPermissionDoc(4, new() { ["CL-01"] = true, ["CL-09"] = true });
         var v = StanleyPermissionRules.View(doc, false, false, true, 0);
         Assert.Equal("soon", v.Rows.Single(r => r.Id == "CL-01").State);
-        Assert.Equal("soon", v.Rows.Single(r => r.Id == "CL-08").State);
+        Assert.Equal("soon", v.Rows.Single(r => r.Id == "CL-09").State);
         Assert.All(StanleyPermissionRules.Rows.Where(r => !r.Built), r => Assert.False(StanleyPermissionRules.IsOn(doc, r, 4, false)));
     }
 
@@ -169,7 +169,7 @@ public class StanleyPermissionTests
         var w = Build();
         Assert.False(await w.Svc.MayAsync(Me, "CL-99", default));
         Assert.False(await w.Svc.MayAsync(Me, "CL-01", default));
-        Assert.False(await w.Svc.MayAsync(Me, "CL-08", default));
+        Assert.False(await w.Svc.MayAsync(Me, "CL-09", default));
     }
 
     [Fact]
@@ -265,7 +265,7 @@ public class StanleyPermissionTests
         await w.Svc.SetLevelAsync(Me, Lvl(4, await TokenAsync(w)), default);
         var lower = await w.Svc.SetLevelAsync(Me, Lvl(2), default);
         Assert.Equal(2, lower.Level);
-        Assert.All(lower.Rows.Where(r => r.NeedsLevel > 2), r => Assert.Equal("soon", r.State));
+        Assert.All(lower.Rows.Where(r => r.NeedsLevel > 2), r => Assert.Contains(r.State, new[] { "soon", "needsLevel" }));
     }
 
     [Fact]
@@ -273,9 +273,9 @@ public class StanleyPermissionTests
     {
         var w = Build(authority: true);
         Assert.Equal("notYet", (await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-01", Row(true), default))).Title);
-        Assert.Equal("notYet", (await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-08", Row(true), default))).Title);
+        Assert.Equal("notYet", (await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-09", Row(true), default))).Title);
         await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-77", Row(true), default));
-        await w.Svc.SetRowAsync(Me, "CL-08", Row(false), default);
+        await w.Svc.SetRowAsync(Me, "CL-09", Row(false), default);
     }
 
     [Fact]

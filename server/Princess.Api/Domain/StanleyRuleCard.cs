@@ -126,6 +126,13 @@ public static class StanleyRuleCards
             "Show me what you would do.", ["journey-solo"], ["the rule the guest made"]),
         Check("TRUST-04", "Control in plain words", [], "The guest types a sentence in the control box", "the sentence, read against six fixed controls and not kept", "the guest confirms or closes it",
             "Be more careful.", ["journey-solo"], ["the sentence, read once and not kept"]),
+        new("AUT-02", "Deadline reminders", ["manage", "prebook"], 4, 4, StanleyActClass.Act,
+            "The guest has switched on setting their reminders (CL-08) at level 4 and the trip has a date that can cost something", StanleyTrigger.State,
+            "check-in opening and the final payment date and state of the booking", 15, "a reminder on the guest's own list with a receipt",
+            ["auto.AUT-02.title", "auto.AUT-02.detail"], [], 30, 120, "Stanley:Switches:Authority", ["reminders set", "reminders removed within two hours", "reminders removed later"],
+            "Set my deadline reminders.", ["journey-solo"], ["payment due date", "check-in window"],
+            "A plain list, one line per reminder with its time in words; every undo a button with words; no colour-only meaning",
+            "Never recurs, never sets a reminder that is not tied to a date on the trip, never pays or books anything and never messages anyone. It sets at most 30 per trip, works only while permission row CL-08 is on, and every reminder it sets can be removed from Did or from the reminders list."),
     ];
 
     /// <summary>A rung 3 rule: it lines something up and asks for the guest's yes; it never books, holds or messages anyone, and works only while its permission row is on.</summary>

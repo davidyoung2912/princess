@@ -282,3 +282,15 @@ It says nothing once a trip is booked. It reads no fare, cabin, review or cancel
 ### Dream, Discover and Book pack, second part (phase P9f, SR-1.1, SR-1.2, SR-3.4 and SR-3.5)
 
 Same endpoint and input; nothing new is stored. Four more findings for a guest with no trip still to sail, each a screen to open: shortlist (the quiz), referee (compare sailings), share the cost (split costs) and deposits (payments). It keeps no weekly list, asks nobody, starts no poll, creates no payment link, sets no reminder and sends nothing. Price falls, holds and filling in travellers are still to do.
+
+## Rung 4 safe classes, first part (phase P10a, AUT-02 deadline reminders)
+
+One thing is stored that was not before: each reminder AUT-02 sets is an ordinary reminder on the guest's own list (the existing reminders table), tagged in its anchor id with a key of the class, the kind of date and the date (for example `aut02:pay7:2027-01-03`) so the same date is never set twice, and it has a ledger line (the existing Stanley action store, kind `remind_me`, idempotency key the same key) so Did shows it and it can be undone for two hours. `POST /me/stanley/auto/deadlines` reads the sailing dates, the payment due date and state and the check-in window, and does nothing unless permission row CL-08 is on.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| payment due date | a reminder seven days and one two days before it, while the balance is unpaid | the reminder's words and time |
+| check-in window | a reminder on the morning online check-in opens, while it has not opened | the reminder's words and time |
+| the guest's own reminders | which keys are already set, and the limit of 30 per trip | nothing |
+
+It sets nothing recurring, nothing that is not a date on the trip, pays and books nothing, and sends nothing to anyone. It is off for a supervised account, for a paused account, below level 4, and unless the Authority switch is on. AUT-01 (reminders that follow) is the existing anchor behaviour of the reminders; AUT-05 and AUT-07 are not built.

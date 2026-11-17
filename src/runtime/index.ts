@@ -167,6 +167,11 @@ export const stanleyDisembark = {
   get: () => http.get<unknown>('/me/stanley/disembark'),
 }
 
+/** Deadline reminders (phase P10a, AUT-02). The server sets reminders only when the guest has switched it on. */
+export const stanleyAuto = {
+  deadlines: () => http.post<unknown>('/me/stanley/auto/deadlines'),
+}
+
 /** The Family pack, first part (phase P9e). Read-only; nothing is registered, marked or sent. */
 export const stanleyFamily = {
   get: () => http.get<unknown>('/me/stanley/family'),
