@@ -24,6 +24,8 @@ import { CABIN_ASKS, cabinFilterFrom, type AskValue } from '../../ai/stanleyAsk'
 import { stanleyLevelFor } from '../../settings/settings'
 import { useSettings } from '../../hooks/useSettings'
 import { Button } from '../Button'
+import { AddToHuddle } from '../onboard/AddToHuddle'
+import { cabinOffer } from '../../domain/chatHuddle'
 import { StanleyAsk, type AskItem } from '../ai/StanleyAsk'
 import { cabinGuideFeed } from '../../feeds/cabinGuide'
 import { useFeed, useFeedList } from '../../hooks/useServedFeeds'
@@ -165,6 +167,8 @@ export function CabinChooserScreen() {
           ))}
         </fieldset>
       </Card>
+
+      <AddToHuddle offer={cabinOffer(roomName(category), sailings.find((s) => s.id === sailing.id)?.title ?? sailing.id, useGuests, FARES[useFare].name)} />
 
       <CabinPhotos category={category} />
 

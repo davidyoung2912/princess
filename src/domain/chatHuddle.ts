@@ -69,3 +69,8 @@ export function costOffer(sailingTitle: string, room: string, guests: number, fa
 
 /** The open huddles a guest can add to: kind `huddle`, not closed. */
 export const openHuddles = <T extends { kind: string; closed?: boolean }>(list: readonly T[]): T[] => list.filter((c) => c.kind === 'huddle' && !c.closed)
+
+/** A room type on a sailing's ship: the room, the sailing, the party size and the fare type. No price, no cabin number. */
+export function cabinOffer(room: string, sailingTitle: string, guests: number, fare: string): HuddleOffer {
+  return { kind: 'cabinType', title: clip(room, HUDDLE_MAX_TITLE), fields: cardFields([{ label: 'Sailing', value: sailingTitle }, { label: 'Guests', value: String(guests) }, { label: 'Fare type', value: fare }]) }
+}

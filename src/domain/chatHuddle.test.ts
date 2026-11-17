@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardFields, cardReady, costOffer, daysUntil, huddleLink, huddleProblem, mayJoin, openHuddles, portOffer, sailingOffer, tokenFromHash } from './chatHuddle'
+import { cardFields, cardReady, cabinOffer, costOffer, daysUntil, huddleLink, huddleProblem, mayJoin, openHuddles, portOffer, sailingOffer, tokenFromHash } from './chatHuddle'
 
 describe('the huddle link', () => {
   it('keeps the token after the hash, so it is not sent to a server', () => {
@@ -75,5 +75,10 @@ describe('huddle offers', () => {
   })
   it('lists only open huddles', () => {
     expect(openHuddles([{ kind: 'huddle' }, { kind: 'group' }, { kind: 'huddle', closed: true }])).toHaveLength(1)
+  })
+  it('builds a cabin type card with no cabin number or price', () => {
+    const o = cabinOffer('Balcony', 'Alaska', 2, 'Standard')
+    expect(o.kind).toBe('cabinType')
+    expect(Object.keys(o.fields)).toEqual(['Sailing', 'Guests', 'Fare type'])
   })
 })
