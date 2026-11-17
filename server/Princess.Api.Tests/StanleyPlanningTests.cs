@@ -9,7 +9,7 @@ public class StanleyPlanningTests
     public void WithoutATripItPointsToFiveScreens()
     {
         var f = StanleyPlanningRules.Findings(new PlanningFacts(false));
-        Assert.Equal(["SR-1.3", "SR-2.1", "SR-2.4", "SR-2.5", "SR-3.3"], f.Select(x => x.Rule));
+        Assert.Equal(["SR-1.1", "SR-1.2", "SR-1.3", "SR-2.1", "SR-2.4", "SR-2.5", "SR-3.4", "SR-3.3", "SR-3.5"], f.Select(x => x.Rule));
         Assert.All(f, x => Assert.StartsWith("/", x.Route));
     }
 

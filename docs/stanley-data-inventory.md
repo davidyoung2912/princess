@@ -278,3 +278,7 @@ Nothing new is stored. `GET /me/stanley/planning` works out its answer from one 
 | sailing dates | whether a confirmed trip is still to sail | five titles, each with a screen to open (saved sailings, cabins, decide, cost, booking) |
 
 It says nothing once a trip is booked. It reads no fare, cabin, review or cancellation date, sets no alert, holds nothing, books nothing, pays nothing and sends nothing. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: fares and cabins, the sailings the guest saved, and weekly shortlists, price falls, holds and share-the-cost links, which are still to do.
+
+### Dream, Discover and Book pack, second part (phase P9f, SR-1.1, SR-1.2, SR-3.4 and SR-3.5)
+
+Same endpoint and input; nothing new is stored. Four more findings for a guest with no trip still to sail, each a screen to open: shortlist (the quiz), referee (compare sailings), share the cost (split costs) and deposits (payments). It keeps no weekly list, asks nobody, starts no poll, creates no payment link, sets no reminder and sends nothing. Price falls, holds and filling in travellers are still to do.

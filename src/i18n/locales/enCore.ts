@@ -10524,7 +10524,7 @@ export const enCore = {
   'stanleyRememberPack.clear': 'Nothing to add right now.',
   'stanleyRememberPack.open': 'Open',
   'stanleyPlanningPack.title': 'Planning a trip',
-  'stanleyPlanningPack.intro': 'Before you book I point to the screens that help you choose: saved sailings, cabins, the decision page, the cost page and the cancellation terms. I never hold, book, pay or send anything.',
+  'stanleyPlanningPack.intro': 'Before you book I point to the screens that help you choose: saved sailings, cabins, the decision page, the cost page, the cost split and the payments page, plus the cancellation terms. I never hold, book, pay or send anything.',
   'stanleyPlanningPack.loading': 'Looking at your trips.',
   'stanleyPlanningPack.error': 'I could not look at that just now.',
   'stanleyPlanningPack.noTrip': 'You already have a trip to sail, so there is nothing to add here.',
