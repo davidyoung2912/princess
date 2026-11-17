@@ -1,5 +1,5 @@
 import { bookPhotos, type Media } from '../../domain/media'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { KeptPicture, MediaImage, PicturePicker } from '../media/Pictures'
 
 const altFor = (m: Media, day: number | 'cover'): string => m.caption || (day === 'cover' ? t('media.book.coverAlt') : t('media.book.alt', { day }))
@@ -9,7 +9,7 @@ export function DayPictureEditor({ day, list, onChange }: { day: number | 'cover
   const mine = bookPhotos(list, day)
   return (
     <details>
-      <summary>{day === 'cover' ? t('media.book.cover') : t('media.book.add', { day })}{mine.length > 0 ? ` (${mine.length})` : ''}</summary>
+      <summary>{headingCase(day === 'cover' ? t('media.book.cover') : t('media.book.add', { day }))}{mine.length > 0 ? ` (${mine.length})` : ''}</summary>
       {mine.map((m) => <KeptPicture key={m.id} media={m} alt={altFor(m, day)} onDeleted={onChange} />)}
       <PicturePicker purpose="book" reference={String(day)} ready onSaved={onChange} />
     </details>

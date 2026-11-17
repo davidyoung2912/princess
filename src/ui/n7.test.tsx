@@ -41,9 +41,9 @@ describe('clear-to-use sentences (N7)', () => {
 
   it('memory book: each day offers to add a picture, and says where it stays', () => {
     const html = render(<DayPictureEditor day={3} list={[m]} onChange={() => undefined} />)
-    expect(html).toContain('Add a picture to day 3')
+    expect(html).toContain('Add a Picture to Day 3')
     const cover = render(<DayPictureEditor day="cover" list={[]} onChange={() => undefined} />)
-    expect(cover).toContain('Add a picture to the front of the book')
+    expect(cover).toContain('Add a Picture to the Front of the Book')
     expect(render(<BookPagePictures day={9} list={[m]} />)).toBe('')
     expect(render(<BookPagePictures day={2} list={[m]} />)).toContain('Dinner on the Piazza')
   })

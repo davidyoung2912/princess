@@ -57,7 +57,7 @@ export function ForYou({ data, events, venues, venueTitles, basePath, onChanged 
       )}
       <p role="status" className="visually-hidden">{message || plan.message}</p>
       <details>
-        <summary>{t('exp.foryou.tune')}</summary>
+        <summary>{headingCase(t('exp.foryou.tune'))}</summary>
         <div className="chip-row" role="group" aria-label={t('exp.foryou.themes')}>
           {themes.map((i) => <Chip key={i} pressed={taste.likes.includes(i)} onToggle={() => { void toggleLike(i).then((ok) => { if (!ok) setMessage(t('exp.foryou.failed')) }) }}>{interestLabel(i)}</Chip>)}
         </div>

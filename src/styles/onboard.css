@@ -684,4 +684,23 @@ button.chat-quote { cursor: pointer; }
 :root[data-motion='reduced'] .chat-draft-photos__remove:is(:hover, :focus-visible, :active) { transform: none; }
 /* No rule between the message history and the message box: the history's own border already marks the edge. */
 .composer--chat { border-top: 0; }
-.composer--chat > .chat-cancel { flex: none; justify-self: start; }
+/* Clear sits on its own line straight under the message box, before the helpers. */
+.composer--chat > .composer__clear { order: 3; flex: 0 0 100%; }
+
+/* Stanley's notices stand out from his ordinary replies by lane: critical in red, important in orange, the rest keep the light blue. The lane is also named in words on the card. */
+.chat-msg--stanley.chat-msg--lane-critical { background: var(--danger-tint); border-color: var(--danger); border-inline-start-color: var(--danger); }
+.chat-msg--stanley.chat-msg--lane-important { background: var(--warning-tint); border-color: var(--warning); border-inline-start-color: var(--warning); border-inline-start-width: 6px; }
+.chat-msg--lane-critical .chat-msg__level { color: var(--danger); }
+.chat-msg--lane-important .chat-msg__level { color: var(--warning); }
+
+/* Clear has room above (so it does not touch the box) and below, in every place it appears. */
+.composer__clear, .field > .composer__clear { margin-block: var(--space-3) var(--space-2); }
+.composer--chat > .composer__clear { margin-block: var(--space-1) 0; }
+
+/* Once a notice has been acknowledged it goes back to the plain blue: red and orange only mean something still needs you. */
+.chat-msg--stanley.chat-msg--lane-critical.chat-msg--seen, .chat-msg--stanley.chat-msg--lane-important.chat-msg--seen { background: var(--sky-tint); border-color: var(--border); border-inline-start-color: var(--primary); border-inline-start-width: 4px; }
+.chat-msg--lane-critical.chat-msg--seen .chat-msg__level, .chat-msg--lane-important.chat-msg--seen .chat-msg__level { color: inherit; }
+
+/* In Stanley's chat the history, the notices panel and the ask box sit close together. */
+.chat-more--tools.chat-notices { margin-top: var(--space-2); }
+.chat-more--tools.chat-notices + .composer--ask, .composer--ask { margin-top: var(--space-2); }

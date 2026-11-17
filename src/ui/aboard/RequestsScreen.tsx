@@ -7,7 +7,7 @@ import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useNow } from '../../hooks/useDemo'
 import { useShipTime } from '../onboard/shipTime'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
@@ -113,7 +113,7 @@ export function RequestsScreen() {
                   )}
                   {r.history.length > 0 && (
                     <details>
-                      <summary>{t('req.history')}</summary>
+                      <summary>{headingCase(t('req.history'))}</summary>
                       <ul className="plain-list">{r.history.map((h) => <li key={`${h.kind}-${h.at}`}>{t(`req.h.${h.kind}` as StringKey, { time: shipTime(h.at) })}</li>)}</ul>
                     </details>
                   )}

@@ -4,7 +4,7 @@ import type { ChatConversation } from '../../api/chatTypes'
 import { openHuddles, type HuddleOffer } from '../../domain/chatHuddle'
 import { useAction } from '../../hooks/useAction'
 import { api } from '../../runtime'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { Button } from '../Button'
 
 /**
@@ -28,7 +28,7 @@ export function AddToHuddle({ offer }: { offer: HuddleOffer }) {
   })
   return (
     <details className="send-chat" onToggle={(e) => setOpen(e.currentTarget.open)}>
-      <summary>{t('chuddle.planWith')}<span className="visually-hidden"> {offer.title}</span></summary>
+      <summary>{headingCase(t('chuddle.planWith'))}<span className="visually-hidden"> {offer.title}</span></summary>
       <p role="status" className="visually-hidden">{done}</p>
       {done && <p className="muted">{done}</p>}
       {open && !rows && !failed && <p role="status" className="muted">{t('conv.share.loading')}</p>}

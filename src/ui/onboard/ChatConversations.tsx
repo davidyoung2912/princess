@@ -52,6 +52,7 @@ import { Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, Pi
 const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
 import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
+import { ClearDraft } from '../ClearDraft'
 import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
@@ -152,7 +153,7 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
             </ul>
             {archived.length > 0 && (
               <details className="conv-archived">
-                <summary>{t('conv.archivedTitle', { count: archived.length })}</summary>
+                <summary>{headingCase(t('conv.archivedTitle', { count: archived.length }))}</summary>
                 <ul className="conv-list" aria-label={t('conv.archivedTitle', { count: archived.length })}>
                   {archived.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
                 </ul>
@@ -161,10 +162,49 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
           </>
         )
       })())}
+      {rows && <AwayPeople rows={rows} onChange={(id, on) => setRows((cur) => (cur ? cur.map((c) => (c.id === id ? { ...c, notifyAway: on } : c)) : cur))} />}
       <p><Button variant="secondary" onClick={() => setMaking(true)}>{t('cgroup.new')}</Button></p>
       <StartHuddle onOpen={onOpen} />
       <DoNotDisturb />
     </section>
+  )
+}
+
+/**
+ * "Tell them when I go ashore": the people I chat with one to one, each with a tick. A tick is the same switch as the one in that chat's Options (so the same rules apply on the server: only people
+ * I am connected with, no one who has blocked me, nothing but "left the ship" and "back on board"). It is off for everyone until I tick them. Collapsed, so it stays out of the way.
+ */
+function AwayPeople({ rows, onChange }: { rows: readonly ChatConversation[]; onChange: (id: string, on: boolean) => void }) {
+  const people = rows.filter((c) => c.kind === 'direct' && !c.closed)
+  const [error, setError] = useState<string | null>(null)
+  const toggle = useAction(async (c: ChatConversation) => {
+    const on = c.notifyAway !== true
+    setError(null)
+    try {
+      await optimistic(() => onChange(c.id, on), () => api.chatConversations.notifyAway(c.id, on), () => onChange(c.id, !on))
+    } catch (e) {
+      setError(isApiError(e) && e.code === 'forbidden' ? t('away.people.supervised') : t('away.people.failed'))
+    }
+  })
+  if (people.length === 0) return null
+  const ticked = people.filter((c) => c.notifyAway === true).length
+  return (
+    <details className="chat-more chat-more--tools chat-away">
+      <summary>{headingCase(t('away.people.title'))}{ticked > 0 ? ` (${ticked})` : ''}</summary>
+      <p className="muted">{t('away.people.hint')}</p>
+      <ul className="plain-bullets chat-away__list" aria-label={t('away.people.title')}>
+        {people.map((c) => (
+          <li key={c.id}>
+            <label className="choice">
+              <input type="checkbox" checked={c.notifyAway === true} disabled={toggle.busy} onChange={() => void toggle.run(c)} />
+              <ChatAvatar avatar={c.avatar} name={c.name} small />
+              <span>{c.name}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {error && <p role="alert" className="field__error">{error}</p>}
+    </details>
   )
 }
 
@@ -746,7 +786,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             </div>
           )}
           {!room && <details className="chat-more chat-more--inline">
-          <summary>{t('urgent.pick')}</summary>
+          <summary>{headingCase(t('urgent.pick'))}</summary>
           <fieldset className="urgency-pick">
             <legend className="visually-hidden">{t('urgent.pick')}</legend>
             {levelsFor(mayUrgent).map((l) => (
@@ -757,7 +797,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             <p className="muted">{t(`urgent.explain.${level}`)}</p>
           </fieldset>
           </details>}
-          <TextArea label={t('chat.message')} value={text} rows={3} maxLength={MAX_TEXT} autoComplete="off"
+          <TextArea clear={false} label={t('chat.message')} value={text} rows={3} maxLength={MAX_TEXT} autoComplete="off"
             onChange={(e) => {
               setText(e.target.value)
               setCaret(e.target.selectionStart ?? e.target.value.length)
@@ -770,7 +810,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } else if (e.key === 'Escape' && typedMention) { e.preventDefault(); setMentionOff(true) } }}
             onKeyUp={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} onClick={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} />
           <details className="chat-more chat-more--inline">
-            <summary>{t('conv.writeMore')}</summary>
+            <summary>{headingCase(t('conv.writeMore'))}</summary>
           {emojiOk && (
             <>
               <Button type="button" variant="tertiary" aria-expanded={emojiOpen} onClick={() => setEmojiOpen((o) => !o)}>{t('emoji.button')}</Button>
@@ -811,12 +851,12 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           <HelpMeReword problem={problem} text={text} onUse={putInBox} />
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           {!room && conversation?.kind !== 'huddle' ? <PhotoAttach photos={draftPhotos} onChange={setDraftPhotos}><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></PhotoAttach> : <div className="composer__actions"><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></div>}
+          <ClearDraft show={text.trim() !== '' || draftPhotos.length > 0} onClear={cancelDraft} />
           <DraftPhotos photos={draftPhotos} onChange={setDraftPhotos} />
           <ActionError error={sendDraftPhotos.error} />
           {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">
             {QUICK_REPLY_KEYS.map((k) => { const Icon = QUICK_ICONS[k]; return <button key={k} type="button" className="chat-quick__btn" aria-label={t(`conv.quick.${k}`)} title={t(`conv.quick.${k}`)} onClick={() => void submit(t(`conv.quick.${k}`))}><Icon aria-hidden="true" /></button> })}
           </div>}
-          {(text.trim() !== '' || draftPhotos.length > 0) && <Button type="button" variant="secondary" className="chat-cancel" onClick={cancelDraft}>{t('conv.cancelDraft')}</Button>}
         </form>
         {!room && <ShareChooser conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
         {!room && conversation!.kind !== 'direct' && <PlanTools conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
@@ -832,7 +872,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       <ActionError error={jump.error} />
       {react.error && <p role="alert" className="field__error">{t('conv.reactFailed')}</p>}
       {!permanent && <details className="chat-more chat-more--tools">
-        <summary>{t('conv.tools')}</summary>
+        <summary>{headingCase(t('conv.tools'))}</summary>
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
       {conversation?.kind === 'huddle' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('chuddle.details')}</Button>}
       {room && <Button variant="secondary" onClick={() => setDetails(true)}>{t(room.kind === 'channel' ? 'room.channelDetails' : 'room.details')}</Button>}
@@ -858,8 +898,9 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
 }) {
   const device = useSyncExternalStore(subscribeStanley, getStanleyThread)
   const waiting = useStanleyBusy()
-  const items = threadItems(messages, device)
-  const dots = waiting ? <li key="waiting" className="chat-msg chat-msg--answer"><p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong></p><p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p></li> : null
+  // The server's "I'm now speaking for ..." lines are left out: the cards no longer name the ship, so a change of voice needs no marker.
+  const items = threadItems(messages.filter((m) => !m.system), device)
+  const dots = waiting ? <li key="waiting" className="chat-msg chat-msg--answer"><p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.reply')}</strong></p><p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p></li> : null
   const rows = items.map((item, i) => {
     const heading = startsDay(items, i) ? <li key={`h:${item.key}`} className="chat-day"><h3>{new Date(item.at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h3></li> : null
     const row = ((): ReactNode => {
@@ -867,7 +908,7 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
     const asked = item.kind === 'question'
     return (
       <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg chat-msg--answer'}>
-        <p className="chat-msg__meta"><strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.from')}</strong></p>
+        <p className="chat-msg__meta">{!asked && <img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} />}<strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.reply')}</strong> <span className="muted">{shipTime(item.at)}</span></p>
         <p>{item.text}</p>
       </li>
     )
@@ -915,10 +956,11 @@ function AskStanley() {
   return (
     <div className="composer composer--ask">
       <form className="composer composer--chat" onSubmit={(e) => { e.preventDefault(); if (ask) void submit(ask, () => setText('')) }}>
-        <TextArea label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
+        <TextArea clear={false} label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
         {problem && <p role="alert" className="field__error">{problem}</p>}
         {cooldown > 0 && <p role="status" className="muted">{t('stanley.cooldown', { seconds: cooldown })}</p>}
         <Button type="submit" disabled={!ask || busy || cooldown > 0}>{t('stanley.send')}</Button>
+        <ClearDraft show={text !== ''} onClear={() => setText('')} disabled={busy} />
         <p className="muted composer__note">{t('stanley.chat.history').split(/(?<=\.)\s+/).map((line) => <span key={line} className="composer__note-line">{line}</span>)}</p>
       </form>
     </div>
@@ -928,8 +970,8 @@ function AskStanley() {
 /** The shell of the Stanley notices settings. The categories, quiet hours and budget are the existing notification settings; the relay that fills this chat with them comes in the next slice. */
 function StanleyNotices() {
   return (
-    <details className="chat-options chat-more--tools">
-      <summary>{t('stanley.chat.noticesTitle')}</summary>
+    <details className="chat-options chat-more--tools chat-notices">
+      <summary>{headingCase(t('stanley.chat.noticesTitle'))}</summary>
       <p className="muted">{t('stanley.chat.noticesBody')}</p>
       <p><Link to="/me/notifications">{t('stanley.chat.noticesLink')}</Link></p>
       <StanleySuggestions />
@@ -977,9 +1019,9 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
   const link = state === 'active' ? safeNoticePath(n.path) : null
   const body = noticeBody(m.text)
   return (
-    <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}`}>
-      <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>
-      <p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
+    <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}${m.acked === true ? ' chat-msg--seen' : ''}`}>
+      {m.acked !== true && <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>}
+      <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
       <p><strong>{noticeHeadline(m.text)}</strong></p>
       {body && <p>{body}</p>}
       {state !== 'active' && <p className="muted">{t(state === 'superseded' ? (n.lane === 'suggestion' ? 'stanley.moment.putAway' : 'stanley.notice.superseded') : 'stanley.notice.expired')}</p>}
@@ -1000,7 +1042,7 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     if (!n) {
       return (
         <li className="chat-msg chat-msg--stanley">
-          <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
+          <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
           <p>{m.text}</p>
         </li>
       )
@@ -1307,7 +1349,7 @@ function Options({ conversation, messages, awayBusy, onAway, mentionsBusy, onMen
   })
   return (
     <details className="chat-options">
-      <summary>{t('conv.options')}</summary>
+      <summary>{headingCase(t('conv.options'))}</summary>
       <div className="chip-row">
         <Chip pressed={conversation.notifyAway === true} onToggle={() => { if (!awayBusy) onAway(conversation.notifyAway !== true) }}>{t('conv.away')}</Chip>
       </div>
@@ -1366,7 +1408,7 @@ function PlanCardSender({ conversationId, onSent }: { conversationId: string; on
   const send = useAction(async () => { if (card) { await api.chatConversations.send(conversationId, encodePlanCard(card), newClientId()); setPlace(''); onSent() } })
   return (
     <details className="plan-card-form">
-      <summary>{t('chat.card.title')}</summary>
+      <summary>{headingCase(t('chat.card.title'))}</summary>
       <p className="muted">{t('chat.card.hint')}</p>
       <form onSubmit={(e) => { e.preventDefault(); void send.run() }}>
         <Field label={t('chat.card.place')} value={place} maxLength={PLACE_MAX} onChange={(e) => setPlace(e.target.value)} autoComplete="off" />

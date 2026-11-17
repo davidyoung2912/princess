@@ -4,7 +4,7 @@ import { earlierDates, noteDeadlines } from '../../domain/deadlineLog'
 import { formatDate } from '../../domain/cruise'
 import { useNow } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 
 /** Where each deadline's date comes from and which time zone it is in, plus any earlier date it replaced (MNG-15). A moved deadline is a new event; the old one stays on record. */
 export function DeadlineNotes({ counts }: { counts: readonly Countdown[] }) {
@@ -23,7 +23,7 @@ export function DeadlineNotes({ counts }: { counts: readonly Countdown[] }) {
   if (counts.length === 0) return null
   return (
     <details className="calm-hide">
-      <summary>{t('count.details')}</summary>
+      <summary>{headingCase(t('count.details'))}</summary>
       <ul className="plain-list">
         {counts.map((c) => (
           <li key={c.id}>

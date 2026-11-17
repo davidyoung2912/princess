@@ -3,7 +3,7 @@ import type { ChatConversation } from '../../api/chatTypes'
 import { newClientId } from '../../domain/chatThread'
 import { useAction } from '../../hooks/useAction'
 import { api } from '../../runtime'
-import { t } from '../../i18n'
+import { t, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { shareError } from './ChatCards'
 
@@ -28,7 +28,7 @@ export function SendToChat({ shareRef, title, kind = 'card' }: { shareRef: strin
   })
   return (
     <details className="send-chat" onToggle={(e) => setOpen(e.currentTarget.open)}>
-      <summary>{t('sendchat.title')}<span className="visually-hidden"> {title}</span></summary>
+      <summary>{headingCase(t('sendchat.title'))}<span className="visually-hidden"> {title}</span></summary>
       <p role="status" className="visually-hidden">{sentTo}</p>
       {sentTo && <p className="muted">{sentTo}</p>}
       {open && !rows && !failed && <p role="status" className="muted">{t('conv.share.loading')}</p>}

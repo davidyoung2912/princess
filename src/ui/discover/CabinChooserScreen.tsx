@@ -190,7 +190,7 @@ export function CabinChooserScreen() {
           {c.warnings.length > 0 && <ul className="plain-bullets">{c.warnings.map((w) => <li key={w}>{w}</li>)}</ul>}
           <RegretCards cards={cabinRegrets(c)} heading={t('regret.cabin')} headingId={`regret-${c.cabin.number}`} />
           <details>
-            <summary>{t('cabins.why')}</summary>
+            <summary>{headingCase(t('cabins.why'))}</summary>
             {(['sleep', 'motion', 'noise'] as const).map((k) => (
               <div key={k}>
                 <h4>{headingCase(t(`cabins.${k}` as StringKey))}</h4>

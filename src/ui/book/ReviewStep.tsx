@@ -8,7 +8,7 @@ import { sailingById } from '../../domain/sailings'
 import { categoryById } from '../../domain/ship'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Card } from '../Card'
 import { PriceBreakdown, PriceState } from '../discover/parts'
 import { formatDateTime } from '../account/format'
@@ -78,7 +78,7 @@ export function ReviewStep({ draft, update, error }: StepProps) {
           <fieldset key={doc.id}>
             <legend>{doc.title}</legend>
             <details>
-              <summary>{t('book.legal.read')}<span className="visually-hidden"> {doc.title}</span></summary>
+              <summary>{headingCase(t('book.legal.read'))}<span className="visually-hidden"> {doc.title}</span></summary>
               {doc.body.map((p) => <p key={p}>{p}</p>)}
             </details>
             <label className="choice choice--top">

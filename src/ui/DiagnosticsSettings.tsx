@@ -46,7 +46,7 @@ export function DiagnosticsSettings() {
       ) : (
         <>
           <details>
-            <summary>{t('diag.count', { count: entries.length })}</summary>
+            <summary>{headingCase(t('diag.count', { count: entries.length }))}</summary>
             <ul>
               {entries.map((e, i) => <li key={i}><small>{e.at.slice(0, 16).replace('T', ' ')} · {e.kind} · {e.message}</small></li>)}
             </ul>
@@ -70,7 +70,7 @@ export function DiagnosticsSettings() {
         </>
       ) : <p>{t('diag.stanley.none')}</p>}
       <details>
-        <summary>{t('ops.open')}</summary>
+        <summary>{headingCase(t('ops.open'))}</summary>
         <StanleyOpsConsole />
       </details>
       <p role="status">{note}</p>

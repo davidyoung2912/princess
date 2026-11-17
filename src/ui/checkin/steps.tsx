@@ -9,7 +9,7 @@ import { dateIn } from '../../domain/timezones'
 import type { PersonaId } from '../../domain/people'
 import { demoNow } from '../../demo/store'
 import { useAction } from '../../hooks/useAction'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Field } from '../Field'
@@ -142,7 +142,7 @@ export function PhotoStep({ view, save, busy, error }: StepProps) {
       <CheckinError error={error} />
       <p role="status">{reading ? t('checkin.photo.checking') : busy ? t('checkin.saving') : ''}</p>
       <details className="demo-box">
-        <summary>{t('checkin.photo.demo')}</summary>
+        <summary>{headingCase(t('checkin.photo.demo'))}</summary>
         <p className="muted">{t('checkin.photo.demoBody')}</p>
         <div className="button-row">
           {(['good', 'dark', 'blurry'] as const).map((k) => <Button key={k} variant="secondary" disabled={busy} onClick={() => void submit(SAMPLE_PHOTOS[k])}>{t(`checkin.photo.sample.${k}` as StringKey)}</Button>)}

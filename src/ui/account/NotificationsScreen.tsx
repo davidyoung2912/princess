@@ -7,7 +7,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Banner, type BannerKind } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -55,7 +55,7 @@ export function NotificationsScreen() {
                 {shown.map(row)}
                 {held.length > 0 && (
                   <details className="explain">
-                    <summary>{t('notices.held', { count: held.length })}</summary>
+                    <summary>{headingCase(t('notices.held', { count: held.length }))}</summary>
                     <p className="muted">{t('notices.heldBody')}</p>
                     {held.map(row)}
                   </details>

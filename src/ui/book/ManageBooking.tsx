@@ -8,7 +8,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { useMine } from '../../hooks/useMine'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Dialog } from '../Dialog'
@@ -33,7 +33,7 @@ export function ManageBooking({ number, onChanged }: { number: string; onChanged
             </div>
             {!b.canChange && b.canCancel && <p className="muted">{t('book.manage.noChange')} <LinkButton to="/me/contact" variant="tertiary">{t('account.err.contact')}</LinkButton></p>}
             <details>
-              <summary>{t('book.manage.terms')}</summary>
+              <summary>{headingCase(t('book.manage.terms'))}</summary>
               <CancellationTable current={b.cancel.tier} />
             </details>
             {dialog === 'change' && <ChangeDialog number={number} current={b.sailingId} onClose={() => setDialog(null)} onDone={() => { setDialog(null); booking.retry(); onChanged() }} />}

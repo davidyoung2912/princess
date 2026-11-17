@@ -51,7 +51,7 @@ export function ComparisonResult({ comparison, nameOf }: { comparison: Compariso
       <ul>{comparison.ifYouValue.map((v) => <li key={v.criterion}>{t('find8.ifYouValue', { what: v.label, which: v.sailingIds.map(nameOf).join(' / ') })}</li>)}</ul>
       {comparison.rows.some((r) => r.missing.length > 0) && <ul>{comparison.rows.filter((r) => r.missing.length > 0).map((r) => <li key={r.sailingId}>{t('find8.missing', { sailing: r.title, list: r.missing.join(', ') })}</li>)}</ul>}
       <details>
-        <summary>{t('find8.ports')}</summary>
+        <summary>{headingCase(t('find8.ports'))}</summary>
         {comparison.rows.map((r) => <div key={r.sailingId}><h4>{r.title}</h4><ul>{r.portNotes.map((n) => <li key={n}>{n}</li>)}</ul></div>)}
       </details>
       <p className="muted">{comparison.priceBasis}</p>

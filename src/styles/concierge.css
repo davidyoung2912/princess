@@ -52,6 +52,8 @@
 .stanley__form .field label { grid-column: 1 / -1; font-size: var(--fs-caption); margin-bottom: var(--space-1); }
 .stanley__form .field__input { grid-column: 1; }
 .stanley__form .btn { grid-column: 2; }
+.stanley__form > .composer__clear { grid-column: 1 / -1; }
+.stanley__form > .composer__clear .btn { grid-column: auto; }
 .stanley__note { margin: 0; font-size: var(--fs-caption); }
 .stanley__typing { display: inline-flex; gap: 0.3rem; align-items: center; margin: 0; }
 .stanley__typing i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--text-muted); animation: stanley-dot 1s infinite ease-in-out; }

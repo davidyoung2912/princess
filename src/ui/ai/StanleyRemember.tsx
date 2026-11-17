@@ -129,7 +129,7 @@ export function StanleyVoyageStory({ recap }: { recap: Recap }) {
       <p>{story.closing}</p>
       {gone.length > 0 && (
         <details>
-          <summary>{t('rem13.story.removed', { count: gone.length })}</summary>
+          <summary>{headingCase(t('rem13.story.removed', { count: gone.length }))}</summary>
           <ul className="plain-list">{gone.map((m) => <li key={m.id}><span>{m.text}</span> <Button variant="tertiary" onClick={() => put(restoreLine(choices, m.id))}>{t('rem13.story.restore')}<span className="visually-hidden"> {m.text.slice(0, 40)}</span></Button></li>)}</ul>
         </details>
       )}

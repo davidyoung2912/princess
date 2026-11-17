@@ -12,7 +12,7 @@ import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useOffers } from '../../hooks/useOffers'
 import { useSettings } from '../../hooks/useSettings'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -38,7 +38,7 @@ function OfferItem({ offer, trip, onDismiss, ctx }: { offer: OfferDef; trip: str
       <h3 id={id} className="card__title">{th(`offer.${offer.id}.title` as StringKey)}</h3>
       <p>{t(`offer.${offer.id}.body` as StringKey)}</p>
       <details className="explain">
-        <summary>{t('offer.whyOpen')}<span className="visually-hidden"> {t(`offer.${offer.id}.title` as StringKey)}</span></summary>
+        <summary>{headingCase(t('offer.whyOpen'))}<span className="visually-hidden"> {t(`offer.${offer.id}.title` as StringKey)}</span></summary>
         <ul className="plain-bullets">{offerReasons(offer, ctx).map((r) => <li key={r}>{t(`offer.why.${r}` as StringKey)}</li>)}</ul>
         <p className="muted">{t('offer.whyNothingElse')}</p>
       </details>

@@ -6,7 +6,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { usePersona } from '../../hooks/useDemo'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Card } from '../Card'
 
 /** "What is this?" under a charge: a plain reason, and a way to question it (XT-02, S7-05). */
@@ -14,7 +14,7 @@ export function ExplainLine({ line, questionTo }: { line: FolioLine; questionTo:
   const e = explainCharge(line)
   return (
     <details className="explain">
-      <summary>{t('explain.open')}<span className="visually-hidden"> {line.description}</span></summary>
+      <summary>{headingCase(t('explain.open'))}<span className="visually-hidden"> {line.description}</span></summary>
       <p>{t(`explain.${e.id}` as StringKey, e.params)}</p>
       {canQuestion(line) && <p><Link to={questionTo}>{t('explain.question')}</Link></p>}
     </details>

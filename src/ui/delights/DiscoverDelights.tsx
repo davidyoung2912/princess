@@ -71,7 +71,7 @@ export function LandHolidayCompare({ sailing, total, guests }: { sailing: Sailin
       <p>{t('dl3.land.cruise', { amount: formatMoney(c.perDay), days: nights + 1 })}</p>
       <p>{t('dl3.land.range', { low: formatMoney(LAND_HOLIDAY_PER_DAY.low), high: formatMoney(LAND_HOLIDAY_PER_DAY.high) })} {t(`dl3.land.${c.position}` as StringKey)}</p>
       <LastHolidayForm perDay={c.perDay} />
-      <details><summary>{t('dl3.land.how')}</summary><p>{t('dl3.land.method')}</p></details>
+      <details><summary>{headingCase(t('dl3.land.how'))}</summary><p>{t('dl3.land.method')}</p></details>
     </Card>
   )
 }
@@ -84,7 +84,7 @@ export function CabinExtras({ cabin, sailing }: { cabin: Cabin; sailing: Sailing
   const names = (list: { name: string }[]) => (list.length ? list.map((p) => p.name).join(', ') : t('dl3.near.none'))
   return (
     <details>
-      <summary>{t('dl3.walk.title')}</summary>
+      <summary>{headingCase(t('dl3.walk.title'))}</summary>
       <ul className="plain-bullets">
         {walks.walks.map((w) => <li key={w.id}>{t('dl3.walk.to', { count: w.minutes, place: w.name })} ({t(w.by === 'deck' ? 'dl3.walk.byDeck' : 'dl3.walk.byLift')})</li>)}
         <li>{t('dl3.walk.lift', { minutes: walks.lift.minutes, bank: walks.lift.bank })}</li>

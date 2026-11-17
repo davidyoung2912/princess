@@ -20,6 +20,7 @@ import { t, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { useStanleyAsk } from './useStanleyAsk'
 import { Dialog } from '../Dialog'
+import { ClearDraft } from '../ClearDraft'
 import { DialogHeader } from '../DialogHeader'
 import { TextArea } from '../Field'
 import { PocketPanel, ReadAloud } from './StanleyVoice'
@@ -118,8 +119,9 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
         {help === 'pocket' && <PocketPanel />}
         <HandoffCases />
         <form className="stanley__form" onSubmit={(e) => void submit(e)} noValidate>
-          <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={3} />
+          <TextArea clear={false} label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={3} />
           <Button type="submit" disabled={!draft.trim() || busy || cooldown > 0}>{t('stanley.send')}</Button>
+          <ClearDraft show={draft !== ''} onClear={() => setDraft('')} disabled={busy} />
         </form>
         {cooldown > 0 && <p role="status" className="muted stanley__note">{t('stanley.cooldown', { seconds: cooldown })}</p>}
         {problem && <p role="alert" className="field__error stanley__note">{problem}</p>}

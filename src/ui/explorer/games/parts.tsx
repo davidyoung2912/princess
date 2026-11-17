@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { clock } from '../../../domain/games/sudoku'
 import { startVisibleInterval } from '../../../hooks/visibleInterval'
 import { Card } from '../../Card'
+import { headingCase } from '../../../i18n'
 import { Ask, Clock, X } from '../../icons'
 
 /** The pieces every game shares, so the games look and behave the same: How to Play, clock, level picker, hint box and solved card. */
@@ -22,7 +23,7 @@ export function GameClock({ seconds, label }: { seconds: number; label: string }
 export function GameHelp({ title, children }: { title: string; children: ReactNode }) {
   return (
     <details className="game-help">
-      <summary><Ask aria-hidden="true" focusable="false" />{title}</summary>
+      <summary><Ask aria-hidden="true" focusable="false" />{headingCase(title)}</summary>
       {children}
     </details>
   )

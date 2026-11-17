@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import type { StanleyCard } from '../../ai/stanleyCard'
-import { t, type StringKey } from '../../i18n'
+import { t, type StringKey, headingCase } from '../../i18n'
 import { LinkButton } from '../Button'
 
 /** The time a card's data was read or published, as the guest would say it. Never the time of the reply. */
@@ -12,7 +12,7 @@ export function BasedOn({ card, onNavigate }: { card: StanleyCard; onNavigate?: 
   const p = card.provenance
   return (
     <details className="stanley-card2__based">
-      <summary>{t('stanley.card.based')}</summary>
+      <summary>{headingCase(t('stanley.card.based'))}</summary>
       <dl className="stanley-card2__facts">
         {p.owner && <><dt>{t('stanley.card.owner')}</dt><dd>{p.owner}</dd></>}
         <dt>{t('stanley.card.dataTime')}</dt>

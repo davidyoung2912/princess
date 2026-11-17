@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { undoOpen, type StanleyReceipt } from '../../ai/stanleyActivity'
 import { useNow } from '../../hooks/useDemo'
 import { useStanleyActivity, type ActivityFailure } from '../../hooks/useStanleyActivity'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { useShipTime } from '../onboard/shipTime'
@@ -108,7 +108,7 @@ function Receipt({ r, when, defaultOpen, canUndo, busy, onUndo }: { r: StanleyRe
     <li id={`stanley-receipt-${r.id}`}>
       <p><strong>{r.what}</strong> <span className="muted">· {t(`stanleyActivity.status.${r.status}` as StringKey)} · {when} · {r.number}</span></p>
       <details open={defaultOpen}>
-        <summary>{t('stanleyActivity.why')}</summary>
+        <summary>{headingCase(t('stanleyActivity.why'))}</summary>
         <dl>
           <dt>{t('stanleyActivity.field.why')}</dt><dd>{r.why}</dd>
           <dt>{t('stanleyActivity.field.facts')}</dt><dd>{r.facts} <span className="muted">{when}</span></dd>

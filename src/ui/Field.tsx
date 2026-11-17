@@ -1,4 +1,5 @@
-import { useId, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { useId, useRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { ClearDraft } from './ClearDraft'
 import { CircleAlert } from './icons'
 import { headingCase } from '../i18n'
 import { HelpTip } from './HelpTip'
@@ -76,11 +77,22 @@ interface TextAreaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>
   hint?: string
   /** An optional short explanation, opened from a "?" button beside the label. */
   help?: string
+  /** Show a Clear button under the box while it holds something (default on). A screen that has a Clear of its own for the whole draft turns this off. */
+  clear?: boolean
+}
+
+/** Empties a controlled textarea the way typing would, so the screen's own `onChange` runs. */
+function emptyTextarea(box: HTMLTextAreaElement) {
+  Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set?.call(box, '')
+  box.dispatchEvent(new Event('input', { bubbles: true }))
+  box.focus()
 }
 
 /** A multi-line field with a visible label and optional hint. It holds the guest's own words, so spell checking, autocorrect and sentence capitals are on (a caller can override). */
-export function TextArea({ label, hint, help, ...rest }: TextAreaProps) {
+export function TextArea({ label, hint, help, clear = true, ...rest }: TextAreaProps) {
   const id = useId()
+  const box = useRef<HTMLTextAreaElement>(null)
+  const filled = typeof rest.value === 'string' && rest.value !== '' && !rest.readOnly && !rest.disabled
   return (
     <div className="field">
       <div className="field__top">
@@ -88,7 +100,8 @@ export function TextArea({ label, hint, help, ...rest }: TextAreaProps) {
         {help && <HelpTip about={label}>{help}</HelpTip>}
       </div>
       {hint && <p id={`${id}-hint`} className="field__hint">{hint}</p>}
-      <textarea id={id} className="field__input" rows={3} aria-describedby={hint ? `${id}-hint` : undefined} spellCheck autoCorrect="on" autoCapitalize="sentences" {...rest} />
+      <textarea ref={box} id={id} className="field__input" rows={3} aria-describedby={hint ? `${id}-hint` : undefined} spellCheck autoCorrect="on" autoCapitalize="sentences" {...rest} />
+      {clear && <ClearDraft show={filled} onClear={() => box.current && emptyTextarea(box.current)} />}
     </div>
   )
 }
