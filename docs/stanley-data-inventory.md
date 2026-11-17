@@ -387,4 +387,14 @@ On the phone only. A button in the Stanley dialog uses the browser's speech reco
 
 `POST /me/stanley/group/guardian`. Run only when the booker asks. For each supervised child on their account, sets one reminder on the booker's own list an hour before each port day's all aboard time, saying the child's first name ("Sam: all aboard in Cozumel is in an hour."). It is an ordinary reminder (anchor type `guardian`, key of child, date and class so a day is never set twice), counts toward the 30 per trip and the reminders cap, and can be removed from the list. The child gets no reminder and no message and nobody else is told. No ledger line is written. A supervised account is refused (403).
 
-Not built: group meeting reminders each member accepts, copies to a helper (REM-D04), the share sheet for people with no account.
+### A group meeting reminder each member accepts (AC-R8-01)
+
+`POST /me/stanley/group/meeting-reminder` with the group, the plan and a lead of 0 to 120 minutes (30 by default). The proposal is the plan card the group already has, so nothing is proposed or copied to anyone. A member who has said Going to the plan can set one reminder on their own list before it (anchor type `meeting`, key of the plan, so once per plan). A member who has not said Going is refused (403 notGoing), and nobody else gets anything. The text is the plan's title as the group wrote it and how soon it starts. It is a plain clock reminder and does not follow the member's own plan.
+
+### Copies for a helper (REM-D04)
+
+The guest's own choice, `GET` and `PUT /me/stanley/group/helper-copies`, kept as on or off with its time in the guest's own state store (`stanley.helperCopies`), off until they switch it on, and off the moment they switch it off. When the helper's phone is checked, copies are added for each guest whose live helper link has the Stanley permission (thirty days from when the guest last saved the link) and who switched copies on: the guest's due reminders that are all aboard, guardian all-aboard copies, and the cabin-exit, bag-night and all-aboard ones Stanley set, never one marked private and never one the guest wrote. Each copy carries the guest's first name in front and is sent once (the reminder id is the notice key). Nothing is stored for the helper. A supervised helper or guest gets none.
+
+### Share sheet (AC-R8-03)
+
+On the phone only. A Share button on a coming reminder opens the phone's own share sheet with its words and a plain calendar file (no alarm, attendee or link). Where there is no share sheet the calendar file is saved. Princess sends nothing to anyone and keeps nothing.

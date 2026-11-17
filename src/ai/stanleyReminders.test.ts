@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultLeadMin, editTime, groupReminders, normalizeReminder, normalizeReminders, reminderContext, reminderProblem, remindMeArgs } from './stanleyReminders'
+import { defaultLeadMin, editTime, groupReminders, normalizeReminder, normalizeReminders, reminderContext, reminderProblem, remindMeArgs, reminderShare } from './stanleyReminders'
 
 const raw = (over: Record<string, unknown> = {}) => ({ id: 'r1', text: 'Be back', dueAt: '2027-03-22T20:15:00Z', when: 'Today, Mon 22 Mar, 4:15 PM ship time', kind: 'clock', anchor: null, lead: null, state: 'scheduled', note: null, private: false, past: false, ...over })
 
@@ -60,5 +60,18 @@ describe('editing', () => {
   it('names the refusals the server gives', () => {
     expect(['past', 'tooFar', 'time', 'text', 'tooMany', 'forbidden'].map(reminderProblem)).toEqual(['past', 'tooFar', 'time', 'text', 'tooMany', 'forbidden'])
     expect(reminderProblem('boom')).toBe('other')
+  })
+})
+
+describe('reminderShare (AC-R8-03)', () => {
+  it('builds words and a plain calendar event, with nothing to send', () => {
+    const r = reminderShare({ id: 'abc', text: 'Meet at the Piazza, 3 pm; bring hats', dueAt: Date.UTC(2027, 2, 22, 15, 0), when: 'Monday 22 March, 3:00 pm ship time' })
+    expect(r.text).toBe('Meet at the Piazza, 3 pm; bring hats. Monday 22 March, 3:00 pm ship time')
+    expect(r.ics).toContain('DTSTART:20270322T150000Z')
+    expect(r.ics).toContain('DTEND:20270322T151500Z')
+    expect(r.ics).toContain('SUMMARY:Meet at the Piazza\\, 3 pm\\; bring hats')
+    expect(r.ics).not.toMatch(/ATTENDEE|VALARM|URL/)
+    expect(r.ics.endsWith('\r\n')).toBe(true)
+    expect(reminderShare({ id: 'x', text: 'Hi', dueAt: 0, when: '' }).text).toBe('Hi')
   })
 })

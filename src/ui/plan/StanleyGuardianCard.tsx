@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { normalizeGuardianCopies, type GuardianCopies } from '../../ai/stanleyGroup'
+import { normalizeGuardianCopies, normalizeHelperCopies, type GuardianCopies, type HelperCopies } from '../../ai/stanleyGroup'
 import { t, th } from '../../i18n'
 import { stanleyGroup } from '../../runtime'
 import { Button } from '../Button'
@@ -39,6 +39,39 @@ export function StanleyGuardianCard() {
         </div>
       )}
       {(result?.notChecked ?? []).length > 0 && <ul className="muted">{result?.notChecked.map((n) => <li key={n}>{n}</li>)}</ul>}
+    </Card>
+  )
+}
+
+/** Copies to a helper (REM-D04): the guest chooses whether a helper they already gave a link to is also sent their all-aboard, cabin-exit and bag-night reminders, and can switch it off at once. */
+export function StanleyHelperCopiesCard() {
+  const [choice, setChoice] = useState<HelperCopies | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const live = useRef(true)
+  useEffect(() => {
+    live.current = true
+    stanleyGroup.helperCopies().then((raw) => { if (live.current) setChoice(normalizeHelperCopies(raw)) }, () => undefined)
+    return () => { live.current = false }
+  }, [])
+  const set = (on: boolean) => {
+    live.current = true
+    setBusy(true)
+    stanleyGroup.setHelperCopies(on).then(
+      (raw) => { if (live.current) { const c = normalizeHelperCopies(raw); if (c) setChoice(c); setFailed(c === null); setBusy(false) } },
+      () => { if (live.current) { setFailed(true); setBusy(false) } },
+    )
+  }
+  return (
+    <Card labelledBy="helpercopies-h">
+      <h2 id="helpercopies-h" className="card__title">{th('stanleyHelperCopies.title')}</h2>
+      <p>{t('stanleyHelperCopies.intro')}</p>
+      <label className="choice">
+        <input type="checkbox" checked={choice?.on ?? false} disabled={busy || choice === null} onChange={(e) => set(e.target.checked)} />
+        <span>{t('stanleyHelperCopies.switch')}</span>
+      </label>
+      {failed && <p role="alert" className="field__error">{t('stanleyHelperCopies.error')}</p>}
+      {(choice?.notChecked ?? []).length > 0 && <ul className="muted">{choice?.notChecked.map((n) => <li key={n}>{n}</li>)}</ul>}
     </Card>
   )
 }

@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { upcomingFromCache } from '../../ai/stanleyOffline'
 import { normalizeAction, planSnapshot, type StanleyAction } from '../../ai/stanleyAction'
-import { editTime, groupReminders, LEAD_CHOICES, reminderContext, type StanleyReminder } from '../../ai/stanleyReminders'
+import { editTime, groupReminders, LEAD_CHOICES, reminderContext, reminderShare, type StanleyReminder } from '../../ai/stanleyReminders'
 import { useOnline } from '../../hooks/useOnline'
 import { useNow } from '../../hooks/useDemo'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
@@ -139,6 +139,25 @@ interface ItemProps {
   onKeep?: () => void
 }
 
+/** The phone's share sheet with the reminder's words and a calendar file; with no share sheet (a desktop), the calendar file is saved instead. Nothing is sent by Princess. */
+async function shareReminder(item: StanleyReminder): Promise<void> {
+  const s = reminderShare(item)
+  const file = new File([s.ics], s.fileName, { type: 'text/calendar' })
+  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean }
+  try {
+    if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) { await nav.share({ title: s.title, text: s.text, files: [file] }); return }
+    if (typeof nav.share === 'function') { await nav.share({ title: s.title, text: s.text }); return }
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return
+  }
+  const url = URL.createObjectURL(file)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = s.fileName
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function Item({ item, editing, busy, onEdit, onSave, onRemove, onKeep }: ItemProps) {
   const ended = item.state === 'cancelled'
   return (
@@ -150,6 +169,7 @@ function Item({ item, editing, busy, onEdit, onSave, onRemove, onKeep }: ItemPro
       <div className="button-row">
         {ended && onKeep ? <Button variant="secondary" disabled={busy} onClick={onKeep}>{t('stanleyReminders.keep')}</Button> : null}
         {!ended && !item.past ? <Button variant="tertiary" aria-expanded={editing} onClick={onEdit}>{t('stanleyReminders.edit')}<span className="visually-hidden"> {item.text}</span></Button> : null}
+        {!ended && !item.past ? <Button variant="tertiary" onClick={() => { void shareReminder(item) }}>{t('stanleyReminders.share')}<span className="visually-hidden"> {item.text}</span></Button> : null}
         <Button variant="tertiary" disabled={busy} onClick={onRemove}>{t('stanleyReminders.remove')}<span className="visually-hidden"> {item.text}</span></Button>
       </div>
       {editing ? <EditForm item={item} busy={busy} onSave={onSave} onCancel={onEdit} /> : null}

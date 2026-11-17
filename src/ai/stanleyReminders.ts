@@ -85,3 +85,16 @@ export type ReminderProblem = 'past' | 'tooFar' | 'time' | 'text' | 'tooMany' | 
 export function reminderProblem(code: string): ReminderProblem {
   return code === 'past' || code === 'tooFar' || code === 'time' || code === 'text' || code === 'tooMany' || code === 'forbidden' ? code : 'other'
 }
+
+const icsText = (v: string): string => v.replace(/\\/g, '\\\\').replace(/[;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, '\\n')
+const icsStamp = (ms: number): string => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+
+/**
+ * The share sheet (AC-R8-03): the words and a calendar file for one reminder, for the guest to hand to their own calendar or to anyone they choose. It only builds the text; the phone's share sheet does the sending, and Stanley sends nothing to anyone.
+ * The calendar entry is a plain event with no alarm, no attendee and no link back.
+ */
+export function reminderShare(r: Pick<StanleyReminder, 'id' | 'text' | 'dueAt' | 'when'>): { title: string; text: string; ics: string; fileName: string } {
+  const end = r.dueAt + 15 * 60_000
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Princess//Reminder//EN', 'BEGIN:VEVENT', `UID:${r.id}@reminder.princess`, `DTSTAMP:${icsStamp(r.dueAt)}`, `DTSTART:${icsStamp(r.dueAt)}`, `DTEND:${icsStamp(end)}`, `SUMMARY:${icsText(r.text)}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n') + '\r\n'
+  return { title: r.text, text: r.when ? `${r.text}. ${r.when}` : r.text, ics, fileName: 'reminder.ics' }
+}

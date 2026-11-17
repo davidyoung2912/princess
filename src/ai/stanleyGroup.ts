@@ -21,3 +21,19 @@ export function normalizeGuardianCopies(raw: unknown): GuardianCopies | null {
   })
   return { hasChildren: o.hasChildren, children: list(o.children, 10, 40), made, waiting: list(o.waiting, 30, 200), notChecked: list(o.notChecked, 10, 300), asOf: str(o.asOf, 30) || null }
 }
+
+/** The guest's choice to let a helper be sent copies (`GET` and `PUT /me/stanley/group/helper-copies`, REM-D04). */
+export interface HelperCopies { on: boolean; since: string | null; notChecked: string[] }
+
+export function normalizeHelperCopies(raw: unknown): HelperCopies | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  if (typeof o.on !== 'boolean') return null
+  return { on: o.on, since: str(o.since, 30) || null, notChecked: list(o.notChecked, 10, 300) }
+}
+
+/** What a failed meeting reminder was, from the server's code. */
+export type MeetingProblem = 'already' | 'past' | 'time' | 'notGoing' | 'tooMany' | 'other'
+export function meetingProblem(code: string): MeetingProblem {
+  return code === 'already' || code === 'past' || code === 'time' || code === 'notGoing' || code === 'tooMany' ? code : 'other'
+}

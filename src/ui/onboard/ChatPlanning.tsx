@@ -10,7 +10,8 @@ import { clock12 } from '../../domain/planCard'
 import { useAction } from '../../hooks/useAction'
 import { sendWithin, worthRetrying } from '../../hooks/useOutbox'
 import { useNow } from '../../hooks/useDemo'
-import { api } from '../../runtime'
+import { meetingProblem } from '../../ai/stanleyGroup'
+import { api, stanleyGroup } from '../../runtime'
 import { t, type StringKey, headingCase } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { useShipTime } from './shipTime'
@@ -119,6 +120,17 @@ export function PlanMessage({ conversationId, message, canAct, held, onHold }: {
   })
   const when = [card.day !== undefined ? t('card.day', { day: card.day }) : '', card.time ? clock12(card.time) : ''].filter(Boolean).join(', ')
   const mine = rsvpOf(tally?.mine)
+  const [meetNote, setMeetNote] = useState<StringKey | null>(null)
+  const remind = useAction(async () => {
+    setMeetNote(null)
+    try {
+      await stanleyGroup.meetingReminder({ groupId: conversationId, planId: message.id })
+      setMeetNote('cplan.remind.done')
+    } catch (e) {
+      const p = meetingProblem(isApiError(e) ? e.message : '')
+      setMeetNote(p === 'already' ? 'cplan.remind.already' : p === 'past' ? 'cplan.remind.past' : p === 'time' ? 'cplan.remind.time' : 'cplan.remind.failed')
+    }
+  }, { quiet: true })
   const booking = isBookingPlan(card)
   const link = cardLink({ type: 'plan', path: card.path })
   return (
@@ -138,6 +150,12 @@ export function PlanMessage({ conversationId, message, canAct, held, onHold }: {
           <p className="muted">{t('cplan.counts', { going: tally.counts[0] ?? 0, maybe: tally.counts[1] ?? 0, no: tally.counts[2] ?? 0 })}</p>
           {tally.going && tally.going.length > 0 && <p className="muted">{t('cplan.goingNames', { names: tally.going.join(', ') })}</p>}
           {tally.addedToPlan && mine === 'going' && <p role="status">{t('cplan.added')}</p>}
+          {mine === 'going' && card.day !== undefined && card.time && (
+            <div className="button-row">
+              <Button variant="tertiary" disabled={!canAct || remind.busy || meetNote === 'cplan.remind.done'} onClick={() => void remind.run()}>{t('cplan.remind.button')}<span className="visually-hidden"> {card.title}</span></Button>
+            </div>
+          )}
+          {meetNote && <p role={meetNote === 'cplan.remind.done' ? 'status' : 'alert'} className={meetNote === 'cplan.remind.done' ? undefined : 'field__error'}>{t(meetNote)}</p>}
           {booking && link && (
             <>
               <p className="muted">{t('cplan.bookNote')}</p>

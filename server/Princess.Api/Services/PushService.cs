@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null, IPlanStore? plan = null, IChatStore? chatStore = null, IChatSmsStore? smsStore = null, IFinishStore? finish = null, IChatKeepStore? keepStore = null, IDiningFeed? diningFeed = null)
+    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null, IPlanStore? plan = null, IChatStore? chatStore = null, IChatSmsStore? smsStore = null, IFinishStore? finish = null, IChatKeepStore? keepStore = null, IDiningFeed? diningFeed = null, StanleyGroupService? stanleyGroup = null)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -162,6 +162,7 @@ public sealed class PushService(
             catch (Exception e) when (e is not OperationCanceledException) { }
         }
         if (stanleyReminders is not null) input = input with { Reminders = await stanleyReminders.DueAsync(actor.Id, now, ct) };
+        if (stanleyGroup is not null) input = input with { Reminders = [.. input.Reminders ?? [], .. await stanleyGroup.HelperCopiesDueAsync(actor, now, ct)] };
         if (stanleyActions is not null) input = input with { HelperPrepared = [.. (await stanleyActions.WaitingFromHelperAsync(actor, ct)).Select(a => a.Id)] };
         var built = PushRules.Build(input).Select(n => PushRules.WithLink(n, booking?.Number)).ToList();
         // The thread keeps the full text (the guest is in the app); the phone gets the lock-screen version. Writing to the thread never holds the push back.

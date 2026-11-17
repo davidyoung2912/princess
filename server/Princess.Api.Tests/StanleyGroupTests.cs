@@ -59,6 +59,66 @@ public class StanleyGroupTests
         var facts = new CheckupFacts(DateOnly.FromDateTime(now), now, new(2027, 3, 20), 7, null!, "paid", null, "open", TripRules.CheckinOpensAt(new(2027, 3, 20)), TripRules.CheckinClosesAt(new(2027, 3, 20)), false, [], [], []);
         Assert.Empty(StanleyGroupRules.GuardianCandidates(facts, [(Guid.NewGuid(), "Sam")]));
         Assert.StartsWith("grp:", StanleyGroupRules.Marker);
-        Assert.Equal(2, StanleyGroupRules.NotChecked.Length);
+        Assert.Single(StanleyGroupRules.NotChecked);
+    }
+
+    [Fact]
+    public void AHelperIsCopiedOnlyOnTheReminderKindsThatKeepTheGuestOnTime()
+    {
+        Assert.True(StanleyGroupRules.HelperCopy("allAboard", "allAboard", false));
+        Assert.True(StanleyGroupRules.HelperCopy("guardian", "grp:aboard:x:2027-03-22", false));
+        Assert.True(StanleyGroupRules.HelperCopy("auto", "aut02:aboard:2027-03-22", false));
+        Assert.True(StanleyGroupRules.HelperCopy("auto", "aut02:exit:2027-03-27", false));
+        Assert.True(StanleyGroupRules.HelperCopy("auto", "aut02:bags:2027-03-27", false));
+        Assert.False(StanleyGroupRules.HelperCopy("auto", "aut02:pay7:2027-01-20", false));
+        Assert.False(StanleyGroupRules.HelperCopy("auto", "aut02:portpack:2027-03-21", false));
+        Assert.False(StanleyGroupRules.HelperCopy("plan", "evening-show", false));
+        Assert.False(StanleyGroupRules.HelperCopy(null, null, false));
+    }
+
+    [Fact]
+    public void APrivateReminderIsNeverCopiedToAHelper()
+    {
+        Assert.False(StanleyGroupRules.HelperCopy("allAboard", "allAboard", true));
+        Assert.False(StanleyGroupRules.HelperCopy("guardian", "grp:aboard:x:2027-03-22", true));
+    }
+
+    [Fact]
+    public void ACopyNamesTheGuestByFirstNameAndStaysShort()
+    {
+        Assert.Equal("Rosa: All aboard in Cozumel is in an hour.", StanleyGroupRules.HelperText("Rosa", "All aboard in Cozumel is in an hour."));
+        Assert.True(StanleyGroupRules.HelperText("Rosa", new string('x', 200)).Length <= StanleyReminderRules.TextMax);
+    }
+
+    [Fact]
+    public void TheHelperChoiceIsOffUntilTheGuestSwitchesItOnAndReadsBack()
+    {
+        Assert.False(StanleyGroupRules.ParseChoice(null).On);
+        Assert.False(StanleyGroupRules.ParseChoice("not json").On);
+        var at = new DateTime(2027, 3, 1, 8, 0, 0, DateTimeKind.Utc);
+        var on = StanleyGroupRules.ParseChoice(StanleyGroupRules.ChoiceJson(true, at));
+        Assert.True(on.On);
+        Assert.Equal(at, on.At);
+        Assert.False(StanleyGroupRules.ParseChoice(StanleyGroupRules.ChoiceJson(false, at)).On);
+    }
+
+    [Fact]
+    public void AMeetingReminderIsBeforeThePlansTimeInTheShipZone()
+    {
+        var date = new DateOnly(2027, 3, 22);
+        var thirty = StanleyGroupRules.MeetingDue(date, "15:00", 30, "UTC")!.Value;
+        var none = StanleyGroupRules.MeetingDue(date, "15:00", 0, "UTC")!.Value;
+        Assert.Equal(TimeSpan.FromMinutes(30), none - thirty);
+        Assert.Equal(new DateTime(2027, 3, 22, 15, 0, 0), none);
+        Assert.Null(StanleyGroupRules.MeetingDue(date, "3pm", 30, "UTC"));
+        Assert.Null(StanleyGroupRules.MeetingDue(date, null, 30, "UTC"));
+    }
+
+    [Fact]
+    public void AMeetingReminderSaysTheTitleAndHowSoon()
+    {
+        Assert.Equal("Trivia starts in 30 minutes.", StanleyGroupRules.MeetingText("Trivia", 30));
+        Assert.Equal("Trivia starts in 1 hour.", StanleyGroupRules.MeetingText("Trivia", 60));
+        Assert.Equal("Trivia is starting now.", StanleyGroupRules.MeetingText("Trivia", 0));
     }
 }

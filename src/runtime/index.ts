@@ -186,6 +186,9 @@ export const stanleyAuto = {
 /** Guardian copies (phase P11, reminders R8). Run only when the guardian taps; the server sets reminders on the guardian's own list and sends the child nothing. */
 export const stanleyGroup = {
   guardian: () => http.post<unknown>('/me/stanley/group/guardian'),
+  meetingReminder: (body: { groupId: string; planId: string; leadMin?: number }) => http.post<unknown>('/me/stanley/group/meeting-reminder', body),
+  helperCopies: () => http.get<unknown>('/me/stanley/group/helper-copies'),
+  setHelperCopies: (on: boolean) => http.put<unknown>('/me/stanley/group/helper-copies', { on }),
 }
 
 /** The Family pack, first part (phase P9e). Read-only; nothing is registered, marked or sent. */
