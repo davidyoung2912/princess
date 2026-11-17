@@ -220,3 +220,14 @@ Nothing new is stored. `GET /me/stanley/prebook` works out its answer from the s
 | open polls and answer counts | whether a dinner poll already exists | nothing; only whether to suggest one |
 
 SR-5.4 is shown only for three or more adults with no open poll that mentions dinner, and starts nothing: it opens the poll screen. It is read-only, off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: table availability, and each person's dinner wishes.
+
+## Get to the ship and Embark pack, first part (phase P9c, SR-6.1, SR-6.6 and SR-7.2)
+
+Nothing new is stored. `GET /me/stanley/embark` works out its answer from the sailing date, the check-in state and the check-in closing time, and returns it without keeping it.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| sailing date | days to sail: phone and card in the last three days, muster on the day | a title and a screen to open |
+| check-in state and closing time | whether to point to check-in | the closing date in words |
+
+It never fills in, submits or sends check-in, and sets no reminder. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: whether the phone plan or card is set up, the muster station, and flights and traffic.
