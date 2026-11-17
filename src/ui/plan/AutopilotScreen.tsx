@@ -24,6 +24,7 @@ import { StanleyEmpty } from '../ai/StanleyEmpty'
 import { RemindMe } from '../ai/RemindMe'
 import { StanleyBriefCard } from './StanleyBriefCard'
 import { StanleyCheckupCard } from './StanleyCheckupCard'
+import { StanleyValueCard } from './StanleyValueCard'
 import { planSnapshot } from '../../ai/stanleyAction'
 import { reminderContext } from '../../ai/stanleyReminders'
 
@@ -115,6 +116,7 @@ export function AutopilotScreen() {
       </Card>
 
       <StanleyCheckupCard />
+      <StanleyValueCard />
       <StanleyBriefCard />
 
       <Card labelledBy="ap-check">

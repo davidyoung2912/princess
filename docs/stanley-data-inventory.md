@@ -130,3 +130,17 @@ Nothing here leaves the device except the confirm the guest tapped, sent on reco
 | The brief itself | the guest's Stanley thread (a reminder-lane message, tag `brief:<kind>`) and, when allowed, a phone push | ports, times and the names of tours and dinners the guest booked, and the titles of dates within three days; no names, numbers or document detail | as any thread message; a new brief of the same kind supersedes the last |
 
 Turning a brief on switches the CL-04 row on and writes the usual consent-history line; turning both off switches it off. Nothing is sent without the row, on a paused account, or for a supervised account. No text goes to a model: briefs are composed by code from facts already held.
+
+## Value and bill (phase P6, CHK-04, VAL-01 and CHK-05)
+
+Nothing new is stored. `GET /me/stanley/value` works out its answer from the guest's own onboard bill, package balances and sailing, and returns it without keeping it. Travellers appear only as "Traveller 2" by position.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| onboard bill lines | a charge that appears twice on the same day, or a drink charged in full to someone whose package covers it | the description, day and amount of that line, and a route to the bill |
+| package cover | the drinks cap that decides whether a drink should have been covered | words only |
+| excursion credit left | credit still unused in the last two days | the amount left and a route to tours |
+| package balances | specialty dinners and Wi-Fi the guest already has and has not used | counts and words; never a price or an offer to buy |
+| sailing days and ports | elegant evenings, a tender port and the season, in the fortnight before sailing | words and a route to the packing list |
+
+It is read-only (it never buys, charges, disputes or refunds; a fix is only a screen to open), is for the signed-in guest only, is off for a supervised account and when the money switch is off, and is not sent to a model. What it cannot see (whether a price is right, charges not yet on the account) is listed in the answer.

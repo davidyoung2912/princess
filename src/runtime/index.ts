@@ -126,6 +126,11 @@ export const stanleyCheckup = {
   get: () => http.get<unknown>('/me/stanley/checkup'),
 }
 
+/** Value and bill (phase P6): bill watch, what the guest already has, and a packing nudge. Read-only. */
+export const stanleyValue = {
+  get: () => http.get<unknown>('/me/stanley/value'),
+}
+
 /** The morning brief and evening look-ahead (phase P7, permission row CL-04). The server sends them at the times the guest chooses; a preview sends nothing. */
 export const stanleyBrief = {
   get: () => http.get<unknown>('/me/stanley/brief'),

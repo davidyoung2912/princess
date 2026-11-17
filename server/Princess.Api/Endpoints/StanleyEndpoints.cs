@@ -105,6 +105,10 @@ public static class StanleyEndpoints
             .WithTags("Stanley").WithSummary("Trip check-up, plan lint and deadline radar for the guest's current or next trip: { hasTrip, findings[{ id, rule (CHK-01 trip, CHK-02 plan), consequence (safety, lostReservation, conflict, improvement, optional), title, detail, day, due, fix{ label, route } }] ranked most serious first, " +
                 "deadlines[{ id, consequence, title, date, daysLeft, fix }], notChecked[] (what it cannot see; it never reports silence as all clear), clean, asOf }. Read-only: it changes nothing and a fix is only a screen to open.");
 
+        api.MapGet("/me/stanley/value", async (ICurrentUser me, StanleyValueService svc, CancellationToken ct) => Results.Ok(await svc.RunAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Stanley").WithSummary("Value and bill for the guest's current or next trip: { hasTrip, findings[{ id, rule (CHK-04 bill watch, VAL-01 included value, CHK-05 forgot something), consequence, title, detail, fix{ label, route } }] ranked most serious first, notChecked[], clean, asOf }. " +
+                "Read-only: it never buys, charges, disputes or refunds; value findings only name what the guest already has.");
+
         api.MapGet("/me/stanley/brief", async (ICurrentUser me, StanleyBriefService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Stanley").WithSummary("The guest's brief choices: { settings { morning, morningAt, evening, eveningAt } (24-hour ship-clock times; both off until chosen), allowed (the CL-04 permission is on), nextMorning, nextEvening (epoch ms, or null when off) }.");
         api.MapPut("/me/stanley/brief", async (BriefSettingsRequest? body, ICurrentUser me, StanleyBriefService svc, CancellationToken ct) => Results.Ok(await svc.PutAsync(await me.LoadAsync(ct), body, ct)))

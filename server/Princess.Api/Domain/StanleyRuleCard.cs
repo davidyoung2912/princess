@@ -30,6 +30,12 @@ public static class StanleyRuleCards
             "Does my plan clash with anything?", ["tour-cancelled", "journey-family"], ["booked tours and dinners", "sailing days and all-aboard times"]),
         Check("CHK-08", "Deadline radar", [], "A booking is linked", "final payment, check-in opening and closing, and documents still missing", "the date passes or the guest does what it asks",
             "What dates can cost me something?", ["journey-solo"], ["payment due date", "check-in window", "document status per traveller"]),
+        Check("CHK-04", "Bill watch", ["sea", "port", "disembark"], "A sailing is under way", "posted and pending charges, package cover and excursion credit left", "the guest asks about the charge or it is put right on the bill",
+            "Is anything wrong on my bill?", ["journey-solo"], ["onboard bill lines", "package cover", "excursion credit left"]),
+        Check("VAL-01", "Included-value finder", ["sea", "port"], "A package or credit is held", "included specialty dinners and Wi-Fi still unused", "the guest uses it or the days run out",
+            "What does my package include that I have not used?", ["journey-solo"], ["package balances"]),
+        Check("CHK-05", "Forgot something?", ["prebook", "travel"], "Sailing within two weeks", "elegant nights, tender ports and the season at the departure date", "the guest sails",
+            "Have I forgotten anything to pack?", ["journey-solo"], ["sailing days and ports"]),
     ];
 
     /// <summary>A rung 1 notice: answers when asked, never changes anything, and its fix is only a screen to open.</summary>
