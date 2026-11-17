@@ -27,6 +27,11 @@ public static class StanleyEndpoints
             .WithTags("Stanley")
             .WithSummary("Which Stanley routes are switched off: { library, actions, handoff, degraded[] }. The device honours library (its authored answers), actions (previews and confirms) and handoff (making a case) itself; the other routes are applied on the server.");
 
+        api.MapGet("/me/stanley/capabilities", async (ICurrentUser me, StanleyService svc, CancellationToken ct) => Results.Ok(await svc.CapabilitiesAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Stanley")
+            .WithSummary("What Stanley can do, for the signed-in guest: { groups[{ id (answer, do, watch, value), title, intro }], items[{ id, group, title, summary, example (a sentence Stanley really handles), stages[] (empty: every stage), rung (0 tells, 1 notices, 2 prepares and the guest confirms), appliesWhen (always or booking), state (available, or needsBooking until a booking is linked) }] }. " +
+                "An ability whose operator switch is off is left out, and a supervised account is not shown the ones that prepare. The app renders what it is given, so a new ability needs no front-end change.");
+
         api.MapGet("/me/stanley/facts", async (ICurrentUser me, StanleyService svc, CancellationToken ct) => Results.Ok(await svc.FactsAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Stanley")
             .WithSummary("The guest's own trip facts as cards the device may keep to show with no signal: { cards[] } (tours, dinners, packages, ports, countdown, stateroom, party), each with its provenance and the time the booking was read. " +

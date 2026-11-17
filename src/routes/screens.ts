@@ -239,6 +239,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'M39', path: '/me/status', titleKey: 'screen.M39.title', subtextKey: 'screen.M39.subtext', family: 'M' },
   { id: 'M40', path: '/me/report-problem', titleKey: 'screen.M40.title', subtextKey: 'screen.M40.subtext', family: 'M' },
   { id: 'M42', path: '/me/diary', titleKey: 'screen.M42.title', subtextKey: 'screen.M42.subtext', family: 'M' },
+  { id: 'M43', path: '/me/stanley-can', titleKey: 'screen.M43.title', subtextKey: 'screen.M43.subtext', family: 'M' },
   { id: 'M41', path: '/me/demo', titleKey: 'screen.M41.title', subtextKey: 'screen.M41.subtext', family: 'M' },
   { id: 'X01', path: '/kit', titleKey: 'screen.X01.title', subtextKey: 'screen.X01.subtext', family: 'X' },
   { id: 'X02', path: '/trial-day', titleKey: 'screen.X02.title', subtextKey: 'screen.X02.subtext', family: 'X' },
@@ -272,7 +273,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
 ]
 
 /** Settings and help: the same group under Me at every stage, and always plum. */
-export const SETTINGS_AND_HELP: readonly string[] = ['M04', 'M33', 'M28', 'M25', 'M26', 'M35', 'M36', 'M30', 'M31', 'M32', 'M29', 'M27', 'M34', 'M37', 'M38', 'M39', 'M40', 'M41']
+export const SETTINGS_AND_HELP: readonly string[] = ['M04', 'M33', 'M28', 'M25', 'M26', 'M35', 'M36', 'M30', 'M31', 'M32', 'M29', 'M27', 'M34', 'M37', 'M38', 'M39', 'M40', 'M41', 'M43']
 
 /** The tab front pages and the landing page of every other stage tab (plan section 7); they hold the tab's screens, so they are not screens themselves (`/chat` is also `C01`). */
 export const TAB_FRONT_PATHS: readonly string[] = ['/', '/plan', '/ship', '/chat', '/me', '/tab/:slug']

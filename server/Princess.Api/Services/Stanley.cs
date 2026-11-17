@@ -186,6 +186,13 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
 
     private static StanleyReplyDto Unavailable(string code) => new("unavailable", "", null, "", code, "unavailable");
 
+    /// <summary>What Stanley can do, for this guest: the catalogue with switched-off abilities left out and booking-only ones marked until a booking is linked.</summary>
+    public async Task<StanleyCapabilitiesDto> CapabilitiesAsync(UserRecord user, CancellationToken ct)
+    {
+        var trip = await trips.LoadAsync(user, ct);
+        return StanleyCapabilityCatalogue.For(options.Value.Switches, trip is not null, user.IsSupervised);
+    }
+
     /// <summary>What the device needs to know before the first question: which routes are off. The device carries out <c>library</c> and <c>actions</c> itself.</summary>
     public StanleyStatusDto Status()
     {

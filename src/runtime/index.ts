@@ -81,6 +81,9 @@ export const api: Api = toApi(rest.groups)
 /** Today's rate table from the server, so every device shows the same one. */
 export const fetchRates = async (): Promise<RateTable> => normalizeRates(await http.get<unknown>('/rates'))
 
+/** What Stanley can do, for this guest, from the server's catalogue. */
+export const fetchStanleyCapabilities = (): Promise<unknown> => http.get<unknown>('/me/stanley/capabilities')
+
 /** Stanley, the one chat helper, is answered by the server's gateway (word filter, safety screen, routing, model, tools, budget and log all stay there). */
 export const sendStanley: StanleySender = (body) => http.post<unknown>('/me/stanley', body)
 
