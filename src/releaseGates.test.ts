@@ -387,9 +387,10 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
   const server = (f: string): string => read(`server/Princess.Api/Services/${f}`)
 
   describe('no unconfirmed mutating action', () => {
-    it('only the action card confirms an action; a change card can only prepare one for the guest to confirm', () => {
+    it('only the action card confirms an action (and sends back a confirm the guest tapped while offline, which the server checks again); a change card can only prepare one for the guest to confirm', () => {
       const users = walk('src').filter((f) => /stanleyActions\.confirm\(/.test(read(f)))
-      expect(users.map((f) => f.replace(/\\/g, '/'))).toEqual(['src/ui/ai/StanleyActionCard.tsx'])
+      expect(users.map((f) => f.replace(/\\/g, '/')).sort()).toEqual(['src/ui/StanleyOffline.tsx', 'src/ui/ai/StanleyActionCard.tsx'])
+      expect(read('src/ui/StanleyOffline.tsx')).toMatch(/loadQueue\(\)/)
       expect(read('src/ui/ai/StanleyChanges.tsx')).toMatch(/stanleyActions\.prepare\(/)
     })
 

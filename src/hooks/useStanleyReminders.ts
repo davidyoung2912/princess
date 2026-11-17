@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { normalizeReminders, reminderProblem, type ReminderProblem, type StanleyReminder } from '../ai/stanleyReminders'
+import { buildCache, type ReminderCache } from '../ai/stanleyOffline'
 import { isApiError } from '../api/errors'
+import { loadReminderCopy, saveReminderCopy } from '../data/stanleyOffline'
 import { stanleyReminders } from '../runtime'
 
 export type ReminderFailure = 'load' | ReminderProblem
@@ -13,11 +15,18 @@ export function useStanleyReminders(context?: unknown) {
   const [list, setList] = useState<StanleyReminder[] | null>(null)
   const [failure, setFailure] = useState<ReminderFailure | null>(null)
   const [busy, setBusy] = useState(false)
+  // The copy on this phone, for when the list cannot be loaded (phase P3c).
+  const [copy] = useState<ReminderCache | null>(loadReminderCopy)
   const live = useRef(true)
   const sent = useRef<string | null>(null)
   useEffect(() => { live.current = true; return () => { live.current = false } }, [])
 
-  const apply = useCallback((raw: unknown) => { if (live.current) { setList(normalizeReminders(raw)); setFailure(null) } }, [])
+  const apply = useCallback((raw: unknown) => {
+    if (!live.current) return
+    const next = normalizeReminders(raw)
+    saveReminderCopy(buildCache(next, Date.now()))
+    setList(next); setFailure(null)
+  }, [])
   const load = useCallback(() => stanleyReminders.list().then(apply, () => { if (live.current) setFailure('load') }), [apply])
 
   // Read the list once; send the plan (again) whenever it changes, which also moves what follows it.
@@ -42,7 +51,7 @@ export function useStanleyReminders(context?: unknown) {
   }, [load])
 
   return {
-    list, failure, busy, retry: load,
+    list, copy, failure, busy, retry: load,
     remove: (id: string) => run(() => stanleyReminders.remove(id)),
     edit: (id: string, body: Parameters<typeof stanleyReminders.update>[1]) => run(() => stanleyReminders.update(id, body)),
   }

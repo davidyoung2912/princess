@@ -1,7 +1,10 @@
 import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { upcomingFromCache } from '../../ai/stanleyOffline'
 import { normalizeAction, planSnapshot, type StanleyAction } from '../../ai/stanleyAction'
 import { editTime, groupReminders, LEAD_CHOICES, reminderContext, type StanleyReminder } from '../../ai/stanleyReminders'
+import { useOnline } from '../../hooks/useOnline'
+import { useNow } from '../../hooks/useDemo'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useStanleyReminders, type ReminderFailure } from '../../hooks/useStanleyReminders'
 import { t, th, type StringKey } from '../../i18n'
@@ -9,6 +12,7 @@ import { stanleyActions } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
+import { useShipTime } from '../onboard/shipTime'
 import { StanleyActionCard } from '../ai/StanleyActionCard'
 
 /**
@@ -22,7 +26,29 @@ export function StanleyRemindersScreen() {
   const context = useMemo(() => (dp.ready ? reminderContext(planSnapshot(dp.rows, dp.alternatives, day), allAboard, dp.sailing.id) : undefined), [dp.ready, dp.rows, dp.alternatives, day, allAboard, dp.sailing.id])
   const r = useStanleyReminders(context)
   const [editing, setEditing] = useState<string | null>(null)
+  const online = useOnline()
+  const now = useNow()
+  const time = useShipTime()
 
+  if (!r.list && r.failure === 'load' && !online) {
+    const up = upcomingFromCache(r.copy, now)
+    return (
+      <div className="page">
+        <p role="status">{r.copy ? t('stanleyOffline.copyNote', { checked: time(r.copy.cachedAt) }) : t('stanleyOffline.copyNone')}</p>
+        {up.length > 0 && (
+          <ul className="stanley-reminders__list">
+            {up.map((x) => (
+              <li key={x.id} className="stanley-reminders__item">
+                <p><strong>{x.text}</strong></p>
+                <p>{x.when || time(x.dueAt)}</p>
+                {x.mayHaveMoved && r.copy ? <p className="muted">{t('stanleyOffline.mayHaveMoved', { checked: time(r.copy.cachedAt) })}</p> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    )
+  }
   if (!r.list) {
     return (
       <div className="page">

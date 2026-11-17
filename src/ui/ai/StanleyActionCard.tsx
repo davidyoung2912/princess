@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router'
+import { enqueue } from '../../ai/stanleyOffline'
 import { addCustom, removeCustom } from '../../data/customReminders'
+import { loadQueue, saveQueue } from '../../data/stanleyOffline'
+import { useOnline } from '../../hooks/useOnline'
 import { canConfirm, canUndo, changeForAction, changeIdFor, newKey, normalizeAction, planSnapshot, problemOf, dueOfAction, reminderForAction, type ConfirmProblem, type StanleyAction } from '../../ai/stanleyAction'
 import { formatMoney } from '../../domain/money'
 import { acceptChange, addProposal, undoChange } from '../../domain/planChange'
@@ -48,6 +51,8 @@ export function StanleyActionCard({ action, onChange, onNavigate }: { action: St
   const [busy, setBusy] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [notice, setNotice] = useState<StringKey | null>(null)
+  const online = useOnline()
+  const [queuedUntil, setQueuedUntil] = useState<number | null>(null)
 
   const context = { plan: planSnapshot(dp.rows, dp.alternatives, day), sailingId: dp.sailing.id }
 
@@ -84,6 +89,13 @@ export function StanleyActionCard({ action, onChange, onNavigate }: { action: St
   }
 
   const confirm = async () => {
+    if (!online) {
+      // Offline: keep the tap, say plainly that nothing has happened, and let the server check it again on reconnect.
+      const q = enqueue(loadQueue(), { actionId: action.id, key: key.current, title: action.title }, action.expiresAt, Date.now())
+      saveQueue(q)
+      setQueuedUntil(q.find((x) => x.actionId === action.id)?.expiresAt ?? null)
+      return
+    }
     setBusy(true)
     setNotice(null)
     try {
@@ -138,11 +150,12 @@ export function StanleyActionCard({ action, onChange, onNavigate }: { action: St
         <>
           <p className="muted">{canConfirm(action, now) ? t('action.expires', { time: time(action.expiresAt) }) : t('action.expired')}</p>
           <div className="button-row">
-            <Button onClick={() => void confirm()} disabled={busy || !canConfirm(action, now)}>{t('action.confirm')}</Button>
+            <Button onClick={() => void confirm()} disabled={busy || queuedUntil !== null || !canConfirm(action, now)}>{online ? t('action.confirm') : t('stanleyOffline.sendLater')}</Button>
             <Button variant="secondary" onClick={() => setDismissed(true)} disabled={busy}>{t('action.cancel')}</Button>
           </div>
         </>
       )}
+      {preview && queuedUntil !== null && <Banner kind="warning" title={t('stanleyOffline.waiting')}><p role="status">{t('stanleyOffline.waitingBody', { until: time(queuedUntil) })}</p></Banner>}
       {action.status === 'prepared' && dismissed && <Banner kind="info" title={t('action.dismissed')} />}
       {action.status === 'done' && (
         <Banner kind="success" title={t(action.onDevice ? 'action.doneDevice' : 'action.done', { receipt: action.receipt ?? '' })}>

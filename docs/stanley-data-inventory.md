@@ -111,3 +111,12 @@ Nothing new is stored. `StanleyClassifier` computes four flags per item from fac
 
 Every switch, pause and breaker reset writes an audit line (`stanley.ops.*`) with the class and the operator's reason; never any guest field.
 
+## Offline copy on the phone (phase P3c)
+
+| Data | Fields | Purpose | Provider | Retention |
+|---|---|---|---|---|
+| Reminder copy | the guest's scheduled reminders from a few hours back to a day ahead (text, time, kind, what it follows), and when it was last checked | Show a reminder that came due while the phone was offline, with its true time | The guest's own device (`localStorage`), refreshed from `/me/stanley/reminders` | Replaced on every successful load; cleared with `clearStanleyOffline` |
+| Shown ids | reminder ids already shown from the copy (last 100) | Show each once | The guest's device | Kept until cleared |
+| Waiting confirms | preview id, the key made for its card, a title, queue and expiry times (at most 10, 30 minutes) | Keep a confirm tapped with no signal; the server checks it again on reconnect and nothing is applied on the phone | The guest's device | Emptied on reconnect; expired entries are reported, never sent |
+
+Nothing here leaves the device except the confirm the guest tapped, sent on reconnect to the same endpoint as a normal confirm.

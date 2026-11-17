@@ -39,6 +39,7 @@ import { useSettings } from '../hooks/useSettings'
 import { PageHeader } from './PageHeader'
 import { BrowseDepthNote } from './BrowseDepthNote'
 import { LocalReminders } from './LocalReminders'
+import { CatchUp, OfflineFirings } from './StanleyOffline'
 import { OfflineNote } from './OfflineNote'
 import { pageArt } from './pageArt'
 import { DeepLinkNote } from './DeepLinkNote'
@@ -241,6 +242,8 @@ export function Shell() {
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}
         {route && !route.public && <LocalReminders />}
+        {route && !route.public && <OfflineFirings />}
+        {route && !route.public && <CatchUp />}
         {route && !route.public && <BrowseDepthNote />}
         {route && !route.public && !NO_TIP_SCREENS.includes(screen?.id ?? '') && <TipCard id={tipIdFor(landing ? undefined : screen?.id, landing?.key)} />}
         {route && !route.public && !landing && <StanleyCoach screenId={screen?.id} />}
