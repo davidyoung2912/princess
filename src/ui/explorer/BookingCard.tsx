@@ -4,6 +4,7 @@ import { lineWords } from './lineWords'
 import { t } from '../../i18n'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /**
  * What the guest can do in this Explorer and why, directly under the ship clock. A small card, not a page: the headline says whether Reserve is open
@@ -21,7 +22,7 @@ export function BookingCard({ model, labelledBy }: { model: BookingCardModel; la
       <p><StatusBadge kind={kind} label={model.canReserve ? t('explorers.open.now') : t('explorers.closed')} /></p>
       {model.detail && <p>{lineWords(model.detail)}</p>}
       {model.paymentsLink && <p><Link to="/me/payments">{t('route.payments')}</Link></p>}
-      {model.facts.length > 0 && <ul className="tour__facts">{model.facts.map((f) => <li key={f.key}>{lineWords(f)}</li>)}</ul>}
+      {model.facts.length > 0 && <ul className="tour__facts">{model.facts.map((f) => <li key={f.key}>{lineWords(f)}{f.key === 'bk.dining.anytime' && <> <StanleyExplain term="anytimeDining" /></>}</li>)}</ul>}
     </Card>
   )
 }

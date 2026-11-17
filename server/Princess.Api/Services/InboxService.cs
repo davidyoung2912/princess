@@ -131,6 +131,9 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
 
     public Task<List<string>> FavouritesAsync(UserRecord actor, CancellationToken ct) => inbox.ListFavouritesAsync(actor.Id, ct);
 
+    /// <summary>The shortlist (places, treatments, events and tours the person saved) with names, in the order saved. It reads only the catalogues, so it needs no booking.</summary>
+    public async Task<List<SavedItemView>> ShortlistAsync(UserRecord actor, CancellationToken ct) => ExplorerRules.ResolveSaved(await inbox.ListFavouritesAsync(actor.Id, ct));
+
     public Task<List<string>> ToggleFavouriteAsync(UserRecord actor, ToggleFavouriteRequest req, CancellationToken ct)
     {
         var key = req.Key?.Trim() ?? "";

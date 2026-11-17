@@ -1,14 +1,16 @@
+import type { SavedItemView } from '../../api/explorerTypes'
 import { EXPLORER_ROUTES } from './lens'
 import type { ExplorerKind } from './types'
 import { parseVenuePinKey, venuePinKey } from './venueOrder'
 
 /**
- * The shortlist: places, treatments and tours a guest saved to come back to, kept among their server favourites as `venue:<ship>.<id>`, `treatment:<ship>.<id>` and `tour:<id>`.
+ * The shortlist: places, treatments, shows and events, and tours a guest saved to come back to, kept among their server favourites as `venue:<ship>.<id>`, `treatment:<ship>.<id>`, `event:<ship>.<id>` and `tour:<id>`.
  * A saved item never books anything; it only surfaces at the right time and pre-fills the first reservation.
  */
 export const MAX_SAVED_ITEMS = 10
 
 export const treatmentKey = (shipId: string, treatmentId: string): string => `treatment:${shipId}.${treatmentId}`
+export const eventKey = (shipId: string, eventId: string): string => `event:${shipId}.${eventId}`
 export const tourKey = (excursionId: string): string => `tour:${excursionId}`
 
 export function parseTreatmentKey(key: unknown): { shipId: string; treatmentId: string } | null {
@@ -19,13 +21,21 @@ export function parseTreatmentKey(key: unknown): { shipId: string; treatmentId: 
   return dot > 0 && treatmentId ? { shipId: rest.slice(0, dot), treatmentId } : null
 }
 
+export function parseEventKey(key: unknown): { shipId: string; eventId: string } | null {
+  if (typeof key !== 'string' || !key.startsWith('event:')) return null
+  const rest = key.slice('event:'.length)
+  const dot = rest.indexOf('.')
+  const eventId = rest.slice(dot + 1)
+  return dot > 0 && eventId ? { shipId: rest.slice(0, dot), eventId } : null
+}
+
 export function parseTourKey(key: unknown): string | null {
   return typeof key === 'string' && key.startsWith('tour:') && key.length > 'tour:'.length ? key.slice('tour:'.length) : null
 }
 
-export type SavedKind = 'venue' | 'treatment' | 'tour'
+export type SavedKind = 'venue' | 'treatment' | 'event' | 'tour'
 
-const kindOf = (key: string): SavedKind | null => parseVenuePinKey(key) ? 'venue' : parseTreatmentKey(key) ? 'treatment' : parseTourKey(key) ? 'tour' : null
+const kindOf = (key: string): SavedKind | null => parseVenuePinKey(key) ? 'venue' : parseTreatmentKey(key) ? 'treatment' : parseEventKey(key) ? 'event' : parseTourKey(key) ? 'tour' : null
 
 /** The saved keys of the shortlist kinds, in the order saved. */
 export const savedKeys = (keys: readonly string[]): string[] => keys.filter((k) => kindOf(k) !== null)
@@ -44,37 +54,26 @@ export interface SavedItem {
   title: string
   /** Where the item lives, so the list can open it. */
   explorer: ExplorerKind | 'excursions'
-  /** The Explorer page that books it, with the item already chosen. */
-  bookTo: string
+  /** The Explorer page that opens it: the booking page with the item already chosen, or the place's page for a show or event (which is saved to see, never booked). */
+  to: string
+  /** True when the item can be reserved or booked (places, treatments, tours); false for a show or event. */
+  bookable: boolean
 }
 
-export interface ShortlistLookups {
-  venues: readonly { id: string; shipId: string; explorer: ExplorerKind; title: string }[]
-  treatments: readonly { id: string; venueId: string; title: string }[]
-  tours: readonly { id: string; name: string }[]
-  shipId: string
-}
-
-
-/** The shortlist with names, in the order saved. Keys naming something not on this ship (or no longer there) are left out rather than shown blank. */
-export function shortlistItems(keys: readonly string[], lookups: ShortlistLookups): SavedItem[] {
+/**
+ * The shortlist from the server's resolved items, in the order saved. Items on another ship than the guest's are left out (a guest who has not chosen a ship sees all),
+ * and a kind this app does not know is dropped rather than shown blank.
+ */
+export function shortlistFrom(items: readonly SavedItemView[], shipId: string): SavedItem[] {
   const out: SavedItem[] = []
-  for (const key of keys) {
-    const venue = parseVenuePinKey(key)
-    if (venue) {
-      const v = lookups.venues.find((x) => x.shipId === venue.shipId && x.id === venue.venueId)
-      if (v) out.push({ key, kind: 'venue', title: v.title, explorer: v.explorer, bookTo: `${EXPLORER_ROUTES[v.explorer]}/${v.id}` })
-      continue
-    }
-    const tr = parseTreatmentKey(key)
-    if (tr) {
-      const x = tr.shipId === lookups.shipId ? lookups.treatments.find((y) => y.id === tr.treatmentId) : undefined
-      if (x) out.push({ key, kind: 'treatment', title: x.title, explorer: 'spa', bookTo: `/spa-explorer/${x.venueId}?book=new&treatment=${encodeURIComponent(x.id)}` })
-      continue
-    }
-    const tourId = parseTourKey(key)
-    const tour = tourId ? lookups.tours.find((y) => y.id === tourId) : undefined
-    if (tour) out.push({ key, kind: 'tour', title: tour.name, explorer: 'excursions', bookTo: `/excursions-explorer/${tour.id}` })
+  for (const i of items) {
+    if (shipId !== '' && i.shipId !== null && i.shipId !== shipId) continue
+    const explorer = i.explorer
+    const base = { key: i.key, title: i.title, explorer }
+    if (i.kind === 'tour') out.push({ ...base, kind: 'tour', to: `/excursions-explorer/${i.itemId}`, bookable: true })
+    else if (i.kind === 'treatment' && i.venueId) out.push({ ...base, kind: 'treatment', to: `/spa-explorer/${i.venueId}?book=new&treatment=${encodeURIComponent(i.itemId)}`, bookable: true })
+    else if (i.kind === 'venue' && explorer !== 'excursions') out.push({ ...base, kind: 'venue', to: `${EXPLORER_ROUTES[explorer]}/${i.itemId}`, bookable: explorer === 'dining' || explorer === 'spa' })
+    else if (i.kind === 'event' && i.venueId && explorer !== 'excursions') out.push({ ...base, kind: 'event', to: `${EXPLORER_ROUTES[explorer]}/${i.venueId}`, bookable: false })
   }
   return out
 }

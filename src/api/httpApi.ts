@@ -27,7 +27,7 @@ export interface HttpGroups {
   budget: BudgetApi
   privacy: PrivacyApi
   feedback: FeedbackApi
-  favourites: { favourites: Api['discover']['favourites']; toggleFavourite: Api['discover']['toggleFavourite']; reorderFavourites: Api['discover']['reorderFavourites'] }
+  favourites: { favourites: Api['discover']['favourites']; shortlist: Api['discover']['shortlist']; toggleFavourite: Api['discover']['toggleFavourite']; reorderFavourites: Api['discover']['reorderFavourites'] }
   /** Phase 14: sailing offers and quotes, and the whole booking funnel. */
   discover: Pick<Api['discover'], 'offers' | 'quote'>
   booking: Api['booking']
@@ -560,6 +560,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     },
     favourites: {
       favourites: () => get('/me/favourites'),
+      shortlist: () => get('/me/shortlist'),
       toggleFavourite: (key) => send('post', '/me/favourites/toggle', { key }),
       reorderFavourites: (keys) => send('put', '/me/favourites/order', { keys }),
     },

@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { carryOverVenue, MAX_SAVED_ITEMS, parseTourKey, parseTreatmentKey, reminderAt, reminderId, reminderText, savedKeys, shortlistItems, toggleSavedKey, tourKey, treatmentKey } from './shortlist'
+import { carryOverVenue, eventKey, parseEventKey, MAX_SAVED_ITEMS, parseTourKey, parseTreatmentKey, reminderAt, reminderId, reminderText, savedKeys, shortlistFrom, toggleSavedKey, tourKey, treatmentKey } from './shortlist'
 
 const lookups = {
-  shipId: 'sun-princess',
-  venues: [{ id: 'crown', shipId: 'sun-princess', explorer: 'dining' as const, title: 'Crown Grill' }, { id: 'lotus', shipId: 'sun-princess', explorer: 'spa' as const, title: 'Lotus Spa' }],
-  treatments: [{ id: 'massage', venueId: 'lotus', title: 'Massage' }],
-  tours: [{ id: 'coz-snorkel', name: 'Reef snorkel' }],
+  venues: [{ id: 'crown', shipId: 'sun-princess', explorer: 'dining' as const }, { id: 'lotus', shipId: 'sun-princess', explorer: 'spa' as const }],
 }
+const served = [
+  { key: 'tour:coz-snorkel', kind: 'tour', title: 'Reef snorkel', explorer: 'excursions', itemId: 'coz-snorkel', venueId: null, shipId: null },
+  { key: 'venue:sun-princess.crown', kind: 'venue', title: 'Crown Grill', explorer: 'dining', itemId: 'crown', venueId: 'crown', shipId: 'sun-princess' },
+  { key: 'treatment:sun-princess.massage', kind: 'treatment', title: 'Massage', explorer: 'spa', itemId: 'massage', venueId: 'lotus', shipId: 'sun-princess' },
+  { key: 'event:sun-princess.trivia', kind: 'event', title: 'Trivia night', explorer: 'entertainment', itemId: 'trivia', venueId: 'piazza', shipId: 'sun-princess' },
+] as const
 
 describe('shortlist keys', () => {
   it('round-trips treatments and tours', () => {
@@ -36,15 +39,34 @@ describe('toggleSavedKey', () => {
   })
 })
 
-describe('shortlistItems', () => {
-  it('names each item in the order saved and says where it books', () => {
-    const items = shortlistItems(['tour:coz-snorkel', 'venue:sun-princess.crown', 'treatment:sun-princess.massage'], lookups)
-    expect(items.map((i) => i.title)).toEqual(['Reef snorkel', 'Crown Grill', 'Massage'])
-    expect(items[1].bookTo).toBe('/dining-today/crown')
-    expect(items[2].bookTo).toBe('/spa-explorer/lotus?book=new&treatment=massage')
+describe('shortlistFrom', () => {
+  it('keeps the order saved and says where each item opens', () => {
+    const items = shortlistFrom(served, 'sun-princess')
+    expect(items.map((i) => i.title)).toEqual(['Reef snorkel', 'Crown Grill', 'Massage', 'Trivia night'])
+    expect(items[1].to).toBe('/dining-today/crown')
+    expect(items[2].to).toBe('/spa-explorer/lotus?book=new&treatment=massage')
+    expect(items[3].to).toBe('/entertainment/piazza')
   })
-  it('leaves out items that are not on this ship', () => {
-    expect(shortlistItems(['venue:other.crown', 'treatment:other.massage', 'tour:gone', 'screen:S1'], lookups)).toEqual([])
+  it('marks a show or event as not bookable', () => {
+    expect(shortlistFrom(served, 'sun-princess').map((i) => i.bookable)).toEqual([true, true, true, false])
+  })
+  it('works before a ship is chosen, and drops other ships', () => {
+    expect(shortlistFrom(served, '')).toHaveLength(4)
+    expect(shortlistFrom(served, 'star-princess').map((i) => i.kind)).toEqual(['tour'])
+  })
+  it('drops an item it cannot open', () => {
+    expect(shortlistFrom([{ ...served[2], venueId: null }, { ...served[3], venueId: null }], '')).toEqual([])
+  })
+})
+
+describe('event keys', () => {
+  it('round-trips and counts as a shortlist kind with its own limit', () => {
+    expect(parseEventKey(eventKey('sun-princess', 'trivia'))).toEqual({ shipId: 'sun-princess', eventId: 'trivia' })
+    expect(parseEventKey('event:nodot')).toBeNull()
+    expect(savedKeys(['event:s.e', 'screen:S1'])).toEqual(['event:s.e'])
+    const events = Array.from({ length: MAX_SAVED_ITEMS }, (_, i) => `event:s.e${i}`)
+    expect(toggleSavedKey(events, 'event:s.extra').full).toBe(true)
+    expect(toggleSavedKey(events, 'tour:a').full).toBe(false)
   })
 })
 

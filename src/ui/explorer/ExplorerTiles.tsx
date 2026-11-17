@@ -1,7 +1,8 @@
 import { Link } from 'react-router'
 import { actionGate, type ExplorerId, type GateFacts } from '../../domain/explorer/actionGate'
 import { EXPLORER_ROUTES, EXPLORER_TITLE_KEYS, explorerOrder, tileLine, type LensInput } from '../../domain/explorer/lens'
-import { nextTable, nextTreatment } from '../../domain/explorer/tileFacts'
+import { bookingsOnDay } from '../../domain/explorer/excursionDay'
+import { eventsOnNow, nextTable, nextTour, nextTreatment } from '../../domain/explorer/tileFacts'
 import { timeIn } from '../../domain/timezones'
 import type { JourneyStage } from '../../routes/hubs'
 import { formatDayMonth } from '../../domain/cruise'
@@ -15,6 +16,7 @@ import { ExplorerIcon } from './ExplorerIcon'
 import { useDiningView } from './dining/diningView'
 import { useSpaView } from './spa/spaView'
 
+const ON_NOW_KINDS = ['entertainment', 'shopping', 'exercise', 'activities'] as const
 const PRE_BOOKING: readonly JourneyStage[] = ['dream', 'discover', 'book']
 
 function Icon({ id }: { id: ExplorerId }) {
@@ -60,6 +62,12 @@ function TilesWithBooking({ stage }: { stage: JourneyStage }) {
   const finished = stage === 'remember'
   const today = position.day?.kind === 'cruiseDay' ? position.day.day : null
   const aboard = position.onBoard && today !== null
+  // Only aboard is "what is on now" worth reading: one read of each events Explorer for today, and nothing before then.
+  const onNow = useMine(async () => {
+    if (!aboard || today === null) return null
+    const days = await Promise.all(ON_NOW_KINDS.map((kind) => api.onboard.explorerDay(kind, today)))
+    return Object.fromEntries(ON_NOW_KINDS.map((kind, i) => [kind, days[i].venues.flatMap((v) => v.events)]))
+  }, [aboard, today]).data
   const facts = (id: ExplorerId): GateFacts => {
     const base = { hasBooking: true, finished }
     if (id === 'dining') return { ...base, canBook: dining?.canBook ?? null, window: dining?.window ?? null }
@@ -76,6 +84,8 @@ function TilesWithBooking({ stage }: { stage: JourneyStage }) {
     if (!aboard) return undefined
     if (id === 'dining' && dining) return nextTable(dining.reservations, today, timeIn(now, position.zone)) ?? undefined
     if (id === 'spa' && spa) return nextTreatment(spa.appointments, today, now) ?? undefined
+    if (id === 'excursions' && tours) return nextTour(bookingsOnDay(tours, today).map((b) => b.offer.item), timeIn(now, position.zone)) ?? undefined
+    if (id !== 'dining' && id !== 'spa' && id !== 'excursions') return eventsOnNow(onNow?.[id] ?? [], now) ?? undefined
     return undefined
   }
   return <Tiles stage={stage} facts={facts} counts={counts} next={next} />

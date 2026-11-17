@@ -87,6 +87,17 @@ public static class ExplorerCatalogue
         return For(rest[..dot])?.TreatmentList.FirstOrDefault(x => x.Id == rest[(dot + 1)..]);
     }
 
+    /// <summary>The event a saved-event key names (<c>event:&lt;ship&gt;.&lt;id&gt;</c>) and its ship, or null when either does not exist.</summary>
+    public static (string ShipId, ExplorerEventDef Event)? EventOfKey(string? key)
+    {
+        if (key is null || !key.StartsWith("event:", StringComparison.Ordinal)) return null;
+        var rest = key["event:".Length..];
+        var dot = rest.IndexOf('.');
+        if (dot <= 0 || dot == rest.Length - 1) return null;
+        var ship = rest[..dot];
+        return For(ship)?.Events.FirstOrDefault(e => e.Id == rest[(dot + 1)..]) is { } e ? (ship, e) : null;
+    }
+
     /// <summary>The ship a venue pin names (<c>venue:&lt;ship&gt;.&lt;venue&gt;</c>) and the venue, or null when either does not exist.</summary>
     public static (string ShipId, ExplorerVenue Venue)? VenueOfPinKey(string? key)
     {

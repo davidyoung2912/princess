@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { DiningView, Reservation } from '../../../api/types'
 import type { ExplorerDay } from '../../../api/explorerTypes'
-import { formatTime } from '../../../domain/cruise'
+import { formatDate, formatTime } from '../../../domain/cruise'
 import { shortDate } from '../../../domain/explorer/presentation'
 import { itinerary, PORTS } from '../../../domain/sailings'
 import { dinnerDays } from '../../../domain/dining'
@@ -55,7 +55,11 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
   const item = (r: Reservation): ReservationItem => ({
     id: r.id, title: title(r.venueId), name: `${title(r.venueId)}, ${formatTime(r.time)}`, to: basePath && !venueId ? `${basePath}/${r.venueId}?day=${r.day}` : undefined,
     when: `${shortDate(days[r.day - 1]?.date ?? days[0].date)}, ${formatTime(r.time)}`,
-    facts: [names(r.guests), r.charge > 0 ? t('dine.charge', { amount: formatMoney(r.charge) }) : t('dine.included'), ...(r.note ? [r.note] : [])],
+    facts: [
+      names(r.guests), r.charge > 0 ? t('dine.charge', { amount: formatMoney(r.charge) }) : t('dine.included'), ...(r.note ? [r.note] : []),
+      ...(r.reminderOn ? [t('dine.reminder', { date: formatDate(r.reminderOn) })] : []),
+      ...r.dietary.map((d) => t('dine.dietary', { name: d.name, needs: d.needs.map((n) => t(`profile.dietary.${n}` as never)).join(', ') })),
+    ],
   })
   const items: ReservationItem[] = mine.map(item)
   const readOnly = !view.canBook || stage === 'after'

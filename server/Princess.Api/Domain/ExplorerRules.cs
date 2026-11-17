@@ -1,3 +1,5 @@
+using Princess.Api.Contracts;
+
 namespace Princess.Api.Domain;
 
 public sealed record ExplorerVenueDto(
@@ -174,6 +176,12 @@ public static class ExplorerRules
             _ = ExplorerCatalogue.TreatmentOfKey(key) ?? throw ApiException.Invalid("treatment");
             if (current.Count(k => k.StartsWith("treatment:", StringComparison.Ordinal)) >= MaxSavedItems) throw ApiException.Invalid("pinsFull");
         }
+        else if (key.StartsWith("event:", StringComparison.Ordinal))
+        {
+            // A saved show or event must exist on its ship; it is saved to come back to, never booked.
+            _ = ExplorerCatalogue.EventOfKey(key) ?? throw ApiException.Invalid("event");
+            if (current.Count(k => k.StartsWith("event:", StringComparison.Ordinal)) >= MaxSavedItems) throw ApiException.Invalid("pinsFull");
+        }
         else if (key.StartsWith("tour:", StringComparison.Ordinal))
         {
             var id = key["tour:".Length..];
@@ -187,4 +195,27 @@ public static class ExplorerRules
             if (inExplorer >= MaxVenuePins) throw ApiException.Invalid("pinsFull");
         }
     }
+
+    /// <summary>
+    /// The shortlist with names: each saved venue, treatment, event and tour resolved from the catalogues, in the order saved, with no booking needed. A key that names something no longer there is left out.
+    /// Screen pins and taste keys are not part of the shortlist.
+    /// </summary>
+    public static List<SavedItemView> ResolveSaved(IEnumerable<string> keys)
+    {
+        var list = new List<SavedItemView>();
+        foreach (var key in keys)
+        {
+            if (ExplorerCatalogue.VenueOfPinKey(key) is { } v) list.Add(new SavedItemView(key, "venue", v.Venue.Title, v.Venue.Explorer, v.Venue.Id, v.Venue.Id, v.ShipId));
+            else if (ExplorerCatalogue.TreatmentOfKey(key) is { } t) list.Add(new SavedItemView(key, "treatment", t.Title, "spa", t.Id, t.VenueId, ShipOfKey(key)));
+            else if (ExplorerCatalogue.EventOfKey(key) is { } e)
+            {
+                var venue = ExplorerCatalogue.VenueOn(e.ShipId, e.Event.VenueId);
+                if (venue is not null) list.Add(new SavedItemView(key, "event", e.Event.Title, venue.Explorer, e.Event.Id, venue.Id, e.ShipId));
+            }
+            else if (key.StartsWith("tour:", StringComparison.Ordinal) && ExcursionRules.ById(key["tour:".Length..]) is { } x) list.Add(new SavedItemView(key, "tour", x.Name, "excursions", x.Id, null, null));
+        }
+        return list;
+    }
+
+    private static string ShipOfKey(string key) => key[(key.IndexOf(':') + 1)..].Split('.')[0];
 }

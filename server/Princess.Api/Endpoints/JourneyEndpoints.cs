@@ -201,6 +201,10 @@ public static class JourneyEndpoints
                 Results.Ok(await svc.FavouritesAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Favourites").WithSummary("Saved items, in the order saved.");
 
+        api.MapGet("/me/shortlist", async (ICurrentUser me, InboxService svc, CancellationToken ct) =>
+                Results.Ok(await svc.ShortlistAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Favourites").WithSummary("The saved places, treatments, events and tours with their names, in the order saved. Needs an account, not a booking.");
+
         api.MapPost("/me/favourites/toggle", async (ToggleFavouriteRequest body, ICurrentUser me, InboxService svc, CancellationToken ct) =>
                 Results.Ok(await svc.ToggleFavouriteAsync(await me.LoadAsync(ct), body, ct)))
             .WithTags("Favourites").WithSummary("Saves an item or removes it if saved; returns the list.");

@@ -1,4 +1,4 @@
-import type { ExplorerDay, VenueDay } from './explorerTypes'
+import type { ExplorerDay, SavedItemView, VenueDay } from './explorerTypes'
 import type { SpaSlot, SpaView } from './spaTypes'
 import type { ExplorerKind } from '../domain/explorer/types'
 import type { AboardApi } from './aboardTypes'
@@ -820,6 +820,8 @@ export interface Api {
     quote(sailingId: string, category: CategoryId, guests: number): Promise<Quote>
     /** Saved items (`kind:id`), in the order saved, for the signed-in person. */
     favourites(): Promise<string[]>
+    /** The saved places, treatments, events and tours with their names, in the order saved. Needs an account, not a booking. */
+    shortlist(): Promise<SavedItemView[]>
     /** Saves an item, or removes it if saved; returns the new list. */
     toggleFavourite(key: string): Promise<string[]>
     /** Puts the saved items in this order (the pinned screens the person arranged); items not named keep their order after these. Returns the list. */

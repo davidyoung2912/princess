@@ -106,3 +106,14 @@ export interface ExplorerDay {
   /** The reminder chosen for a planned event (minutes ahead, 0 off); an event with none follows the notification preference. */
   reminders?: Record<string, number>
 }
+
+/** One saved item of the shortlist with its name, resolved by the server so it needs no booking. `venueId` is the place it is at (none for a tour); `shipId` the ship (none for a tour). */
+export interface SavedItemView {
+  key: string
+  kind: 'venue' | 'treatment' | 'event' | 'tour'
+  title: string
+  explorer: 'dining' | 'entertainment' | 'shopping' | 'spa' | 'exercise' | 'activities' | 'excursions'
+  itemId: string
+  venueId: string | null
+  shipId: string | null
+}

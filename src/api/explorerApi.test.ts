@@ -24,6 +24,14 @@ const venueDay = { venue, hours: { windows: [['17:30', '21:30']], staffed: [], c
 const explorerDay = { explorer: 'dining', shipId: 'sun-princess', day: 3, date: '2027-03-23', port: 'sea', shipZone: 'America/New_York', venues: [venueDay], mine: ['e1'] }
 
 describe('Explorer client calls', () => {
+  it('reads the shortlist from the account, with no booking in the path', async () => {
+    const item = { key: 'tour:a', kind: 'tour', title: 'Reef', explorer: 'excursions', itemId: 'a', venueId: null, shipId: null }
+    const { http, calls } = fake({ '/me/shortlist': [item] })
+    const g = createHttpGroups(http).groups
+    expect(await g.favourites.shortlist()).toEqual([item])
+    expect(calls.map((c) => c.path)).toEqual(['/me/shortlist'])
+  })
+
   it('reads an Explorer day and a venue day with the day in the query', async () => {
     const { http, calls } = fake({ '/trips': trips, '/bookings/PC2/onboard/explorer/dining?day=3': explorerDay, '/bookings/PC2/onboard/explorer/dining/crown?day=3': venueDay })
     const g = createHttpGroups(http).groups

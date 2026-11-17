@@ -111,4 +111,25 @@ public class ExplorerRulesTests
             ExplorerRules.RequirePinAllowed(tours, key);   // a full list of tours leaves room for a treatment
         }
     }
+
+    [Fact]
+    public void Saved_events_name_real_events_and_the_shortlist_resolves_names_without_a_booking()
+    {
+        var ship = ExplorerCatalogue.For("sun-princess")!;
+        var ev = ship.Events[0];
+        var eventKey = $"event:sun-princess.{ev.Id}";
+        ExplorerRules.RequirePinAllowed([], eventKey);
+        Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed([], "event:sun-princess.nowhere"));
+        Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed([], "event:nowhere.x"));
+
+        var treatment = ship.TreatmentList[0];
+        var tour = ExcursionRules.Catalogue[0];
+        var items = ExplorerRules.ResolveSaved([eventKey, "screen:X20", $"treatment:sun-princess.{treatment.Id}", $"tour:{tour.Id}", "tour:nowhere", "event:sun-princess.nowhere"]);
+        Assert.Equal(["event", "treatment", "tour"], items.Select(i => i.Kind));
+        Assert.Equal(ev.Title, items[0].Title);
+        Assert.Equal(ev.VenueId, items[0].VenueId);
+        Assert.Equal(treatment.VenueId, items[1].VenueId);
+        Assert.Equal("excursions", items[2].Explorer);
+        Assert.Null(items[2].ShipId);
+    }
 }
