@@ -5805,7 +5805,7 @@ export const enLate = {
   'stanley.chat.permanent': 'This chat stays with your account. It cannot be muted, left or removed.',
   'stanley.chat.from': 'Stanley',
   'stanley.chat.askLabel': 'Ask Stanley a question',
-  'stanley.chat.askHint': 'Your question opens in Stanley’s window and nothing is sent until you press Send there.',
+  'stanley.chat.askHint': 'Stanley answers right here. Your question is not shared with other guests.',
   'stanley.chat.askButton': 'Ask Stanley',
   'stanley.chat.history': 'Your questions and Stanley’s answers are kept on this device only. Notices from Princess Cruises and your ship are kept with your account.',
   'stanley.chat.noticesTitle': 'Stanley notices',

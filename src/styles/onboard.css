@@ -534,4 +534,4 @@ button.chat-quote { cursor: pointer; }
 #thread-h ~ .chat-more > :not(summary) + :not(summary) { margin-top: var(--space-2); }
 
 /* The Ask Stanley button is a main call to action: the normal CTA height and its own width, not stretched across the compact composer grid. */
-.composer--ask > .btn { justify-self: start; min-height: var(--target-min); padding-inline: var(--space-5); margin-block: var(--space-1); }
+.composer--ask .btn { justify-self: start; min-height: var(--target-min); padding-inline: var(--space-5); margin-block: var(--space-1); }

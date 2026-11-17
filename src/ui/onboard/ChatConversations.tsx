@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
-import { requestStanley } from '../../ai/stanleyOpen'
+import { useStanleyAsk } from '../ai/useStanleyAsk'
+import { StanleyAnswerCard } from '../ai/StanleyAnswerCard'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, GroupStanley, ChatThread, ChatUrgency } from '../../api/chatTypes'
@@ -861,17 +862,34 @@ function PushPromptNote({ prompt }: { prompt: ReturnType<typeof pushPrompt> }) {
     : <Banner kind="info" title={t('stanley.chat.pushDeclinedTitle')}><p>{t('stanley.chat.pushDeclinedBody')}</p></Banner>
 }
 
-/** The free-text box. Asking goes through Stanley's own window (his limits, safety screen and tools live there), with the words already in its box. */
+/** The free-text box. The question is asked and answered right here, on the chat page, with the waiting dots under the box; his dialog shares the same in-memory thread. */
 function AskStanley() {
   const [text, setText] = useState('')
+  const { submit, busy, problem, reveal, cooldown, messages } = useStanleyAsk()
   const ask = questionFrom(text)
   return (
-    <form className="composer composer--ask" onSubmit={(e) => { e.preventDefault(); if (ask) { requestStanley(ask); setText('') } }}>
-      <TextArea label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
-      <p className="muted">{t('stanley.chat.askHint')}</p>
-      <Button type="submit" disabled={!ask}>{t('stanley.chat.askButton')}</Button>
-      <p className="muted">{t('stanley.chat.history')}</p>
-    </form>
+    <div className="composer composer--ask">
+      {messages.length > 0 && (
+        <ol className="ai-log stanley__log" role="log" aria-live="polite" aria-label={t('stanley.log')}>
+          {messages.map((m) => (
+            <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
+              <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
+              {m.card ? <StanleyAnswerCard card={m.card} /> : <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>}
+              {m.actions && m.actions.length > 0 && <p className="stanley__actions">{m.actions.map((a) => <LinkButton key={a.path} variant="secondary" to={a.path}>{a.label}</LinkButton>)}</p>}
+            </li>
+          ))}
+        </ol>
+      )}
+      {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
+      <form className="composer" onSubmit={(e) => { e.preventDefault(); if (ask) void submit(ask, () => setText('')) }}>
+        <TextArea label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
+        <p className="muted">{t('stanley.chat.askHint')}</p>
+        {problem && <p role="alert" className="field__error">{problem}</p>}
+        {cooldown > 0 && <p role="status" className="muted">{t('stanley.cooldown', { seconds: cooldown })}</p>}
+        <Button type="submit" disabled={!ask || busy || cooldown > 0}>{t('stanley.chat.askButton')}</Button>
+        <p className="muted">{t('stanley.chat.history')}</p>
+      </form>
+    </div>
   )
 }
 

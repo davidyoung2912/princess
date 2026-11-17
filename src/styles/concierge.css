@@ -182,3 +182,13 @@ img.tip__icon { box-sizing: border-box; width: 3.5rem; height: 3.5rem; padding: 
 /* The diary composer: the text box, mood chips and Add button sit in an even column so nothing touches. */
 .diary-composer { display: flex; flex-direction: column; gap: var(--space-3); margin-block: var(--space-3) var(--space-4); }
 .diary-composer .actions { margin: 0; }
+
+/* The intro line is easier to read and sits a little lower; the suggested questions are a tight list (the link buttons' tap height was spacing them out). */
+.stanley__empty > p:first-child { font-size: var(--fs-body, 1rem); margin-top: var(--space-2); }
+.stanley__tries { gap: 0; }
+.stanley__tries .link-button { min-height: 0; padding-block: var(--space-1); }
+.stanley__tries li { display: flex; align-items: center; gap: var(--space-1); }
+
+/* Hidden for now: the row of links under the log (explain this screen, ask a person, show crew, pocket card). */
+.stanley__explain { display: none; }
+.stanley__form .field label { font-size: var(--fs-body, 1rem); }
