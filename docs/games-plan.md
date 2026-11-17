@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34) and **Killer Sudoku** (X35). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35) and **Binairo** (X36). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -39,7 +39,9 @@ Built as planned, with one change: the generator needs no guessing search. `kill
 - Generator: full grid, random cage partition, sums from the solution; levels change cage sizes and how many digits are given. Uniqueness by a solver that prunes with cage sums; logic solver adds cage rules (cage combinations for a sum, the 45 rule for rows, columns and boxes).
 - Hints name the cage (for example "This 2-cell cage sums to 3, so it holds 1 and 2"). Dead cells include a cage whose sum can no longer be reached.
 
-### G3: Binairo (X36)
+### G3: Binairo (X36) — built
+
+Built as planned. `binairo.ts` builds a full grid row by row from balanced rows with column checks, then removes givens while plain logic (pair, gap, half-full line, and at medium and up the rows-must-differ rule) still solves it, so the answer is unique with no guessing. Easy leaves out the rows-must-differ rule. `BinairoScreen.tsx`: tap cycles empty, circle, square; two-button pad with remaining counts; keys 0/c and 1/s.
 
 - Grid of 0 and 1 (shown as two clearly different shapes, not only colours). No more than two of the same symbol in a row or column, equal numbers of each in every row and column, and no two rows or no two columns identical.
 - Levels by size and clues: Easy 6x6, Medium 8x8, Hard 10x10, Expert 12x12. Tap a cell to cycle empty, 0, 1; pad for phones; given cells locked.

@@ -88,6 +88,7 @@ export {
   SquareSlash as DiagonalSudokuGame,
   Shapes as JigsawSudokuGame,
   Calculator as KillerSudokuGame,
+  CircleDot as BinairoGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,
