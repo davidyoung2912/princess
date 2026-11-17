@@ -390,6 +390,48 @@ public class GroupMomentTests
     }
 }
 
+public class BookingHandOffMomentTests
+{
+    private static readonly DateTime Now = new(2027, 3, 22, 16, 0, 0, DateTimeKind.Utc);
+    private static readonly Guid Chat = Guid.Parse("11111111-2222-3333-4444-555555555555");
+
+    private static List<Moment> Cards(MomentFacts f) => ChatProactiveRules.Candidates(f);
+
+    [Fact]
+    public void ThePartyChatCardOpensThatChatAndComesOnlyBeforeSailing()
+    {
+        var facts = new MomentFacts(Now, StageRules.Manage, 40, false, null, PartyChat: Chat);
+        var m = Assert.Single(Cards(facts), c => c.Key == ChatProactiveRules.PartyChatKey);
+        Assert.Equal($"/chat?c={Chat}", m.Path);
+        Assert.Equal(ChatProactiveRules.ClassGuide, m.Class);
+        Assert.DoesNotContain(Cards(facts with { PartyChat = null }), c => c.Key == ChatProactiveRules.PartyChatKey);
+        Assert.DoesNotContain(Cards(facts with { Stage = StageRules.GetToShip }), c => c.Key == ChatProactiveRules.PartyChatKey);
+        Assert.DoesNotContain(Cards(facts with { Stage = StageRules.Sea }), c => c.Key == ChatProactiveRules.PartyChatKey);
+    }
+
+    [Fact]
+    public void TheHuddleCardStaysUntilTheShipAndIsNeverShownAtSea()
+    {
+        var facts = new MomentFacts(Now, StageRules.Prebook, 30, false, null, HuddleToCarry: Chat);
+        Assert.Contains(Cards(facts), c => c.Key == ChatProactiveRules.HuddleCarryKey);
+        Assert.Contains(Cards(facts with { Stage = StageRules.GetToShip }), c => c.Key == ChatProactiveRules.HuddleCarryKey);
+        Assert.DoesNotContain(Cards(facts with { Stage = StageRules.Sea }), c => c.Key == ChatProactiveRules.HuddleCarryKey);
+    }
+
+    [Fact]
+    public void BothCardsAreGuideCardsSoOnlyTheStepByStepChoiceSeesThemAndCarryNoPrivateFact()
+    {
+        var facts = new MomentFacts(Now, StageRules.Manage, 40, false, null, PartyChat: Chat, HuddleToCarry: Chat);
+        foreach (var m in Cards(facts).Where(c => c.Key is ChatProactiveRules.PartyChatKey or ChatProactiveRules.HuddleCarryKey))
+        {
+            Assert.Null(ChatProactiveRules.Choose([m], [], new(ChatProactiveRules.ModeSuggest, [], false, false), Now));
+            Assert.NotNull(ChatProactiveRules.Choose([m], [], new(ChatProactiveRules.ModeGuide, [], false, false), Now));
+            Assert.DoesNotMatch(@"\d{3,}|\$", m.Text);
+            Assert.False(ProfanityFilter.IsBlocked(m.Text));
+        }
+    }
+}
+
 public class SuggestionCountsTests
 {
     [Fact]

@@ -4,7 +4,7 @@ using System.Text;
 namespace Princess.Api.Domain;
 
 /// <summary>What the engine knows about a guest's trip when it decides. Trip facts only: nothing a guest said to another guest is ever an input (docs/chat-features-research.md, 7.1 point 3).</summary>
-public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false, bool DinnerUnbooked = false, bool TenderLate = false, bool AshoreNoBridge = false, Guid? MeetGroup = null, Guid? LunchGroup = null, int CruiseDay = 0, int ShipHour = 0, int DaysSinceEnd = 0, bool FeedbackDone = false, bool CaseOpen = false, bool ChatsToKeep = false);
+public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false, bool DinnerUnbooked = false, bool TenderLate = false, bool AshoreNoBridge = false, Guid? MeetGroup = null, Guid? LunchGroup = null, int CruiseDay = 0, int ShipHour = 0, int DaysSinceEnd = 0, bool FeedbackDone = false, bool CaseOpen = false, bool ChatsToKeep = false, Guid? HuddleToCarry = null, Guid? PartyChat = null);
 
 /// <summary>A candidate card. <see cref="FactsHash"/> is a hash of what it is about (a due date), so a dismissed card returns only when that changes. <see cref="Class"/> orders them: due, then guide, then suggestion.</summary>
 public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash, string? Subject = null);
@@ -119,8 +119,19 @@ public static class ChatProactiveRules
             list.Add(new("getship.checkin-open", Travel, ClassDue, "Online check-in is open\nCheck in to get your boarding pass.", "/home/check-in", f.Now.AddDays(2), Hash("getship.checkin-open")));
         if (f.ShareGroup is { } group && f.Stage is StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
             list.Add(new(ChatGroupMomentRules.GroupPollKey, Planning, ClassSuggestion, ChatGroupMomentRules.OfferText, ChatGroupMomentRules.GroupPath(group), f.Now.AddDays(3), Hash(group.ToString("N")), group.ToString()));
+        // The hand-offs into the booking (docs/chat-features-research.md, 13.7): the party chat now exists, and a trip huddle can become it. Both open the chat and post nothing; the guest decides.
+        if (f.HuddleToCarry is { } huddle && f.Stage is StageRules.Book or StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
+            list.Add(new(HuddleCarryKey, Planning, ClassGuide, HuddleCarryText, ChatGroupMomentRules.GroupPath(huddle), f.Now.AddDays(7), Hash(huddle.ToString("N")), huddle.ToString()));
+        if (f.PartyChat is { } party && f.Stage is StageRules.Book or StageRules.Manage or StageRules.Prebook)
+            list.Add(new(PartyChatKey, Planning, ClassGuide, PartyChatText, ChatGroupMomentRules.GroupPath(party), f.Now.AddDays(7), Hash(party.ToString("N")), party.ToString()));
         return list;
     }
+
+    public const string HuddleCarryKey = "book.huddle-carry", PartyChatKey = "book.party-chat";
+
+    /// <summary>Words for the two hand-off cards. No name, price or booking number: the chat has the people, and each member says whether the huddle's history comes across.</summary>
+    public const string HuddleCarryText = "You have booked: bring your huddle along?\nThe huddle can become your travel party chat. Everyone going has to agree before its history comes across.";
+    public const string PartyChatText = "Your travel party chat is ready\nEveryone on your booking is in it. A good first step is to say who is doing what.";
 
     /// <summary>
     /// Phase 7c (stages Embark, Sea, Port and Disembark; 7.6): moments for a guest on board, on a switchable <c>onboard</c> topic. The muster, all-aboard and exit cards mirror what the ship already says (the

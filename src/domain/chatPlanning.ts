@@ -1,5 +1,5 @@
 /** Group planning in chat (docs/chat-features-research.md, section 11, phase 4): polls, plans with an answer, and who may post. Framework-free; mirrors `ChatPlanningRules` on the server. */
-import type { ChatMessage, ChatPlannable, ChatPoll, ChatRsvp, ChatTally } from '../api/chatTypes'
+import type { ChatCard, ChatMessage, ChatPlannable, ChatPoll, ChatRsvp, ChatTally } from '../api/chatTypes'
 
 export const POLL_MIN_OPTIONS = 2
 export const POLL_MAX_OPTIONS = 5
@@ -78,6 +78,12 @@ export function pollResultText(poll: ChatPoll, tally: ChatTally, words: { votes:
 /** What a poll or plan is: the typed kinds this phase adds. */
 export const isPoll = (m: Pick<ChatMessage, 'kind' | 'poll'>): boolean => m.kind === 'poll' && m.poll !== undefined
 export const isPlan = (m: Pick<ChatMessage, 'kind' | 'card'>): boolean => m.kind === 'plan' && m.card !== undefined
+
+/** The screens a plan for something booked opens (an excursion or a dinner). Answering such a plan books nothing; each person books their own place there. */
+const BOOKED_PLAN_PATHS = ['/plan/excursions', '/plan/dining']
+
+/** Whether a plan is for an excursion or a dinner, which has to be booked by each person on its own screen. */
+export const isBookingPlan = (card: Pick<ChatCard, 'path'>): boolean => card.path !== undefined && BOOKED_PLAN_PATHS.includes(card.path)
 
 /** The events of one day in time order, for the day picker in the plan chooser. */
 export function eventsOnDay(events: readonly ChatPlannable[], day: number): ChatPlannable[] {

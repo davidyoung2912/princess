@@ -54,6 +54,7 @@ export function CatchUpButton({ conversationId }: { conversationId: string }) {
           <p role="status" className="visually-hidden">{catchUpAnnouncement(result)}</p>
           <p><strong>{result.label}</strong></p>
           <p className="muted">{t('cst.private')} {t('cst.read', { count: result.messages, time: shipTime(result.since) })}</p>
+          {result.written && <p className="muted">{t('cst.written')}</p>}
           {!hasHighlights(result) && <p>{t('cst.nothing')}</p>}
           <Quotes title={t('cst.decided')} lines={result.decided} />
           <Quotes title={t('cst.open')} lines={result.open} />

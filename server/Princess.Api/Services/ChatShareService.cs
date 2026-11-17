@@ -52,6 +52,12 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
                 .Select(e => new ChatPlannableDto(ChatPlanningRules.PlanRef(e.Id, day), e.Title, day, e.Start, ProgramRules.PlaceName(e.PlaceId) is { Length: > 0 } place ? place : null)).ToList();
             foreach (var e in ExplorerRules.EventsOn(explorer, timeline, day, false, []))
                 dayList.Add(new ChatPlannableDto(ChatPlanningRules.PlanRef(e.Id, day), e.Title, day, e.Start, explorer.Venues.FirstOrDefault(v => v.Id == e.VenueId)?.Title));
+            // Excursions on a port day and dinners on a dinner day: asked and answered like any plan, but booked by each person on the normal screen.
+            foreach (var x in ExcursionRules.Catalogue.Where(x => timeline.Days.Any(d => d.Day == day && d.Port == x.Port && d.Arrive is not null)))
+                dayList.Add(new ChatPlannableDto(ChatPlanningRules.PlanRef(ChatPlanningRules.TourEventId(x.Id), day), x.Name, day, x.Start, Itinerary.PortOf(x.Port)?.Name));
+            if (DiningRules.IsDinnerDay(timeline, day))
+                foreach (var v in ShipDining.VenuesOf(ship).Where(v => !v.WalkIn))
+                    dayList.Add(new ChatPlannableDto(ChatPlanningRules.PlanRef(ChatPlanningRules.DinnerEventId(v.Id, DefaultDinnerTime), day), DinnerTitle(v), day, DefaultDinnerTime, v.Deck));
             list.AddRange(dayList.OrderBy(x => x.Time, StringComparer.Ordinal));
         }
         return list;
@@ -60,8 +66,25 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
     /// <summary>An event a plan can be made of, from the daily programme or from one of the Explorers (both go in the same plan): its title, start, the words for its place and the screen it opens, and the kinds of day it runs.</summary>
     private sealed record Plannable(string Id, string Title, string Start, string? Place, string[] When, string? Path);
 
+    private const string DefaultDinnerTime = "19:00";
+
+    private static string DinnerTitle(Venue v) => $"Dinner at {v.Name}";
+
+    /// <summary>
+    /// An excursion or a dinner that a plan can ask the group about. It has no programme times of its own (<c>When</c> is empty): <see cref="ProgrammeSailingAsync"/> checks the day against the itinerary instead, and answering never books anything.
+    /// </summary>
+    private static Plannable? BookedPlanOn(string? shipId, string eventId)
+    {
+        if (ChatPlanningRules.ParseTourEvent(eventId) is { } tourId && ExcursionRules.ById(tourId) is { } tour)
+            return new(eventId, tour.Name, tour.Start, tour.Meeting, [], ChatCardRules.PathOf(ChatCardRules.Excursion));
+        if (ChatPlanningRules.ParseDinnerEvent(eventId) is { } dinner && ShipDining.VenueOn(shipId, dinner.VenueId) is { WalkIn: false } venue && DiningRules.DinnerTimes.Contains(dinner.Time))
+            return new(eventId, DinnerTitle(venue), dinner.Time, venue.Deck, [], ChatCardRules.PathOf(ChatCardRules.Dining));
+        return null;
+    }
+
     private static Plannable? PlannableOn(string? shipId, string eventId)
     {
+        if (ChatPlanningRules.IsBookingPlan(eventId)) return BookedPlanOn(shipId, eventId);
         if (ProgramRules.ById(eventId, shipId) is { } ev)
             return new(ev.Id, ev.Title, ev.Start, ProgramRules.PlaceName(ev.PlaceId) is { Length: > 0 } place ? place : null, ev.When, null);
         if (ExplorerCatalogue.EventOn(shipId, eventId) is { } x && ExplorerCatalogue.VenueOn(shipId, x.VenueId) is { } venue)
@@ -77,7 +100,10 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         if (await CurrentAsync(actor, ct) is not { } booking) return null;
         if (PlannableOn(AboardPlans.ShipOfSailing(booking.SailingId), eventId) is not { } ev) return null;
         var timeline = TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure));
-        return day >= 1 && day <= timeline.Days.Count && DayKinds.Runs(timeline, day, ev.When) ? booking.SailingId : null;
+        if (day < 1 || day > timeline.Days.Count) return null;
+        if (ChatPlanningRules.ParseTourEvent(eventId) is { } tourId) return ExcursionRules.ById(tourId) is { } tour && timeline.Days.Any(d => d.Day == day && d.Port == tour.Port && d.Arrive is not null) ? booking.SailingId : null;
+        if (ChatPlanningRules.IsBookingPlan(eventId)) return DiningRules.IsDinnerDay(timeline, day) ? booking.SailingId : null;
+        return DayKinds.Runs(timeline, day, ev.When) ? booking.SailingId : null;
     }
 
     /// <summary>

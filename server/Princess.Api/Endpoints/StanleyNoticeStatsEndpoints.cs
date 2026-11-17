@@ -46,6 +46,21 @@ public static class StanleyNoticeStatsEndpoints
             .WithSummary("Administrators only (403 otherwise): the suggestion cards' dismiss and don't-show-again rates, and the host roles R6 and R11 (counts of what they did), against the rollout thresholds (notEnough, ok, rewrite or pause) over the last `days` (at least 14), with the signals the logs cannot yet give listed as unmeasured. Aggregate counts only.");
     }
 
+    /// <summary>Staff view of the "Measures" lines of section 13.6 across the 11 stages. Aggregate counts only; a measure the data cannot give is listed as unmeasured, never shown as zero.</summary>
+    public static void MapChatStageMeasureEndpoints(this IEndpointRouteBuilder api)
+    {
+        api.MapGet("/admin/chat-stages/summary", async (int? days, ICurrentUser me, IChatStageStatsStore stats, IClock clock, CancellationToken ct) =>
+            {
+                if (me.ActorPublicId is not null) throw ApiException.Forbidden();
+                if ((await me.LoadAsync(ct)).Role != "admin") throw ApiException.Forbidden();
+                var window = ChatRolloutRules.WindowDays(Math.Clamp(days ?? 0, 0, 90));
+                var counts = await stats.CountsSinceAsync(clock.UtcNow.AddDays(-window), ct);
+                return Results.Ok(new { windowDays = window, measures = ChatStageMeasureRules.Measures(counts), unmeasured = ChatStageMeasureRules.Unmeasured });
+            })
+            .WithTags("Stanley")
+            .WithSummary("Administrators only (403 otherwise): how chat is used at each stage (shortlists shared in huddles, party chats used within 48 hours, reminders that ended up muted, groups with a plan or poll, meet-ups, kept chats, recaps shared, reports per 1000 messages) over the last `days` (at least 14). Aggregate counts only; measures the data cannot give are listed as unmeasured.");
+    }
+
     /// <summary>The totals and the fail-open share (of notices posted or failed open) from the log's grouped counts.</summary>
     public static StanleyNoticeSummaryDto Summarise(long sinceMs, IReadOnlyList<NoticeDeliveryCount> rows)
     {

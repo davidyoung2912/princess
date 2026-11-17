@@ -93,6 +93,26 @@ public static class ChatPlanningRules
         return at > 0 && int.TryParse(text![(at + 1)..], out var day) && day > 0 ? (text[..at], day) : null;
     }
 
+    // ---- Plans for something that is booked, not scheduled (an excursion or a dinner) ----
+
+    /// <summary>The event id of a plan for an excursion: <c>tour~&lt;excursionId&gt;</c>. Such a plan is asked about and answered, never booked: Going records the answer only, and each person books their own place on the normal screen.</summary>
+    public static string TourEventId(string excursionId) => $"tour~{excursionId}";
+
+    /// <summary>The event id of a plan for a dinner: <c>dine~&lt;venueId&gt;~&lt;time&gt;</c>.</summary>
+    public static string DinnerEventId(string venueId, string time) => $"dine~{venueId}~{time}";
+
+    public static string? ParseTourEvent(string? eventId) => eventId is { } e && e.StartsWith("tour~", StringComparison.Ordinal) && e.Length > 5 ? e[5..] : null;
+
+    public static (string VenueId, string Time)? ParseDinnerEvent(string? eventId)
+    {
+        if (eventId is not { } e || !e.StartsWith("dine~", StringComparison.Ordinal)) return null;
+        var parts = e[5..].Split('~');
+        return parts.Length == 2 && parts[0].Length > 0 && parts[1].Length > 0 ? (parts[0], parts[1]) : null;
+    }
+
+    /// <summary>Whether a plan's event is booked rather than scheduled. Answering such a plan never changes anyone's programme and never books, pays or reserves anything.</summary>
+    public static bool IsBookingPlan(string? eventId) => ParseTourEvent(eventId) is not null || ParseDinnerEvent(eventId) is not null;
+
     /// <summary>The words a list line and a phone alert show for a plan.</summary>
     public static string PlanPreview(string title) => $"Plan: {title}";
 

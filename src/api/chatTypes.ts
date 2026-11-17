@@ -475,7 +475,8 @@ export interface ChatConversationsApi {
 /** `reason` is `kind` (his own chat, a channel or a room), `child` (a supervised child is a member) or `off` (the creator turned it off) when `available` is false. */
 export interface ChatStanleyTap { available: boolean; canSwitch: boolean; off: boolean; reason?: 'kind' | 'child' | 'off'; /** You chose not to see his answers in this conversation. */ muted?: boolean }
 /** A private catch-up: short quotes with their speakers. `since` is the time of the oldest message it read. */
-export interface ChatCatchUp { label: string; messages: number; since: number; decided: string[]; open: string[]; latest: string[] }
+/** `written` is true when a model wrote `decided` and `open` from the same messages instead of quoting them; `latest` is always real quotes. */
+export interface ChatCatchUp { label: string; messages: number; since: number; decided: string[]; open: string[]; latest: string[]; written?: boolean }
 export interface ChatPlanPreview { question: string; options: string[] }
 export interface ChatTerm { word: string; meaning: string }
 /** `lines` are Stanley's wording keyed by what each is for: waiting, sent, expired, cooldown, tooManyOpen, tooMany, alreadyAsked, blocked. */

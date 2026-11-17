@@ -15,9 +15,9 @@ public sealed record ChatStanleyMuteBody(bool Muted);
 
 /// <summary>
 /// A private catch-up. Nothing in it is stored in the thread or shown to anyone else. <c>Label</c> says it is not a full record. <c>Messages</c> is how many it read and <c>Since</c> the time of the oldest (ship ms).
-/// <c>Decided</c> and <c>Open</c> are short quotes with their speakers; <c>Latest</c> is the newest few.
+/// <c>Decided</c> and <c>Open</c> are short quotes with their speakers (or, when <c>Written</c> is true, short sentences a model wrote from the same messages); <c>Latest</c> is the newest few, always real quotes.
 /// </summary>
-public sealed record ChatCatchUpDto(string Label, int Messages, long Since, List<string> Decided, List<string> Open, List<string> Latest);
+public sealed record ChatCatchUpDto(string Label, int Messages, long Since, List<string> Decided, List<string> Open, List<string> Latest, bool Written = false);
 
 /// <summary>A poll the app may offer to post to the group. Nothing is posted by asking for it.</summary>
 public sealed record ChatPlanPreviewDto(string Question, List<string> Options);

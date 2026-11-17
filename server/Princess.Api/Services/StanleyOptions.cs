@@ -43,6 +43,11 @@ public sealed class StanleySwitches
     /// </summary>
     public bool ChatHerald { get; set; } = true;
     public bool ChatCatchUp { get; set; } = true;
+    /// <summary>
+    /// A model writes the catch-up's decided and open lists instead of quoting (R3, section 13.2). Off until switched on (<c>Stanley:Switches:ChatCatchUpModel=true</c>): it needs the injection test against the real model first (13.8). With it off, the model
+    /// unavailable, a cap reached or an unusable reply, the catch-up is the quoted one. It is not in <see cref="Off"/>, because off is its normal state and must not show Stanley as degraded.
+    /// </summary>
+    public bool ChatCatchUpModel { get; set; } = false;
     public bool ChatPlan { get; set; } = true;
     public bool ChatWords { get; set; } = true;
     public bool ChatDraft { get; set; } = true;

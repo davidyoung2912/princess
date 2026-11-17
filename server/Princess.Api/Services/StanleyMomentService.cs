@@ -25,6 +25,7 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             var off = (await store.GetTopicsOffAsync(actor.Id, ct)).Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var history = await store.ListMomentsAsync(actor.Id, ct);
             if (!off.Contains(ChatProactiveRules.Planning) && ChatProactiveRules.ModeAllows(mode, ChatProactiveRules.ClassSuggestion) && await GroupOfferAsync(actor, ct) is { } group) facts = facts with { ShareGroup = group };
+            if (!off.Contains(ChatProactiveRules.Planning) && facts.Stage is StageRules.Book or StageRules.Manage or StageRules.Prebook or StageRules.GetToShip) facts = await BookingChatsAsync(actor, facts, ct);
             if (!off.Contains(ChatProactiveRules.Onboard) && ChatProactiveRules.ModeAllows(mode, ChatProactiveRules.ClassSuggestion) && facts.CruiseDay > 0) facts = await GroupsTodayAsync(actor, facts, ct);
             var pick = ChatProactiveRules.Choose(ChatProactiveRules.Candidates(facts), history, new(mode, off, held, actor.IsSupervised), facts.Now);
             if (pick is null) return null;
@@ -40,6 +41,17 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             log.LogWarning(e, "A Stanley suggestion could not be posted for user {UserId}", actor.Id);
             return null;
         }
+    }
+
+    /// <summary>
+    /// The hand-offs into the booking (13.7): the guest's trip huddle, if they are in one (it can be made the party chat), and the booking's party chat once it has more than one person in it. Trip facts and membership only: nothing anyone wrote is read.
+    /// </summary>
+    private async Task<MomentFacts> BookingChatsAsync(UserRecord actor, MomentFacts facts, CancellationToken ct)
+    {
+        var mine = (await store.ListConversationsAsync(actor.Id, ct)).Where(c => c.Status == ChatConversationRules.Active).ToList();
+        if (mine.FirstOrDefault(c => c.Kind == ChatHuddleRules.Kind) is { } huddle) facts = facts with { HuddleToCarry = huddle.GroupPublicId };
+        if (mine.FirstOrDefault(c => c.Kind == ChatConversationRules.Party) is { } party && (await store.ListMembersAsync(party.GroupId, ct)).Count(p => p.Status == ChatConversationRules.Active) > 1) facts = facts with { PartyChat = party.GroupPublicId };
+        return facts;
     }
 
     /// <summary>

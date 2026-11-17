@@ -82,6 +82,7 @@ services.AddScoped<ChatConnectionService>();
 services.AddScoped<IChatGroupStore, DapperChatGroupStore>();
 services.AddScoped<IChatHuddleStore, DapperChatHuddleStore>();
 services.AddScoped<IChatHostStore, DapperChatHostStore>();
+services.AddScoped<IChatStageStatsStore, DapperChatStageStatsStore>();
 services.AddOptions<ChatHostOptions>().BindConfiguration(ChatHostOptions.Section);
 services.AddScoped<ChatHostService>();
 services.AddScoped<ChatHuddleService>();
@@ -403,6 +404,7 @@ v1.MapAuditEndpoints();
 v1.MapReviewEndpoints();
 v1.MapStanleyNoticeStatsEndpoints();
 v1.MapChatRolloutEndpoints();
+v1.MapChatStageMeasureEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>

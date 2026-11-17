@@ -111,4 +111,27 @@ public class ChatPlanningRulesTests
         Assert.True(ChatCardRules.CannotEdit("plan"));
         Assert.False(ChatCardRules.CannotEdit("text"));
     }
+
+    [Fact]
+    public void APlanForAnExcursionOrADinnerIsOnlyAnAnswerAndNeverTouchesAProgramme()
+    {
+        var tour = ChatPlanningRules.TourEventId("coz-snorkel");
+        var dinner = ChatPlanningRules.DinnerEventId("crown", "19:00");
+        Assert.True(ChatPlanningRules.IsBookingPlan(tour));
+        Assert.True(ChatPlanningRules.IsBookingPlan(dinner));
+        Assert.False(ChatPlanningRules.IsBookingPlan("trivia"));
+        Assert.False(ChatPlanningRules.IsBookingPlan(null));
+        Assert.Equal("coz-snorkel", ChatPlanningRules.ParseTourEvent(tour));
+        Assert.Equal(("crown", "19:00"), ChatPlanningRules.ParseDinnerEvent(dinner));
+        Assert.Null(ChatPlanningRules.ParseDinnerEvent("dine~crown"));
+        Assert.Null(ChatPlanningRules.ParseTourEvent("tour~"));
+    }
+
+    [Fact]
+    public void ThePlanRefOfADinnerSurvivesItsTimeHavingAColon()
+    {
+        var planRef = ChatPlanningRules.PlanRef(ChatPlanningRules.DinnerEventId("crown", "19:00"), 4);
+        var parsed = ChatPlanningRules.ParsePlanRef(planRef);
+        Assert.Equal((ChatPlanningRules.DinnerEventId("crown", "19:00"), 4), parsed);
+    }
 }

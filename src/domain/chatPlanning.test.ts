@@ -3,7 +3,7 @@ import type { ChatPlannable, ChatTally } from '../api/chatTypes'
 import {
   OPTION_MAX, QUESTION_MAX, adminCandidates, applyRsvp, applyVote, canAddOption, canPost, cleanPollDraft, eventsOnDay, isPlan, isPoll, isPollClosed, leaders, percentOf, planDays, pollResultText, rsvpIndex, rsvpOf,
 } from './chatPlanning'
-import { answerJob, readAnswerJob, withHeld } from './chatPlanning'
+import { answerJob, isBookingPlan, readAnswerJob, withHeld } from './chatPlanning'
 import { readReactionJob } from './chatReactions'
 import { canEditKind } from './chatCards'
 
@@ -134,5 +134,14 @@ describe('answers held for signal', () => {
     expect(withHeld(tally([0, 0, 0]), { kind: 'rsvp', value: 'maybe' })).toEqual(tally([0, 1, 0], { mine: 1 }))
     expect(withHeld(undefined, { kind: 'vote', value: '0' })).toBeUndefined()
     expect(withHeld(tally([1, 0]), undefined)).toEqual(tally([1, 0]))
+  })
+})
+
+describe('plans for something booked', () => {
+  it('knows an excursion or dinner plan from its screen', () => {
+    expect(isBookingPlan({ path: '/plan/excursions' })).toBe(true)
+    expect(isBookingPlan({ path: '/plan/dining' })).toBe(true)
+    expect(isBookingPlan({ path: '/explore/venue/x' })).toBe(false)
+    expect(isBookingPlan({})).toBe(false)
   })
 })

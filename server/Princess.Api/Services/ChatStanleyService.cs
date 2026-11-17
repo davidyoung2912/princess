@@ -13,7 +13,7 @@ namespace Princess.Api.Services;
 /// or sent to anyone: a preview is posted only when the person taps through the ordinary poll route. There is no model call, so nothing a member writes can steer him. Not offered in Stanley's own chat, a channel
 /// or room, a conversation with a supervised child in it, or one whose creator turned it off.
 /// </summary>
-public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses, IUserClock clock, IAuditLog audit, IOptions<StanleyOptions> options)
+public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses, IUserClock clock, IAuditLog audit, IOptions<StanleyOptions> options, IConciergeModel model, IConciergeLimiter limiter)
 {
     private const int ReadAtMost = 120;
 
@@ -86,9 +86,31 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
         var byId = room.People.ToDictionary(p => p.UserId);
         var said = rows.Select(r => new ChatStanleyRules.Said(r.FromUserId, r.FromUserId == actor.Id ? "You" : byId.TryGetValue(r.FromUserId, out var p) ? ShortName(p) : "Someone", r.Text)).ToList();
         var summary = ChatStanleyRules.Summarise(said);
+        var (written, how) = await WrittenAsync(actor, said, summary, ct);
         await uses.RecordUseAsync(actor.Id, room.Member.GroupId, now, ct);
-        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "chat.catchUp", Outcome = AuditOutcome.Success, Target = "conversation:" + conversationId, Detail = rows.Count + " messages" }, ct);
-        return new("Stanley's summary, not a full record", rows.Count, Shipboard.Ms(rows[0].At), summary.Decided, summary.Open, summary.Latest);
+        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "chat.catchUp", Outcome = AuditOutcome.Success, Target = "conversation:" + conversationId, Detail = rows.Count + " messages, " + how }, ct);
+        var shown = written ?? summary;
+        return new("Stanley's summary, not a full record", rows.Count, Shipboard.Ms(rows[0].At), shown.Decided, shown.Open, shown.Latest, written is not null);
+    }
+
+    /// <summary>
+    /// A model-written version of the summary, or null with the reason the quoted one is used: <c>quoted</c> (switch off or no model), <c>safety</c> (a line the safety screen keeps from a model), <c>limit</c>, <c>failed</c> or <c>unusable</c>.
+    /// The call has no tools and the conversation is data inside a block; the reply must be JSON, every line passes the output filter and a number the chat never held is dropped. The reason is audited, never any text.
+    /// </summary>
+    private async Task<(ChatStanleyRules.Summary? Written, string How)> WrittenAsync(UserRecord actor, List<ChatStanleyRules.Said> said, ChatStanleyRules.Summary quoted, CancellationToken ct)
+    {
+        var o = options.Value;
+        if (!o.Switches.ChatCatchUpModel || !o.Switches.Model || !model.Available) return (null, "quoted");
+        if (!ChatStanleyRules.MayCallModel(said)) return (null, "safety");
+        var meter = new ModelMeter(model, c => limiter.TryTakeAsync(actor.Id, DateTime.UtcNow, o.DailyCeiling, TimeSpan.FromDays(1), c), 1);
+        var turn = ChatStanleyRules.ModelTurn(said);
+        try
+        {
+            var reply = await meter.CallAsync(ChatStanleyRules.ModelSystem, StanleyService.NoTools, [new System.Text.Json.Nodes.JsonObject { ["role"] = "user", ["content"] = turn }], ModelTier.Small, ct);
+            var text = string.Concat((reply["content"] as System.Text.Json.Nodes.JsonArray ?? []).OfType<System.Text.Json.Nodes.JsonObject>().Where(b => b["type"]?.GetValue<string>() == "text").Select(b => b["text"]?.GetValue<string>()));
+            return ChatStanleyRules.ParseModelSummary(text, turn, quoted) is { } written ? (written, "written") : (null, "unusable");
+        }
+        catch (ConciergeModelException e) { return (null, e.Code == "limit" ? "limit" : "failed"); }
     }
 
     /// <summary>One chosen message the caller may read, and up to two text messages before it (oldest first), or an error when it is not an ordinary message of theirs to read.</summary>

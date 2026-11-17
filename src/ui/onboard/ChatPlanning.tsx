@@ -3,16 +3,16 @@ import type { ChatConversation, ChatMessage, ChatPlannable, ChatRsvp, ChatTally 
 import { isApiError } from '../../api/errors'
 import { newClientId } from '../../domain/chatThread'
 import {
-  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, answerJob, applyRsvp, applyVote, canAddOption, cleanPollDraft, eventsOnDay, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MAX_OPTIONS, POLL_MIN_OPTIONS, rsvpOf, totalVotes, withHeld,
+  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, answerJob, applyRsvp, applyVote, canAddOption, cleanPollDraft, eventsOnDay, isBookingPlan, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MAX_OPTIONS, POLL_MIN_OPTIONS, rsvpOf, totalVotes, withHeld,
 } from '../../domain/chatPlanning'
-import { cleanNote, NOTE_MAX } from '../../domain/chatCards'
+import { cardLink, cleanNote, NOTE_MAX } from '../../domain/chatCards'
 import { clock12 } from '../../domain/planCard'
 import { useAction } from '../../hooks/useAction'
 import { sendWithin, worthRetrying } from '../../hooks/useOutbox'
 import { useNow } from '../../hooks/useDemo'
 import { api } from '../../runtime'
 import { t, type StringKey, headingCase } from '../../i18n'
-import { Button } from '../Button'
+import { Button, LinkButton } from '../Button'
 import { useShipTime } from './shipTime'
 
 const votes = (n: number): string => t('cpoll.votes', { count: n })
@@ -119,6 +119,8 @@ export function PlanMessage({ conversationId, message, canAct, held, onHold }: {
   })
   const when = [card.day !== undefined ? t('card.day', { day: card.day }) : '', card.time ? clock12(card.time) : ''].filter(Boolean).join(', ')
   const mine = rsvpOf(tally?.mine)
+  const booking = isBookingPlan(card)
+  const link = cardLink({ type: 'plan', path: card.path })
   return (
     <div className="chat-card chat-card--plan" role="group" aria-label={`${t('card.type.plan')}: ${card.title}`}>
       <p className="chat-card__type"><strong>{t('card.type.plan')}</strong></p>
@@ -136,6 +138,12 @@ export function PlanMessage({ conversationId, message, canAct, held, onHold }: {
           <p className="muted">{t('cplan.counts', { going: tally.counts[0] ?? 0, maybe: tally.counts[1] ?? 0, no: tally.counts[2] ?? 0 })}</p>
           {tally.going && tally.going.length > 0 && <p className="muted">{t('cplan.goingNames', { names: tally.going.join(', ') })}</p>}
           {tally.addedToPlan && mine === 'going' && <p role="status">{t('cplan.added')}</p>}
+          {booking && link && (
+            <>
+              <p className="muted">{t('cplan.bookNote')}</p>
+              <LinkButton to={link} variant="secondary" aria-label={t('cplan.bookYours.label', { title: card.title })}>{t('cplan.bookYours')}</LinkButton>
+            </>
+          )}
         </>
       )}
       <p role="status" className="visually-hidden">{announce}</p>

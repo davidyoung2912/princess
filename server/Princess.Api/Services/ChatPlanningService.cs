@@ -95,7 +95,8 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
         var card = ChatCardRules.Parse(message.Payload) ?? throw ApiException.Invalid("notPlan");
         var previous = await store.GetResponseAsync(message.Id, actor.Id, ct);
         var sailing = card.EventId is { } eventId && card.Day is { } day ? await share.ProgrammeSailingAsync(actor, eventId, day, ct) : null;
-        var mayChange = sailing is not null && ChatPlanningRules.MayChangeProgramme(actor.IsSupervised);
+        // A plan for an excursion or a dinner is only an answer: nothing is added to a programme, booked or reserved from chat.
+        var mayChange = sailing is not null && !ChatPlanningRules.IsBookingPlan(card.EventId) && ChatPlanningRules.MayChangeProgramme(actor.IsSupervised);
         var inProgramme = mayChange && (await onboard.ListPlanAsync(actor.Id, sailing!, ct)).Any(r => r.EventId == card.EventId && r.Day == card.Day);
         var effect = ChatPlanningRules.Effect(previous?.Choice, previous?.AddedToPlan ?? false, next, inProgramme, mayChange);
         if (effect.Add) await onboard.SetPlanAsync(actor.Id, sailing!, card.EventId!, card.Day!.Value, true, null, ct);
