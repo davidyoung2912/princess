@@ -15,7 +15,7 @@ public class StanleyGoldenTests
         Assert.Equal(StanleyFixtures.All.Count, StanleyFixtures.All.Select(s => s.Name).Distinct().Count());
         var dir = Path.GetDirectoryName(Goldens.PathFor("x"))!;
         if (!Directory.Exists(dir)) return;
-        Assert.Empty(Directory.GetFiles(dir, "*.json").Select(Path.GetFileNameWithoutExtension).Where(n => !StanleyFixtures.Exists(n!)));
+        Assert.All(Directory.GetFiles(dir, "*.json").Select(Path.GetFileNameWithoutExtension), n => Assert.True(StanleyFixtures.Exists(n!), $"golden {n} has no script"));
     }
 
     [Fact]
