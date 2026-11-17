@@ -93,7 +93,10 @@ export function CapsuleCard() {
         <Button variant="secondary" onClick={() => { void protect().then((ok) => setAnswer(ok ? 'granted' : 'declined')) }}>{t('capsule.protect')}</Button>
       )}
       {answer && <p role="status">{t(`capsule.protect.${answer}` as StringKey)}</p>}
-      <Button onClick={runTest}>{t('ready.run')}</Button>
+      <div className="button-row">
+        <Button onClick={runTest}>{t('ready.run')}</Button>
+        <Button variant="secondary" onClick={check}>{t('capsule.check')}</Button>
+      </div>
       {report && (
         <div role="status">
           <p><strong>{t(`ready.result.${report.r.result}` as StringKey)}</strong> <small className="muted">{t('ready.ran', { time: formatWhen(report.at) })}</small></p>
@@ -102,7 +105,6 @@ export function CapsuleCard() {
           </ul>
         </div>
       )}
-      <Button variant="secondary" onClick={check}>{t('capsule.check')}</Button>
       <p role="status" className="muted">{t('capsule.checked', { time: formatWhen(checkedAt) })}</p>
       <fieldset>
         <legend>{t('capsule.choose')}</legend>

@@ -54,6 +54,12 @@ public sealed class MemoryStanleyDueStore : IStanleyDueStore
         FactKey = r.FactKey, State = r.State, LeaseOwner = r.LeaseOwner, LeaseUntil = r.LeaseUntil, Reason = r.Reason, CreatedAt = r.CreatedAt,
     };
 
+    /// <summary>A copy of every row in queue order, for the test harness to read what became of each item.</summary>
+    public List<StanleyDueRow> Snapshot()
+    {
+        lock (_rows) return _rows.OrderBy(r => r.Id).Select(Copy).ToList();
+    }
+
     public Task<bool> EnqueueAsync(StanleyDueRow row, CancellationToken ct)
     {
         lock (_rows)
