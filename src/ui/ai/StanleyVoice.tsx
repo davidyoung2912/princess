@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { dayPlanCard, pocketCard, speakable, voiceSupport } from '../../ai/stanleyVoice'
+import { dayPlanCard, pocketCard, speakable, voiceShortcut, voiceSupport, type VoiceShortcut } from '../../ai/stanleyVoice'
 import { savedFacts } from '../../feeds/stanleyFacts'
 import { useMemory } from '../../hooks/useMemory'
 import { useSailing } from '../../hooks/useDemo'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { t } from '../../i18n'
+import { speechRecognitionOf } from '../../domain/finishMore'
 import { PrintCard } from '../delights/Cards'
 
 /** Reads an answer aloud, only when the guest asks, at the speed they chose for read-aloud elsewhere (normal here). One thing is spoken at a time. */
@@ -47,5 +48,33 @@ export function PocketPanel() {
       <PrintCard label={t('stanley.pocket.day')} card={dayPlanCard({ title: t('stanley.pocket.day'), subtitle: t('stanley.pocket.daySub', { day, date: sailing.departure }), rows: plan.rows, ready: plan.ready, words: { empty: t('stanley.pocket.dayEmpty'), waiting: t('stanley.pocket.dayWaiting'), foot: t('stanley.pocket.dayFoot') } }, true)} />
       {facts.length === 0 && <p className="muted no-print">{t('stanley.pocket.empty')}</p>}
     </section>
+  )
+}
+
+interface Recognition { lang: string; interimResults: boolean; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start(): void; stop(): void }
+
+/** Speak a question (ACT-07). It listens once, only after a tap, and puts what it heard in the question box; nothing is recorded, kept or sent, and sending is still a tap. Not shown where the phone cannot listen. */
+export function ListenButton({ onHeard }: { onHeard: (heard: VoiceShortcut) => void }) {
+  const [listening, setListening] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const Recognizer = speechRecognitionOf(typeof window === 'undefined' ? undefined : window) as (new () => Recognition) | null
+  if (!Recognizer) return null
+  const start = () => {
+    setFailed(false)
+    const r = new Recognizer()
+    r.lang = document.documentElement.lang || 'en-US'
+    r.interimResults = false
+    r.onresult = (e) => { onHeard(voiceShortcut(Array.from(e.results, (x) => x[0]?.transcript ?? '').join(' '))) }
+    r.onend = () => setListening(false)
+    r.onerror = () => { setListening(false); setFailed(true) }
+    setListening(true)
+    try { r.start() } catch { setListening(false); setFailed(true) }
+  }
+  return (
+    <>
+      <button type="button" className="link-button" disabled={listening} onClick={start}>{listening ? t('stanley.voice.listening') : t('stanley.voice.start')}</button>
+      {listening && <span role="status" className="muted"> {t('stanley.voice.hint')}</span>}
+      {failed && <span role="alert" className="field__error"> {t('stanley.voice.failed')}</span>}
+    </>
   )
 }

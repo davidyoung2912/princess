@@ -23,6 +23,21 @@ export function appendTranscript(draft: string, heard: string, max: number): str
   return (base === '' ? said : `${base} ${said}`).slice(0, max)
 }
 
+/** What a spoken request was taken as. `remind` and `next` are the two fixed shortcuts; anything else is the guest's own words, unchanged. */
+export type VoiceShortcut = { kind: 'remind' | 'next' | 'plain'; text: string }
+
+/**
+ * ACT-07: "Hey Stanley, remind me to ..." and "what's next". The wake phrase is dropped, a reminder keeps the guest's own words after "remind me" (the reminder parser still asks and shows a preview in ship time, so nothing is set by voice), and
+ * "what's next" becomes one fixed question. The result only fills the question box: sending is still a tap, and this code records and sends nothing.
+ */
+export function voiceShortcut(heard: string): VoiceShortcut {
+  const said = heard.replace(/\s+/g, ' ').replace(/^(?:(?:hey|hi|ok|okay)[ ,]+)?stanley\b[ ,:]*/i, '').trim()
+  if (/^what(?:'s| is)? (?:is )?next\b[?.!]*$/i.test(said)) return { kind: 'next', text: 'What is next?' }
+  const remind = /^remind me\b[ ,:]*(.*)$/i.exec(said)
+  if (remind) return { kind: 'remind', text: remind[1] === '' ? 'Remind me ' : `Remind me ${remind[1]}`.replace(/[.!]+$/, '') }
+  return { kind: 'plain', text: said }
+}
+
 /** The words of an answer as they should be spoken: no web addresses, no markdown marks, and a pause (a full stop) at the end of each line. */
 export function speakable(text: string): string {
   return text

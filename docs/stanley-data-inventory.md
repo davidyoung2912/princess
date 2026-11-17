@@ -372,3 +372,19 @@ All three work only when their permission row is on (level 4, switched on with t
 ### My standing order (AUT-09, row CL-12)
 
 `POST /me/stanley/auto/orders`. Sends the one chosen free stateroom request once a day from the time the guest chose, only after three earlier asks, with no repair and no charge. Its undo is a cancel and works only until the crew is on the way (half the usual time), so the receipt says so rather than two hours. One ledger key per sailing, day and item.
+
+## Group, voice and shared briefs (phase P11, v1)
+
+### Today's plan for the group (VAL-07)
+
+A fourth shared card, key `onboard.group-digest`, on the same path as the poll, the meeting place and the port day. On a sea or port day, between 6 am and noon ship time, the group's admin gets a card in their own Stanley chat when Stanley is on in the group, three or more people are active, no supervised child is in it and the group has a plan today that at least one person said Going to. The card posts nothing. Only when the admin taps does the server check everything again and post, under the admin's own name after the line "asked Stanley to share this", a short message: each of the group's own plans for today (time, title and the place as the group wrote it), in time order, at most six. It holds no booking, price, cabin or private plan. A plan that was removed meanwhile refuses with 409 already, and a card is offered once a day per group. Nothing new is stored: the card is the usual suggestion row, and the message is an ordinary group message.
+
+### Speak your question (ACT-07)
+
+On the phone only. A button in the Stanley dialog uses the browser's speech recognition once, after a tap. The words are never recorded or sent by Princess: they go into the question box, with the wake phrase "Hey Stanley" dropped. "What's next" becomes the fixed question "What is next?" and "Remind me ..." keeps the guest's own words so the reminder parser still asks and shows a preview. Sending is still a tap. Nothing is stored.
+
+### Guardian copies (reminders R8)
+
+`POST /me/stanley/group/guardian`. Run only when the booker asks. For each supervised child on their account, sets one reminder on the booker's own list an hour before each port day's all aboard time, saying the child's first name ("Sam: all aboard in Cozumel is in an hour."). It is an ordinary reminder (anchor type `guardian`, key of child, date and class so a day is never set twice), counts toward the 30 per trip and the reminders cap, and can be removed from the list. The child gets no reminder and no message and nobody else is told. No ledger line is written. A supervised account is refused (403).
+
+Not built: group meeting reminders each member accepts, copies to a helper (REM-D04), the share sheet for people with no account.

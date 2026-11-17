@@ -183,6 +183,11 @@ export const stanleyAuto = {
   setStanding: (body: { usualDinner: string; orderItem: string; orderTime: string }) => http.put<unknown>('/me/stanley/auto/standing', body),
 }
 
+/** Guardian copies (phase P11, reminders R8). Run only when the guardian taps; the server sets reminders on the guardian's own list and sends the child nothing. */
+export const stanleyGroup = {
+  guardian: () => http.post<unknown>('/me/stanley/group/guardian'),
+}
+
 /** The Family pack, first part (phase P9e). Read-only; nothing is registered, marked or sent. */
 export const stanleyFamily = {
   get: () => http.get<unknown>('/me/stanley/family'),

@@ -62,7 +62,8 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
     {
         var wantMeet = facts.Stage == StageRules.Sea;
         var wantLunch = facts.Stage == StageRules.Port && facts.ShipHour >= ChatGroupMomentRules.LunchFromHour;
-        if (!wantMeet && !wantLunch) return facts;
+        var wantDigest = facts.Stage is StageRules.Sea or StageRules.Port && facts.ShipHour is >= ChatGroupMomentRules.DigestFromHour and < ChatGroupMomentRules.DigestToHour;
+        if (!wantMeet && !wantLunch && !wantDigest) return facts;
         foreach (var g in (await store.ListConversationsAsync(actor.Id, ct)).Where(c => c.Kind == ChatConversationRules.Group && c.Status == ChatConversationRules.Active && ChatPlanningService.AdminOf(c, actor.Id)))
         {
             if (!await store.GetGroupStanleyAsync(g.GroupId, ct)) continue;
@@ -71,6 +72,7 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             var plans = await GroupDayPlans.ListAsync(store, g.GroupId, ct);
             if (wantMeet && facts.MeetGroup is null && ChatGroupMomentRules.Gathering(plans, facts.CruiseDay, GroupDayPlans.ShipPlaces()) is not null) facts = facts with { MeetGroup = g.GroupPublicId };
             if (wantLunch && facts.LunchGroup is null && ChatGroupMomentRules.HasDayPlan(plans, facts.CruiseDay)) facts = facts with { LunchGroup = g.GroupPublicId };
+            if (wantDigest && facts.DigestGroup is null && ChatGroupMomentRules.Digest(plans, facts.CruiseDay) is not null) facts = facts with { DigestGroup = g.GroupPublicId };
         }
         return facts;
     }

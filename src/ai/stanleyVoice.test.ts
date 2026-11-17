@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EMPTY_ACCESS } from '../domain/bookingPrep'
-import { appendTranscript, cardSpeech, dayPlanCard, pocketCard, speakable, voiceSupport, POCKET_FACTS, type PocketInput } from './stanleyVoice'
+import { appendTranscript, voiceShortcut, cardSpeech, dayPlanCard, pocketCard, speakable, voiceSupport, POCKET_FACTS, type PocketInput } from './stanleyVoice'
 import type { StanleyCard } from './stanleyCard'
 
 const card = (id: string, over: Partial<StanleyCard> = {}): StanleyCard => ({
@@ -71,5 +71,22 @@ describe('dayPlanCard', () => {
   it('never shows an unloaded day as a free one', () => {
     expect(dayPlanCard({ title: 'T', subtitle: '', ready: false, words: w, rows: [] }).lines).toEqual(['Your day has not loaded.'])
     expect(dayPlanCard({ title: 'T', subtitle: '', ready: true, words: w, rows: [] }).lines).toEqual(['Nothing planned.'])
+  })
+})
+
+describe('voiceShortcut (ACT-07)', () => {
+  it('drops the wake phrase and keeps plain words as they were', () => {
+    expect(voiceShortcut('Hey Stanley, where is the pool')).toEqual({ kind: 'plain', text: 'where is the pool' })
+    expect(voiceShortcut('  where is the  pool ')).toEqual({ kind: 'plain', text: 'where is the pool' })
+    expect(voiceShortcut('')).toEqual({ kind: 'plain', text: '' })
+  })
+  it('turns "what is next" into one fixed question', () => {
+    for (const said of ["Hey Stanley what's next", 'what is next?', 'Stanley, what next', 'ok stanley whats next'.replace('whats', "what's")]) expect(voiceShortcut(said)).toEqual({ kind: 'next', text: 'What is next?' })
+    expect(voiceShortcut('what is next on the menu for dinner')).toEqual({ kind: 'plain', text: 'what is next on the menu for dinner' })
+  })
+  it('keeps the guest words after remind me, so the reminder parser still asks and previews', () => {
+    expect(voiceShortcut('Hey Stanley, remind me to pack sun cream at 6pm.')).toEqual({ kind: 'remind', text: 'Remind me to pack sun cream at 6pm' })
+    expect(voiceShortcut('remind me')).toEqual({ kind: 'remind', text: 'Remind me ' })
+    expect(voiceShortcut('reminder for tomorrow').kind).toBe('plain')
   })
 })

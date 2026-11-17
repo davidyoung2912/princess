@@ -7,10 +7,10 @@ namespace Princess.Api.Domain;
 /// </summary>
 public static class ChatGroupMomentRules
 {
-    public const string GroupPollKey = "manage.group-poll", GroupMeetKey = "sea.group-meet", GroupLunchKey = "port.group-lunch";
+    public const string GroupPollKey = "manage.group-poll", GroupMeetKey = "sea.group-meet", GroupLunchKey = "port.group-lunch", GroupDigestKey = "onboard.group-digest";
 
     /// <summary>Whether a card key is one an admin can post to the group (the poll, the meeting place, the port day for lunch).</summary>
-    public static bool IsSharedKey(string? key) => key is GroupPollKey or GroupMeetKey or GroupLunchKey;
+    public static bool IsSharedKey(string? key) => key is GroupPollKey or GroupMeetKey or GroupLunchKey or GroupDigestKey;
 
     /// <summary>How many of a plan's people say Going before Stanley offers a meeting place, and before he offers the port day for lunch.</summary>
     public const int MeetGoing = 3, LunchGoing = 2;
@@ -69,6 +69,27 @@ public static class ChatGroupMomentRules
 
     /// <summary>Ship time from which "share the port day" is offered: midday.</summary>
     public const int LunchFromHour = 12;
+
+    /// <summary>Ship hours between which "post today's plan" is offered (VAL-07): the morning, so the group gets it before the day starts.</summary>
+    public const int DigestFromHour = 6, DigestToHour = 12;
+
+    /// <summary>The most plans one digest lists.</summary>
+    public const int DigestMax = 6;
+
+    public const string DigestOfferText = "Post today's plan to your group?\nI can write out what the group has planned today for you to post, and you stay in charge of it.";
+
+    /// <summary>
+    /// The words of the shared daily digest (VAL-07): the group's own plans for <paramref name="day"/> that at least one person said Going to, in time order, each with its time and place as the group wrote them.
+    /// Nothing else goes in: no booking, price, cabin or anyone's private plan. Null when there is nothing to say, so an empty digest is never posted.
+    /// </summary>
+    public static string? Digest(IEnumerable<DayPlan> plans, int day)
+    {
+        var today = plans.Where(p => p.Card.Day == day && p.Going >= 1)
+            .OrderBy(p => p.Card.Time ?? "99:99", StringComparer.Ordinal).ThenBy(p => p.Card.Title, StringComparer.Ordinal).Take(DigestMax).ToList();
+        if (today.Count == 0) return null;
+        var lines = today.Select(p => $"{(p.Card.Time is { Length: > 0 } t ? t + " " : "")}{p.Card.Title}{(p.Card.Place is { Length: > 0 } pl ? $" at {pl}" : "")}");
+        return "Today's plan for the group:\n" + string.Join('\n', lines.Select(l => "- " + l));
+    }
 
     public static string GroupPath(Guid groupPublicId) => $"/chat?c={groupPublicId}";
 }

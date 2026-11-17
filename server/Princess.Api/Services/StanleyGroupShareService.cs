@@ -45,6 +45,11 @@ public sealed class StanleyGroupShareService(IChatStore store, ChatService chat,
                 if (ChatGroupMomentRules.Gathering(plans, day, GroupDayPlans.ShipPlaces()) is not { } meet) throw ApiException.Conflict("already");
                 await chat.SendAsync(actor, groupId, new(null, Kind: "place", PlaceId: meet.PlaceId, Note: $"For {meet.Title}"), ct);
             }
+            else if (key == ChatGroupMomentRules.GroupDigestKey)
+            {
+                if (day <= 0 || ChatGroupMomentRules.Digest(plans, day) is not { } digest) throw ApiException.Conflict("already");
+                await chat.SendAsync(actor, groupId, new(digest), ct);
+            }
             else
             {
                 if (day <= 0 || !ChatGroupMomentRules.HasDayPlan(plans, day)) throw ApiException.Conflict("already");
