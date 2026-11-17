@@ -36,6 +36,10 @@ public static class StanleyRuleCards
             "What does my package include that I have not used?", ["journey-solo"], ["package balances"]),
         Check("CHK-05", "Forgot something?", ["prebook", "travel"], "Sailing within two weeks", "elegant nights, tender ports and the season at the departure date", "the guest sails",
             "Have I forgotten anything to pack?", ["journey-solo"], ["sailing days and ports"]),
+        Check("ACT-01", "Bundles", ["sea", "port"], "A sailing day is open", "booked tours and dinners, the day's events and the all-aboard time", "the guest does each step on its own screen",
+            "Plan my evening", ["journey-solo", "journey-family"], ["booked tours and dinners", "sailing days and all-aboard times"]),
+        Check("ACT-03", "Drafts for approval", ["sea", "port"], "A sailing day is open", "the bundle for the day and the all-aboard time", "the guest copies the note or closes it",
+            "Draft a note to my party", ["journey-solo"], ["booked tours and dinners", "sailing days and all-aboard times"]),
     ];
 
     /// <summary>A rung 1 notice: answers when asked, never changes anything, and its fix is only a screen to open.</summary>

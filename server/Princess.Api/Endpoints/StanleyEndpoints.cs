@@ -109,6 +109,12 @@ public static class StanleyEndpoints
             .WithTags("Stanley").WithSummary("Value and bill for the guest's current or next trip: { hasTrip, findings[{ id, rule (CHK-04 bill watch, VAL-01 included value, CHK-05 forgot something), consequence, title, detail, fix{ label, route } }] ranked most serious first, notChecked[], clean, asOf }. " +
                 "Read-only: it never buys, charges, disputes or refunds; value findings only name what the guest already has.");
 
+        api.MapGet("/me/stanley/bundle", async (string? scope, string? pace, int? day, ICurrentUser me, StanleyBundleService svc, CancellationToken ct) => Results.Ok(await svc.PreviewAsync(await me.LoadAsync(ct), scope, pace, day, ct)))
+            .WithTags("Stanley").WithSummary("A bundle (ACT-01) for ?scope=evening|day, ?pace=relaxed|balanced|packed and ?day (default today, or day 1 before sailing): { hasPlan, scope, pace, day, port, backBy, steps[{ id, start, minutes, kind, title, status (booked, suggested), why, route }] in time order, clashes[], notChecked[] }. " +
+                "Read-only: nothing is booked, held, paid or sent; each step is a screen to open. 400 invalid for an unknown scope, pace or day.");
+        api.MapGet("/me/stanley/draft", async (string? kind, string? scope, string? pace, int? day, ICurrentUser me, StanleyBundleService svc, CancellationToken ct) => Results.Ok(await svc.DraftAsync(await me.LoadAsync(ct), kind, scope, pace, day, ct)))
+            .WithTags("Stanley").WithSummary("A draft note (ACT-03) for ?kind=party-plan|late-note: { kind, text, inputs[] }, or null when there is no plan. It is for the guest to read, change and send themselves; Stanley never sends it. 400 invalid for an unknown kind.");
+
         api.MapGet("/me/stanley/brief", async (ICurrentUser me, StanleyBriefService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Stanley").WithSummary("The guest's brief choices: { settings { morning, morningAt, evening, eveningAt } (24-hour ship-clock times; both off until chosen), allowed (the CL-04 permission is on), nextMorning, nextEvening (epoch ms, or null when off) }.");
         api.MapPut("/me/stanley/brief", async (BriefSettingsRequest? body, ICurrentUser me, StanleyBriefService svc, CancellationToken ct) => Results.Ok(await svc.PutAsync(await me.LoadAsync(ct), body, ct)))

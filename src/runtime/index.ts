@@ -126,6 +126,12 @@ export const stanleyCheckup = {
   get: () => http.get<unknown>('/me/stanley/checkup'),
 }
 
+/** Bundles and drafts (phase P4): an ordered evening or day at a pace, and a note for the guest to send themselves. Read-only; nothing is booked or sent. */
+export const stanleyBundle = {
+  get: (scope: string, pace: string) => http.get<unknown>(`/me/stanley/bundle?scope=${encodeURIComponent(scope)}&pace=${encodeURIComponent(pace)}`),
+  draft: (kind: string, scope: string, pace: string) => http.get<unknown>(`/me/stanley/draft?kind=${encodeURIComponent(kind)}&scope=${encodeURIComponent(scope)}&pace=${encodeURIComponent(pace)}`),
+}
+
 /** Value and bill (phase P6): bill watch, what the guest already has, and a packing nudge. Read-only. */
 export const stanleyValue = {
   get: () => http.get<unknown>('/me/stanley/value'),

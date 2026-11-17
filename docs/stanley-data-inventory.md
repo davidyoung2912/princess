@@ -144,3 +144,15 @@ Nothing new is stored. `GET /me/stanley/value` works out its answer from the gue
 | sailing days and ports | elegant evenings, a tender port and the season, in the fortnight before sailing | words and a route to the packing list |
 
 It is read-only (it never buys, charges, disputes or refunds; a fix is only a screen to open), is for the signed-in guest only, is off for a supervised account and when the money switch is off, and is not sent to a model. What it cannot see (whether a price is right, charges not yet on the account) is listed in the answer.
+
+## Bundles and drafts (phase P4, ACT-01 and ACT-03)
+
+Nothing new is stored. `GET /me/stanley/bundle` and `GET /me/stanley/draft` work out their answer from the guest's own sailing, booked tours and booked dinners, and return it without keeping it. The draft text is not stored anywhere and is never sent by Stanley: the guest copies it and sends it themselves.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| booked tours and dinners | kept as booked in the ordered steps, and checked for overlaps and for ending close to all aboard | the name, start time and length, and a route to the screen |
+| sailing days and all-aboard times | the day's events, a suggested dinner, the "back on board by" time and the late note | times and words |
+| whether a traveller is under 13 | choosing events suited to children | nothing about the traveller is returned |
+
+It is read-only (nothing is booked, held, paid or sent; every step is a screen to open), is for the signed-in guest only, is off for a supervised account and when the tools switch is off, and is not sent to a model. What it cannot see (walking times, whether a show or table has space, whether a step suits a traveller's pace or access) is listed in the answer.

@@ -177,6 +177,7 @@ services.AddScoped<StanleyChangeService>();
 services.AddScoped<StanleyMoneyService>();
 services.AddScoped<StanleyCheckupService>();
 services.AddScoped<StanleyValueService>();
+services.AddScoped<StanleyBundleService>();
 services.AddScoped<StanleyBriefService>();
 services.AddScoped<IStanleyDueHandler, StanleyBriefDueHandler>();
 services.AddScoped<PrivacyService>();
