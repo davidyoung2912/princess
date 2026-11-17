@@ -18,7 +18,7 @@ public static class StanleyAutoRules
 {
     public const string ClassId = "AUT-02", Row = "CL-08", Marker = "aut02:";
     public const int MaxPerTrip = 30, PaymentLeadFar = 7, PaymentLeadNear = 2, UndoMinutes = 120;
-    private static readonly TimeOnly Morning = new(9, 0);
+    private static readonly TimeOnly Morning = new(9, 0), BagNight = new(15, 0);
 
     /// <summary>The dates on the trip that can cost something and are still ahead. A paid balance and a check-in that has opened give none.</summary>
     public static List<AutoCandidate> Candidates(CheckupFacts f)
@@ -30,6 +30,11 @@ public static class StanleyAutoRules
         {
             list.Add(new($"{Marker}pay7:{due:yyyy-MM-dd}", "Your final payment is due in 7 days.", TripRules.ZonedToUtc(due.AddDays(-PaymentLeadFar), Morning)));
             list.Add(new($"{Marker}pay2:{due:yyyy-MM-dd}", "Your final payment is due in 2 days.", TripRules.ZonedToUtc(due.AddDays(-PaymentLeadNear), Morning)));
+        }
+        if (f.Nights >= 1)
+        {
+            var last = f.Departure.AddDays(f.Nights);
+            list.Add(new($"{Marker}bags:{last:yyyy-MM-dd}", "Bags go out tonight. The bags screen has the tags.", TripRules.ZonedToUtc(last.AddDays(-1), BagNight)));
         }
         return list;
     }
@@ -53,6 +58,6 @@ public static class StanleyAutoRules
     [
         "Reminders that follow (AUT-01) are done by the reminders themselves when a time moves.",
         "Lists kept current (AUT-05) and saved for me (AUT-07) are not built yet.",
-        "Bag night, documents, dining and exit time reminders are not set yet.",
+        "Documents, dining and exit time reminders are not set yet.",
     ];
 }

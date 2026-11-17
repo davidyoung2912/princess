@@ -294,3 +294,7 @@ One thing is stored that was not before: each reminder AUT-02 sets is an ordinar
 | the guest's own reminders | which keys are already set, and the limit of 30 per trip | nothing |
 
 It sets nothing recurring, nothing that is not a date on the trip, pays and books nothing, and sends nothing to anyone. It is off for a supervised account, for a paused account, below level 4, and unless the Authority switch is on. AUT-01 (reminders that follow) is the existing anchor behaviour of the reminders; AUT-05 and AUT-07 are not built.
+
+### Bag night reminder (phase P10a, second part)
+
+AUT-02 also sets one reminder at 3 pm ship time on the day before the ship gets in ("Bags go out tonight. The bags screen has the tags."), key `aut02:bags:<date>`, from the sailing dates already read. Same limits, receipt and undo as the others; it tags, packs and chooses nothing. Documents, dining and exit-time reminders, AUT-05 and AUT-07 are still to do.
