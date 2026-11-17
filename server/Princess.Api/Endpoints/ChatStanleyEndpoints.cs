@@ -67,5 +67,31 @@ public static class ChatStanleyEndpoints
 
         chat.MapPut("/groups/{id:guid}/stanley/reminders", async (Guid id, ChatRemindersMuteBody body, ICurrentUser me, ChatCoordinatorService svc, CancellationToken ct) => Results.Ok(await svc.SetRemindersMutedAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("The caller stops or allows Stanley's reminders in this group, for themselves only. Nobody is told. 400 muted; 404.");
+
+        // Relay to a person and the group recap (phase 13).
+        chat.MapPost("/conversations/{id:guid}/handoff/draft", async (Guid id, ChatRelayDraftBody body, ICurrentUser me, ChatRelayService svc, CancellationToken ct) => Results.Ok(await svc.DraftAsync(await me.LoadAsync(ct), id, body, ct)))
+            .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
+            .WithSummary("Get a person: the text of a hand-off made only from the messages the caller chose (one to ten, from a chat they can read; no photos, cards, system lines or Stanley's lines). Sends and stores nothing; the guest edits it and sends it with consent through `POST /me/stanley/handoffs`. 400 none|tooMany; 403 child|notChat; 404.");
+
+        chat.MapGet("/groups/{id:guid}/recap", async (Guid id, ICurrentUser me, ChatRelayService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("The group's recap as the caller may see it: before it is shared only their own parts and a count of how many parts are decided; after, only the parts each owner approved. 404 none yet or not a member.");
+
+        chat.MapPost("/groups/{id:guid}/recap", async (Guid id, ICurrentUser me, ChatRelayService svc, CancellationToken ct) => Results.Ok(await svc.StartAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("Starts the group's recap (or returns it). Plans members posted become parts owned by their poster. Any member of a made group of two or more with no supervised child. 403 notGroup|child|small; 404.");
+
+        chat.MapGet("/groups/{id:guid}/recap/photos", async (Guid id, ICurrentUser me, ChatRelayService svc, CancellationToken ct) => Results.Ok(await svc.ChoicesAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("The caller's own photo messages that they could add to the recap. Never anyone else's. 403 notGroup|child|small; 404.");
+
+        chat.MapPut("/groups/{id:guid}/recap/photos", async (Guid id, ChatRecapPhotosBody body, ICurrentUser me, ChatRelayService svc, CancellationToken ct) => Results.Ok(await svc.SetPhotosAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Sets which of the caller's own photos are in the recap (at most six); adding one is approving it. 400 tooMany|notYours; 403; 404; 409 shared.");
+
+        chat.MapPut("/groups/{id:guid}/recap/parts/{messageId:guid}", async (Guid id, Guid messageId, ChatRecapDecideBody body, ICurrentUser me, ChatRelayService svc, CancellationToken ct) => Results.Ok(await svc.DecideAsync(await me.LoadAsync(ct), id, messageId, body, ct)))
+            .WithSummary("The owner of a part approves or declines it (`decision`). Nobody decides for another: another member's part is 404. 400 decision; 403; 404; 409 shared.");
+
+        chat.MapPost("/groups/{id:guid}/recap/share", async (Guid id, ICurrentUser me, ChatRelayService svc, CancellationToken ct) => Results.Ok(await svc.ShareAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("Shares the recap with the group once every part is decided and one is approved: a line with counts is posted and the approved parts become visible. 403; 404; 409 shared|waiting|empty.");
+
+        chat.MapGet("/groups/{id:guid}/recap/photos/{messageId:guid}", async (Guid id, Guid messageId, ICurrentUser me, ChatRelayService svc, CancellationToken ct) => Results.Ok(new { photo = await svc.PhotoAsync(await me.LoadAsync(ct), id, messageId, ct) }))
+            .WithSummary("One approved photo of a shared recap as a data URL, for a member of the group. 404 for anything not shared and approved.");
     }
 }

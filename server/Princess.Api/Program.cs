@@ -87,6 +87,8 @@ services.AddScoped<IChatStanleyStore, DapperChatStanleyStore>();
 services.AddScoped<ChatStanleyService>();
 services.AddScoped<IChatCoordinatorStore, DapperChatCoordinatorStore>();
 services.AddScoped<ChatCoordinatorService>();
+services.AddScoped<IChatRecapStore, DapperChatRecapStore>();
+services.AddScoped<ChatRelayService>();
 services.AddScoped<ChatHelpService>();
 services.AddSingleton<ChatAskQueue>();
 services.AddScoped<ChatAskStanleyService>();

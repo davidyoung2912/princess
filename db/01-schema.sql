@@ -3819,3 +3819,36 @@ CREATE TABLE dbo.ChatStanleyReminders (
 CREATE INDEX IX_ChatStanleyReminders_Group_User ON dbo.ChatStanleyReminders (GroupId, UserId, [At]);
 END
 GO
+
+-- Chat phase 13: the group recap (docs/chat-features-research.md, phase 13, role R12).
+-- ChatRecaps: one recap a made group builds together. It is shared once, by a member, when every part has been decided; SharedAt is then set and the recap shows only what each owner approved.
+-- ChatRecapItems: one part of a recap, owned by one member: a plan card they posted (starts 'pending') or a photo they chose to add (their choice is their approval). Kind is plan or photo, Decision pending, approved or declined.
+-- Neither table holds any text or picture: only the ids of the messages. Both go with the group, which the retention job deletes.
+IF OBJECT_ID(N'dbo.ChatRecaps', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatRecaps (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatRecaps PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT UQ_ChatRecaps_PublicId UNIQUE,
+  GroupId BIGINT NOT NULL, StartedBy BIGINT NOT NULL, StartedAt DATETIME2(0) NOT NULL,
+  SharedAt DATETIME2(0) NULL, SharedBy BIGINT NULL,
+  CONSTRAINT FK_ChatRecaps_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ChatRecaps_Group ON dbo.ChatRecaps (GroupId, StartedAt);
+END
+GO
+
+IF OBJECT_ID(N'dbo.ChatRecapItems', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatRecapItems (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatRecapItems PRIMARY KEY,
+  RecapId BIGINT NOT NULL, UserId BIGINT NOT NULL, Kind NVARCHAR(5) NOT NULL, MessageId BIGINT NOT NULL,
+  Decision NVARCHAR(8) NOT NULL CONSTRAINT DF_ChatRecapItems_Decision DEFAULT N'pending',
+  DecidedAt DATETIME2(0) NULL,
+  CONSTRAINT FK_ChatRecapItems_Recaps FOREIGN KEY (RecapId) REFERENCES dbo.ChatRecaps (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatRecapItems_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_ChatRecapItems_Kind CHECK (Kind IN (N'plan', N'photo')),
+  CONSTRAINT CK_ChatRecapItems_Decision CHECK (Decision IN (N'pending', N'approved', N'declined')),
+  CONSTRAINT UQ_ChatRecapItems UNIQUE (RecapId, MessageId)
+);
+END
+GO
