@@ -258,6 +258,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/games-explorer/crossmath', titleKey: 'route.crossmath', tab: null, phase: 0 },
   { path: '/games-explorer/nonogram', titleKey: 'route.nonogram', tab: null, phase: 0 },
   { path: '/games-explorer/minesweeper', titleKey: 'route.minesweeper', tab: null, phase: 0 },
+  { path: '/games-explorer/hashi', titleKey: 'route.hashi', tab: null, phase: 0 },
   { path: '/exercise-explorer', titleKey: 'route.exerciseExplorer', tab: null, phase: 0 },
   { path: '/exercise-explorer/:venueId', titleKey: 'route.exerciseVenue', tab: null, phase: 0 },
   { path: '/spa-explorer', titleKey: 'route.spaExplorer', tab: null, phase: 0 },

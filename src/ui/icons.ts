@@ -99,6 +99,7 @@ export {
   Calculator as CrossmathGame,
   Image as NonogramGame,
   Bomb as MinesweeperGame,
+  Waypoints as HashiGame,
   Flag,
   Undo2 as Undo,
   Pencil as Notes,
