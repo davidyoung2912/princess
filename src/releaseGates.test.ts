@@ -440,3 +440,58 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
     })
   })
 })
+
+describe('Chat gates (chat phase 14): Stanley in a thread', () => {
+  const svc = (f: string): string => read(`server/Princess.Api/Services/${f}`)
+  const roles: [string, string, string][] = [
+    ['ChatCatchUp', 'ChatStanleyService.cs', 'R3 catch-up'],
+    ['ChatPlan', 'ChatStanleyService.cs', 'R4 make it a plan'],
+    ['ChatWords', 'ChatStanleyService.cs', 'R8 plain words'],
+    ['ChatDraft', 'ChatStanleyService.cs', 'R9 drafting'],
+    ['ChatCoordinator', 'ChatCoordinatorService.cs', 'R5 coordinator'],
+    ['ChatRelay', 'ChatRelayService.cs', 'R7 relay and R12 recap'],
+    ['ChatHerald', 'StanleyMomentService.cs', 'R2 suggestion cards'],
+  ]
+
+  it.each(roles)('%s is a switch of its own, named in the status, and the service for %s asks it before doing anything', (name, file) => {
+    const options = svc('StanleyOptions.cs')
+    expect(options).toMatch(new RegExp(`public bool ${name} \\{ get; set; \\} = true;`))
+    expect(options).toContain(`("${name[0].toLowerCase()}${name.slice(1)}", ${name})`)
+    expect(svc(file)).toContain(`Switches.${name}`)
+  })
+
+  it('a stopped role answers 403 "stopped", and the critical lanes of the notice relay do not depend on any chat role switch', () => {
+    expect(svc('StanleyOptions.cs')).toContain('Stopped = "stopped"')
+    for (const [name] of roles) expect(svc('StanleyNoticeRelay.cs')).not.toContain(`Switches.${name}`)
+  })
+
+  it('no chat role can pay, book, change or confirm: none of their services reaches the action, booking or payment services', () => {
+    for (const f of ['ChatStanleyService.cs', 'ChatCoordinatorService.cs', 'ChatRelayService.cs', 'StanleyMomentService.cs']) {
+      expect(svc(f), f).not.toMatch(/StanleyActionService|IStanleyEffects|IStanleyTools|\bConfirmAsync\b|IPaymentProvider|IBookingStore|StanleyMoneyService/)
+    }
+  })
+
+  it('no Stanley line reaches a conversation with a supervised child: each role checks for one', () => {
+    expect(read('server/Princess.Api/Domain/ChatStanleyRules.cs')).toMatch(/child/i)
+    expect(svc('ChatRelayService.cs')).toContain('IsSupervised')
+    expect(svc('StanleyMomentService.cs')).toContain('IsSupervised')
+    expect(read('server/Princess.Api/Domain/ChatCoordinatorRules.cs') + read('server/Princess.Api/Domain/ChatGroupMomentRules.cs')).toMatch(/supervised|child/i)
+  })
+
+  it('no chat or relay service logs or audits a message text: audit details are counts', () => {
+    for (const f of ['ChatStanleyService.cs', 'ChatRelayService.cs', 'ChatCoordinatorService.cs']) {
+      for (const m of svc(f).matchAll(/Detail = ([^}]+?) \}/g)) expect(m[1], f).not.toMatch(/\.Text\b|text\b|body\./i)
+    }
+  })
+
+  it('the guest-facing Stanley chat strings never say "AI" (owner decision, 2026-11-10)', () => {
+    const offenders = Object.entries(strings).filter(([k, v]) => /^(chat|stanley)/i.test(k) && /\bAI\b/.test(v)).map(([k]) => k)
+    expect(offenders).toEqual([])
+  })
+
+  it('the rollout lines are the ones in the plan (a change needs the owner)', () => {
+    const rules = read('server/Princess.Api/Domain/ChatRolloutRules.cs')
+    expect(rules).toContain('MinCards = 200, MinGuests = 50, MinDays = 14')
+    for (const line of ['0.60, 0.80', '0.10, 0.20', '0.05, 0.10', '1, 3', '1, 2', '0.08, 0.03']) expect(rules).toContain(line)
+  })
+})

@@ -77,6 +77,32 @@ For the eight incident classes in strategy section 10.4. Stanley's routes are sw
 
 **Operations screen.** Settings, Problems on this device, "Stanley operations (for the team)": written answers overdue or due within 60 days, by owner; the questions asked again and again and the share unanswered on this device; and, for an administrator, the last seven days of reply counts from `GET /me/stanley/tiers` against the targets (at least 60% with no model call, under 10% on the large tier). Repeat-question rate and unanswered share are per device; the server part also lists the resolver cards answered most often across all guests with how often each could not answer (`cards` in `GET /me/stanley/tiers`, keyed by a closed card id, never words) and, from `GET /me/stanley/handoff-outcomes`, handed-over cases by topic with how many are overdue or escalated and the share not overdue. Escalation precision proper is still not measured (no outcome says whether a person was needed), and the desk is simulated, so the handoff figures show how cases fare, not whether handing over was right.
 
+## Chat and Stanley in a thread (chat phase 14)
+
+Each Stanley role in a thread has its own switch (`Stanley:Switches:<Name>=false`, no deploy of code). A stopped role answers 403 `stopped`, and the guest's chat carries on as plain chat. The notice relay and the phone push never depend on these, so a safety notice still reaches the guest. `GET /me/stanley/status` lists what is off.
+
+| Role | Switch | What stops |
+| --- | --- | --- |
+| R2 Herald | `ChatHerald` | His private suggestion cards (nothing is posted; the guest's other notices continue) |
+| R3 Catch-up | `ChatCatchUp` | "Catch me up" |
+| R4 Make it a plan | `ChatPlan` | "Make this a plan" |
+| R5 Coordinator | `ChatCoordinator` | Tallies, reminders and "what remains" |
+| R7 and R12 Relay and recap | `ChatRelay` | "Get a person" draft and the trip recap |
+| R8 Plain words | `ChatWords` | "What does this mean?" |
+| R9 Drafting | `ChatDraft` | "Help me write" |
+| R1 `@Stanley`, wording help | `ChatAsk`, `Chat` | (existing) |
+
+| Incident | Detect | Contain | Then |
+| --- | --- | --- | --- |
+| A wrong card or summary | Guest report; "that was wrong" after a catch-up | Switch that role off | Fix the rule, add a test, switch on for staff first |
+| A leaked fact (price, cabin, booking or document number, health or access need, a child's detail, whereabouts) in a shared thread, a push or a log | Report; a failed gate in `releaseGates.test.ts` | **Hard stop**: switch every chat role off, treat as a security incident | Preserve logs, tell the owner; a written review is needed before any switch is on again |
+| A runaway cost | Daily ceiling reached; the tier dashboard | `Model=false` (no chat role uses a model today) | Find the loop; restore |
+| A harassment report that involves a Stanley line | Report in the moderation queue | Switch the role off if the line was his; block and report apply as usual | Keep the message id, not the words; staff review |
+
+**Rollout.** Three stages, each with the switches above: (1) staff only, with no thresholds and only the hard stops; (2) a cohort of about 5% of guests for one full sailing; (3) everyone, only if no signal is in the "pause" column and at most one is in the "rewrite" column. The lines are in `ChatRolloutRules` (and are the plan's: dismiss 60% and 80%, don't show again 10% and 20%, mute of Stanley's lines 5% and 10%, reminders muted 10% and 20%, reports per 1,000 lines 1 and 3, "that was wrong" after a catch-up 5% and 10%, push opt-out 1 and 2 points, action rate under 8% and 3%), judged only once there are 200 cards shown or 50 guests, over a full sailing or 14 days. Critical-lane cards are measured for delivery and accuracy, not dismiss rates (`/admin/stanley-notices/summary`). **Dashboard:** `GET /admin/chat-rollout/summary` (administrators) judges suggestion cards on the two signals the log has (Not now and Don't show again, against cards written) and lists the rest as unmeasured. **Kill-switch drill:** before the cohort stage, switch each role off in a staging copy, check the 403 `stopped` and the hidden button, then switch it on; record the date here.
+
+**Not measured yet:** guests exposed, mutes of Stanley's lines, reminders muted, reports per line, "that was wrong", push opt-out and the action rate have no log, so they are not on the dashboard. Add each log before the cohort stage; until then those thresholds cannot be judged and the owner should not read a quiet dashboard as a pass.
+
 ## Not built yet
 
 An error-reporting hook (PERF-07), structured JSON logs, a staff view of the moderation queue and a retention report. Add them before a pilot.

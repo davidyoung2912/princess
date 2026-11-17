@@ -3,6 +3,7 @@ using Princess.Api.Auth;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
 using Princess.Api.Domain;
+using Microsoft.Extensions.Options;
 
 namespace Princess.Api.Services;
 
@@ -13,7 +14,7 @@ namespace Princess.Api.Services;
 /// <b>Recap:</b> any member of a made group (no supervised child in it) starts one. Plans members posted become parts owned by their poster, who approves or declines their own; a member adds their own photos, which is their approval.
 /// Nobody decides for another. Once every part is decided and one is approved, a member shares it: the group sees a line with counts, and the recap shows only approved parts. Before that, a member sees only their own parts.
 /// </summary>
-public sealed class ChatRelayService(IChatStore store, IChatRecapStore recaps, IUserClock clock, IAuditLog audit)
+public sealed class ChatRelayService(IChatStore store, IChatRecapStore recaps, IUserClock clock, IAuditLog audit, IOptions<StanleyOptions> options)
 {
     private static string ShortName(ChatPeerRow p) => ChatConnectionRules.ShortName(p.FirstName, p.LastName);
 
@@ -24,6 +25,7 @@ public sealed class ChatRelayService(IChatStore store, IChatRecapStore recaps, I
     /// <summary>The draft hand-off text from the chosen messages. 403 <c>child|notChat</c>; 400 <c>none|tooMany</c>; 404 not a member, or a message that is not in the chat the caller may read.</summary>
     public async Task<ChatRelayDraftDto> DraftAsync(UserRecord actor, Guid conversationId, ChatRelayDraftBody? body, CancellationToken ct)
     {
+        if (!options.Value.Switches.ChatRelay) throw ApiException.Forbidden(StanleySwitches.Stopped);
         if (actor.IsSupervised) throw ApiException.Forbidden(ChatRelayRules.Child);
         var member = await store.GetMemberAsync(actor.Id, conversationId, ct) ?? throw ApiException.NotFound();
         if (member.Status != ChatConversationRules.Active || !ChatRelayRules.Handable(member.Kind)) throw ApiException.Forbidden(ChatRelayRules.NotChat);
@@ -52,6 +54,7 @@ public sealed class ChatRelayService(IChatStore store, IChatRecapStore recaps, I
 
     private async Task<Room> OpenAsync(UserRecord actor, Guid groupId, CancellationToken ct)
     {
+        if (!options.Value.Switches.ChatRelay) throw ApiException.Forbidden(StanleySwitches.Stopped);
         var member = await store.GetMemberAsync(actor.Id, groupId, ct) ?? throw ApiException.NotFound();
         if (member.Status != ChatConversationRules.Active) throw ApiException.NotFound();
         var active = (await store.ListMembersAsync(member.GroupId, ct)).Where(p => p.Status == ChatConversationRules.Active).ToList();

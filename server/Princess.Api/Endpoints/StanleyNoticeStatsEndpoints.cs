@@ -27,6 +27,22 @@ public static class StanleyNoticeStatsEndpoints
             .WithSummary("Administrators only (403 otherwise): how many notices the Stanley relay posted, how many reached the phone only because the thread write failed, and how many guests tapped Got it, by kind and lane, over the last `hours` (default 24, 1 to 720). Aggregate counts only.");
     }
 
+    /// <summary>Staff view of the rollout thresholds for suggestion cards (chat phase 14): the worst signal decides, and a sample that is too small says so. Aggregate counts only.</summary>
+    public static void MapChatRolloutEndpoints(this IEndpointRouteBuilder api)
+    {
+        api.MapGet("/admin/chat-rollout/summary", async (int? days, ICurrentUser me, IChatStore store, IClock clock, CancellationToken ct) =>
+            {
+                if (me.ActorPublicId is not null) throw ApiException.Forbidden();
+                if ((await me.LoadAsync(ct)).Role != "admin") throw ApiException.Forbidden();
+                var window = ChatRolloutRules.WindowDays(Math.Clamp(days ?? 0, 0, 90));
+                var counts = await store.NoticeDeliverySummaryAsync(clock.UtcNow.AddDays(-window), ct);
+                var sample = ChatRolloutRules.FromSuggestionLog(counts.Where(r => r.Lane == ChatProactiveRules.Lane).Select(r => (r.Event, r.Count)));
+                return Results.Ok(new { windowDays = window, verdicts = new[] { ChatRolloutRules.Judge(sample) }, unmeasured = new[] { "guestsExposed", "mute", "remindersMuted", "reports", "catchUpWrong", "pushOptOut", "actionRate" } });
+            })
+            .WithTags("Stanley")
+            .WithSummary("Administrators only (403 otherwise): the suggestion cards' dismiss and don't-show-again rates against the rollout thresholds (notEnough, ok, rewrite or pause) over the last `days` (at least 14), with the signals the logs cannot yet give listed as unmeasured. Aggregate counts only.");
+    }
+
     /// <summary>The totals and the fail-open share (of notices posted or failed open) from the log's grouped counts.</summary>
     public static StanleyNoticeSummaryDto Summarise(long sinceMs, IReadOnlyList<NoticeDeliveryCount> rows)
     {

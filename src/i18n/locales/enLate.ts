@@ -90,7 +90,7 @@ export const enLate = {
   'stanley.why.fact.suggestion': 'you opened a new chat',
   'stanley.why.owner.app': 'Written for this app',
   'stanley.why.note.written': 'Written ahead of time from the page\'s description. It does not use your data.',
-  'stanley.why.note.rule': 'A fixed rule, not an AI choice.',
+  'stanley.why.note.rule': 'A fixed rule, not a judgement call.',
   'stanley.open': 'Open {name}',
   'stanley.show': 'Show me',
   'stanley.group': 'Ask the group',

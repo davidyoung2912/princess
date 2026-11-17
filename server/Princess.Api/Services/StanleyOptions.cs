@@ -36,8 +36,25 @@ public sealed class StanleySwitches
     public bool ThreadReminder { get; set; } = true;
     public bool ThreadInfo { get; set; } = true;
 
+    /// <summary>
+    /// One switch per Stanley role in a thread (docs/chat-features-research.md, 13.2 and phase 14), so a role that misbehaves is stopped alone (<c>Stanley:Switches:ChatCoordinator=false</c>) and chat carries on as plain chat.
+    /// R2 <see cref="ChatHerald"/> (his private suggestion cards), R3 to R4 and R8 to R9 <see cref="ChatCatchUp"/>, <see cref="ChatPlan"/>, <see cref="ChatWords"/> and <see cref="ChatDraft"/>, R5 <see cref="ChatCoordinator"/>, R7 and R12 <see cref="ChatRelay"/>.
+    /// A stopped role answers 403 <c>stopped</c> and the app hides its button; a notice or a critical lane never depends on any of them.
+    /// </summary>
+    public bool ChatHerald { get; set; } = true;
+    public bool ChatCatchUp { get; set; } = true;
+    public bool ChatPlan { get; set; } = true;
+    public bool ChatWords { get; set; } = true;
+    public bool ChatDraft { get; set; } = true;
+    public bool ChatCoordinator { get; set; } = true;
+    public bool ChatRelay { get; set; } = true;
+
+    /// <summary>The refusal a stopped chat role gives.</summary>
+    public const string Stopped = "stopped";
+
     /// <summary>The names of the routes that are off, for the reply.</summary>
-    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff), ("changes", Changes), ("money", Money), ("chatAsk", ChatAsk), ("chat", Chat) }.Where(x => !x.On).Select(x => x.Name)];
+    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff), ("changes", Changes), ("money", Money), ("chatAsk", ChatAsk), ("chat", Chat),
+        ("chatHerald", ChatHerald), ("chatCatchUp", ChatCatchUp), ("chatPlan", ChatPlan), ("chatWords", ChatWords), ("chatDraft", ChatDraft), ("chatCoordinator", ChatCoordinator), ("chatRelay", ChatRelay) }.Where(x => !x.On).Select(x => x.Name)];
 }
 
 /// <summary>

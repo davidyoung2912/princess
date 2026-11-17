@@ -3,6 +3,7 @@ using Princess.Api.Auth;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
 using Princess.Api.Domain;
+using Microsoft.Extensions.Options;
 
 namespace Princess.Api.Services;
 
@@ -12,7 +13,7 @@ namespace Princess.Api.Services;
 /// or sent to anyone: a preview is posted only when the person taps through the ordinary poll route. There is no model call, so nothing a member writes can steer him. Not offered in Stanley's own chat, a channel
 /// or room, a conversation with a supervised child in it, or one whose creator turned it off.
 /// </summary>
-public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses, IUserClock clock, IAuditLog audit)
+public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses, IUserClock clock, IAuditLog audit, IOptions<StanleyOptions> options)
 {
     private const int ReadAtMost = 120;
 
@@ -63,8 +64,9 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
         return await TapAsync(actor, conversationId, ct);
     }
 
-    private async Task<Room> RequireOnAsync(UserRecord actor, Guid conversationId, CancellationToken ct)
+    private async Task<Room> RequireOnAsync(UserRecord actor, Guid conversationId, bool roleOn, CancellationToken ct)
     {
+        if (!roleOn) throw ApiException.Forbidden(StanleySwitches.Stopped);
         var room = await OpenAsync(actor, conversationId, ct);
         if (ReasonFor(room) is { } reason) throw ApiException.Forbidden(reason);
         return room;
@@ -76,7 +78,7 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
     /// </summary>
     public async Task<ChatCatchUpDto> CatchUpAsync(UserRecord actor, Guid conversationId, CancellationToken ct)
     {
-        var room = await RequireOnAsync(actor, conversationId, ct);
+        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatCatchUp, ct);
         var now = await clock.NowAsync(actor, ct);
         if (!ChatStanleyRules.UnderCap(await uses.CountUsesAsync(actor.Id, now - ChatStanleyRules.CapWindow, ct))) throw ApiException.TooMany("catchUpLimit");
         var rows = ChatStanleyRules.Window(await store.ListMessagesAsync(room.Member.GroupId, actor.Id, null, ReadAtMost, ct), room.Member.Kind, room.Member.JoinedAt, room.Member.LeftAt, now);
@@ -107,7 +109,7 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
     /// </summary>
     public async Task<ChatPlanPreviewDto> MakePlanAsync(UserRecord actor, Guid conversationId, ChatPlanBody? body, CancellationToken ct)
     {
-        var room = await RequireOnAsync(actor, conversationId, ct);
+        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatPlan, ct);
         var (chosen, earlier) = await ChosenAsync(actor, room, body?.MessageId ?? Guid.Empty, ct);
         var poll = ChatStanleyRules.PlanFrom(chosen.Text, earlier) ?? throw ApiException.Invalid("noPlan");
         return new(poll.Question, poll.Options);
@@ -116,12 +118,12 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
     /// <summary>The cruise words in one message the caller can read, from the library (never a model). An empty list when there are none. 400 <c>notMessage</c>; 403 <c>kind|child|off</c>; 404.</summary>
     public async Task<ChatTermsDto> ExplainAsync(UserRecord actor, Guid conversationId, ChatPlanBody? body, CancellationToken ct)
     {
-        var room = await RequireOnAsync(actor, conversationId, ct);
+        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatWords, ct);
         var (chosen, _) = await ChosenAsync(actor, room, body?.MessageId ?? Guid.Empty, ct);
         return new([.. ChatStanleyRules.Explain(chosen.Text).Select(t => new ChatTermDto(t.Word, t.Meaning))]);
     }
 
     /// <summary>A short message to edit before sending: running late, or asking to meet. Nothing is sent. 400 <c>draft</c> for an unknown kind, an unusable place or time, or minutes outside 5 to 180.</summary>
     public Task<ChatDraftDto> DraftAsync(ChatDraftBody? body) =>
-        Task.FromResult(new ChatDraftDto(ChatStanleyRules.Draft(body?.Kind, body?.Minutes, body?.Place, body?.Time) ?? throw ApiException.Invalid("draft")));
+        !options.Value.Switches.ChatDraft ? throw ApiException.Forbidden(StanleySwitches.Stopped) : Task.FromResult(new ChatDraftDto(ChatStanleyRules.Draft(body?.Kind, body?.Minutes, body?.Place, body?.Time) ?? throw ApiException.Invalid("draft")));
 }

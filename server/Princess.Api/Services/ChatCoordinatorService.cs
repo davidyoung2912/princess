@@ -3,6 +3,7 @@ using Princess.Api.Auth;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
 using Princess.Api.Domain;
+using Microsoft.Extensions.Options;
 
 namespace Princess.Api.Services;
 
@@ -13,7 +14,7 @@ namespace Princess.Api.Services;
 /// (<see cref="ChatGroupMomentRules.Refusal"/>) and the group's off switch for Stanley also stops this. Every member can switch reminders off for themselves, and hide Stanley's group lines with the existing mute.
 /// </summary>
 public sealed class ChatCoordinatorService(IChatStore store, IChatStanleyStore uses, IChatCoordinatorStore coordinator, IUserStore users, StanleyThreadService stanleyThread, ChatShareService share,
-    ChatFanout fanout, IUserClock clock, IAuditLog audit)
+    ChatFanout fanout, IUserClock clock, IAuditLog audit, IOptions<StanleyOptions> options)
 {
     private sealed record Room(ChatMemberRow Member, List<ChatPeerRow> Active, bool IsAdmin, string? Refusal);
 
@@ -22,6 +23,7 @@ public sealed class ChatCoordinatorService(IChatStore store, IChatStanleyStore u
     /// <summary>An active member of a made group, with the group-level refusal (admin, opt-in, no supervised child, not switched off) worked out. 404 for anyone else.</summary>
     private async Task<Room> OpenAsync(UserRecord actor, Guid groupId, CancellationToken ct)
     {
+        if (!options.Value.Switches.ChatCoordinator) throw ApiException.Forbidden(StanleySwitches.Stopped);
         var member = await store.GetMemberAsync(actor.Id, groupId, ct) ?? throw ApiException.NotFound();
         if (member.Status != ChatConversationRules.Active || member.Kind != ChatConversationRules.Group) throw ApiException.NotFound();
         var active = (await store.ListMembersAsync(member.GroupId, ct)).Where(p => p.Status == ChatConversationRules.Active).ToList();

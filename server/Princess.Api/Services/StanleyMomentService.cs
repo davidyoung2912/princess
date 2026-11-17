@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// <see cref="ChatProactiveRules"/>. It runs when the guest's notices are checked (the app asks, or the scheduled pass does) and is best effort: a failure is logged without text and never
 /// reaches the notice path. It sends no phone alert: a card is a quiet badge (the unread count) and is read in the app.
 /// </summary>
-public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore memory, ILogger<StanleyMomentService> log)
+public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore memory, ILogger<StanleyMomentService> log, Microsoft.Extensions.Options.IOptions<StanleyOptions> options)
 {
     /// <summary>
     /// Decides and, if one is due, posts a card. <paramref name="held"/> is true in quiet hours or do-not-disturb: nothing is posted, and the card waits for the next check. Returns the moment key posted, or null.
@@ -19,7 +19,7 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
     {
         try
         {
-            if (actor.IsSupervised || held) return null;
+            if (actor.IsSupervised || held || !options.Value.Switches.ChatHerald) return null;
             var mode = ChatProactiveRules.ModeOf(await memory.GetLevelAsync(actor.Id, ct));
             if (mode == ChatProactiveRules.ModeOff) return null;
             var off = (await store.GetTopicsOffAsync(actor.Id, ct)).Split(' ', StringSplitOptions.RemoveEmptyEntries);
