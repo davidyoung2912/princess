@@ -268,3 +268,13 @@ It never builds an album, drafts or sends feedback or a thank-you, reads a loyal
 ### Remember pack, second part (phase P9f, SR-11.3, SR-11.4 and SR-11.6)
 
 Same endpoint and inputs; nothing new is stored. Three more findings on the day the ship gets in, each a screen to open: privacy (keep my chats), rebook (next voyage) and bill (expense export). It deletes or keeps no chat, makes no offer, reads no amount and sends nothing. It cannot see when chats will be cleared or whether a case is open, and the plan's day-after timings are still to do.
+
+## Dream, Discover and Book pack, first part (phase P9f, SR-1.3, SR-2.1, SR-2.4, SR-2.5 and SR-3.3)
+
+Nothing new is stored. `GET /me/stanley/planning` works out its answer from one fact, whether the guest has a confirmed trip still to sail, and returns it without keeping it.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| sailing dates | whether a confirmed trip is still to sail | five titles, each with a screen to open (saved sailings, cabins, decide, cost, booking) |
+
+It says nothing once a trip is booked. It reads no fare, cabin, review or cancellation date, sets no alert, holds nothing, books nothing, pays nothing and sends nothing. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: fares and cabins, the sailings the guest saved, and weekly shortlists, price falls, holds and share-the-cost links, which are still to do.
