@@ -17,6 +17,8 @@ import { Field, FieldLabel } from '../Field'
 import { budgetNote } from '../../domain/planning'
 import { useMemory } from '../../hooks/useMemory'
 import { Banner } from '../Banner'
+import { AddToHuddle } from '../onboard/AddToHuddle'
+import { costOffer } from '../../domain/chatHuddle'
 
 const DAY = 86_400_000
 
@@ -154,6 +156,7 @@ export function TripCostScreen() {
             </table>
           </>
         )}
+        {cost && sailing && <AddToHuddle offer={costOffer(sailings.find((s) => s.id === sailingId)?.title ?? sailingId, rooms.find((r) => r.id === category)?.name ?? category, guests, cost.options.map((o) => ({ name: fareName(o.fare), cruise: formatMoney(cents(o.fare, 'cruise') ?? 0) })))} />}
         <p className="muted">{t('cost.footnote')}</p>
         <p><Link to={`/home/sailings/${sailingId}`}>{t('route.sailing')}</Link></p>
       </section>

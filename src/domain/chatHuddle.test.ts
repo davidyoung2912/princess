@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardFields, cardReady, daysUntil, huddleLink, huddleProblem, mayJoin, tokenFromHash } from './chatHuddle'
+import { cardFields, cardReady, costOffer, daysUntil, huddleLink, huddleProblem, mayJoin, openHuddles, portOffer, sailingOffer, tokenFromHash } from './chatHuddle'
 
 describe('the huddle link', () => {
   it('keeps the token after the hash, so it is not sent to a server', () => {
@@ -57,5 +57,23 @@ describe('the deletion date', () => {
   it('counts whole days and never goes below zero', () => {
     expect(daysUntil(3 * 86_400_000 + 1, 0)).toBe(4)
     expect(daysUntil(0, 5)).toBe(0)
+  })
+})
+
+describe('huddle offers', () => {
+  it('builds a sailing card from public facts and drops empty fields', () => {
+    const o = sailingOffer('Alaska', '5 Jun to 12 Jun', 7, ['Juneau', 'Skagway'])
+    expect(o.kind).toBe('sailing')
+    expect(o.fields).toEqual({ Dates: '5 Jun to 12 Jun', Nights: '7', Ports: 'Juneau, Skagway' })
+    expect(portOffer('Juneau').fields).toEqual({})
+  })
+  it('keeps field names clear of the words the server refuses', () => {
+    const o = costOffer('Alaska', 'Balcony', 2, [{ name: 'Standard', cruise: '$1,200' }])
+    const refused = ['paid', 'balance', 'deposit', 'owed', 'owes', 'split', 'share', 'spend', 'folio', 'credit', 'payment', 'cardnumber', 'accountnumber', 'bookingnumber', 'cabinnumber', 'passport']
+    for (const k of Object.keys(o.fields)) for (const w of refused) expect(k.toLowerCase()).not.toContain(w)
+    expect(cardReady(o.kind, o.title)).toBe(true)
+  })
+  it('lists only open huddles', () => {
+    expect(openHuddles([{ kind: 'huddle' }, { kind: 'group' }, { kind: 'huddle', closed: true }])).toHaveLength(1)
   })
 })
