@@ -93,6 +93,7 @@ export {
   Grid2x2 as KenKenGame,
   Grid3x3 as KakuroGame,
   Binary as CodewordGame,
+  Contrast as HitoriGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,

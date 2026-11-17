@@ -317,3 +317,29 @@
   :is(.sd-tool, .sd-digit, .cw-key, .wd-key):is(:hover, :active):not(:disabled) { transform: none; }
 }
 :root[data-motion='reduced'] :is(.sd-tool, .sd-digit, .cw-key, .wd-key):is(:hover, :active):not(:disabled) { transform: none; }
+
+/* Hitori: a grid of digits; a tap shades a square (solid block) or circles it (ring), so colour is never the only cue. */
+.hi-board { width: min(100%, 30rem); border: 2px solid var(--sd-line); background: var(--bg); touch-action: manipulation; user-select: none; }
+.hi-row { display: grid; grid-template-columns: repeat(var(--n), 1fr); }
+.hi-cell {
+  position: relative; aspect-ratio: 1; display: grid; place-items: center; box-sizing: border-box; min-width: 0;
+  border-right: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong); background: var(--bg); color: var(--text); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.hi-cell:last-child { border-right: 0; }
+.hi-row:last-child .hi-cell { border-bottom: 0; }
+.hi-digit { position: relative; font-size: clamp(0.95rem, 5.2vw, 1.6rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.hi-cell--shaded { background: var(--text); color: var(--bg); }
+.hi-cell--shaded .hi-digit { opacity: 0.55; text-decoration: line-through; }
+.hi-mark { position: absolute; inset: 12%; box-sizing: border-box; pointer-events: none; }
+.hi-mark--circled { border: 2px solid currentColor; border-radius: 50%; }
+.hi-cell--hint { background: color-mix(in srgb, var(--warning) 28%, var(--bg)); }
+.hi-cell--shaded.hi-cell--hint { background: color-mix(in srgb, var(--warning) 45%, var(--text)); }
+.hi-cell--selected { box-shadow: inset 0 0 0 3px var(--primary); z-index: 1; }
+.hi-cell--repeat { box-shadow: inset 0 0 0 2px var(--sd-error); }
+.hi-cell--repeat:not(.hi-cell--shaded) { color: var(--sd-error); }
+.hi-cell--repeat.hi-cell--selected { box-shadow: inset 0 0 0 3px var(--primary); }
+.hi-cell:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; z-index: 2; }
+.hi-pad__key { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+.hi-pad__swatch { display: grid; place-items: center; width: 1.7rem; height: 1.7rem; box-sizing: border-box; font-weight: 700; font-size: 0.95rem; }
+.hi-pad__swatch--shaded { background: var(--text); }
+.hi-pad__swatch--circled { border: 2px solid currentColor; border-radius: 50%; }

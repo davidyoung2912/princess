@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39) and **Codeword** (X40). All ten games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) and **Hitori** (X41). All eleven games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -91,7 +91,9 @@ Built. Each catalogue entry now carries `levels`, `minutes` and `players`, and t
 
 Four more games, one phase each, built in this order (easiest to riskiest). Same checklist and rules as above; screen ids X41 to X44. Each ends with a commit and a stop. A final phase repeats the G8 consistency pass for the new games and updates the explorer card counts.
 
-### G9: Hitori (X41)
+### G9: Hitori (X41) — built
+
+Built as planned. `hitori.ts` makes a Latin square, a random legal shading (no touching, rest joined; about 20 to 24% shaded), gives each shaded square a copy of a digit that stays in its row or column, and keeps the puzzle only when plain logic finishes it to that shading, so the answer is unique with no guessing (shaded squares must repeat a staying digit, the usual convention). Logic rules, also used for hints: neighbour of a shaded square stays, twin of a circled square is shaded, equal pair shades any third copy, sandwich (X Y X) keeps the middle, no twin left keeps the square, and (not on Easy) shading that would split the unshaded group. Levels: Easy 5x5, Medium 6x6, Hard 8x8, Expert 10x10 (generates in milliseconds). Solved means any legal shading. `HitoriScreen.tsx`: tap cycles blank, shaded (solid block, struck digit), circled (ring); Shade and Circle buttons; red for touching shaded squares, circled repeats or a split group.
 
 - N by N grid of digits. Shade squares so no digit repeats in any row or column among the unshaded squares, no two shaded squares touch along a side, and all unshaded squares stay joined as one group.
 - Generator: Latin-style base grid, choose a valid shading (no touching, joined whites), fill each shaded square with a copy of a digit already in its row or column, then check uniqueness with a logic solver (pair and triple rules, sandwich, corner, "shading here would split the whites" connectivity). Levels 5x5 to 9x9 (Expert 10x10 if fast).
