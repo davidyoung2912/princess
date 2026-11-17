@@ -9,7 +9,6 @@ import { formatDate, formatTime } from '../../domain/cruise'
 import { dinnerDays, DRESS_NOTES, venueById } from '../../domain/dining'
 import { formatMoney } from '../../domain/money'
 import { itinerary, PORTS, type PortId } from '../../domain/sailings'
-import { nearestFreeSlot } from '../../domain/reservationNudge'
 import { addDays } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -19,102 +18,28 @@ import { useMine } from '../../hooks/useMine'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
-import { SendToChat } from './SendToChat'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
-import { StatusBadge } from '../StatusBadge'
 import { Load } from '../account/parts'
 import { names } from '../plan/people'
 import { PlanError, ReadOnly } from '../plan/common'
 import { WaitsList } from './Waits'
+import { TripReservations } from '../explorer/TripReservations'
 import { BackLink, Saved } from './common'
 
-/** Everything the guest has reserved: dinners (change or cancel) and tours (DIN-02, POR-03). */
+/** Everything the guest has booked, dinners, treatments and tours, in one list by day with clash warnings; each row opens its own Explorer (DIN-02, POR-03). */
 export function ReservationsScreen() {
   const me = usePersona()
   const dining = useSavedCopy('dining', me?.booker ?? 'none', () => api.plan.dining.view(), asDiningView, [me?.id])
+  const spa = useMine(() => api.plan.spa.view())
   const tours = useMine(() => api.plan.excursions.list())
-  const s = useSailing()
   return (
     <div className="page">
-      <p>{t('res.intro')}</p>
-      <section aria-labelledby="res-dinners-h">
-        <h2 id="res-dinners-h">{th('res.dinners')}</h2>
-        <Saved copy={dining}>
-          {(v) => (
-            <>
-              {v.seating && <p>{t('res.fixed', { time: formatTime(v.seating) })}</p>}
-              {v.reservations.length === 0 ? <p className="muted">{t('dine.none')}</p> : <ul className="card-grid">{v.reservations.map((r) => <DinnerCard key={r.id} r={r} date={addDays(s.departure, r.day - 1)} canEdit={v.canBook} reload={dining.retry} />)}</ul>}
-              <p><LinkButton to="/dining-today" variant="secondary">{t('res.find')}</LinkButton></p>
-            </>
-          )}
-        </Saved>
-      </section>
+      <p>{t('res.trip.intro')}</p>
+      <Saved copy={dining}>{(v) => <TripReservations dining={v} spa={spa.data} tours={tours.data} />}</Saved>
+      <p><LinkButton to="/dining-today?view=trip" variant="secondary">{t('res.find')}</LinkButton></p>
       <WaitsList />
-      <section aria-labelledby="res-tours-h">
-        <h2 id="res-tours-h">{th('res.tours')}</h2>
-        <Load state={tours}>
-          {(v) => {
-            const booked = v.booked.filter((b) => b.status === 'booked')
-            return booked.length === 0 ? <p className="muted">{t('res.noTours')}</p> : (
-              <ul className="card-grid">
-                {booked.map((b) => {
-                  const offer = v.offers.find((o) => o.item.id === b.excursionId)!
-                  return (
-                    <li key={b.id} className="card">
-                      <h3 className="card__title">{offer.item.name}</h3>
-                      <ul className="tour__facts">
-                        <li>{t('res.tourWhen', { date: formatDate(offer.date), time: formatTime(offer.item.start), back: formatTime(offer.backBy) })}</li>
-                        <li>{offer.item.meeting}</li>
-                        <li>{names(b.guests)}</li>
-                      </ul>
-                      <SendToChat shareRef={`excursion:${b.id}`} title={offer.item.name} />
-                    </li>
-                  )
-                })}
-              </ul>
-            )
-          }}
-        </Load>
-        <p><Link to="/plan/excursions">{t('route.excursions')}</Link> · <Link to="/ship/port">{t('route.portDay')}</Link></p>
-      </section>
       <p className="muted">{t('res.queue')}</p>
-    </div>
-  )
-}
-
-function DinnerCard({ r, date, canEdit, reload }: { r: Reservation; date: string; canEdit: boolean; reload: () => void }) {
-  const v = venueById(r.venueId)
-  return (
-    <li className="card">
-      <h3 className="card__title">{v?.name ?? r.venueId}</h3>
-      <p>
-        <StatusBadge kind="booked" label={t('dine.confirmed')} />
-        {r.lateMinutes > 0 && <StatusBadge kind="changed" label={t('res.lateBadge', { count: r.lateMinutes })} />}
-      </p>
-      <ul className="tour__facts">
-        <li>{t('dine.when', { day: r.day, date: formatDate(date), time: formatTime(r.time) })}</li>
-        <li>{names(r.guests)}</li>
-      </ul>
-      {canEdit && <Nudge r={r} reload={reload} name={v?.name ?? r.venueId} />}
-      <SendToChat shareRef={`dining:${r.id}`} title={v?.name ?? r.venueId} />
-      <Link to={`/plan/reservations/${r.id}`}>{t('res.open')}<span className="visually-hidden"> {v?.name}, {t('plan.day', { n: r.day })}</span></Link>
-    </li>
-  )
-}
-
-/** Earlier and later buttons (L7): move a dinner to the nearest free time the same night. The detail screen has the full picker; drag is not offered, because buttons work for everyone. */
-function Nudge({ r, reload, name }: { r: Reservation; reload: () => void; name: string }) {
-  const slots = useAsync(() => api.plan.dining.slots(r.venueId, r.day), [r.venueId, r.day, r.time])
-  const [said, setSaid] = useState('')
-  const earlier = slots.data ? nearestFreeSlot(slots.data, r.time, 'earlier') : null
-  const later = slots.data ? nearestFreeSlot(slots.data, r.time, 'later') : null
-  const go = useAction(async (time: string) => { await api.plan.dining.move(r.id, { day: r.day, time }); setSaid(t('res.moved', { day: r.day, time: formatTime(time) })); reload() })
-  return (
-    <div className="button-row">
-      <Button variant="secondary" disabled={!earlier || go.busy} onClick={() => earlier && void go.run(earlier.time)}>{earlier ? t('l7.res.earlier', { time: formatTime(earlier.time) }) : t('l7.res.noEarlier')}<span className="visually-hidden"> {name}</span></Button>
-      <Button variant="secondary" disabled={!later || go.busy} onClick={() => later && void go.run(later.time)}>{later ? t('l7.res.later', { time: formatTime(later.time) }) : t('l7.res.noLater')}<span className="visually-hidden"> {name}</span></Button>
-      <span role="status" className="muted">{go.error ? t('res.stillYours', { when: formatTime(r.time) }) : said}</span>
     </div>
   )
 }

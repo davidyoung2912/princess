@@ -393,6 +393,10 @@ button.chat-quote { cursor: pointer; }
 .exp-event p { margin: 0 0 var(--space-1); }
 .exp-event--cancelled { color: var(--text-muted); }
 .exp-event__clash { color: var(--warning); font-weight: 600; }
+.exp-scope { border: 0; padding: 0; margin: var(--space-3) 0; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); }
+.exp-scope legend { padding: 0; font-weight: 600; margin-block-end: var(--space-1); }
+.exp-trip__day { margin-block-start: var(--space-4); }
+.exp-trip__none { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
 .exp-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block-start: var(--space-3); }
 @media (prefers-reduced-motion: no-preference) { .exp-days__btn { transition: border-color 0.15s; } }
 

@@ -9,6 +9,8 @@ import { Saved } from '../../onboard/common'
 import { diningBookingCard } from '../../../domain/explorer/bookingState'
 import { useExplorerStage } from '../../../hooks/useExplorerStage'
 import { BookingCard } from '../BookingCard'
+import { ReservationScope } from '../ReservationScope'
+import { useReservationScope } from '../../../hooks/useReservationScope'
 import { ExplorerPage } from '../ExplorerPage'
 import { VenueDetailPage } from '../VenueDetailPage'
 import { DiningReservations } from './DiningReservations'
@@ -25,6 +27,7 @@ const kindLabels = (): Record<string, string> => Object.fromEntries(Object.entri
 export function DiningExplorerScreen() {
   const view = useDiningView()
   const [params] = useSearchParams()
+  const [scope, setScope] = useReservationScope()
   if (params.get('reserve')) return <ReservePage />
   return (
     <ExplorerPage
@@ -34,7 +37,8 @@ export function DiningExplorerScreen() {
           {(v) => (
             <>
               <DiningBooking view={v} />
-              <DiningReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} />
+              <ReservationScope scope={scope} onChange={setScope} />
+              <DiningReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} scope={scope} />
             </>
           )}
         </Saved>

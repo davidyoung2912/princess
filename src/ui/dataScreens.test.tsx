@@ -82,8 +82,8 @@ describe('top tasks: my reservations and change dining', () => {
     await open('/plan/reservations')
     await seen('Crown Grill')
     expect(within(main()).getByText(/7:00 PM/)).toBeTruthy()
-    expect(within(main()).getByText(/Change or cancel/)).toBeTruthy()
-    expect(within(main()).getByText('Confirmed')).toBeTruthy()
+    expect(within(main()).getByText('Dinner')).toBeTruthy()
+    expect(within(main()).getAllByText(/^Open/).length).toBeGreaterThan(0)
   })
 
   it('opens one dinner with the controls to move it', async () => {

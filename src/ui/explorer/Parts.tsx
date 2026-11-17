@@ -165,15 +165,17 @@ export interface ReservationItem {
 }
 
 /** The guest's reservations, each with Change and Cancel; nothing about what is being reserved. */
-export function ReservationList({ heading, items, empty, onChange, onCancel, action, readOnly }: { heading: string; items: readonly ReservationItem[]; empty: string; onChange: (id: string) => void; onCancel: (id: string) => void; action?: ReactNode; readOnly?: boolean }) {
+export function ReservationList({ heading, items, empty, onChange, onCancel, action, readOnly, id = 'exp-res-h', level = 2 }: { heading: string; items: readonly ReservationItem[]; empty: string; onChange: (id: string) => void; onCancel: (id: string) => void; action?: ReactNode; readOnly?: boolean; /** Several lists on one page (a day each) need their own heading ids and a lower heading level. */ id?: string; level?: 2 | 3 }) {
+  const Heading = level === 2 ? 'h2' : 'h3'
+  const Title = level === 2 ? 'h3' : 'h4'
   return (
-    <section aria-labelledby="exp-res-h">
-      <h2 id="exp-res-h">{heading}</h2>
+    <section aria-labelledby={id}>
+      <Heading id={id}>{heading}</Heading>
       {items.length === 0 ? <p className="muted">{empty}</p> : (
         <ul className="card-grid">
           {items.map((r) => (
             <li key={r.id} className="card">
-              <h3 className="card__title">{r.to ? <Link to={r.to}>{r.title}</Link> : r.title}</h3>
+              <Title className="card__title">{r.to ? <Link to={r.to}>{r.title}</Link> : r.title}</Title>
               <StatusBadge kind="booked" label={t('exp.res.confirmed')} />
               <p><strong>{r.when}</strong></p>
               {r.facts.length > 0 && <ul className="tour__facts">{r.facts.map((f) => <li key={f}>{f}</li>)}</ul>}
