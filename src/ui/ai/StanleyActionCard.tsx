@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { addCustom, removeCustom } from '../../data/customReminders'
-import { canConfirm, canUndo, changeForAction, changeIdFor, newKey, normalizeAction, planSnapshot, problemOf, reminderForAction, type ConfirmProblem, type StanleyAction } from '../../ai/stanleyAction'
+import { canConfirm, canUndo, changeForAction, changeIdFor, newKey, normalizeAction, planSnapshot, problemOf, dueOfAction, reminderForAction, type ConfirmProblem, type StanleyAction } from '../../ai/stanleyAction'
 import { formatMoney } from '../../domain/money'
 import { acceptChange, addProposal, undoChange } from '../../domain/planChange'
 import { itinerary, shipZoneOnDate } from '../../domain/sailings'
@@ -64,7 +64,7 @@ export function StanleyActionCard({ action, onChange, onNavigate }: { action: St
     }
     if (a.kind === 'remind_me') {
       const date = itinerary(dp.sailing)[currentDay - 1]?.date
-      const due = date ? zonedToEpoch(date, a.params.at ?? '', shipZoneOnDate(dp.sailing, date)) : null
+      const due = dueOfAction(a) ?? (date ? zonedToEpoch(date, a.params.at ?? '', shipZoneOnDate(dp.sailing, date)) : null)
       const reminder = reminderForAction(a, due)
       if (!reminder) return false
       addCustom(reminder)

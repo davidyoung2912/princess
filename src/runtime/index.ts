@@ -113,6 +113,14 @@ export const stanleyActions = {
   waiting: () => http.get<unknown>('/me/stanley/actions/waiting'),
 }
 
+/** The guest's own reminders, held by the server (phase P2a). `sync` sends the plan so a reminder that follows a plan item or all aboard moves with it; every call answers the list. */
+export const stanleyReminders = {
+  list: () => http.get<unknown>('/me/stanley/reminders'),
+  sync: (context: unknown) => http.post<unknown>('/me/stanley/reminders/sync', { context }),
+  update: (id: string, body: { text?: string; at?: string; date?: string; leadMin?: number; keepAsClock?: boolean }) => http.patch<unknown>(`/me/stanley/reminders/${encodeURIComponent(id)}`, body),
+  remove: (id: string) => http.delete<void>(`/me/stanley/reminders/${encodeURIComponent(id)}`),
+}
+
 /** What Stanley did, is watching and remembers (phase P1). Undo of one act is `stanleyActions.undo`; switching a watch off is `stanleyPermissions.setRow`; forgetting is `stanleyMemory.forget`. */
 export const stanleyLedger = {
   get: () => http.get<unknown>('/me/stanley/ledger'),

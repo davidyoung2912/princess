@@ -219,6 +219,7 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/me/activity': 'needs-connection',
   '/me/stanley-can': 'needs-connection',
   '/me/stanley-activity': 'needs-connection',
+  '/me/reminders': 'needs-connection',
   '/me/demo': 'needs-connection',
   '/kit': 'offline',
   '/account': 'needs-connection',

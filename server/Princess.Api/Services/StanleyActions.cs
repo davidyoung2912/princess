@@ -336,11 +336,40 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
             }
             case StanleyActionKinds.RemindMe:
             {
-                var at = intent.Arg("at");
+                var zone = await ReminderZoneAsync(user, ctx, ct);
+                var args = new Dictionary<string, string>(intent.Args);
                 var text = intent.Arg("text");
-                var lines = new List<string> { $"At {at}: {text}" };
-                if (ctx.AllAboard is { } a) lines.Add($"All aboard is {a.At} ({a.Label}).");
-                return new StanleyPreviewFacts($"Remind you at {at}", lines, ["You"], null, "It shows on this device when you open the app after that time, and is sent to your phone as an alert if you have allowed alerts. The time is the ship's clock.", $"remind|{at}|{text}");
+                var lines = new List<string>();
+                string how;
+                if (intent.Arg("when") == StanleyReminderRules.KindAnchored)
+                {
+                    var anchor = intent.Arg("anchor");
+                    if (anchor == StanleyReminderRules.AllAboard)
+                    {
+                        var a = ctx.AllAboard ?? throw ApiException.Invalid("noAnchor");
+                        args["at"] = a.At; args["anchorTitle"] = "all aboard"; args["anchorDay"] = "0";
+                        how = $"{StanleyReminderRules.LeadWords(int.Parse(intent.Arg("offset")))} before all aboard ({a.At}).";
+                    }
+                    else
+                    {
+                        var entry = (ctx.Plan ?? []).FirstOrDefault(p => p.Id == anchor && p.Listed) ?? throw ApiException.Invalid("notInPlan");
+                        args["at"] = entry.Start; args["anchorTitle"] = entry.Title; args["anchorDay"] = entry.Day.ToString();
+                        how = $"{StanleyReminderRules.LeadWords(int.Parse(intent.Arg("offset")))} before {entry.Title} ({entry.Start}).";
+                    }
+                    lines.Add(how + " It follows it if it moves.");
+                }
+                else if (intent.Arg("when") == StanleyReminderRules.KindRelative) lines.Add($"{StanleyReminderRules.LeadWords(int.Parse(intent.Arg("in")))} from now.");
+                var now = reminders.UtcNow;
+                var due = StanleyReminderRules.Resolve(args, now, zone) ?? throw ApiException.Invalid("time");
+                if (due <= now) throw ApiException.Invalid("past");
+                if (due > now.AddDays(StanleyReminderRules.MaxDays)) throw ApiException.Invalid("tooFar");
+                var label = StanleyReminderRules.Label(due, zone, now);
+                args["due"] = due.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+                args["zone"] = zone;
+                lines.Insert(0, $"{label}: {text}");
+                if (args.GetValueOrDefault("private") == "1") lines.Add("This looks like a health reminder. I keep it private and never advise on it.");
+                lines.Add("Ends when it has been sent, or when you remove it from your reminders list.");
+                return new StanleyPreviewFacts($"Remind you {label}", lines, ["You"], null, "It shows on this device when you open the app after that time, and is sent to your phone as an alert if you have allowed alerts. You can change or remove it from your reminders list.", $"remind|{args.GetValueOrDefault("when")}|{args.GetValueOrDefault("in")}|{args.GetValueOrDefault("at")}|{args.GetValueOrDefault("date")}|{args.GetValueOrDefault("anchor")}|{args.GetValueOrDefault("offset")}|{text}", args);
             }
         }
 
@@ -487,7 +516,7 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
     public async Task<StanleyEffectResult> ExecuteAsync(UserRecord user, StanleyIntent intent, StanleyActionContext ctx, CancellationToken ct)
     {
         if (intent.Kind == StanleyActionKinds.RemindMe)
-            return new StanleyEffectResult((await reminders.SetAsync(user, intent.Arg("at"), intent.Arg("text"), await ReminderZoneAsync(user, ctx, ct), ct)).ToString());
+            return new StanleyEffectResult((await reminders.AddAsync(user, intent.Args, intent.Args.GetValueOrDefault("zone") ?? await ReminderZoneAsync(user, ctx, ct), ct)).ToString());
         var booking = await BookingAsync(user, ctx.SailingId, ct);
         switch (intent.Kind)
         {

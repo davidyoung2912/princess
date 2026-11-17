@@ -21,6 +21,9 @@ import { useItinerary } from '../../hooks/useShipCatalogue'
 import { SlotWatch } from './SlotWatch'
 import { WeekPlanner } from './WeekPlanner'
 import { StanleyEmpty } from '../ai/StanleyEmpty'
+import { RemindMe } from '../ai/RemindMe'
+import { planSnapshot } from '../../ai/stanleyAction'
+import { reminderContext } from '../../ai/stanleyReminders'
 
 const TENDER_DELAYS = [20, 40, 60] as const
 
@@ -48,6 +51,7 @@ export function AutopilotScreen() {
   const log = changeLog(dp.changes.filter((c) => c.status !== 'proposed'))
   const shown = visibleRows(dp.rows, now, dp.dayEndAt)
   const notes = state.gentle ? gentleNotes(dp.rows, dp.weather) : []
+  const remindContext = reminderContext(planSnapshot(dp.rows, dp.alternatives, day), dp.itineraryDay.allAboard ?? null, dp.sailing.id)
 
   const commit = (next: readonly Change[]) => {
     void programmeFollows(api.onboard, dp.sailing, state.prefs, dp.changes, next)
@@ -93,9 +97,11 @@ export function AutopilotScreen() {
             <li key={r.entry.id} className={r.state === 'dropped' ? 'plan-row--dropped' : undefined}>
               <strong>{r.entry.start}</strong> <Link to={r.entry.path}>{r.entry.title}</Link>
               {r.state !== 'planned' && <span className="plan-row__note">{t(`autopilot.state.${r.state}` as StringKey, { was: r.was ?? '' })}</span>}
+              {r.state !== 'dropped' && <> <RemindMe anchor={{ kind: 'plan', id: r.entry.id, title: r.entry.title, start: r.entry.start }} label={r.entry.title} date={dp.itineraryDay.date} context={remindContext} /></>}
             </li>
           ))}
         </ul>
+        {port && dp.itineraryDay.allAboard && <p>{t('autopilot.allAboard', { at: dp.itineraryDay.allAboard })} <RemindMe anchor={{ kind: 'allAboard', at: dp.itineraryDay.allAboard }} label={t('autopilot.allAboardLabel')} date={dp.itineraryDay.date} context={remindContext} /></p>}
         {!dp.ready && <FeedWaiting />}
         {dp.ready && shown.length === 0 && <StanleyEmpty pose="clipboard">{t('autopilot.empty')}</StanleyEmpty>}
         <label className="choice"><input type="checkbox" checked={state.gentle} onChange={(e) => update((s) => ({ ...s, gentle: e.target.checked }))} /><span>{t('gentle.on')}<small>{t('gentle.hint')}</small></span></label>

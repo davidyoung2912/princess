@@ -108,6 +108,22 @@ public static class StanleyEndpoints
         ledger.MapPost("/undo-today", async (ICurrentUser me, StanleyActivityService svc, CancellationToken ct) => Results.Ok(await svc.UndoAllAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Undoes every act still inside its two-hour window that the server can reverse: { undone, kept }. An act that cannot be undone now (for example a case the team has picked up) is kept and counted. A plan change and a reminder are undone on the device.");
 
+        var rem = api.MapGroup("/me/stanley/reminders").WithTags("Stanley");
+        rem.MapGet("", async (ICurrentUser me, StanleyReminderService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The guest's own reminders, soonest first: { id, text, dueAt, when (the moment in words, with weekday, date and ship time), kind (clock, relative or anchored), anchor (what it follows), lead (\"45 minutes before\"), state (scheduled or cancelled), note (one line: it moved, or its anchor went), private, past }. " +
+                "Upcoming ones and those that were due in the last 12 hours.");
+        rem.MapPost("/sync", async (StanleyPrepareRequest body, ICurrentUser me, StanleyReminderService svc, CancellationToken ct) =>
+            {
+                var user = await me.LoadAsync(ct);
+                await svc.FollowAsync(user, (body.Context ?? new StanleyActionContext()).Clean(body.Context?.SailingId), ct);
+                return Results.Ok(await svc.ListAsync(user, ct));
+            })
+            .WithSummary("Sends the plan as the device lists it (context { plan[{ id, title, start, day, listed }], allAboard { at, label }, sailingId }) so reminders anchored to a plan item or to all aboard follow it: one that moved moves with a line saying so, and one whose item was dropped ends with a line and an offer to keep it as a plain reminder. Answers the list, as GET does.");
+        rem.MapPatch("/{id:guid}", async (Guid id, StanleyReminderEdit body, ICurrentUser me, StanleyReminderService svc, CancellationToken ct) => Results.Ok(await svc.UpdateAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Edits one of the guest's reminders: { text } the words, { at (HH:mm), date (yyyy-MM-dd) } a new time for a clock reminder, { leadMin } a new lead for an anchored one, { keepAsClock: true } to keep one whose anchor went as a plain reminder at the moment it had. 400 time, text, past or tooFar, 403 for a child account, 404 for one that is not yours.");
+        rem.MapDelete("/{id:guid}", async (Guid id, ICurrentUser me, StanleyReminderService svc, CancellationToken ct) => { if (!await svc.CancelAsync(await me.LoadAsync(ct), id, ct)) throw ApiException.NotFound(); return Results.NoContent(); })
+            .WithSummary("Removes one of the guest's reminders. 404 for one that is not yours.");
+
         var memory = api.MapGroup("/me/stanley/memory").WithTags("Stanley");
         memory.MapGet("", async (ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("What Stanley remembers about the signed-in guest: { enabled, items[{ id, kind, value, text, reason, scope (trip or future), sailingId, sensitive, shared, updatedAt }], kinds[{ kind, values[], multiple, sensitive }] }. Only the guest's own items; booking facts are not here.");

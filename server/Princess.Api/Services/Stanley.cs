@@ -74,7 +74,9 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         // Actions (phase 5): a request to change something becomes a typed intent and a stored preview. Nothing is done here: the guest confirms the preview, and only then does the server act.
         var actionCtx = await StanleyPlanSnapshots.MergeAsync(planSnapshots, user.Id, (request.ActionContext ?? new StanleyActionContext()).Clean(packet?.Choice.Chosen?.SailingId ?? context.SailingId), clock.UtcNow, ct);
         var mayAct = o.Switches.Actions && actions is not null && trip is not null;
-        if (mayAct && StanleyIntents.Parse(turns.Message, actionCtx) is { } parsed)
+        // The ship's wall clock now, so a reminder can ask rather than guess at "5" or "tomorrow" (docs/stanley-reminders-requirements.md section 15.2).
+        DateTime? shipNow = trip is null ? null : TimeZoneInfo.ConvertTimeFromUtc(clock.UtcNow, TimeZoneInfo.FindSystemTimeZoneById(Itinerary.ShipZoneAt(trip.Departure, clock.UtcNow)));
+        if (mayAct && StanleyIntents.Parse(turns.Message, actionCtx, shipNow) is { } parsed)
         {
             if (parsed.Intent is null) return await End(Answer(parsed.Clarify!, "scripted", "action", null, null), "action", "asked");
             try

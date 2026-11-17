@@ -112,7 +112,7 @@ public static partial class StanleyIntents
     public const string ToolName = "propose_action";
 
     public static readonly string ToolJson = """
-        {"name":"propose_action","description":"Ask for a preview of one change the guest wants made to their trip. Nothing happens until the guest presses Confirm. Use it only for these kinds: order_item (a stateroom item such as towels, with item and qty), add_excursion (put a shore excursion in the cart, with excursionId), move_dinner (move the guest's dinner reservation, with day and time), reserve_dinner (book a main dining table, with day, time and who: all, me or a first name), draft_case (a service case for Guest Services: kind lostItem (with place) or complaint, with summary), plan_change (move, drop or add a day-plan item: op, itemId, and to for a move), remind_me (a reminder: at as HH:MM and text), create_poll (a group poll for the booking: question, options as two to six short choices, and days open 1, 3 or 7), change_seating (the booking's dining plan: plan early, late or anytime; only the person who booked). You can never pay, cancel a booking, change a cabin or share data. If a detail is missing, ask the guest instead of guessing.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["order_item","add_excursion","move_dinner","reserve_dinner","draft_case","plan_change","remind_me","create_poll","change_seating"]},"item":{"type":"string"},"qty":{"type":"integer"},"excursionId":{"type":"string"},"who":{"type":"string","description":"me, all, or a first name of someone on the booking"},"day":{"type":"integer"},"time":{"type":"string","description":"HH:MM, 24 hour"},"caseKind":{"type":"string","enum":["lostItem","complaint"]},"summary":{"type":"string"},"place":{"type":"string"},"op":{"type":"string","enum":["move","drop","add"]},"itemId":{"type":"string"},"to":{"type":"string","description":"HH:MM, 24 hour"},"at":{"type":"string","description":"HH:MM, 24 hour"},"text":{"type":"string"},"question":{"type":"string"},"options":{"type":"array","items":{"type":"string"}},"days":{"type":"integer"},"plan":{"type":"string","enum":["early","late","anytime"]}},"required":["kind"]}}
+        {"name":"propose_action","description":"Ask for a preview of one change the guest wants made to their trip. Nothing happens until the guest presses Confirm. Use it only for these kinds: order_item (a stateroom item such as towels, with item and qty), add_excursion (put a shore excursion in the cart, with excursionId), move_dinner (move the guest's dinner reservation, with day and time), reserve_dinner (book a main dining table, with day, time and who: all, me or a first name), draft_case (a service case for Guest Services: kind lostItem (with place) or complaint, with summary), plan_change (move, drop or add a day-plan item: op, itemId, and to for a move), remind_me (a reminder for the guest only: text, and one of at as HH:MM with optional date as yyyy-MM-dd, in as minutes from now, or anchor (all aboard: allAboard, or a plan item id) with offset as minutes before it and at as its HH:MM), create_poll (a group poll for the booking: question, options as two to six short choices, and days open 1, 3 or 7), change_seating (the booking's dining plan: plan early, late or anytime; only the person who booked). You can never pay, cancel a booking, change a cabin or share data. If a detail is missing, ask the guest instead of guessing.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["order_item","add_excursion","move_dinner","reserve_dinner","draft_case","plan_change","remind_me","create_poll","change_seating"]},"item":{"type":"string"},"qty":{"type":"integer"},"excursionId":{"type":"string"},"who":{"type":"string","description":"me, all, or a first name of someone on the booking"},"day":{"type":"integer"},"time":{"type":"string","description":"HH:MM, 24 hour"},"caseKind":{"type":"string","enum":["lostItem","complaint"]},"summary":{"type":"string"},"place":{"type":"string"},"op":{"type":"string","enum":["move","drop","add"]},"itemId":{"type":"string"},"to":{"type":"string","description":"HH:MM, 24 hour"},"at":{"type":"string","description":"HH:MM, 24 hour"},"text":{"type":"string"},"date":{"type":"string","description":"yyyy-MM-dd, ship calendar, for a reminder"},"in":{"type":"integer","description":"minutes from now, for a reminder"},"anchor":{"type":"string","description":"allAboard or a plan item id, for a reminder"},"offset":{"type":"integer","description":"minutes before the anchor"},"question":{"type":"string"},"options":{"type":"array","items":{"type":"string"}},"days":{"type":"integer"},"plan":{"type":"string","enum":["early","late","anytime"]}},"required":["kind"]}}
         """;
 
     /// <summary>The tool list with <see cref="ToolName"/> added, for a request that may prepare an action.</summary>
@@ -213,11 +213,31 @@ public static partial class StanleyIntents
             }
             default:
             {
-                var at = Hm(S("at"));
                 var text = Clean(S("text"), 80);
-                if (at.Length == 0) return IntentResult.Ask("What time should I remind you?");
                 if (text.Length == 0) text = "Reminder";
-                return IntentResult.Of(new StanleyIntent(kind, new() { ["at"] = at, ["text"] = text }));
+                var when = S("when");
+                var args = new Dictionary<string, string> { ["text"] = text };
+                if (when == StanleyReminderRules.KindRelative)
+                {
+                    if (N("in") is < 1 or > 24 * 60) return IntentResult.Ask("How long from now? " + ReminderParser.Example);
+                    args["when"] = when;
+                    args["in"] = N("in").ToString();
+                    return IntentResult.Of(new StanleyIntent(kind, args));
+                }
+                var at = Hm(S("at"));
+                if (at.Length == 0) return IntentResult.Ask("What time should I remind you?");
+                args["at"] = at;
+                if (DateOnly.TryParseExact(S("date"), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var onDate)) args["date"] = onDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                if (when == StanleyReminderRules.KindAnchored || S("anchor").Length > 0)
+                {
+                    var anchor = S("anchor");
+                    if (anchor.Length is 0 or > 60 || N("offset") is < 0 or > StanleyReminderRules.MaxLeadMin) return IntentResult.Ask("How long before? " + ReminderParser.Example);
+                    args["when"] = StanleyReminderRules.KindAnchored;
+                    args["anchor"] = anchor;
+                    args["offset"] = N("offset").ToString();
+                }
+                if (S("private") == "1") args["private"] = "1";
+                return IntentResult.Of(new StanleyIntent(kind, args));
             }
         }
     }
@@ -275,7 +295,7 @@ public static partial class StanleyIntents
     /// Reads a request such as "I need two more towels", "add the reef snorkel to my cart", "move dinner to 8pm", "skip bingo" or "remind me at 4:15 to be back" into an intent, or says what is missing.
     /// Null when the words are not a request to change anything, so the question goes on to the answer routes. The never list is checked by the caller first.
     /// </summary>
-    public static IntentResult? Parse(string message, StanleyActionContext ctx)
+    public static IntentResult? Parse(string message, StanleyActionContext ctx, DateTime? nowLocal = null)
     {
         var q = message.Trim();
         // A request is a short plain sentence. Text with markup in it, or a long pasted passage (a port description, a menu), is never read as a command.
@@ -284,14 +304,14 @@ public static partial class StanleyIntents
         if (w.Count == 0) return null;
         var lower = q.ToLowerInvariant();
 
-        // A reminder.
-        if (Regex.IsMatch(lower, @"\bremind me\b|\bset (a|an) (reminder|alarm)\b"))
+        // A reminder: clock, day, relative or anchored words, read by the reminder grammar (a question or a refusal when it cannot be sure).
+        if (Regex.IsMatch(lower, @"\bremind\b|\bset (a|an) (reminder|alarm)\b"))
         {
-            var at = TimeIn(Regex.Replace(lower, @"\b(remind me|set (a|an) (reminder|alarm))\b", " "));
-            if (at is null) return IntentResult.Ask("What time should I remind you?");
-            var what = Regex.Match(lower, @"\b(?:to|that)\s+(?<t>(?!\d).+)$");
-            var text = what.Success ? Clean(what.Groups["t"].Value, 80) : "Reminder";
-            return IntentResult.Of(new StanleyIntent(StanleyActionKinds.RemindMe, new() { ["at"] = at, ["text"] = text.Length == 0 ? "Reminder" : text }));
+            var read = ReminderParser.Read(q, ctx, nowLocal);
+            if (read is null) return null;
+            if (read.Refuse is not null) return IntentResult.Ask(read.Refuse);
+            if (read.Spec is null) return IntentResult.Ask(read.Ask!);
+            return IntentResult.Of(new StanleyIntent(StanleyActionKinds.RemindMe, read.Spec.ToArgs()));
         }
 
         // A group poll: "poll the group: snorkel or beach?".
@@ -424,6 +444,11 @@ public static class StanleyActionText
         "notInPlan" => "I can't find that in your plan.",
         "guests" => "I can only act for you, or for people you booked.",
         "duplicate" => "That is already done or already asked for.",
+        "past" => "That time has already passed. Tell me a later time and I will set it.",
+        "tooFar" => "That is further away than a reminder can wait. Tell me a time within the next 30 days.",
+        "noAnchor" => "I do not have an all aboard time to follow today. Give me a clock time instead.",
+        "tooMany" => "You have 40 reminders waiting. Remove one from your reminders list and I will add this one.",
+        "time" => "I could not read that time. For example: in 30 minutes, at 4:15 pm, or tomorrow at 7 am.",
         "whichTrip" => "Open the trip you mean on the My trips screen, then ask me again.",
         _ => "I can't do that right now. You can try it on its own screen.",
     };

@@ -178,6 +178,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/me/contact': 'contact us; phone number; email; call; speak to someone',
   '/me/bill': 'my bill; charges; onboard account; folio; what I spent',
   '/me/activity': 'my activity; audit log; who did what; sign-in history; what changed on my account; failed attempts',
+  '/me/reminders': 'my reminders; reminders; remind me; set a reminder; edit reminder; delete reminder; reminder list; alarm; stanley reminders',
   '/me/stanley-activity': 'what has stanley done; stanley activity; stanley receipts; why did you do that; undo stanley; stop stanley; what stanley remembers; what stanley is watching; pause stanley',
   '/me/stanley-can': 'what can stanley do; stanley abilities; what stanley does; ask stanley; try stanley; stanley help',
   '/me/ledger': 'everything paid; ledger; all charges; payments history',

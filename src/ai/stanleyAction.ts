@@ -124,8 +124,17 @@ export function changeForAction(a: StanleyAction, rows: readonly PlanRow[], alte
 /** A confirmed reminder, as the device keeps it: when it is due (epoch ms) and what it says. */
 export interface CustomReminder { id: string; at: number; text: string }
 
-/** The reminder a confirmed `remind_me` action asks for. `dueAt` is the epoch time of its HH:MM on the guest's day, worked out by the caller in the ship's zone. */
+/** The moment the server worked out for a `remind_me` action (its `due`, an instant), in epoch milliseconds; null when it did not say. */
+export function dueOfAction(a: StanleyAction): number | null {
+  const n = a.params.due ? Date.parse(a.params.due) : NaN
+  return Number.isFinite(n) ? n : null
+}
+
+/**
+ * The reminder a confirmed `remind_me` action asks for. `dueAt` is the moment the server worked out (see `dueOfAction`), or, for an older receipt, the epoch time of its HH:MM on the guest's day, worked out by the caller
+ * in the ship's zone.
+ */
 export function reminderForAction(a: StanleyAction, dueAt: number | null): CustomReminder | null {
-  if (a.kind !== 'remind_me' || dueAt === null || !isHhmm(a.params.at)) return null
+  if (a.kind !== 'remind_me' || dueAt === null || (dueOfAction(a) === null && !isHhmm(a.params.at))) return null
   return { id: a.id, at: dueAt, text: (a.params.text || 'Reminder').slice(0, 80) }
 }

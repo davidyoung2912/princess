@@ -1157,6 +1157,19 @@ CREATE TABLE dbo.StanleyReminders (
 CREATE INDEX IX_StanleyReminders_UserId ON dbo.StanleyReminders (UserId, DueAt);
 END
 
+-- Reminders R1 and R2 (docs/stanley-reminders-requirements.md section 25.2): the kind (clock, relative, anchored), the anchor it follows and the lead, the zone it was meant in, health wording kept private, the state and one line the guest is told once.
+IF COL_LENGTH(N'dbo.StanleyReminders', N'Kind') IS NULL
+BEGIN
+ALTER TABLE dbo.StanleyReminders ADD
+  Kind NVARCHAR(12) NOT NULL CONSTRAINT DF_StanleyReminders_Kind DEFAULT N'clock',
+  AnchorType NVARCHAR(12) NULL, AnchorId NVARCHAR(60) NULL, AnchorTitle NVARCHAR(80) NULL, AnchorDay INT NULL, AnchorTime NCHAR(5) NULL, AnchorDate DATETIME2(0) NULL, OffsetMin INT NULL,
+  ZoneId NVARCHAR(40) NOT NULL CONSTRAINT DF_StanleyReminders_ZoneId DEFAULT N'America/New_York',
+  [Private] BIT NOT NULL CONSTRAINT DF_StanleyReminders_Private DEFAULT 0,
+  [State] NVARCHAR(12) NOT NULL CONSTRAINT DF_StanleyReminders_State DEFAULT N'scheduled',
+  Note NVARCHAR(200) NULL;
+END
+GO
+
 IF OBJECT_ID(N'dbo.StanleyPlanSnapshots', N'U') IS NULL
 BEGIN
 -- The day plan as the device last listed it (titles and times only), so a plan change is checked against one saved plan: one row per guest and sailing ('' for the current trip).
