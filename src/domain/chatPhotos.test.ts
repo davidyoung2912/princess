@@ -17,6 +17,11 @@ describe('photoCountOf', () => {
 })
 
 describe('planPicks', () => {
+  it('counts photos already on the draft against the ten', () => {
+    const plan = planPicks(Array.from({ length: 5 }, () => ({ type: 'image/png', size: 1 })), ['image/png'], 8)
+    expect(plan).toEqual({ keep: [0, 1], badType: 0, over: 3 })
+  })
+
   const ok = ['image/jpeg', 'image/png']
   it('keeps the first ten allowed files and counts the rest', () => {
     const picks = Array.from({ length: 12 }, () => ({ type: 'image/jpeg', size: 1 }))

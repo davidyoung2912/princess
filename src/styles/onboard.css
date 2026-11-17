@@ -664,3 +664,11 @@ button.chat-quote { cursor: pointer; }
 /* The attach-photos button sits beside Send in the message row. */
 .composer--chat > .chat-attach { order: 3; flex: none; min-height: var(--target-min); min-width: var(--target-min); }
 .chat-attach:disabled { opacity: 0.6; cursor: progress; }
+
+/* Photos attached to the message being written. */
+.chat-draft-photos { order: 1; }
+.chat-draft-photos__list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.chat-draft-photos__item { position: relative; }
+.chat-draft-photos__item img { display: block; width: 4.5rem; height: 4.5rem; object-fit: cover; border: 2px solid var(--primary); border-radius: var(--radius-card); }
+.chat-draft-photos__remove { position: absolute; top: -0.4rem; inset-inline-end: -0.4rem; display: inline-grid; place-items: center; min-width: 1.6rem; min-height: 1.6rem; padding: 0; border: 2px solid var(--primary); border-radius: 50%; background: var(--bg); color: var(--text); cursor: pointer; }
+.chat-draft-photos__remove svg { width: 0.9rem; height: 0.9rem; }

@@ -15,14 +15,14 @@ export const photoCountOf = (m: Pick<ChatMessage, 'photo' | 'hasPhoto' | 'photoC
 
 export interface PhotoPick { type: string; size: number }
 
-/** What to do with the files the guest picked: the first ten of the allowed types are kept, and the rest are counted so the screen can say so. */
-export function planPicks(picks: readonly PhotoPick[], allowed: readonly string[]): { keep: number[]; badType: number; over: number } {
+/** What to do with the files the guest picked: of the allowed types, as many as still fit under ten (counting the `already` attached to the draft) are kept, and the rest are counted so the screen can say so. */
+export function planPicks(picks: readonly PhotoPick[], allowed: readonly string[], already = 0): { keep: number[]; badType: number; over: number } {
   const keep: number[] = []
   let badType = 0
   let over = 0
   picks.forEach((p, i) => {
     if (!allowed.includes(p.type)) badType++
-    else if (keep.length >= MAX_PHOTOS_PER_MESSAGE) over++
+    else if (already + keep.length >= MAX_PHOTOS_PER_MESSAGE) over++
     else keep.push(i)
   })
   return { keep, badType, over }

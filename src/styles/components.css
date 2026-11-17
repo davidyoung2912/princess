@@ -388,3 +388,7 @@ main.signin { margin-inline: auto; }
   .btn:is(:hover, :focus-visible) .btn__icon { transform: none; }
 }
 :root[data-motion='reduced'] .btn:is(:hover, :focus-visible) .btn__icon { transform: none; }
+
+/* A compact coloured title bar for a dialog that is not worth a full page header (the photo viewer). */
+.dialog__head--tinted { padding: var(--space-3) var(--space-4); border-radius: var(--radius-card); background: linear-gradient(135deg, var(--hdr-a), var(--hdr-b)); color: var(--on-header); }
+.dialog__head--tinted h2 { color: inherit; }

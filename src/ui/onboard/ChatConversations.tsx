@@ -52,7 +52,7 @@ import { Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, Pi
 const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
 import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
-import { BlockedList, MessageSafety, PhotoAttach } from '../aboard/ChatSafe'
+import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
@@ -263,6 +263,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const [firstUnread, setFirstUnread] = useState<string | null>(null)
   const [jumped, setJumped] = useState(false)
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
+  const [draftPhotos, setDraftPhotos] = useState<StagedPhoto[]>([])
   // Whether Stanley's help (catch me up, make a plan, plain words) is on here; asked once per conversation, and only where it can ever be on.
   const [tap, setTap] = useState<ChatStanleyTap | undefined>(undefined)
   const tapKind = conversation?.kind
@@ -612,7 +613,21 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
   }
   const runUse = useLatest((draft: string) => putInBox(draft))
+  // Photos attached to the draft go out together with its words when the guest presses Send.
+  const sendDraftPhotos = useAction(async () => {
+    const [first, ...more] = draftPhotos
+    if (!first) return
+    await api.chatConversations.sendPhoto(id, { ...first, caption: text.trim(), ...(more.length > 0 ? { more } : {}) })
+    setDraftPhotos([])
+    setText('')
+    setReplyTo(null)
+    setLevel('normal')
+    wasNear.current = true
+    void load()
+  })
+  const cancelDraft = () => { setText(''); setDraftPhotos([]); setReplyTo(null); setLevel('normal'); setProblem(null) }
   const submit = async (quick?: string) => {
+    if (quick === undefined && draftPhotos.length > 0) { void sendDraftPhotos.run(); return }
     const body = (quick ?? text).trim()
     if (!body) return
     setProblem(null)
@@ -795,8 +810,11 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && problem !== 'held' && <p className="muted">{t('chat.kept')}</p>}
           <HelpMeReword problem={problem} text={text} onUse={putInBox} />
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
-          {!room && conversation?.kind !== 'huddle' && <PhotoAttach conversationId={id} caption={text} onSent={() => { setText(''); setReplyTo(null); wasNear.current = true; void load() }} />}
-          <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
+          {!room && conversation?.kind !== 'huddle' && <PhotoAttach photos={draftPhotos} onChange={setDraftPhotos} />}
+          <Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button>
+          {(text.trim() !== '' || draftPhotos.length > 0) && <Button type="button" variant="tertiary" onClick={cancelDraft}>{t('conv.cancelDraft')}</Button>}
+          <DraftPhotos photos={draftPhotos} onChange={setDraftPhotos} />
+          <ActionError error={sendDraftPhotos.error} />
           {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">
             {QUICK_REPLY_KEYS.map((k) => { const Icon = QUICK_ICONS[k]; return <button key={k} type="button" className="chat-quick__btn" aria-label={t(`conv.quick.${k}`)} title={t(`conv.quick.${k}`)} onClick={() => void submit(t(`conv.quick.${k}`))}><Icon aria-hidden="true" /></button> })}
           </div>}

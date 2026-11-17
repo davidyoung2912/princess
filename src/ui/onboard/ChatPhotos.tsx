@@ -80,7 +80,7 @@ function Viewer({ conversationId, items, start, onClose }: { conversationId: str
   }, [items.length])
   const alt = photoAlt(item.fromName, item.index, item.count)
   return (
-    <Dialog title={t('cphoto.viewer')} onClose={onClose}>
+    <Dialog title={t('cphoto.viewer')} onClose={onClose} backButton tinted>
       <div
         className="chat-viewer"
         onTouchStart={(e) => { const p = e.touches[0]; touch.current = p ? { x: p.clientX, y: p.clientY } : null }}

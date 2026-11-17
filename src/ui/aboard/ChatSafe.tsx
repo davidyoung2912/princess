@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { ImagePlus } from 'lucide-react'
+import { ImagePlus, X } from 'lucide-react'
 import { FieldLabel } from '../Field'
 import { MAX_PHOTO_BYTES, PHOTO_MIN_AGE, PHOTO_TYPES, REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import type { PersonaId } from '../../domain/people'
@@ -66,16 +66,19 @@ const readAsDataUrl = (file: Blob): Promise<string> => new Promise((resolve, rej
   reader.readAsDataURL(file)
 })
 
+/** A photo chosen for the message being written: shrunk on the device and ready to send. Nothing is sent until the guest presses Send. */
+export interface StagedPhoto { type: string; bytes: number; dataUrl: string }
+
 /**
- * Attach photos to a chat message (MSG-01, phase 9b): a button beside Send. Up to ten at once, each shrunk on the device first, JPEG, PNG or WebP, adults only.
- * The words in the message box go with the photos as their caption and the box is emptied once they are sent; a photo still over the limit after shrinking is left out and the guest is told.
+ * Attach photos to a chat message being written (MSG-01, phase 9b): a button beside Send that can be used again and again, up to ten in all.
+ * Each photo is shrunk on the device and added to the draft; nothing is sent here. JPEG, PNG or WebP, adults only.
  */
-export function PhotoAttach({ conversationId, caption, onSent }: { conversationId: string; caption: string; onSent: () => void }) {
+export function PhotoAttach({ photos, onChange }: { photos: readonly StagedPhoto[]; onChange: (next: StagedPhoto[]) => void }) {
   const me = usePersona()
   const input = useRef<HTMLInputElement>(null)
   const [note, setNote] = useState<{ badType: number; over: number; big: number } | null>(null)
-  const send = useAction(async (files: File[]) => {
-    const ready: { type: string; bytes: number; dataUrl: string }[] = []
+  const prepare = useAction(async (files: File[]) => {
+    const ready: StagedPhoto[] = []
     let big = 0
     for (const file of files) {
       const shrunk = await shrinkPicture(file)
@@ -83,10 +86,7 @@ export function PhotoAttach({ conversationId, caption, onSent }: { conversationI
       ready.push({ type: shrunk.type || file.type, bytes: shrunk.size, dataUrl: await readAsDataUrl(shrunk) })
     }
     setNote((n) => (n ? { ...n, big } : n))
-    const [first, ...more] = ready
-    if (!first) return
-    await api.chatConversations.sendPhoto(conversationId, { ...first, caption: caption.trim(), ...(more.length > 0 ? { more } : {}) })
-    onSent()
+    if (ready.length > 0) onChange([...photos, ...ready].slice(0, MAX_PHOTOS_PER_MESSAGE))
   })
   if (!me || me.age < PHOTO_MIN_AGE) return null
   const pick = (e: ChangeEvent<HTMLInputElement>) => {
@@ -94,22 +94,39 @@ export function PhotoAttach({ conversationId, caption, onSent }: { conversationI
     e.target.value = ''
     setNote(null)
     if (files.length === 0) return
-    const plan = planPicks(files.map((f) => ({ type: f.type, size: f.size })), PHOTO_TYPES)
+    const plan = planPicks(files.map((f) => ({ type: f.type, size: f.size })), PHOTO_TYPES, photos.length)
     setNote({ badType: plan.badType, over: plan.over, big: 0 })
-    if (plan.keep.length > 0) void send.run(plan.keep.map((i) => files[i]))
+    if (plan.keep.length > 0) void prepare.run(plan.keep.map((i) => files[i]))
   }
-  const label = t('safe.photo')
   return (
     <>
       <input ref={input} type="file" multiple hidden tabIndex={-1} accept={PHOTO_TYPES.join(',')} onChange={pick} />
-      <button type="button" className="chat-quick__btn chat-attach" aria-label={label} title={t('safe.photoHint', { mb: MAX_PHOTO_BYTES / 1_000_000, max: MAX_PHOTOS_PER_MESSAGE })} disabled={send.busy} onClick={() => input.current?.click()}>
+      <button type="button" className="chat-quick__btn chat-attach" aria-label={t('safe.photo')} title={t('safe.photoHint', { mb: MAX_PHOTO_BYTES / 1_000_000, max: MAX_PHOTOS_PER_MESSAGE })} disabled={prepare.busy || photos.length >= MAX_PHOTOS_PER_MESSAGE} onClick={() => input.current?.click()}>
         <ImagePlus aria-hidden="true" />
       </button>
-      {send.busy && <p role="status" className="muted">{t('cphoto.preparing')}</p>}
+      {prepare.busy && <p role="status" className="muted">{t('cphoto.preparing')}</p>}
       {note && note.badType > 0 && <p role="alert" className="field__error">{t('safe.badType')}</p>}
       {note && note.over > 0 && <p role="alert" className="field__error">{t('cphoto.tooMany', { max: MAX_PHOTOS_PER_MESSAGE })}</p>}
       {note && note.big > 0 && <p role="alert" className="field__error">{t('safe.badSize', { mb: MAX_PHOTO_BYTES / 1_000_000 })}</p>}
-      <AboardError error={send.error} />
+      <AboardError error={prepare.error} />
     </>
+  )
+}
+
+/** The photos attached to the draft, each with a Remove button, so the guest can review them before sending. */
+export function DraftPhotos({ photos, onChange }: { photos: readonly StagedPhoto[]; onChange: (next: StagedPhoto[]) => void }) {
+  if (photos.length === 0) return null
+  return (
+    <div className="chat-draft-photos" role="group" aria-label={t('cphoto.draft', { count: photos.length })}>
+      <p className="muted" role="status">{t('cphoto.draft', { count: photos.length })}</p>
+      <ul className="chat-draft-photos__list plain-bullets">
+        {photos.map((p, i) => (
+          <li key={`${i}:${p.bytes}`} className="chat-draft-photos__item">
+            <img src={p.dataUrl} alt={t('cphoto.draftAlt', { n: i + 1, count: photos.length })} />
+            <button type="button" className="chat-draft-photos__remove" aria-label={t('cphoto.remove', { n: i + 1 })} onClick={() => onChange(photos.filter((_, j) => j !== i))}><X aria-hidden="true" /></button>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

@@ -12,6 +12,8 @@ interface DialogProps {
   header?: (titleId: string) => ReactNode
   /** Close with the same Back button the page header cards show, in place of the X. */
   backButton?: boolean
+  /** Give the title row the header colour (a compact bar, not a full page header). */
+  tinted?: boolean
 }
 
 /**
@@ -20,14 +22,14 @@ interface DialogProps {
  * It always has a Close button, so closing never depends on a drag gesture (WCAG 2.5.7). Tapping outside does not
  * close it: a stray tap should not throw away what someone was doing.
  */
-export function Dialog({ title, onClose, children, header, backButton }: DialogProps) {
+export function Dialog({ title, onClose, children, header, backButton, tinted }: DialogProps) {
   const ref = useDialog<HTMLDivElement>(onClose)
   const titleId = useId()
   return createPortal(
     <div className="dialog-backdrop">
       <div ref={ref} className="dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         {header ? header(titleId) : (
-          <div className="dialog__head">
+          <div className={tinted ? 'dialog__head dialog__head--tinted' : 'dialog__head'}>
             <h2 id={titleId}>{headingCase(title)}</h2>
             {backButton ? (
               <button type="button" className="page-header__back dialog__back" onClick={onClose}>
