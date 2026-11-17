@@ -115,4 +115,17 @@ public class StanleyAutoTests
         Assert.Equal(["old one"], change.Removed);
         Assert.Null(StanleyAutoRules.ShortlistDiff(["a"], open, ["a"]));
     }
+
+    [Fact]
+    public void TheComparisonSaysAScoreThatMovedAndANewTop()
+    {
+        (string, string, int?)[] now = [("b", "Bravo", 80), ("a", "Alpha", 70)];
+        Assert.Null(StanleyAutoRules.ComparisonDiff(now, null));
+        Assert.Null(StanleyAutoRules.ComparisonDiff(now, ["b=80", "a=70"]));
+        var change = StanleyAutoRules.ComparisonDiff(now, ["a=75", "b=80"]);
+        Assert.NotNull(change);
+        Assert.Contains("Alpha: 75 to 70 out of 100", change.Added);
+        Assert.Contains("Bravo now scores highest", change.Added);
+        Assert.Empty(change.Removed);
+    }
 }

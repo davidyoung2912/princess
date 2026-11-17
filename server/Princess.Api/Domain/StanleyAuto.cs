@@ -129,6 +129,29 @@ public static class StanleyAutoRules
 
     public static string ShortlistToJson(IEnumerable<string> ids) => System.Text.Json.JsonSerializer.Serialize(ids.Distinct().Order(StringComparer.Ordinal).ToList());
 
+    public const string ComparisonKey = "stanley.auto.lists.comparison";
+
+    /// <summary>
+    /// The comparison of the guest's open shortlisted sailings (their own saved weights and filters) against the scores recorded last time, in rank order as "id=score". It says a score that moved and a new sailing at the top;
+    /// a sailing that joined or left the shortlist is the shortlist's own line, not repeated here. A first look (no record) reports nothing.
+    /// </summary>
+    public static AutoListChange? ComparisonDiff(IReadOnlyList<(string Id, string Title, int? Score)> now, IReadOnlyCollection<string>? before)
+    {
+        if (before is null) return null;
+        var was = before.Select(b => b.Split('=', 2)).Where(p => p.Length == 2).ToDictionary(p => p[0], p => p[1], StringComparer.Ordinal);
+        var lines = new List<string>();
+        foreach (var r in now.Where(r => was.ContainsKey(r.Id)))
+        {
+            var score = r.Score?.ToString() ?? "-";
+            if (was[r.Id] != score) lines.Add($"{r.Title}: {(was[r.Id] == "-" ? "no score" : was[r.Id])} to {(score == "-" ? "no score" : score)} out of 100");
+        }
+        var oldTop = before.Select(b => b.Split('=', 2)[0]).FirstOrDefault(id => now.Any(r => r.Id == id));
+        if (now.Count > 0 && oldTop is not null && now[0].Id != oldTop && now[0].Score is not null && was.ContainsKey(now[0].Id)) lines.Add($"{now[0].Title} now scores highest");
+        return lines.Count == 0 ? null : new("comparison", lines, []);
+    }
+
+    public static string ComparisonToJson(IEnumerable<(string Id, string Title, int? Score)> rows) => System.Text.Json.JsonSerializer.Serialize(rows.Select(r => $"{r.Id}={r.Score?.ToString() ?? "-"}").ToList());
+
     private static string PrettyId(string id) => id.Replace('-', ' ').Replace('_', ' ');
 
     public static string ToJson(IEnumerable<PackItem> items) => System.Text.Json.JsonSerializer.Serialize(items.Where(i => i.Group != "mine").Select(i => i.Id).Distinct().Order(StringComparer.Ordinal).ToList());
@@ -142,7 +165,7 @@ public static class StanleyAutoRules
 
     public static readonly string[] ListsNotChecked =
     [
-        "The packing list (which holds the documents to bring), the trip checklist and the sailing shortlist are kept current so far. The comparison is not. A sailing that is gone or closed to booking is only said, never removed from your shortlist.",
+        "The packing list (which holds the documents to bring), the trip checklist and the sailing shortlist are kept current so far. The comparison of your shortlist (with your saved weights) is kept current so far: only a score that moved is said, and nothing is re-ranked for you. A sailing that is gone or closed to booking is only said, never removed from your shortlist.",
         "Your own items, ticks and hidden items are never changed.",
     ];
 }

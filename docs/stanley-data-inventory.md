@@ -326,3 +326,7 @@ The same run also reads the trip checklist the guest already sees and says which
 ### Lists kept current, sailing shortlist (phase P10a, AUT-05 third part)
 
 The same run also reads the shortlist in the guest's saved decision brief and says which sailings are newly on it and which were on it last time but are now gone from the catalogue or closed to booking. The only thing stored is a list of shortlisted sailing ids in the guest's own state store (key `stanley.auto.lists.shortlist`). It never edits the brief or the shortlist and sends nothing. The comparison and AUT-07 are still to do.
+
+### Lists kept current, comparison (phase P10a, AUT-05 fourth part)
+
+The same run also compares the guest's open shortlisted sailings (two to four) using the weights and filters in their saved decision brief, exactly as the Compare screen does, and says which scores moved since the last run and which sailing now scores highest. The only thing stored is the ranked list of "sailing id=score" in the guest's own state store (key `stanley.auto.lists.comparison`). A sailing joining or leaving the shortlist is the shortlist's line, not repeated. It never changes the brief, weights or shortlist, re-ranks nothing for the guest and sends nothing. AUT-05 is now complete; AUT-07 is still to do.

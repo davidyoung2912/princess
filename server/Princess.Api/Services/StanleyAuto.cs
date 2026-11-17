@@ -51,7 +51,7 @@ public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPer
 
     /// <summary>
     /// AUT-05, lists kept current (first part: the packing list). The list is rebuilt from the season, tours and forecast whenever it is read, so it is already current; this says what its suggestions added or dropped since the last run
-    /// and records where it stands now. Same switch (CL-08) as AUT-02. It changes no list, tick, hidden item or item the guest added. The trip checklist is read the same way (what it now shows as done or no longer done), and so is the sailing shortlist (what is newly on it, and what is gone or closed to booking).
+    /// and records where it stands now. Same switch (CL-08) as AUT-02. It changes no list, tick, hidden item or item the guest added. The trip checklist is read the same way (what it now shows as done or no longer done), and so is the sailing shortlist (what is newly on it, and what is gone or closed to booking), and the comparison of the shortlist with the guest's saved weights (a score that moved).
     /// </summary>
     public async Task<AutoListsDto> ListsAsync(UserRecord user, CancellationToken ct)
     {
@@ -85,6 +85,21 @@ public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPer
         if (schange is not null) changes.Add(schange);
         if (sbefore is null || schange is not null)
             await state.SaveAsync(false, user.Id, StanleyAutoRules.ShortlistKey, StanleyAutoRules.ShortlistToJson(sbrief), srow?.Version ?? 0, clock.UtcNow, ct);
-        return new(true, before is null && cbefore is null && sbefore is null, changes, StanleyAutoRules.ListsNotChecked.ToList(), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+
+        var rows = new List<(string, string, int?)>();
+        var picks = sbrief.Where(open.ContainsKey).ToArray();
+        if (picks.Length is >= 2 and <= StanleyDiscoverRules.MaxCompare)
+        {
+            var saved = (await discover.GetBriefAsync(user, ct)).Brief;
+            var cmp = await discover.CompareAsync(new(picks, saved.Weights, saved.Filters), ct);
+            rows = [.. cmp.Rows.Select(r => (r.SailingId, r.Title, r.Score))];
+        }
+        var mrow = await state.GetAsync(false, user.Id, StanleyAutoRules.ComparisonKey, ct);
+        var mbefore = StanleyAutoRules.Parse(mrow?.Json);
+        var mchange = StanleyAutoRules.ComparisonDiff(rows, mbefore);
+        if (mchange is not null) changes.Add(mchange);
+        if (mbefore is null || mchange is not null)
+            await state.SaveAsync(false, user.Id, StanleyAutoRules.ComparisonKey, StanleyAutoRules.ComparisonToJson(rows), mrow?.Version ?? 0, clock.UtcNow, ct);
+        return new(true, before is null && cbefore is null && sbefore is null && mbefore is null, changes, StanleyAutoRules.ListsNotChecked.ToList(), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
     }
 }
