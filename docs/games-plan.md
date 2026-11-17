@@ -124,3 +124,31 @@ Built as planned, with equations of the form `a sign b = c` (signs and "=" alway
 - A crossword-style grid of numbers and signs (+, -, x, /) where each row and column reads as a true equation; some squares are given, the player fills the rest from a number tray (each tray number used once).
 - Generator: build equations on a grid, cross them so shared squares agree, blank out squares while the answer stays unique and plain logic (the only fit for a square, the last tray number) finishes. Levels by grid size, number range and which signs appear (Easy add and subtract to 20, Expert all four signs to 99).
 - Tray of numbers with counts, tap a blank then a tray number, keyboard digits. Hints show the equation with one blank. Red for a broken equation.
+
+## Round three (proposed)
+
+Four more popular single-player logic puzzles in the same vein: each needs a generator whose puzzles have one answer that plain logic finds, rule-naming hints, red marks for broken rules, four levels and phone-first controls. Screen ids continue from X45. Build the riskiest generator first inside each phase. Reserve options if one is dropped: Skyscrapers (Latin square with edge visibility clues, reuses Futoshiki and KenKen pieces), Cryptogram (themed cruise quote, reuses the Codeword word lists and keyboard), Light Up and Masyu.
+
+### G13: Nonogram (X45)
+
+- Numbers beside each row and column give the lengths of the runs of filled squares, in order. Fill or cross squares to reveal a picture. Levels 5x5 to 15x15 (Easy 5x5, Medium 8x8, Hard 10x10, Expert 15x15).
+- Generator: random picture (blobby regions so it looks like a shape, not noise), clues from the picture, kept only if a line solver (overlap, edge, gap and complete-run rules, repeated to a fixed point) fills the whole grid, so the answer is unique with no guessing. Retry when it stalls.
+- Tap cycles empty, filled, crossed; Fill and Cross buttons and drag to paint a line for phones; clue numbers turn grey once their run is complete and red when impossible. Hints name the line and the rule. Keyboard cursor with arrows, F, X, Backspace.
+
+### G14: Minesweeper, no guessing (X46)
+
+- Reveal every safe square without touching a mine; each number counts the mines in the eight squares around it. Levels: Easy 8x8, Medium 10x10, Hard 12x14, Expert 16x16, mine density about 12 to 20%.
+- Generator: place mines after the first reveal (the first square and its neighbours are safe), then accept the board only if a logic solver (single-square counts, subset rule between neighbouring numbers, total mine count at the end) can finish it from there, so no guess is ever needed. Retry otherwise.
+- Tap reveals, long-press or the Flag button flags (flag shapes, not colour alone); chord on a satisfied number; mines-left counter; hint points at a safe square or a certain mine and names the rule. Red for a flag that contradicts a number. Highest-risk generator: build and test it first.
+
+### G15: Hashi, bridges (X47)
+
+- Numbered islands on a grid; join them with horizontal or vertical bridges (at most two between a pair, none crossing) so each island has its number of bridges and all islands form one connected group. Levels 7x7 to 15x15.
+- Generator: place islands, grow a connected bridge network without crossings, write the numbers, then keep only islands and numbers that a logic solver (island needs all its bridges, a 1 next to a 1, a 2 in a corner and similar forced bridges, connectivity rule) can finish.
+- Tap or drag between two islands to cycle none, one, two bridges (single and double drawn as different shapes); islands show met, over and impossible states; large hit areas; keyboard arrows between islands. Hints name the island and the rule.
+
+### G16: Nurikabe (X48)
+
+- Numbered squares are islands: shade the rest so each island is one white region of exactly its number size, every region holds one number, the shaded wall is one connected piece and contains no 2x2 block. Levels 5x5 to 10x10.
+- Generator: grow islands and a connected wall without 2x2 blocks, write one number per island, remove numbers while a logic solver (squares next to two islands are wall, an island that is complete is walled in, unreachable squares are wall, a 2x2 would form so one square is white, wall connectivity) still finishes. Highest-risk uniqueness: build and test it first.
+- Tap cycles empty, wall, dot (known white); red for a 2x2 wall, a region with two numbers or the wrong size, a split wall. Hints name the rule. Reuses the Hitori shade and circle marks and connectivity helpers.
