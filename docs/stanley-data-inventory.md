@@ -120,3 +120,13 @@ Every switch, pause and breaker reset writes an audit line (`stanley.ops.*`) wit
 | Waiting confirms | preview id, the key made for its card, a title, queue and expiry times (at most 10, 30 minutes) | Keep a confirm tapped with no signal; the server checks it again on reconnect and nothing is applied on the phone | The guest's device | Emptied on reconnect; expired entries are reported, never sent |
 
 Nothing here leaves the device except the confirm the guest tapped, sent on reconnect to the same endpoint as a normal confirm.
+
+## Briefs (phase P7, ACT-06 and permission row CL-04)
+
+| Data | Where | What it holds | Retention |
+|---|---|---|---|
+| Brief choices | the account's state store, key `stanleyBrief` | two on or off flags and two times of day; no text the guest typed | until the guest changes them or the account is deleted |
+| Queued briefs | the due queue (`StanleyRuleDue`) | a key of guest, kind (morning or evening) and ship-clock day, the due time and the class `brief`; no content | closed items are purged after 7 days, as for every queued item |
+| The brief itself | the guest's Stanley thread (a reminder-lane message, tag `brief:<kind>`) and, when allowed, a phone push | ports, times and the names of tours and dinners the guest booked, and the titles of dates within three days; no names, numbers or document detail | as any thread message; a new brief of the same kind supersedes the last |
+
+Turning a brief on switches the CL-04 row on and writes the usual consent-history line; turning both off switches it off. Nothing is sent without the row, on a paused account, or for a supervised account. No text goes to a model: briefs are composed by code from facts already held.

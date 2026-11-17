@@ -140,6 +140,10 @@ public sealed class PushService(
         return new(subs.Count == 0 ? 0 : subs.Min(s => s.Budget), sentToday, PushRules.QuietOrDnd(prefs, TimeOnly.FromDateTime(local), Shipboard.Ms(now)), false, subs.Any(s => s.Calm), shipAlert, new HashSet<string>());
     }
 
+    /// <summary>Whether the guest's own quiet hours cover this time of day (their do-not-disturb is not a time of day, so it is left out). Used to refuse a brief time the guest has silenced.</summary>
+    public async Task<bool> InQuietHoursAsync(UserRecord actor, TimeOnly local, CancellationToken ct) =>
+        PushRules.QuietOrDnd(await PrefsAsync(actor.Id, ct), local, 0);
+
     private async Task RunAsync(UserRecord actor, List<PushSubscriptionRow> subs, CancellationToken ct)
     {
         var now = await clock.NowAsync(actor, ct);

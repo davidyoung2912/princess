@@ -126,6 +126,13 @@ export const stanleyCheckup = {
   get: () => http.get<unknown>('/me/stanley/checkup'),
 }
 
+/** The morning brief and evening look-ahead (phase P7, permission row CL-04). The server sends them at the times the guest chooses; a preview sends nothing. */
+export const stanleyBrief = {
+  get: () => http.get<unknown>('/me/stanley/brief'),
+  put: (body: { morning?: boolean; morningAt?: string; evening?: boolean; eveningAt?: string }) => http.put<unknown>('/me/stanley/brief', body),
+  preview: (kind: 'morning' | 'evening') => http.get<unknown>(`/me/stanley/brief/${kind}`),
+}
+
 /** What Stanley did, is watching and remembers (phase P1). Undo of one act is `stanleyActions.undo`; switching a watch off is `stanleyPermissions.setRow`; forgetting is `stanleyMemory.forget`. */
 export const stanleyLedger = {
   get: () => http.get<unknown>('/me/stanley/ledger'),

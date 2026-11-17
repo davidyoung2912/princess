@@ -11,11 +11,18 @@ public sealed class StanleyCheckupService(ITripStore trips, IAccountStore accoun
 {
     public async Task<CheckupDto> RunAsync(UserRecord user, CancellationToken ct)
     {
+        var (facts, _) = await FactsAsync(user, ct);
+        return facts is null ? new CheckupDto(false, [], [], [], false, null) : StanleyCheckupRules.Build(facts, facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+    }
+
+    /// <summary>The facts of the guest's current or next confirmed trip, with the booking's sailing id; null facts when there is no such trip. Shared with the briefs.</summary>
+    public async Task<(CheckupFacts? Facts, string? SailingId)> FactsAsync(UserRecord user, CancellationToken ct)
+    {
         var now = await clock.NowAsync(user, ct);
         var today = TripRules.Today(now);
         var booking = (await trips.ListForUserAsync(user.Id, ct))
             .Where(b => b.Status == "confirmed" && DateOnly.FromDateTime(b.Departure).AddDays(b.Nights) >= today).OrderBy(b => b.Departure).FirstOrDefault();
-        if (booking is null) return new CheckupDto(false, [], [], [], false, null);
+        if (booking is null) return (null, null);
 
         var departure = DateOnly.FromDateTime(booking.Departure);
         var agent = booking.Kind == "agent";
@@ -40,6 +47,6 @@ public sealed class StanleyCheckupService(ITripStore trips, IAccountStore accoun
         var checkin = booking.CheckinFinishedAt is not null ? "done" : TripRules.CheckinWindow(now, opens, closes);
 
         var facts = new CheckupFacts(today, now, departure, booking.Nights, TimelineBook.For(booking.SailingId, departure), payment, finalDue, checkin, opens, closes, agent, travellers, tours, meals);
-        return StanleyCheckupRules.Build(facts, now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+        return (facts, booking.SailingId);
     }
 }

@@ -22,6 +22,7 @@ import { SlotWatch } from './SlotWatch'
 import { WeekPlanner } from './WeekPlanner'
 import { StanleyEmpty } from '../ai/StanleyEmpty'
 import { RemindMe } from '../ai/RemindMe'
+import { StanleyBriefCard } from './StanleyBriefCard'
 import { StanleyCheckupCard } from './StanleyCheckupCard'
 import { planSnapshot } from '../../ai/stanleyAction'
 import { reminderContext } from '../../ai/stanleyReminders'
@@ -114,6 +115,7 @@ export function AutopilotScreen() {
       </Card>
 
       <StanleyCheckupCard />
+      <StanleyBriefCard />
 
       <Card labelledBy="ap-check">
         <h2 id="ap-check" className="card__title">{th('autopilot.check')}</h2>

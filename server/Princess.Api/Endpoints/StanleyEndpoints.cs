@@ -105,6 +105,13 @@ public static class StanleyEndpoints
             .WithTags("Stanley").WithSummary("Trip check-up, plan lint and deadline radar for the guest's current or next trip: { hasTrip, findings[{ id, rule (CHK-01 trip, CHK-02 plan), consequence (safety, lostReservation, conflict, improvement, optional), title, detail, day, due, fix{ label, route } }] ranked most serious first, " +
                 "deadlines[{ id, consequence, title, date, daysLeft, fix }], notChecked[] (what it cannot see; it never reports silence as all clear), clean, asOf }. Read-only: it changes nothing and a fix is only a screen to open.");
 
+        api.MapGet("/me/stanley/brief", async (ICurrentUser me, StanleyBriefService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Stanley").WithSummary("The guest's brief choices: { settings { morning, morningAt, evening, eveningAt } (24-hour ship-clock times; both off until chosen), allowed (the CL-04 permission is on), nextMorning, nextEvening (epoch ms, or null when off) }.");
+        api.MapPut("/me/stanley/brief", async (BriefSettingsRequest? body, ICurrentUser me, StanleyBriefService svc, CancellationToken ct) => Results.Ok(await svc.PutAsync(await me.LoadAsync(ct), body, ct)))
+            .WithTags("Stanley").WithSummary("Sets the morning and evening briefs (only the fields sent change; times are HH:mm). Turning a brief on switches the CL-04 permission on and queues the next brief; both off switches it off. 400 with morningQuiet or eveningQuiet when the time is inside the guest's quiet hours. Not for a supervised account.");
+        api.MapGet("/me/stanley/brief/{kind}", async (string kind, ICurrentUser me, StanleyBriefService svc, CancellationToken ct) => await svc.ComposeAsync(await me.LoadAsync(ct), kind, ct) is { } brief ? Results.Ok(brief) : Results.NoContent())
+            .WithTags("Stanley").WithSummary("A preview of the morning or evening brief as it would be sent now: { kind, date, title, lines[{ text, route }] }. 204 when the guest has no sailing day it covers. Sends nothing.");
+
         var ledger = api.MapGroup("/me/stanley/ledger").WithTags("Stanley");
         ledger.MapGet("", async (ICurrentUser me, StanleyActivityService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("What Stanley did, is watching and remembers, for the signed-in guest: { paused, pausedUntil, undoableNow, did[{ id, number, kind, status (done, failed, pending, undone), at, what, why, facts, affects, undo (in words), undoUntil, canUndo, stop }], watching[{ id (checklist row), wording, example, never }], remembers { enabled, count, items[{ id, text, reason }] } }. " +

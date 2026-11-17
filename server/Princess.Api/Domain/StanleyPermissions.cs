@@ -58,7 +58,7 @@ public static class StanleyPermissionRules
         new("CL-01", "watching", "Check my trip for problems", "Your passport expires within 6 months of the return date.", "Never blocks anything or says a document is official.", 2, false),
         new("CL-02", "watching", "Tell me when something changes and what it means", "Your tour moved to 9:30. You now have 20 minutes less in port.", "Never changes your plans by itself. Safety alerts always reach you.", 2, true),
         new("CL-03", "watching", "Watch my spending", "Your spending is running ahead of the budget you set.", "Never blocks a purchase and never pays for anything.", 2, true),
-        new("CL-04", "watching", "Morning brief and evening look-ahead (you choose the times)", "Today at a glance, and tomorrow's early start.", "Only at the times you choose.", 2, false, true),
+        new("CL-04", "watching", "Morning brief and evening look-ahead (you choose the times)", "Today at a glance, and tomorrow's early start.", "Only at the times you choose.", 2, true, true),
         new("CL-05", "preparing", "Line up a fix when a plan breaks, for my yes", "Your tour is cancelled. Here is the best replacement today.", "Never books it until you say yes.", 3, false),
         new("CL-06", "preparing", "Fill in forms and drafts for me to check", "Check-in is open. I filled it in; please check and send.", "Never sends or signs anything for you.", 3, false),
         new("CL-07", "preparing", "Tell me when a table or space opens, with a ready booking", "A table for four opened on Thursday at 7:30.", "Never holds a table or books it without your yes.", 3, false),
