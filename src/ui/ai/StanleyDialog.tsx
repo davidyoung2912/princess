@@ -38,8 +38,8 @@ import { Button, LinkButton } from '../Button'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
 import { TextArea } from '../Field'
-import { MicButton, PocketPanel, ReadAloud } from './StanleyVoice'
-import { appendTranscript, cardSpeech } from '../../ai/stanleyVoice'
+import { PocketPanel, ReadAloud } from './StanleyVoice'
+import { cardSpeech } from '../../ai/stanleyVoice'
 
 /** Stanley's own wording for a reply; only an answer carries text from the server. */
 function wording(turn: StanleyTurn): string {
@@ -221,7 +221,6 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
         <form className="stanley__form" onSubmit={(e) => void submit(e)} noValidate>
           <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={2} />
           <Button type="submit" disabled={busy || cooldown > 0}>{t('stanley.send')}</Button>
-          <MicButton onHeard={(heard) => setDraft((d) => appendTranscript(d, heard, MAX_MESSAGE))} />
         </form>
         {cooldown > 0 && <p role="status" className="muted stanley__note">{t('stanley.cooldown', { seconds: cooldown })}</p>}
         {problem && <p role="alert" className="field__error stanley__note">{problem}</p>}

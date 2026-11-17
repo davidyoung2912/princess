@@ -232,7 +232,7 @@ export function HealthPrepScreen() {
               {GROUPS.map((g) => (
                 <section key={g} aria-labelledby={`prep-${g}`}>
                   <h2 id={`prep-${g}`}>{th(`prep.g.${g}` as StringKey)}</h2>
-                  <ul className="plain-bullets">
+                  <ul className="plain-bullets plain-bullets--checks">
                     {PREP.filter((p) => p.group === g).map((p) => (
                       <li key={p.id}>
                         <label className="choice choice--top">

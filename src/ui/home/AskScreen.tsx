@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
 import { requestStanley } from '../../ai/stanleyOpen'
-import { speechRecognitionOf } from '../../domain/finishMore'
 import { t } from '../../i18n'
 import { Button } from '../Button'
 import { Field } from '../Field'
@@ -15,14 +14,6 @@ export function AskScreen() {
   const [params] = useSearchParams()
   // The words are filled in from the link but not sent.
   const [text, setText] = useState(() => (params.get('q') ?? '').slice(0, 200))
-  const Recognition = typeof window === 'undefined' ? null : speechRecognitionOf(window)
-  const listen = () => {
-    if (!Recognition) return
-    const r = new Recognition() as { lang: string; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; start: () => void }
-    r.lang = 'en-US'
-    r.onresult = (e) => setText(e.results[0]?.[0]?.transcript?.slice(0, 200) ?? '')
-    r.start()
-  }
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -40,9 +31,7 @@ export function AskScreen() {
       <form onSubmit={submit}>
         <Field label={t('ask.label')} hint={t('ask.hint')} value={text} maxLength={200} onChange={(e) => setText(e.target.value)} />
         <Button type="submit">{t('ask.send')}</Button>
-        {Recognition && <Button variant="secondary" onClick={listen}>{t('ask.speak')}</Button>}
       </form>
-      {Recognition && <p className="muted">{t('ask.speakNote')}</p>}
       <ul className="plain-list" aria-label={t('ask.examples')}>
         {EXAMPLES.map((q) => <li key={q}><Button variant="tertiary" onClick={() => requestStanley(q)}>{q}</Button></li>)}
       </ul>

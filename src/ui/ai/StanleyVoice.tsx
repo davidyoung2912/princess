@@ -1,55 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { dayPlanCard, pocketCard, speakable, voiceSupport } from '../../ai/stanleyVoice'
 import { savedFacts } from '../../feeds/stanleyFacts'
 import { useMemory } from '../../hooks/useMemory'
 import { useSailing } from '../../hooks/useDemo'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
-import { speechRecognitionOf } from '../../domain/finishMore'
 import { t } from '../../i18n'
-import { Button } from '../Button'
 import { PrintCard } from '../delights/Cards'
-
-interface Recognition {
-  lang: string
-  interimResults: boolean
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
-  onend: (() => void) | null
-  onerror: (() => void) | null
-  start: () => void
-  stop: () => void
-}
-
-/** Speak into the question box. The words only fill the box: the guest still reads them and taps Send. Hidden where the device has no speech recognition. */
-export function MicButton({ onHeard }: { onHeard: (text: string) => void }) {
-  const [on, setOn] = useState(false)
-  const [note, setNote] = useState('')
-  const rec = useRef<Recognition | null>(null)
-  const supported = voiceSupport(typeof window === 'undefined' ? undefined : window).listen
-  useEffect(() => () => { rec.current?.stop() }, [])
-  if (!supported) return null
-  const toggle = () => {
-    if (on) { rec.current?.stop(); return }
-    const Ctor = speechRecognitionOf(window) as (new () => Recognition) | null
-    if (!Ctor) return
-    const r = new Ctor()
-    r.lang = document.documentElement.lang || 'en-US'
-    r.interimResults = false
-    r.onresult = (e) => { const heard = Array.from(e.results).map((x) => x[0]?.transcript ?? '').join(' '); onHeard(heard) }
-    r.onerror = () => { setNote(t('stanley.voice.error')); setOn(false) }
-    r.onend = () => setOn(false)
-    rec.current = r
-    setNote('')
-    setOn(true)
-    try { r.start() } catch { setOn(false); setNote(t('stanley.voice.error')) }
-  }
-  return (
-    <>
-      <Button type="button" variant="secondary" aria-pressed={on} onClick={toggle}>{on ? t('stanley.voice.stop') : t('stanley.voice.start')}</Button>
-      <span role="status" className="visually-hidden">{on ? t('stanley.voice.listening') : ''}</span>
-      {note && <span role="alert" className="field__error">{note}</span>}
-    </>
-  )
-}
 
 /** Reads an answer aloud, only when the guest asks, at the speed they chose for read-aloud elsewhere (normal here). One thing is spoken at a time. */
 export function ReadAloud({ text }: { text: string }) {

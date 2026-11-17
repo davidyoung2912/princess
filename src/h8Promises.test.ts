@@ -115,8 +115,6 @@ describe('H8 slice D promises', () => {
     expect(homeNudges({ budget: 0, quiet: true, backAboardMin: 30, storm: 'higher', stormPhase: 'near', proposals: 3, briefing: true }).map((n) => n.id)).toEqual(['backAboard'])
     // Phase 5: every change is a preview from the server, and only the Confirm button sends it. Voice only fills the box.
     expect(read('src/ui/ai/StanleyActionCard.tsx')).toMatch(/onClick=\{\(\) => void confirm\(\)\}/)
-    expect(read('src/ui/home/AskScreen.tsx')).not.toMatch(/r\.onresult[^\n]*(submit|confirm)/)
-    expect(en['ask.speakNote']).toMatch(/nothing happens until you confirm/)
   })
 })
 

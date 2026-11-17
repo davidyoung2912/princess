@@ -96,3 +96,7 @@ Nothing new is stored. `GET /me/stanley/checkup` works out its answer from data 
 | sailing days and all-aboard times | the same | times |
 
 It is read-only (it never writes, books or changes anything, and a fix is only a screen to open), is for the signed-in guest only, and is not sent to a model. What it cannot see (flights and the travel-day connection, whether names match documents, whether a tour suits a traveller's pace) is listed in the answer as not checked, never reported as all clear. The scheduled run and the permission row CL-01 follow with the briefs and deadline notices phase.
+
+## Classifier flags and the act-or-ask gate (phase P3a)
+
+Nothing new is stored. `StanleyClassifier` computes four flags per item from facts the server already holds: **free** (no cover charge, no ticket or tour price), **fee-free until** (the table or show time, two days before a tour's port day, 24 hours before a spa start, half a stateroom request's usual time), **only me** (no other traveller on the booking) and **reversible until**. `StanleyActGate` reads those flags with the class state (on, paused, practice, daily count, undo window, refusals of this kind, step-up), fact age and source health, overlap with booked items, serious case, ship alert, quiet hours and supervised-child flag, and answers act or ask with reasons from a closed set. It holds ids, times and counts only, never the guest's words, and sends nothing anywhere.

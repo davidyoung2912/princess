@@ -9011,8 +9011,6 @@ export const enCore = {
   'nudge.proposals.link': 'Review in Autopilot',
   'nudge.briefing.title': 'Your briefing is ready',
   'nudge.briefing.link': 'Open the briefing',
-  'ask.speak': 'Speak',
-  'ask.speakNote': 'Speaking only fills in the question. You still tap Send, and nothing happens until you confirm.',
   'route.alerts': 'Visual and vibration alerts',
   'route.readAloud': 'Read aloud',
   'route.portSnapshot': 'Port snapshot',
