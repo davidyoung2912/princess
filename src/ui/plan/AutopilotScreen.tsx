@@ -24,6 +24,7 @@ import { StanleyEmpty } from '../ai/StanleyEmpty'
 import { RemindMe } from '../ai/RemindMe'
 import { StanleyBriefCard } from './StanleyBriefCard'
 import { StanleyCheckupCard } from './StanleyCheckupCard'
+import { StanleyChecklistCard } from './StanleyChecklistCard'
 import { StanleyBundleCard } from './StanleyBundleCard'
 import { StanleyValueCard } from './StanleyValueCard'
 import { planSnapshot } from '../../ai/stanleyAction'
@@ -117,6 +118,7 @@ export function AutopilotScreen() {
       </Card>
 
       <StanleyCheckupCard />
+      <StanleyChecklistCard />
       <StanleyBundleCard />
       <StanleyValueCard />
       <StanleyBriefCard />

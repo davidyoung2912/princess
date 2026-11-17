@@ -156,3 +156,15 @@ Nothing new is stored. `GET /me/stanley/bundle` and `GET /me/stanley/draft` work
 | whether a traveller is under 13 | choosing events suited to children | nothing about the traveller is returned |
 
 It is read-only (nothing is booked, held, paid or sent; every step is a screen to open), is for the signed-in guest only, is off for a supervised account and when the tools switch is off, and is not sent to a model. What it cannot see (walking times, whether a show or table has space, whether a step suits a traveller's pace or access) is listed in the answer.
+
+## Trip checklist and smart defaults (phase P5, ACT-02 and ACT-04)
+
+Nothing new is stored. `GET /me/stanley/checklist` works out its answer from the check-in progress of each traveller, the booked tours and dinners, and the guest's own remembered dinner preference, and returns it without keeping it. Travellers appear only as "Traveller 2" by position. It ticks off by being recomputed from the real state each time.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| check-in steps left per traveller and for the booking | the outstanding list, in check-in order | the step as words, the traveller's position and a route to check-in |
+| booked tours and dinners | offering "book a dinner" or "look at tours" only when none is booked | words and a route |
+| the guest's own remembered dinner preference (early or late only) | a suggestion shown beside "book a dinner", with where it came from | the word early or late; never applied |
+
+Memory must be on, the item must be the guest's own and not sensitive, and a trip item counts only for this sailing; "flexible" is not shown because there is nothing to suggest. It is read-only, off for a supervised account and when the tools switch is off, and is not sent to a model. Documents are left to the trip check-up and the answer says so.

@@ -38,6 +38,10 @@ public static class StanleyRuleCards
             "Have I forgotten anything to pack?", ["journey-solo"], ["sailing days and ports"]),
         Check("ACT-01", "Bundles", ["sea", "port"], "A sailing day is open", "booked tours and dinners, the day's events and the all-aboard time", "the guest does each step on its own screen",
             "Plan my evening", ["journey-solo", "journey-family"], ["booked tours and dinners", "sailing days and all-aboard times"]),
+        Check("ACT-02", "Trip checklist concierge", ["manage", "prebook", "travel"], "A booking is linked", "check-in steps per traveller, booked dinners and tours", "the guest finishes the step on its screen",
+            "What do I still need to do?", ["journey-solo", "journey-family"], ["check-in progress per traveller", "booked tours and dinners"]),
+        Check("ACT-04", "Smart defaults", ["prebook", "sea"], "The guest has told Stanley a preference", "the guest's own remembered dinner preference", "the guest sets the choice on the screen or forgets the item",
+            "Book my dinner the way I like it", ["journey-solo"], ["remembered preferences"]),
         Check("ACT-03", "Drafts for approval", ["sea", "port"], "A sailing day is open", "the bundle for the day and the all-aboard time", "the guest copies the note or closes it",
             "Draft a note to my party", ["journey-solo"], ["booked tours and dinners", "sailing days and all-aboard times"]),
     ];

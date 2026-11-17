@@ -109,6 +109,9 @@ public static class StanleyEndpoints
             .WithTags("Stanley").WithSummary("Value and bill for the guest's current or next trip: { hasTrip, findings[{ id, rule (CHK-04 bill watch, VAL-01 included value, CHK-05 forgot something), consequence, title, detail, fix{ label, route } }] ranked most serious first, notChecked[], clean, asOf }. " +
                 "Read-only: it never buys, charges, disputes or refunds; value findings only name what the guest already has.");
 
+        api.MapGet("/me/stanley/checklist", async (ICurrentUser me, StanleyChecklistService svc, CancellationToken ct) => Results.Ok(await svc.RunAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Stanley").WithSummary("The trip checklist (ACT-02) with smart defaults (ACT-04): { hasTrip, items[{ id, traveller (position, 0 for the booking), kind (checkin, dining, excursions), title, route, default { label, source } or null }], done, total, complete, notChecked[], asOf }. " +
+                "Read-only: it ticks off by being recomputed from the real state and applies no default; a default is only shown, with where it came from.");
         api.MapGet("/me/stanley/bundle", async (string? scope, string? pace, int? day, ICurrentUser me, StanleyBundleService svc, CancellationToken ct) => Results.Ok(await svc.PreviewAsync(await me.LoadAsync(ct), scope, pace, day, ct)))
             .WithTags("Stanley").WithSummary("A bundle (ACT-01) for ?scope=evening|day, ?pace=relaxed|balanced|packed and ?day (default today, or day 1 before sailing): { hasPlan, scope, pace, day, port, backBy, steps[{ id, start, minutes, kind, title, status (booked, suggested), why, route }] in time order, clashes[], notChecked[] }. " +
                 "Read-only: nothing is booked, held, paid or sent; each step is a screen to open. 400 invalid for an unknown scope, pace or day.");

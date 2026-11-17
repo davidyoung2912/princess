@@ -126,6 +126,11 @@ export const stanleyCheckup = {
   get: () => http.get<unknown>('/me/stanley/checkup'),
 }
 
+/** The trip checklist and smart defaults (phase P5). Read-only; a default is shown, never applied. */
+export const stanleyChecklist = {
+  get: () => http.get<unknown>('/me/stanley/checklist'),
+}
+
 /** Bundles and drafts (phase P4): an ordered evening or day at a pace, and a note for the guest to send themselves. Read-only; nothing is booked or sent. */
 export const stanleyBundle = {
   get: (scope: string, pace: string) => http.get<unknown>(`/me/stanley/bundle?scope=${encodeURIComponent(scope)}&pace=${encodeURIComponent(pace)}`),
