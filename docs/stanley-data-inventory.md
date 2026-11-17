@@ -264,3 +264,7 @@ Nothing new is stored. `GET /me/stanley/remember` works out its answer from the 
 | sailing date and number of nights | the day the ship gets in | three titles, each with a screen to open (memories, feedback, loyalty) |
 
 It never builds an album, drafts or sends feedback or a thank-you, reads a loyalty balance or tier, or sets a reminder. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: the loyalty balance, whether the survey is done or an album built, and the days after the guest gets home (the trip lookup drops a finished trip, so the plan's day-after timings are still to do).
+
+### Remember pack, second part (phase P9f, SR-11.3, SR-11.4 and SR-11.6)
+
+Same endpoint and inputs; nothing new is stored. Three more findings on the day the ship gets in, each a screen to open: privacy (keep my chats), rebook (next voyage) and bill (expense export). It deletes or keeps no chat, makes no offer, reads no amount and sends nothing. It cannot see when chats will be cleared or whether a case is open, and the plan's day-after timings are still to do.

@@ -10517,7 +10517,7 @@ export const enCore = {
   'stanleyFamily.clear': 'Nothing to add right now.',
   'stanleyFamily.open': 'Open',
   'stanleyRememberPack.title': 'Remember the trip',
-  'stanleyRememberPack.intro': 'On the day the ship gets in I point to your memories, the feedback survey and what the voyage counts for in loyalty. I never build an album, write feedback or send anything.',
+  'stanleyRememberPack.intro': 'On the day the ship gets in I point to your memories, the feedback survey, loyalty, keeping your chats, a next voyage and saving your charges. I never build an album, write feedback, delete a chat, make an offer or send anything.',
   'stanleyRememberPack.loading': 'Looking at your trip.',
   'stanleyRememberPack.error': 'I could not look at that just now.',
   'stanleyRememberPack.noTrip': 'There is no confirmed trip to look at yet.',

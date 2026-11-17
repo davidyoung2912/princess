@@ -13,7 +13,7 @@ public class StanleyRememberTests
     public void ArrivalDayPointsToThreeScreens()
     {
         var f = StanleyRememberRules.Findings(On(7));
-        Assert.Equal(["SR-11.1", "SR-11.2", "SR-11.5"], f.Select(x => x.Rule));
+        Assert.Equal(["SR-11.1", "SR-11.2", "SR-11.5", "SR-11.3", "SR-11.4", "SR-11.6"], f.Select(x => x.Rule));
         Assert.Contains(f, x => x.Rule == "SR-11.2" && x.Detail.Contains("send nothing"));
     }
 
