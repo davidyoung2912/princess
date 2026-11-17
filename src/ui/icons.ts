@@ -100,6 +100,7 @@ export {
   Image as NonogramGame,
   Bomb as MinesweeperGame,
   Waypoints as HashiGame,
+  Grid2x2 as NurikabeGame,
   Flag,
   Undo2 as Undo,
   Pencil as Notes,

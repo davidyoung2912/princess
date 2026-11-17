@@ -241,6 +241,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/games-explorer/nonogram': screen(() => import('./ui/explorer/games/NonogramScreen'), 'NonogramScreen'),
   '/games-explorer/minesweeper': screen(() => import('./ui/explorer/games/MinesweeperScreen'), 'MinesweeperScreen'),
   '/games-explorer/hashi': screen(() => import('./ui/explorer/games/HashiScreen'), 'HashiScreen'),
+  '/games-explorer/nurikabe': screen(() => import('./ui/explorer/games/NurikabeScreen'), 'NurikabeScreen'),
   '/games-explorer/hitori': screen(() => import('./ui/explorer/games/HitoriScreen'), 'HitoriScreen'),
   '/games-explorer/kakuro': screen(() => import('./ui/explorer/games/KakuroScreen'), 'KakuroScreen'),
   '/games-explorer/kenken': screen(() => import('./ui/explorer/games/KenKenScreen'), 'KenKenScreen'),

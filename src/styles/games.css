@@ -443,6 +443,12 @@
 .ms-pad__key svg { width: 1.5rem; height: 1.5rem; }
 .ms-pad__swatch { width: 1.6rem; height: 1.6rem; box-sizing: border-box; border: 2px outset currentColor; }
 
+/* Nurikabe reuses the Hitori grid: wall is a solid block, a dot is a small disc, a clue is a number. */
+.nk-dot { position: absolute; top: 50%; left: 50%; width: 22%; height: 22%; transform: translate(-50%, -50%); border-radius: 50%; background: currentColor; pointer-events: none; }
+.nk-clue { font-size: clamp(0.95rem, 5.2vw, 1.5rem); }
+.hi-cell--repeat .nk-clue { color: var(--sd-error); }
+.nk-pad__dot { font-size: 1.6rem; line-height: 1; }
+
 /* Hashi: islands are discs with their number, bridges are one or two lines (shape, not colour, tells single from double); a complete island is solid, a wrong one has a dashed red ring. */
 .hs-board { position: relative; width: min(100%, 36rem); user-select: none; -webkit-touch-callout: none; }
 .hs-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }

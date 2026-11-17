@@ -33,6 +33,7 @@ export const GAMES: readonly GameEntry[] = [
   { id: 'nonogram', path: '/games-explorer/nonogram', mode: 'single', titleKey: 'gx.game.nonogram.title', bodyKey: 'gx.game.nonogram.body', levels: 4, minutes: [2, 25], players: 1 },
   { id: 'minesweeper', path: '/games-explorer/minesweeper', mode: 'single', titleKey: 'gx.game.minesweeper.title', bodyKey: 'gx.game.minesweeper.body', levels: 4, minutes: [2, 20], players: 1 },
   { id: 'hashi', path: '/games-explorer/hashi', mode: 'single', titleKey: 'gx.game.hashi.title', bodyKey: 'gx.game.hashi.body', levels: 4, minutes: [3, 25], players: 1 },
+  { id: 'nurikabe', path: '/games-explorer/nurikabe', mode: 'single', titleKey: 'gx.game.nurikabe.title', bodyKey: 'gx.game.nurikabe.body', levels: 4, minutes: [3, 25], players: 1 },
 ]
 
 export const gamesOf = (mode: GameEntry['mode']): GameEntry[] => GAMES.filter((g) => g.mode === mode)
