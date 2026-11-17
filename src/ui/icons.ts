@@ -94,6 +94,7 @@ export {
   Grid3x3 as KakuroGame,
   Binary as CodewordGame,
   Contrast as HitoriGame,
+  TextSearch as WordSearchGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,

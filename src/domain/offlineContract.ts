@@ -253,6 +253,7 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/games-explorer/kakuro': 'offline',
   '/games-explorer/codeword': 'offline',
   '/games-explorer/hitori': 'offline',
+  '/games-explorer/word-search': 'offline',
   '/activities-explorer': 'view-only',
   '/activities-explorer/:venueId': 'view-only',
   '/ship-explorer': 'needs-connection',

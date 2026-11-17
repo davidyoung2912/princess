@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) and **Hitori** (X41). All eleven games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42). All twelve games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -99,7 +99,10 @@ Built as planned. `hitori.ts` makes a Latin square, a random legal shading (no t
 - Generator: Latin-style base grid, choose a valid shading (no touching, joined whites), fill each shaded square with a copy of a digit already in its row or column, then check uniqueness with a logic solver (pair and triple rules, sandwich, corner, "shading here would split the whites" connectivity). Levels 5x5 to 9x9 (Expert 10x10 if fast).
 - Tap cycles blank, shaded, circled (known to stay). Hints name the rule; red for a repeat among unshaded squares, two touching shaded squares or a split group. Shapes not colour alone for shaded and circled.
 
-### G10: Word Search with no spare letters (X42)
+### G10: Word Search with no spare letters (X42) — built
+
+Built with this answer rule: the grid has no filler. Every square is covered by a listed word (words cross and share letters) except a few answer squares, which hold a hidden cruise word (5 to 8 letters by level) in reading order. Find every listed word and the squares left unmarked spell the answer, shown on the solved card. `wordSearch.ts` picks the answer squares, then packs words by a budgeted search that always covers the first uncovered square (themed words first, a sample of common Codeword words as fill), and rejects any layout where a listed word also hides over an answer square, so the leftover squares are exactly the answer. `wordSearchWords.ts` holds about 330 themed words and the answers. Levels: Easy 6x6 (4 directions), Medium 8x8 (6), Hard 10x10 and Expert 12x12 (all 8); about 0.2 s to generate. `WordSearchScreen.tsx`: drag, tap first then last letter, or keyboard (arrows, Shift-arrows start a selection, Enter marks first and last, Escape clears); found squares are tinted and underlined, found words struck off the list; Hint names the first letter, position, length and direction of the next word and Fill it in marks it.
+
 
 - Every letter of the grid belongs to a word; no filler. Words run in all 8 directions and may cross. When all words are found, the letters that belong to no listed word are none, so the answer is instead a hidden phrase: the letters left uncovered after crossing off the word list at the start form it (Wonderword style: found words are cleared, and the leftover letters read as the answer). Decide the exact answer rule when the phase starts.
 - Needs a themed word list (cruise and travel, plus common words) in a lazy module, as for Codeword. Generator: pack words into a grid to cover every square (search with a step budget, retry), place the answer letters in the squares left over.

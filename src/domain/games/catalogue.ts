@@ -27,6 +27,7 @@ export const GAMES: readonly GameEntry[] = [
   { id: 'codeword', path: '/games-explorer/codeword', mode: 'single', titleKey: 'gx.game.codeword.title', bodyKey: 'gx.game.codeword.body', levels: 4, minutes: [10, 40], players: 1 },
   { id: 'kenken', path: '/games-explorer/kenken', mode: 'single', titleKey: 'gx.game.kenken.title', bodyKey: 'gx.game.kenken.body', levels: 4, minutes: [3, 25], players: 1 },
   { id: 'hitori', path: '/games-explorer/hitori', mode: 'single', titleKey: 'gx.game.hitori.title', bodyKey: 'gx.game.hitori.body', levels: 4, minutes: [3, 25], players: 1 },
+  { id: 'word-search', path: '/games-explorer/word-search', mode: 'single', titleKey: 'gx.game.wordsearch.title', bodyKey: 'gx.game.wordsearch.body', levels: 4, minutes: [4, 20], players: 1 },
 ]
 
 export const gamesOf = (mode: GameEntry['mode']): GameEntry[] => GAMES.filter((g) => g.mode === mode)
