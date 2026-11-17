@@ -97,6 +97,21 @@ public static class StanleyAutoRules
         return added.Count == 0 && removed.Count == 0 ? null : new("packing", added, removed);
     }
 
+    public const string ChecklistKey = "stanley.auto.lists.checklist";
+
+    /// <summary>What the trip checklist now shows as done against the ids recorded last time: <c>Added</c> is newly done, <c>Removed</c> is no longer done. A first look (no record) reports nothing.</summary>
+    public static AutoListChange? ChecklistDiff(IReadOnlyList<ChecklistEntry> now, IReadOnlyCollection<string>? before)
+    {
+        if (before is null) return null;
+        var done = now.Where(e => e.State == "done").Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        var was = before.ToHashSet(StringComparer.Ordinal);
+        var added = done.Where(id => !was.Contains(id)).Order(StringComparer.Ordinal).Select(PrettyId).ToList();
+        var removed = was.Where(id => !done.Contains(id)).Order(StringComparer.Ordinal).Select(PrettyId).ToList();
+        return added.Count == 0 && removed.Count == 0 ? null : new("checklist", added, removed);
+    }
+
+    public static string ChecklistToJson(IEnumerable<ChecklistEntry> entries) => System.Text.Json.JsonSerializer.Serialize(entries.Where(e => e.State == "done").Select(e => e.Id).Distinct().Order(StringComparer.Ordinal).ToList());
+
     private static string PrettyId(string id) => id.Replace('-', ' ').Replace('_', ' ');
 
     public static string ToJson(IEnumerable<PackItem> items) => System.Text.Json.JsonSerializer.Serialize(items.Where(i => i.Group != "mine").Select(i => i.Id).Distinct().Order(StringComparer.Ordinal).ToList());
@@ -110,7 +125,7 @@ public static class StanleyAutoRules
 
     public static readonly string[] ListsNotChecked =
     [
-        "Only the packing list is kept current so far. The document bring list, trip checklist, shortlist and comparison are not.",
+        "The packing list (which holds the documents to bring) and the trip checklist are kept current so far. The shortlist and comparison are not.",
         "Your own items, ticks and hidden items are never changed.",
     ];
 }

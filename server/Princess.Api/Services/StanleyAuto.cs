@@ -51,7 +51,7 @@ public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPer
 
     /// <summary>
     /// AUT-05, lists kept current (first part: the packing list). The list is rebuilt from the season, tours and forecast whenever it is read, so it is already current; this says what its suggestions added or dropped since the last run
-    /// and records where it stands now. Same switch (CL-08) as AUT-02. It changes no list, tick, hidden item or item the guest added.
+    /// and records where it stands now. Same switch (CL-08) as AUT-02. It changes no list, tick, hidden item or item the guest added. The trip checklist is read the same way: what it now shows as done or no longer done.
     /// </summary>
     public async Task<AutoListsDto> ListsAsync(UserRecord user, CancellationToken ct)
     {
@@ -60,12 +60,22 @@ public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPer
         var (facts, _) = await checkup.FactsAsync(user, ct);
         if (facts is null) return none with { On = true };
 
+        var changes = new List<AutoListChange>();
         var view = await plan.PackingAsync(user, null, ct);
         var row = await state.GetAsync(false, user.Id, StanleyAutoRules.ListsKey, ct);
         var before = StanleyAutoRules.Parse(row?.Json);
         var change = StanleyAutoRules.Diff(view.Items, before);
+        if (change is not null) changes.Add(change);
         if (before is null || change is not null)
             await state.SaveAsync(false, user.Id, StanleyAutoRules.ListsKey, StanleyAutoRules.ToJson(view.Items), row?.Version ?? 0, clock.UtcNow, ct);
-        return new(true, before is null, change is null ? [] : [change], StanleyAutoRules.ListsNotChecked.ToList(), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+
+        var check = await plan.ChecklistAsync(user, null, ct);
+        var crow = await state.GetAsync(false, user.Id, StanleyAutoRules.ChecklistKey, ct);
+        var cbefore = StanleyAutoRules.Parse(crow?.Json);
+        var cchange = StanleyAutoRules.ChecklistDiff(check.Entries, cbefore);
+        if (cchange is not null) changes.Add(cchange);
+        if (cbefore is null || cchange is not null)
+            await state.SaveAsync(false, user.Id, StanleyAutoRules.ChecklistKey, StanleyAutoRules.ChecklistToJson(check.Entries), crow?.Version ?? 0, clock.UtcNow, ct);
+        return new(true, before is null && cbefore is null, changes, StanleyAutoRules.ListsNotChecked.ToList(), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
     }
 }

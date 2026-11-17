@@ -90,4 +90,17 @@ public class StanleyAutoTests
         Assert.Equal(["coat", "hat"], ids);
         Assert.Null(StanleyAutoRules.Parse("not json"));
     }
+
+    private static ChecklistEntry Entry(string id, string state) => new(id, 30, null, null, "", state, true);
+
+    [Fact]
+    public void TheChecklistSaysWhatIsNewlyDoneAndWhatIsNot()
+    {
+        Assert.Null(StanleyAutoRules.ChecklistDiff([Entry("paid", "done")], null));
+        var change = StanleyAutoRules.ChecklistDiff([Entry("paid", "done"), Entry("tours", "done"), Entry("dining", "open")], ["paid", "dining"]);
+        Assert.NotNull(change);
+        Assert.Equal(["tours"], change.Added);
+        Assert.Equal(["dining"], change.Removed);
+        Assert.Null(StanleyAutoRules.ChecklistDiff([Entry("paid", "done")], ["paid"]));
+    }
 }

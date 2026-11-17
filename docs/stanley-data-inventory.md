@@ -319,3 +319,6 @@ AUT-02 also sets one reminder an hour before all aboard on each port day ("All a
 
 `POST /me/stanley/auto/lists` (same permission row CL-08, same switch and gates as AUT-02) says what the packing list's suggested items added or dropped since the last run. The only thing stored is a list of suggested item ids in the guest's own state store (key `stanley.auto.lists.packing`), replaced each time something changes. The first run only records and says so. It reads the packing list the guest already sees; it never changes a list, a tick, a hidden item or an item the guest added, and sends nothing. The document bring list, trip checklist, shortlist and comparison, and AUT-07, are still to do.
 
+### Lists kept current, trip checklist (phase P10a, AUT-05 second part)
+
+The same run also reads the trip checklist the guest already sees and says which entries are newly done or no longer done since the last run. The only thing stored is a list of done entry ids in the guest's own state store (key `stanley.auto.lists.checklist`). The document bring list is part of the packing list (its documents group), so it was already covered. It never ticks, unticks or adds an entry and sends nothing. The shortlist and comparison, and AUT-07, are still to do.
