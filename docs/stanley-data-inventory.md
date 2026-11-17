@@ -302,3 +302,7 @@ AUT-02 also sets one reminder at 3 pm ship time on the day before the ship gets 
 ### Exit time reminder (phase P10a, third part)
 
 AUT-02 also sets one reminder an hour before the cabin has to be empty on the last morning ("Your cabin needs to be empty in an hour. The getting off screen has the last look list."), key `aut02:exit:<date>`, from the disembarkation times the Getting off screen already uses. Same limits, receipt and undo as the others; it tags, packs and chooses nothing. Documents and dining reminders, AUT-05 and AUT-07 are still to do.
+
+### Documents reminder (phase P10a, fourth part)
+
+AUT-02 also sets one reminder at 9 am ship time two weeks before sailing ("Two weeks to sailing and a document is not ready. The documents screen shows which."), key `aut02:docs:<date>`, only when the booking is not made by an agent and the check-up already finds a traveller's document not ready. It reads only the ready or not-ready state the check-up holds, no number, name or document detail. Same limits, receipt and undo as the others. Dining reminders, AUT-05 and AUT-07 are still to do.

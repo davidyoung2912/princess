@@ -26,6 +26,10 @@ public class StanleyAutoTests
         Assert.DoesNotContain(StanleyAutoRules.Candidates(Facts(new(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc))), x => x.Key.Contains(":exit:"));
 
     [Fact]
+    public void NoTravellersMeansNoDocumentsReminder() =>
+        Assert.DoesNotContain(StanleyAutoRules.Candidates(Facts(new(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc))), x => x.Key.Contains(":docs:"));
+
+    [Fact]
     public void APaidBalanceAndAnOpenCheckinLeaveOnlyBagNight() =>
         Assert.Equal(["bags"], StanleyAutoRules.Candidates(Facts(new(2027, 3, 10, 0, 0, 0, DateTimeKind.Utc), "paid", "open")).Select(x => x.Key.Split(':')[1]));
 
