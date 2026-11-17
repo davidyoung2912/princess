@@ -322,3 +322,7 @@ AUT-02 also sets one reminder an hour before all aboard on each port day ("All a
 ### Lists kept current, trip checklist (phase P10a, AUT-05 second part)
 
 The same run also reads the trip checklist the guest already sees and says which entries are newly done or no longer done since the last run. The only thing stored is a list of done entry ids in the guest's own state store (key `stanley.auto.lists.checklist`). The document bring list is part of the packing list (its documents group), so it was already covered. It never ticks, unticks or adds an entry and sends nothing. The shortlist and comparison, and AUT-07, are still to do.
+
+### Lists kept current, sailing shortlist (phase P10a, AUT-05 third part)
+
+The same run also reads the shortlist in the guest's saved decision brief and says which sailings are newly on it and which were on it last time but are now gone from the catalogue or closed to booking. The only thing stored is a list of shortlisted sailing ids in the guest's own state store (key `stanley.auto.lists.shortlist`). It never edits the brief or the shortlist and sends nothing. The comparison and AUT-07 are still to do.

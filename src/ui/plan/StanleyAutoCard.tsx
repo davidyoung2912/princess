@@ -51,9 +51,9 @@ export function StanleyAutoCard() {
       {lists?.on && lists.firstLook && <p role="status">{t('stanleyAuto.listsFirst')}</p>}
       {lists?.on && !lists.firstLook && lists.changes.length === 0 && <p role="status">{t('stanleyAuto.listsSame')}</p>}
       {lists?.on && lists.changes.map((c) => (
-        <section key={c.list} aria-label={c.list === 'checklist' ? t('stanleyAuto.checklistName') : t('stanleyAuto.packingName')}>
-          {c.added.length > 0 && <><h3>{th(c.list === 'checklist' ? 'stanleyAuto.checklistDone' : 'stanleyAuto.listsAdded')}</h3><ul>{c.added.map((a) => <li key={a}>{a}</li>)}</ul></>}
-          {c.removed.length > 0 && <><h3>{th(c.list === 'checklist' ? 'stanleyAuto.checklistUndone' : 'stanleyAuto.listsRemoved')}</h3><ul>{c.removed.map((a) => <li key={a}>{a}</li>)}</ul></>}
+        <section key={c.list} aria-label={c.list === 'checklist' ? t('stanleyAuto.checklistName') : c.list === 'shortlist' ? t('stanleyAuto.shortlistName') : t('stanleyAuto.packingName')}>
+          {c.added.length > 0 && <><h3>{th(c.list === 'checklist' ? 'stanleyAuto.checklistDone' : c.list === 'shortlist' ? 'stanleyAuto.shortlistAdded' : 'stanleyAuto.listsAdded')}</h3><ul>{c.added.map((a) => <li key={a}>{a}</li>)}</ul></>}
+          {c.removed.length > 0 && <><h3>{th(c.list === 'checklist' ? 'stanleyAuto.checklistUndone' : c.list === 'shortlist' ? 'stanleyAuto.shortlistGone' : 'stanleyAuto.listsRemoved')}</h3><ul>{c.removed.map((a) => <li key={a}>{a}</li>)}</ul></>}
         </section>
       ))}
       {result?.on && result.made.length > 0 && (

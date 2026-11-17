@@ -103,4 +103,16 @@ public class StanleyAutoTests
         Assert.Equal(["dining"], change.Removed);
         Assert.Null(StanleyAutoRules.ChecklistDiff([Entry("paid", "done")], ["paid"]));
     }
+
+    [Fact]
+    public void TheShortlistSaysWhatIsNewAndWhatIsGoneOrClosed()
+    {
+        var open = new Dictionary<string, string> { ["a"] = "Alaska, 2027-06-01", ["c"] = "Caribbean, 2027-02-01" };
+        Assert.Null(StanleyAutoRules.ShortlistDiff(["a"], open, null));
+        var change = StanleyAutoRules.ShortlistDiff(["a", "c"], open, ["a", "old-one"]);
+        Assert.NotNull(change);
+        Assert.Equal(["Caribbean, 2027-02-01"], change.Added);
+        Assert.Equal(["old one"], change.Removed);
+        Assert.Null(StanleyAutoRules.ShortlistDiff(["a"], open, ["a"]));
+    }
 }

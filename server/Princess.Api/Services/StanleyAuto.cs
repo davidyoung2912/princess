@@ -9,7 +9,7 @@ namespace Princess.Api.Services;
 /// a level below 4 or a guest who has not switched it on. Each reminder is a plain clock reminder on the guest's own list with a ledger line (so Did shows it and it can be removed there), is tagged with its key so it is set once, and
 /// never touches money, another person or a booking.
 /// </summary>
-public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPermissionService permissions, IStanleyReminderStore reminders, IStanleyActionStore ledger, IClock clock, PlanService plan, IStateStore state)
+public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPermissionService permissions, IStanleyReminderStore reminders, IStanleyActionStore ledger, IClock clock, PlanService plan, IStateStore state, StanleyDiscoverService discover, ICatalogueStore catalogue)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -51,7 +51,7 @@ public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPer
 
     /// <summary>
     /// AUT-05, lists kept current (first part: the packing list). The list is rebuilt from the season, tours and forecast whenever it is read, so it is already current; this says what its suggestions added or dropped since the last run
-    /// and records where it stands now. Same switch (CL-08) as AUT-02. It changes no list, tick, hidden item or item the guest added. The trip checklist is read the same way: what it now shows as done or no longer done.
+    /// and records where it stands now. Same switch (CL-08) as AUT-02. It changes no list, tick, hidden item or item the guest added. The trip checklist is read the same way (what it now shows as done or no longer done), and so is the sailing shortlist (what is newly on it, and what is gone or closed to booking).
     /// </summary>
     public async Task<AutoListsDto> ListsAsync(UserRecord user, CancellationToken ct)
     {
@@ -76,6 +76,15 @@ public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPer
         if (cchange is not null) changes.Add(cchange);
         if (cbefore is null || cchange is not null)
             await state.SaveAsync(false, user.Id, StanleyAutoRules.ChecklistKey, StanleyAutoRules.ChecklistToJson(check.Entries), crow?.Version ?? 0, clock.UtcNow, ct);
-        return new(true, before is null && cbefore is null, changes, StanleyAutoRules.ListsNotChecked.ToList(), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+
+        var sbrief = (await discover.GetBriefAsync(user, ct)).Brief.Shortlist ?? [];
+        var open = (await catalogue.GetAsync(ct)).Sailings.Where(x => x.BookingOpen).ToDictionary(x => x.Id, x => $"{x.Title}, {x.Departure:yyyy-MM-dd}");
+        var srow = await state.GetAsync(false, user.Id, StanleyAutoRules.ShortlistKey, ct);
+        var sbefore = StanleyAutoRules.Parse(srow?.Json);
+        var schange = StanleyAutoRules.ShortlistDiff(sbrief, open, sbefore);
+        if (schange is not null) changes.Add(schange);
+        if (sbefore is null || schange is not null)
+            await state.SaveAsync(false, user.Id, StanleyAutoRules.ShortlistKey, StanleyAutoRules.ShortlistToJson(sbrief), srow?.Version ?? 0, clock.UtcNow, ct);
+        return new(true, before is null && cbefore is null && sbefore is null, changes, StanleyAutoRules.ListsNotChecked.ToList(), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
     }
 }

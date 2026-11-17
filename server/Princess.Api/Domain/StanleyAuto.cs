@@ -112,6 +112,23 @@ public static class StanleyAutoRules
 
     public static string ChecklistToJson(IEnumerable<ChecklistEntry> entries) => System.Text.Json.JsonSerializer.Serialize(entries.Where(e => e.State == "done").Select(e => e.Id).Distinct().Order(StringComparer.Ordinal).ToList());
 
+    public const string ShortlistKey = "stanley.auto.lists.shortlist";
+
+    /// <summary>
+    /// The guest's shortlisted sailings against the ids recorded last time: <c>Added</c> is a sailing newly on the shortlist (the guest's own choice, said back), <c>Removed</c> is one on it last time that is no longer in the catalogue
+    /// or no longer open to book. <paramref name="titles"/> maps the sailing ids that are still open to book to a title. A first look (no record) reports nothing.
+    /// </summary>
+    public static AutoListChange? ShortlistDiff(IReadOnlyCollection<string> shortlist, IReadOnlyDictionary<string, string> titles, IReadOnlyCollection<string>? before)
+    {
+        if (before is null) return null;
+        var was = before.ToHashSet(StringComparer.Ordinal);
+        var added = shortlist.Where(id => !was.Contains(id) && titles.ContainsKey(id)).Select(id => titles[id]).ToList();
+        var gone = was.Where(id => !titles.ContainsKey(id)).Order(StringComparer.Ordinal).Select(PrettyId).ToList();
+        return added.Count == 0 && gone.Count == 0 ? null : new("shortlist", added, gone);
+    }
+
+    public static string ShortlistToJson(IEnumerable<string> ids) => System.Text.Json.JsonSerializer.Serialize(ids.Distinct().Order(StringComparer.Ordinal).ToList());
+
     private static string PrettyId(string id) => id.Replace('-', ' ').Replace('_', ' ');
 
     public static string ToJson(IEnumerable<PackItem> items) => System.Text.Json.JsonSerializer.Serialize(items.Where(i => i.Group != "mine").Select(i => i.Id).Distinct().Order(StringComparer.Ordinal).ToList());
@@ -125,7 +142,7 @@ public static class StanleyAutoRules
 
     public static readonly string[] ListsNotChecked =
     [
-        "The packing list (which holds the documents to bring) and the trip checklist are kept current so far. The shortlist and comparison are not.",
+        "The packing list (which holds the documents to bring), the trip checklist and the sailing shortlist are kept current so far. The comparison is not. A sailing that is gone or closed to booking is only said, never removed from your shortlist.",
         "Your own items, ticks and hidden items are never changed.",
     ];
 }
