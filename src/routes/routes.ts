@@ -226,6 +226,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/me/settings', titleKey: 'route.settings', tab: 'me', phase: 0 },
   { path: '/me/activity', titleKey: 'route.activity', tab: 'me', phase: 0 },
   { path: '/me/stanley-can', titleKey: 'route.stanleyCan', tab: 'me', phase: 0 },
+  { path: '/me/stanley-activity', titleKey: 'route.stanleyActivity', tab: 'me', phase: 0 },
   { path: '/me/demo', titleKey: 'route.demo', tab: 'me', phase: 0 },
   { path: '/kit', titleKey: 'route.kit', tab: null, phase: 0 },
   { path: '/account', titleKey: 'route.account', tab: 'me', phase: 0 },

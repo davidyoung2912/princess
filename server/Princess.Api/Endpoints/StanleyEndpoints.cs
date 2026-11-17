@@ -101,6 +101,13 @@ public static class StanleyEndpoints
             .WithTags("Stanley")
             .WithSummary("The guest's receipts for what Stanley did, newest first (up to 50): done, failed, pending and undone actions with their receipt number and times. The Trust Ledger lists them.");
 
+        var ledger = api.MapGroup("/me/stanley/ledger").WithTags("Stanley");
+        ledger.MapGet("", async (ICurrentUser me, StanleyActivityService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("What Stanley did, is watching and remembers, for the signed-in guest: { paused, pausedUntil, undoableNow, did[{ id, number, kind, status (done, failed, pending, undone), at, what, why, facts, affects, undo (in words), undoUntil, canUndo, stop }], watching[{ id (checklist row), wording, example, never }], remembers { enabled, count, items[{ id, text, reason }] } }. " +
+                "Each receipt has the six fields: what he did, why, the facts he used, who it affects, how to undo it and how to stop this kind of thing. Typed fields and the server's own words only; nothing the guest typed. Undo one with POST /me/stanley/actions/{id}/undo, switch a watch off with PUT /me/stanley/permissions/rows/{id}, forget an item with DELETE /me/stanley/memory/items/{id}.");
+        ledger.MapPost("/undo-today", async (ICurrentUser me, StanleyActivityService svc, CancellationToken ct) => Results.Ok(await svc.UndoAllAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("Undoes every act still inside its two-hour window that the server can reverse: { undone, kept }. An act that cannot be undone now (for example a case the team has picked up) is kept and counted. A plan change and a reminder are undone on the device.");
+
         var memory = api.MapGroup("/me/stanley/memory").WithTags("Stanley");
         memory.MapGet("", async (ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("What Stanley remembers about the signed-in guest: { enabled, items[{ id, kind, value, text, reason, scope (trip or future), sailingId, sensitive, shared, updatedAt }], kinds[{ kind, values[], multiple, sensitive }] }. Only the guest's own items; booking facts are not here.");

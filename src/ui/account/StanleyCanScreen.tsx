@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { useStanleyCapabilities } from '../../hooks/useStanleyCapabilities'
 import { headingCase, t, th } from '../../i18n'
@@ -37,6 +38,7 @@ export function StanleyCanScreen() {
           </Card>
         )
       })}
+      <p><Link to="/me/stanley-activity">{t('stanleyActivity.link')}</Link></p>
       <Card info labelledBy="stanley-can-never-h">
         <h2 id="stanley-can-never-h">{th('stanleyIntro.never.title')}</h2>
         <p>{t('stanleyIntro.never.body')}</p>

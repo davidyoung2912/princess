@@ -25,6 +25,15 @@ Written for phase 4 of `docs/stanley-gap-analysis-and-plan.md`. It lists every f
 | Consent history | ability, state, wording version, source (welcome, settings, stage), time | Show what the guest agreed to and which wording | Server (person state document `stanleyConsent`, last 200 lines) | Account life; never any text the guest typed |
 | Step-up | code hash and expiry (HMAC under a key from the signing key), token hash and expiry | Confirm it is the guest before Stanley is given more to do | Server (person state document `stanleyStepUp`); the code is emailed to the address on the account | Code 10 minutes, token 10 minutes and single use |
 
+## What Stanley did (phase P1)
+
+| Data | Fields | Purpose | Provider | Retention |
+|---|---|---|---|---|
+| Ledger | None of its own: a view (`GET /me/stanley/ledger`) over the action store rows that were done, failed, pending or undone. Each receipt shows kind, status, time, title, who it affects, who prepared it (a helper's name), the undo window and a receipt number, and the six fields are worded by the server from those | Show, explain, undo and stop what Stanley did | Server (the existing action store, `Providers:StanleyLog`) | As the action store today. **Open:** the plan's "detail for 90 days after disembark, then counters only" is not yet enforced; confirm the policy and add the purge before launch |
+| Watching and Remembers | Read from the permissions document (rows switched on) and the memory store (items and why) | Show them beside the receipts, each with its own stop | Server | As those stores |
+
+Nothing the guest typed is stored in the ledger. Undo goes through the existing undo, so the same window, checks and audit lines (`stanley.action.undo`) apply.
+
 Decision: the plan's tables (`StanleyPermissions`, `StanleyConsentLog`) are held as person state documents for now, which the server already keeps with versioned saves; move them to tables when the ledger (P1) needs queries across guests.
 
 ## Rules the tools keep

@@ -15,6 +15,7 @@ export function HelpCentreScreen() {
   return (
     <div className="page">
       <p><Link to="/me/stanley-can">{t('stanleyCan.link')}</Link></p>
+      <p><Link to="/me/stanley-activity">{t('stanleyActivity.link')}</Link></p>
       <Field label={t('faq.search')} hint={t('faq.searchHint')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
       <p role="status" className="muted">{query.trim() ? t('faq.count', { count: results.length }) : ''}</p>
       {results.length === 0 ? (

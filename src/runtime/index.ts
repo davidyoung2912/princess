@@ -113,6 +113,12 @@ export const stanleyActions = {
   waiting: () => http.get<unknown>('/me/stanley/actions/waiting'),
 }
 
+/** What Stanley did, is watching and remembers (phase P1). Undo of one act is `stanleyActions.undo`; switching a watch off is `stanleyPermissions.setRow`; forgetting is `stanleyMemory.forget`. */
+export const stanleyLedger = {
+  get: () => http.get<unknown>('/me/stanley/ledger'),
+  undoToday: () => http.post<unknown>('/me/stanley/ledger/undo-today', {}),
+}
+
 /** Group polls kept by the server for the guest's booking. Only the person who made a poll may close, extend or remove it. */
 export const stanleyPolls = {
   list: () => http.get<unknown>('/me/stanley/polls'),
