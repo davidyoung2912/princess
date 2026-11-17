@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
+import { PACES, type Pace } from '../../ai/stanleyStanding'
 import { normalizeTripSoFar, type TripSoFar } from '../../ai/stanleyTripSoFar'
 import { t, th } from '../../i18n'
 import { stanleyTripSoFar } from '../../runtime'
@@ -14,6 +15,8 @@ export function StanleyTripSoFarCard() {
   const [result, setResult] = useState<TripSoFar | null>(null)
   const [failed, setFailed] = useState(false)
   const [busy, setBusy] = useState(true)
+  const [saved, setSaved] = useState<Pace | null>(null)
+  const [saveFailed, setSaveFailed] = useState(false)
   const live = useRef(true)
 
   const read = useCallback(() => stanleyTripSoFar.get().then(
@@ -56,6 +59,21 @@ export function StanleyTripSoFarCard() {
             ))}
           </ul>
         </section>
+      )}
+      {result?.enabled && result.confirmed > 0 && (
+        <fieldset className="stack" aria-describedby="tripsofar-pace-hint">
+          <legend>{t('stanleyTrip.pace')}</legend>
+          <p id="tripsofar-pace-hint">{t('stanleyTrip.paceHint')}</p>
+          <div className="button-row">
+            {PACES.map((p) => (
+              <Button key={p} variant={(saved ?? result.pace) === p ? 'primary' : 'secondary'} aria-pressed={(saved ?? result.pace) === p} disabled={busy}
+                onClick={() => { setSaveFailed(false); stanleyTripSoFar.answer(p).then(() => { setSaved(p); void read() }, () => setSaveFailed(true)) }}>
+                {t(`stanleyTrip.pace.${p}`)}
+              </Button>
+            ))}
+          </div>
+          {saveFailed && <p role="alert" className="field__error">{t('stanleyTrip.paceError')}</p>}
+        </fieldset>
       )}
       {result?.enabled && result.notMeasured.length > 0 && (
         <section aria-labelledby="tripsofar-not">

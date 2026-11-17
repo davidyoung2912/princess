@@ -181,6 +181,8 @@ services.AddScoped<StanleyBundleService>();
 services.AddScoped<StanleyChecklistService>();
 services.AddScoped<StanleyShipGroupService>();
 services.AddScoped<StanleyTripSoFarService>();
+services.AddScoped<StanleyStandingService>();
+services.AddScoped<StanleyControlService>();
 services.AddScoped<StanleyBriefService>();
 services.AddScoped<IStanleyDueHandler, StanleyBriefDueHandler>();
 services.AddScoped<PrivacyService>();

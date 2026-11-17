@@ -190,3 +190,20 @@ Nothing new is stored. `GET /me/stanley/trip-so-far` counts the guest's own ledg
 | Stanley ledger counts (kind and done or undone per act) | the three counts, and a suggestion when one kind has three yeses and no undo (offer more) or two undos (offer to ask first) | numbers and one sentence per kind; no titles, no guest words |
 
 A suggestion is words and a link to the "what Stanley can do" screen. It never changes a level, switches a row on or acts. The answer lists what it does not measure: time saved, and whether a suggestion was right unless it was undone. It is off for a supervised account and when the tools switch is off, and is not sent to a model.
+
+## Standing rules, availability watch, practice mode, plain-words control and the pace answer (phase P9a v1, 4.D, VAL-03, 19.2, 19.4, 19.5)
+
+Stored, in the guest's account state under the key `stanleyStanding` (so every device sees the same): the guest's rules (at most ten) and their answer to "More, the same, or less?". A rule is a template id (RUL-01 to RUL-06 or VAL-03), whether it is in practice, and where the template needs one a restaurant or tour id, a day number and a dinner time, plus the last count of free places a watch saw. No guest words are stored. The plain-words control stores nothing: the sentence is read once against six fixed controls and dropped.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| the rule the guest made | which rules to check, and their own wording | the rule's sentence, day and time |
+| the watch the guest made | the restaurant or tour, night and time to look at, and the last count seen | an item only when places went from none to some |
+| booked tours and dinners | RUL-01 (a tour affected by a change) and RUL-02 (a dinner at the guest's time) | the tour or dinner name, its day and time |
+| change list for the trip | the programme, port, reservation and tender changes already shown on the change screen | the change's title and whether it is serious |
+| places left on tours | same-day alternatives for RUL-01 and the space watch | up to three tour names |
+| tables and places left | the table and space watches | whether anything is free, not the count |
+| check-in window | RUL-03 | whether check-in is open or when it opens |
+| the sentence, read once and not kept | plain-words control | one of six fixed controls shown back for confirmation |
+
+A rule only notices or lines something up for the guest to open. It never books, pays, cancels, holds a table or place, or messages anyone. Rules work only while their permission row is on (CL-05 and CL-07 need level 3, which stays off behind the operator's Authority switch; CL-02 for the notice rules), at most five prepared items are shown (the rest are counted), and a rule in practice lists what it would have offered and offers nothing until the guest graduates it with one tap. Rules are read when the guest opens the screen; there is no background run yet. The answer lists what is not checked. The pace answer moves only when a suggestion is made (less: no "more" suggestion; more: after two yeses) and never changes a level. Off for a supervised account and when the tools switch is off; nothing here is sent to a model.

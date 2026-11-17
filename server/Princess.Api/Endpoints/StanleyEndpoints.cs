@@ -115,6 +115,26 @@ public static class StanleyEndpoints
         api.MapGet("/me/stanley/trip-so-far", async (ICurrentUser me, StanleyTripSoFarService svc, CancellationToken ct) => Results.Ok(await svc.RunAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Stanley").WithSummary("Stanley's trip so far (19.5) and level suggestions (19.3): { enabled, done, confirmed, undone, suggestions[{ id, direction (more, ask-first), kind, text, route }], notMeasured[], asOf }. " +
                 "Read-only, counted from the ledger only: a suggestion is words and a screen to open, never a change of level or switch.");
+        var standing = api.MapGroup("/me/stanley/rules").WithTags("Stanley");
+        standing.MapGet("", async (ICurrentUser me, StanleyStandingService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The guest's standing rules (RUL-01 to RUL-06) and availability watches (VAL-03): { enabled, hasTrip, templates[{ id, wording, trigger, rung, row (the permission row that must be on), param (none, time, day, table, tour) }], rules[{ id, template, wording, rung, practice, target, day, time, state (on, practice, needsPermission) }], items[{ id, ruleId, template, kind (notice, prepared), critical, title, detail, route }], practice[the same with kind would], rolled (prepared items beyond five), maxRules, notChecked[], asOf }. " +
+                "Rules are read when asked, not in the background. A rule never books, pays, cancels, holds a place or messages anyone; the rung 3 rows need level 3.");
+        standing.MapPost("", async (StandingRequest body, ICurrentUser me, StanleyStandingService svc, CancellationToken ct) => Results.Ok(await svc.AddAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Makes a rule from a template { template, target, day, time, practice }. 400 template, full (ten rules), time, day, target or duplicate; 403 child account.");
+        standing.MapDelete("/{id}", async (string id, ICurrentUser me, StanleyStandingService svc, CancellationToken ct) => Results.Ok(await svc.RemoveAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("Removes a rule. 404 for a rule that is not the guest's.");
+        standing.MapPut("/{id}/practice", async (string id, StandingPracticeRequest body, ICurrentUser me, StanleyStandingService svc, CancellationToken ct) => Results.Ok(await svc.SetPracticeAsync(await me.LoadAsync(ct), id, body.Practice, ct)))
+            .WithSummary("Puts a rule in practice (it lists what it would have offered and offers nothing) or graduates it { practice: false } with one tap.");
+
+        api.MapPut("/me/stanley/trip-so-far/answer", async (PaceRequest body, ICurrentUser me, StanleyStandingService svc, CancellationToken ct) => { await svc.SetPaceAsync(await me.LoadAsync(ct), body.Answer, ct); return Results.NoContent(); })
+            .WithTags("Stanley").WithSummary("The guest's answer to \"More, the same, or less?\" { answer: more, same, less }. It moves when a level suggestion comes and never changes a level. 400 answer, 403 child account.");
+
+        var control = api.MapGroup("/me/stanley/control").WithTags("Stanley");
+        control.MapPost("", async (ControlRequest body, ICurrentUser me, StanleyControlService svc, CancellationToken ct) => Results.Ok(await svc.ProposeAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Reads a sentence as one of six controls and shows it back { text }: { understood, id, label, detail, needsConfirm, route, examples[] }. Changes nothing and stores nothing. 403 child account.");
+        control.MapPost("/confirm", async (ControlConfirmRequest body, ICurrentUser me, StanleyControlService svc, CancellationToken ct) => Results.Ok(await svc.ConfirmAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Applies a control the guest confirmed { id }: { applied, message, route }. 400 id, 403 child account.");
+
         api.MapGet("/me/stanley/ship-group", async (ICurrentUser me, StanleyShipGroupService svc, CancellationToken ct) => Results.Ok(await svc.RunAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Stanley").WithSummary("The missed-ship guard (CHK-03) and group gaps (CHK-07): { hasTrip, findings[{ id, severity (critical, soon, ok), title, detail, route }], notChecked[], clear, asOf }. Read-only: it sends nothing, contacts nobody and answers no poll; the guard only speaks about a guest who said they are ashore or leaving.");
         api.MapGet("/me/stanley/bundle", async (string? scope, string? pace, int? day, ICurrentUser me, StanleyBundleService svc, CancellationToken ct) => Results.Ok(await svc.PreviewAsync(await me.LoadAsync(ct), scope, pace, day, ct)))

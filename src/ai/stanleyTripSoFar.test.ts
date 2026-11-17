@@ -16,4 +16,8 @@ describe('normalizeTripSoFar', () => {
     const r = normalizeTripSoFar({ enabled: true, suggestions: [s('a', '/me/stanley-can', 'auto'), s('b', '//evil.example'), s('c', 'https://x'), s('d')] })!
     expect(r.suggestions.map((x) => x.id)).toEqual(['d'])
   })
+  it('keeps only a known answer to the pace question', () => {
+    expect(normalizeTripSoFar({ enabled: true, pace: 'less' })!.pace).toBe('less')
+    expect(normalizeTripSoFar({ enabled: true, pace: 'auto' })!.pace).toBe('')
+  })
 })

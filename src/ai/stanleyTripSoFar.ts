@@ -3,7 +3,7 @@
  * A suggestion is a sentence and a screen to open: nothing here changes a level or switches anything on. Framework-free, so it is tested in node.
  */
 export interface LevelSuggestion { id: string; direction: 'more' | 'ask-first'; text: string; route: string }
-export interface TripSoFar { enabled: boolean; done: number; confirmed: number; undone: number; suggestions: LevelSuggestion[]; notMeasured: string[]; asOf: string | null }
+export interface TripSoFar { enabled: boolean; done: number; confirmed: number; undone: number; suggestions: LevelSuggestion[]; notMeasured: string[]; asOf: string | null; pace: '' | 'more' | 'same' | 'less' }
 
 const str = (v: unknown, max: number): string => (typeof v === 'string' ? v.slice(0, max) : '')
 const count = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.min(Math.floor(v), 100000) : 0)
@@ -27,5 +27,6 @@ export function normalizeTripSoFar(raw: unknown): TripSoFar | null {
     suggestions: (Array.isArray(o.suggestions) ? o.suggestions.flatMap((x) => { const s = suggestion(x); return s ? [s] : [] }) : []).slice(0, 10),
     notMeasured: Array.isArray(o.notMeasured) ? o.notMeasured.filter((x): x is string => typeof x === 'string').slice(0, 6).map((x) => x.slice(0, 200)) : [],
     asOf: str(o.asOf, 30) || null,
+    pace: o.pace === 'more' || o.pace === 'same' || o.pace === 'less' ? o.pace : '',
   }
 }

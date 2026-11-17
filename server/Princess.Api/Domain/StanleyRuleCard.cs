@@ -52,7 +52,31 @@ public static class StanleyRuleCards
             "What have you done for me so far?", ["journey-solo"], ["Stanley ledger counts"]),
         Check("TRUST-03", "Level suggestion", ["sea", "port"], "Three yeses with no undo, or two undos, of one kind", "counts of confirmed and undone acts of one kind, from the ledger", "the guest opens the screen or ignores it; nothing changes either way",
             "Should you do more of this for me?", ["journey-solo"], ["Stanley ledger counts"]),
+        Rule("RUL-01", "Replace a cancelled or moved tour", StanleyTrigger.Change, "A tour is booked and a change is on record for its day", "booked tours, the change list and places left on same-day tours", "Your tour is cancelled. Find me a replacement.",
+            ["tour-cancelled"], ["booked tours and dinners", "change list for the trip", "places left on tours"], "CL-05"),
+        Rule("RUL-02", "Keep my dinner time", StanleyTrigger.Change, "A dinner is booked and the programme changes that day", "booked dinners, the change list and the time the guest chose", "Keep my dinner at 8:00 if the show moves.",
+            ["journey-solo"], ["booked tours and dinners", "change list for the trip"], "CL-05"),
+        Rule("RUL-05", "Table watch", StanleyTrigger.Inventory, "The guest named a restaurant and a night", "tables left at the named restaurant, now and at the last look", "Tell me if a table opens on Thursday.",
+            ["journey-solo"], ["tables and places left", "the watch the guest made"], "CL-07"),
+        Rule("VAL-03", "Space watch", StanleyTrigger.Inventory, "The guest named a tour", "places left on the named tour, now and at the last look", "Tell me if this excursion gets space.",
+            ["journey-solo"], ["tables and places left", "the watch the guest made"], "CL-07"),
+        Check("RUL-03", "Check-in opens", ["manage", "prebook"], "A booking is linked", "the check-in state and opening time", "check-in is finished or the guest removes the rule",
+            "Tell me when check-in opens.", ["journey-solo"], ["check-in window"]),
+        Check("RUL-04", "Tender delay", ["port"], "A tender port is on the sailing", "tender changes on record", "the port day passes or the guest removes the rule",
+            "Tell me if tenders are delayed.", ["tender-delayed"], ["change list for the trip"]),
+        Check("RUL-06", "Formal clothes reminder", ["sea", "port"], "The guest named a formal night", "the day the guest named and today's day number", "the night passes or the guest removes the rule",
+            "Remind me to set out my formal clothes.", ["journey-solo"], ["the rule the guest made"]),
+        Check("TRUST-02", "Practice mode", ["sea", "port"], "A rule is switched to practice", "what the rule would have offered, listed and not offered", "the guest graduates the rule or removes it",
+            "Show me what you would do.", ["journey-solo"], ["the rule the guest made"]),
+        Check("TRUST-04", "Control in plain words", [], "The guest types a sentence in the control box", "the sentence, read against six fixed controls and not kept", "the guest confirms or closes it",
+            "Be more careful.", ["journey-solo"], ["the sentence, read once and not kept"]),
     ];
+
+    /// <summary>A rung 3 rule: it lines something up and asks for the guest's yes; it never books, holds or messages anyone, and works only while its permission row is on.</summary>
+    private static StanleyRuleCard Rule(string id, string name, string trigger, string appliesWhen, string inputs, string prompt, string[] fixtures, string[] privacy, string row) =>
+        new(id, name, ["sea", "port"], 3, 3, StanleyActClass.Prepare, appliesWhen, trigger, inputs, 15, "a prepared item with a screen to open",
+            [$"standing.{id}.title", $"standing.{id}.detail"], [], 5, 1, "Stanley:Switches:Tools", ["items prepared", "items opened", "rules removed"], prompt, fixtures, privacy,
+            "A plain list, one heading per item, every action a link with words; no colour-only meaning", $"Never books, pays, cancels, holds a table or place, or messages anyone. It works only while permission row {row} is on and stops when the guest removes the rule.");
 
     /// <summary>A rung 1 notice: answers when asked, never changes anything, and its fix is only a screen to open.</summary>
     private static StanleyRuleCard Check(string id, string name, string[] stages, string appliesWhen, string inputs, string stops, string prompt, string[] fixtures, string[] privacy) =>

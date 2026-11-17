@@ -6,7 +6,7 @@ public sealed record LedgerTally(string Kind, bool Undone);
 /// <summary>A suggestion to change how much Stanley asks. <c>Direction</c> is <c>more</c> (offer to do it for the guest) or <c>ask-first</c>; it is only ever shown, never applied.</summary>
 public sealed record LevelSuggestion(string Id, string Direction, string Kind, string Text, string Route);
 
-public sealed record TripSoFarDto(bool Enabled, int Done, int Confirmed, int Undone, IReadOnlyList<LevelSuggestion> Suggestions, IReadOnlyList<string> NotMeasured, string? AsOf);
+public sealed record TripSoFarDto(bool Enabled, int Done, int Confirmed, int Undone, IReadOnlyList<LevelSuggestion> Suggestions, IReadOnlyList<string> NotMeasured, string? AsOf, string Pace = "");
 
 /// <summary>
 /// "Stanley's trip so far" (19.5) and level suggestions (19.3), docs/stanley-actions-and-proactive-plan.md section 19. Pure and deterministic. Counts come only from the ledger (what was done, what was undone); nothing is claimed that is not counted.
@@ -37,8 +37,10 @@ public static class StanleyTripSoFarRules
         _ => "",
     };
 
-    public static IReadOnlyList<LevelSuggestion> Suggestions(IReadOnlyList<LedgerTally> rows)
+    /// <summary>The guest's own answer to "More, the same, or less?" moves how early a suggestion comes: <c>less</c> offers no "more" at all, <c>more</c> offers it after two yeses. It never changes a level.</summary>
+    public static IReadOnlyList<LevelSuggestion> Suggestions(IReadOnlyList<LedgerTally> rows, string pace = "")
     {
+        var needed = pace == "more" ? ConfirmsForMore - 1 : ConfirmsForMore;
         var list = new List<LevelSuggestion>();
         foreach (var g in rows.Where(r => Phrase(r.Kind).Length > 0).GroupBy(r => r.Kind).OrderBy(g => g.Key, StringComparer.Ordinal))
         {
@@ -47,15 +49,15 @@ public static class StanleyTripSoFarRules
             var what = Phrase(g.Key);
             if (undone >= UndosForAskFirst)
                 list.Add(new($"ask:{g.Key}", "ask-first", g.Key, $"You have undone {what} {undone} times. Want me to ask first from now on? You can check how much I do on my own.", Route));
-            else if (undone == 0 && kept >= ConfirmsForMore)
+            else if (undone == 0 && kept >= needed && pace != "less")
                 list.Add(new($"more:{g.Key}", "more", g.Key, $"You have said yes to {what} {kept} times. Want me to do more of this for you? Nothing changes unless you choose it.", Route));
         }
         return list;
     }
 
-    public static TripSoFarDto Build(IReadOnlyList<LedgerTally> rows, string asOf)
+    public static TripSoFarDto Build(IReadOnlyList<LedgerTally> rows, string asOf, string pace = "")
     {
         var undone = rows.Count(r => r.Undone);
-        return new(true, rows.Count - undone, rows.Count, undone, Suggestions(rows), NotMeasured(), asOf);
+        return new(true, rows.Count - undone, rows.Count, undone, Suggestions(rows, pace), NotMeasured(), asOf, pace);
     }
 }

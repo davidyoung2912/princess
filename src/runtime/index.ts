@@ -129,6 +129,22 @@ export const stanleyCheckup = {
 /** Stanley's trip so far and level suggestions (phase P9a). Read-only; a suggestion changes nothing. */
 export const stanleyTripSoFar = {
   get: () => http.get<unknown>('/me/stanley/trip-so-far'),
+  /** The guest's answer to "More, the same, or less?". It only moves when a suggestion is made; it never changes a level. */
+  answer: (answer: 'more' | 'same' | 'less') => http.put<void>('/me/stanley/trip-so-far/answer', { answer }),
+}
+
+/** Standing rules, the availability watch and practice mode (phase P9a). A rule only notices or lines something up for the guest to open. */
+export const stanleyStanding = {
+  get: () => http.get<unknown>('/me/stanley/rules'),
+  add: (body: object) => http.post<unknown>('/me/stanley/rules', body),
+  remove: (id: string) => http.delete<unknown>(`/me/stanley/rules/${encodeURIComponent(id)}`),
+  setPractice: (id: string, practice: boolean) => http.put<unknown>(`/me/stanley/rules/${encodeURIComponent(id)}/practice`, { practice }),
+}
+
+/** Control in plain words (phase P9a): a sentence is read as one of six fixed controls, shown back, and applied only on the guest's confirm. */
+export const stanleyControl = {
+  propose: (text: string) => http.post<unknown>('/me/stanley/control', { text }),
+  confirm: (id: string) => http.post<unknown>('/me/stanley/control/confirm', { id }),
 }
 
 /** The missed-ship guard and group gaps (phase P8). Read-only; nothing is sent and no poll is answered. */
