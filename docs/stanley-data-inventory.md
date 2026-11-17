@@ -82,3 +82,17 @@ Phase 10 follow-up: `dbo.PackingEdits` holds the guest's own packing changes per
 | Plan as last sent | Titles and times only, as already held for plan changes (`StanleyPlanSnapshots`); now also read to move or end anchored reminders | Follow a moved or dropped plan item | Server | As that table (a day) |
 
 The text of a reminder is only what the guest typed or chose, or the title of a plan item they pointed at. The preview, the receipt and the list say the exact moment with the weekday, date and zone. A reminder never carries a link. The parser is deterministic and runs on the server; no text is sent to a model for reminders in this phase. A request to remind someone else, or to repeat, is refused with the reason.
+
+## Trip check-up, plan lint and deadline radar (phase P3, CHK-01, CHK-02 and CHK-08)
+
+Nothing new is stored. `GET /me/stanley/checkup` works out its answer from data already held for the guest's current or next confirmed trip and returns it without keeping it. The inputs, and what leaves the server:
+
+| Input | Used for | In the answer |
+|---|---|---|
+| document status per traveller | whether a required document is missing, expired, or a passport too close to expiring | only the finding's words and a route; travellers are "Traveller 2" by position, never a name, number, date of birth or document number |
+| payment state and due date | an overdue or coming-due final payment | the due date and a route to Payments; no amount, card or total |
+| check-in window | check-in open and not finished, or closing within a day | words and a route |
+| booked tours and dinners | a tour ending after or close to all aboard, starting before the ship can be ashore, overlapping another tour or dinner, or a dinner on a late port day | tour or venue name, day and times |
+| sailing days and all-aboard times | the same | times |
+
+It is read-only (it never writes, books or changes anything, and a fix is only a screen to open), is for the signed-in guest only, and is not sent to a model. What it cannot see (flights and the travel-day connection, whether names match documents, whether a tour suits a traveller's pace) is listed in the answer as not checked, never reported as all clear. The scheduled run and the permission row CL-01 follow with the briefs and deadline notices phase.

@@ -22,7 +22,21 @@ public sealed record StanleyRuleCard(
 /// <summary>The registry and the checks. Each later phase adds one card per rule to <see cref="All"/>; the harness test then holds them to the format.</summary>
 public static class StanleyRuleCards
 {
-    public static readonly IReadOnlyList<StanleyRuleCard> All = [];
+    public static readonly IReadOnlyList<StanleyRuleCard> All =
+    [
+        Check("CHK-01", "Trip check-up", ["manage", "prebook", "travel"], "A booking is linked", "documents, payment and check-in state of the booking", "the guest saves a document, pays or finishes check-in, and the finding goes",
+            "Check my trip for problems", ["journey-solo", "journey-family"], ["document status per traveller", "payment state and due date", "check-in window"]),
+        Check("CHK-02", "Plan lint", ["prebook", "embark", "sea", "port"], "A tour or dinner is booked", "booked tours and dinners against the sailing's arrival, all aboard and dinner times", "the guest moves or removes the tour or dinner, and the finding goes",
+            "Does my plan clash with anything?", ["tour-cancelled", "journey-family"], ["booked tours and dinners", "sailing days and all-aboard times"]),
+        Check("CHK-08", "Deadline radar", [], "A booking is linked", "final payment, check-in opening and closing, and documents still missing", "the date passes or the guest does what it asks",
+            "What dates can cost me something?", ["journey-solo"], ["payment due date", "check-in window", "document status per traveller"]),
+    ];
+
+    /// <summary>A rung 1 notice: answers when asked, never changes anything, and its fix is only a screen to open.</summary>
+    private static StanleyRuleCard Check(string id, string name, string[] stages, string appliesWhen, string inputs, string stops, string prompt, string[] fixtures, string[] privacy) =>
+        new(id, name, stages, 2, 1, StanleyActClass.Notice, appliesWhen, StanleyTrigger.State, inputs, 15, "list of findings with a screen to open for each",
+            [$"checkup.{id}.title", $"checkup.{id}.detail"], [], 4, 1, "Stanley:Switches:Tools", ["findings per check-up", "fixes opened", "false alarms reported"], prompt, fixtures, privacy,
+            "A plain list, one heading per finding, every action a link with words; no colour-only meaning", $"Never changes a booking, document, payment or plan, and never calls a document official. It stops when {stops}.");
 
     private static readonly Regex AiWord = new(@"\bAI\b|artificial intelligence", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 

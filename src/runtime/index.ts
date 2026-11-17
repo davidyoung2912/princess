@@ -121,6 +121,11 @@ export const stanleyReminders = {
   remove: (id: string) => http.delete<void>(`/me/stanley/reminders/${encodeURIComponent(id)}`),
 }
 
+/** The trip check-up, plan lint and deadline radar (phase P3). Read-only: a fix is only a screen to open. */
+export const stanleyCheckup = {
+  get: () => http.get<unknown>('/me/stanley/checkup'),
+}
+
 /** What Stanley did, is watching and remembers (phase P1). Undo of one act is `stanleyActions.undo`; switching a watch off is `stanleyPermissions.setRow`; forgetting is `stanleyMemory.forget`. */
 export const stanleyLedger = {
   get: () => http.get<unknown>('/me/stanley/ledger'),

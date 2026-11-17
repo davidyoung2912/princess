@@ -175,6 +175,7 @@ services.AddScoped<StanleyTravelService>();
 services.AddScoped<StanleyTravellerService>();
 services.AddScoped<StanleyChangeService>();
 services.AddScoped<StanleyMoneyService>();
+services.AddScoped<StanleyCheckupService>();
 services.AddScoped<PrivacyService>();
 services.AddScoped<DiscoverService>();
 services.AddScoped<BookingService>();

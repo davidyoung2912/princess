@@ -101,6 +101,10 @@ public static class StanleyEndpoints
             .WithTags("Stanley")
             .WithSummary("The guest's receipts for what Stanley did, newest first (up to 50): done, failed, pending and undone actions with their receipt number and times. The Trust Ledger lists them.");
 
+        api.MapGet("/me/stanley/checkup", async (ICurrentUser me, StanleyCheckupService svc, CancellationToken ct) => Results.Ok(await svc.RunAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Stanley").WithSummary("Trip check-up, plan lint and deadline radar for the guest's current or next trip: { hasTrip, findings[{ id, rule (CHK-01 trip, CHK-02 plan), consequence (safety, lostReservation, conflict, improvement, optional), title, detail, day, due, fix{ label, route } }] ranked most serious first, " +
+                "deadlines[{ id, consequence, title, date, daysLeft, fix }], notChecked[] (what it cannot see; it never reports silence as all clear), clean, asOf }. Read-only: it changes nothing and a fix is only a screen to open.");
+
         var ledger = api.MapGroup("/me/stanley/ledger").WithTags("Stanley");
         ledger.MapGet("", async (ICurrentUser me, StanleyActivityService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("What Stanley did, is watching and remembers, for the signed-in guest: { paused, pausedUntil, undoableNow, did[{ id, number, kind, status (done, failed, pending, undone), at, what, why, facts, affects, undo (in words), undoUntil, canUndo, stop }], watching[{ id (checklist row), wording, example, never }], remembers { enabled, count, items[{ id, text, reason }] } }. " +
