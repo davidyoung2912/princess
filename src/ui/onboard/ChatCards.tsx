@@ -123,7 +123,7 @@ export function ShareChooser({ conversation, onSent }: { conversation: ChatConve
   const items = data ? sortShareables(data.items) : []
   const places = data ? sortPlaces(data.places) : []
   return (
-    <details className="chat-share" onToggle={(e) => setOpen(e.currentTarget.open)}>
+    <details className="chat-share chat-more--tools" onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary>{t('conv.share')}</summary>
       <p className="muted">{t('conv.share.hint')}</p>
       <p role="status" className="visually-hidden">{announce}</p>

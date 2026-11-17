@@ -118,7 +118,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
         {help === 'pocket' && <PocketPanel />}
         <HandoffCases />
         <form className="stanley__form" onSubmit={(e) => void submit(e)} noValidate>
-          <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={4} />
+          <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={3} />
           <Button type="submit" disabled={busy || cooldown > 0}>{t('stanley.send')}</Button>
         </form>
         {cooldown > 0 && <p role="status" className="muted stanley__note">{t('stanley.cooldown', { seconds: cooldown })}</p>}

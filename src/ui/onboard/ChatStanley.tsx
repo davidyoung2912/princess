@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { CalendarPlus, ShieldCheck } from 'lucide-react'
+import { CalendarPlus, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import stanleyPicture from '../../assets/stanley-small.png'
 import type { ApiError } from '../../api/errors'
 import type { ChatCatchUp, ChatIcebreakers, ChatMessage, ChatMessageCheck, ChatPlanPreview, ChatReword, ChatRewordMode, ChatStanleyTap, ChatTerm } from '../../api/chatTypes'
@@ -82,7 +82,7 @@ export function StanleyTapNote({ conversationId, tap, onChanged }: { conversatio
       {tap.available && <p className="muted" role="note">{t('cst.askNote')}</p>}
       {tap.available && (
         <>
-          <div className="button-row"><Button variant="secondary" disabled={hide.busy} onClick={() => void hide.run(tap.muted !== true)}>{t(tap.muted ? 'cst.unmute' : 'cst.mute')}</Button></div>
+          <div className="button-row"><Button variant="secondary" icon={tap.muted ? Eye : EyeOff} disabled={hide.busy} onClick={() => void hide.run(tap.muted !== true)}>{t(tap.muted ? 'cst.unmute' : 'cst.mute')}</Button></div>
           <p className="muted">{t('cst.muteBody')}</p>
           <ActionError error={hide.error} />
         </>

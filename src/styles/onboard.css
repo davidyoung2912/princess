@@ -509,7 +509,7 @@ button.chat-quote { cursor: pointer; }
 .composer .urgency-pick .muted { flex-basis: 100%; margin: 0; }
 
 /* The message history scrolls in its own box above the message area; the message area no longer floats over it. */
-.chat-scroll { max-height: calc(100dvh - 21rem); min-height: 12rem; overflow-y: auto; overscroll-behavior: contain; padding: var(--space-2); border: 2px solid var(--primary); border-radius: var(--radius-card); background: color-mix(in srgb, var(--sky-tint) 55%, var(--bg)); }
+.chat-scroll { height: 22rem; min-height: 12rem; max-height: none; resize: vertical; overflow-y: auto; overscroll-behavior: contain; padding: var(--space-2); border: 2px solid var(--primary); border-radius: var(--radius-card); background: color-mix(in srgb, var(--sky-tint) 55%, var(--bg)); }
 .composer { position: static; }
 .chat-quick__btn { min-height: 2rem; min-width: 2rem; padding: 0; display: inline-grid; place-items: center; border-radius: 50%; }
 .chat-quick__btn svg { width: 1.1rem; height: 1.1rem; }
@@ -555,15 +555,27 @@ button.chat-quote { cursor: pointer; }
 /* Stanley's answers to questions in the thread: the same very light yellow as in his own window. */
 .chat-msg--answer { background: color-mix(in srgb, var(--warning-tint) 55%, var(--bg)); }
 
-/* "Chat tools and settings" sits at the bottom of the chat as a bordered, expanding section: a chevron at the end points down when closed and up when open. */
-.chat-more--tools { margin: var(--space-3) 0 0; border: 2px solid var(--primary); border-radius: var(--radius-card); background: var(--bg); }
-.chat-more--tools > summary { list-style: none; justify-content: space-between; gap: var(--space-2); padding: 0 var(--space-3); }
+/* "Chat tools and settings" sits at the bottom of the chat as an expanding section styled like "How to Play" in the games: a chevron that flips when open, a light blue panel when open, and a lift and glow on hover. */
+.chat-more--tools {
+  margin: var(--space-5) 0 0; padding: 0 var(--space-3); box-sizing: border-box;
+  border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-card); background: var(--bg); box-shadow: var(--shadow-card);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.chat-more--tools[open] { background: var(--brand-tint); border-color: var(--primary-dark); }
+.chat-more--tools:has(> summary:hover) {
+  transform: translateY(-2px); border-color: var(--primary-dark);
+  box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
+}
+.chat-more--tools:has(> summary:active) { transform: translateY(0) scale(0.99); box-shadow: none; }
+.chat-more--tools > summary { min-height: var(--target-min); display: flex; align-items: center; gap: var(--space-2); font-weight: 700; color: var(--primary); cursor: pointer; list-style: none; padding: 0; }
 .chat-more--tools > summary::-webkit-details-marker { display: none; }
-.chat-more--tools > summary::after { content: ''; flex: none; width: 0.6rem; height: 0.6rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-25%) rotate(45deg); }
-.chat-more--tools[open] > summary::after { transform: translateY(25%) rotate(-135deg); }
-.chat-more--tools > :not(summary) { margin-inline: var(--space-3); }
+.chat-more--tools > summary::after { content: ''; flex: none; margin-inline-start: auto; width: 0.55rem; height: 0.55rem; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-2px); transition: transform var(--t-fast) var(--ease); }
+.chat-more--tools[open] > summary::after { transform: rotate(-135deg); }
+.chat-more--tools > :not(summary) { margin-inline: 0; }
 .chat-more--tools > :last-child { margin-bottom: var(--space-3); }
 .chat-more--tools[open] > summary { margin-bottom: var(--space-2); }
+@media (prefers-reduced-motion: reduce) { .chat-more--tools, .chat-more--tools > summary::after { transition: none; } .chat-more--tools:has(> summary:hover), .chat-more--tools:has(> summary:active) { transform: none; } }
+:root[data-motion='reduced'] .chat-more--tools:is(:has(> summary:hover), :has(> summary:active)) { transform: none; }
 
 /* Message actions (react, reply, pin, calendar, edit, delete) run along the bottom of the card instead of floating at the top right. */
 .chat-msg:has(> .chat-msg__tools), .chat-msg:has(> .chat-msg__actions-wrap) { display: flex; flex-direction: column; }
@@ -576,10 +588,35 @@ button.chat-quote { cursor: pointer; }
 .composer .chat-more > summary { font-size: var(--fs-body, 1rem); }
 
 /* The chat message box matches the Ask Stanley box: the label on its own line, then the taller box with the Send button beside it, centred on it. Everything else spans the full width. */
-.composer--chat { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.composer--chat { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
 .composer--chat > * { order: 4; flex: 0 0 100%; }
 .composer--chat > .field { display: contents; }
 .composer--chat > .field > * { order: 2; flex: 1 1 0; min-width: 0; }
-.composer--chat > .field > label { order: 1; flex: 0 0 100%; }
-.composer--chat > details:has(> .urgency-pick), .composer--chat > .chat-replying { order: 0; }
+.composer--chat > .field > .field__top { order: 1; flex: 0 0 100%; }
+.composer--chat > .field > .field__hint { order: 1; flex: 0 0 100%; }
+.composer--chat > .chat-replying { order: 0; }
 .composer--chat > button[type='submit'] { order: 3; flex: none; min-height: var(--target-min); padding-inline: var(--space-5); }
+
+/* "How important is this?" and "Writing helpers" show the classic disclosure triangle to the left of the text: pointing right when collapsed, down when open. */
+.composer .chat-more--inline > summary { gap: var(--space-2); }
+.composer .chat-more--inline > summary::before { content: ''; flex: none; width: 0; height: 0; border-block: 0.3rem solid transparent; border-inline-start: 0.5rem solid currentColor; transition: transform var(--t-fast) var(--ease); }
+.composer .chat-more--inline[open] > summary::before { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .composer .chat-more--inline > summary::before { transition: none; } }
+
+/* "Share from the app" and "Plan with the group" sit a little closer together. */
+.chat-share + .chat-share { margin-top: 0; }
+.chat-share > summary { min-height: 2.5rem; display: flex; align-items: center; }
+
+/* The quick-reply buttons lift slightly and glow on hover or keyboard focus. Reduced motion stops the lift. */
+.chat-quick__btn { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease); }
+.chat-quick__btn:is(:hover, :focus-visible) { transform: translateY(-2px); background: var(--brand-tint); box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 12px color-mix(in srgb, var(--primary-bright, var(--primary)) 40%, transparent); }
+.chat-quick__btn:active { transform: translateY(0) scale(0.96); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .chat-quick__btn { transition: none; } .chat-quick__btn:is(:hover, :focus-visible, :active) { transform: none; } }
+:root[data-motion='reduced'] .chat-quick__btn:is(:hover, :focus-visible, :active) { transform: none; }
+
+/* The strip scrolls sideways, which clips anything past its edge; room around the buttons keeps the hover glow whole (negative margins keep the layout where it was). */
+.chat-quick { padding: var(--space-3) var(--space-3); margin-block: calc(var(--space-3) * -1) calc(var(--space-2) * -1); margin-inline: calc(var(--space-3) * -1); }
+.composer .chat-quick { margin-top: calc(var(--space-3) * -1 + var(--space-1)); }
+
+/* "Share from the app" and "Plan with the group" use the same expanding-panel style as "Chat tools and settings", stacked with a small gap. */
+.chat-share.chat-more--tools { margin-top: var(--space-2); }

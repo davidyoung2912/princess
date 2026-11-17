@@ -277,7 +277,7 @@ export function PlanTools({ conversation, onSent }: { conversation: ChatConversa
     api.chatConversations.shareable().then((d) => setEvents(d.events ?? []), () => { asked.current = false; setFailed(true) })
   }, [open])
   return (
-    <details className="chat-share chat-plan-tools" onToggle={(e) => setOpen(e.currentTarget.open)}>
+    <details className="chat-share chat-plan-tools chat-more--tools" onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary>{t('cplan.tools')}</summary>
       <p className="muted">{t('cplan.tools.hint')}</p>
       <PollForm conversationId={conversation.id} onSent={onSent} />

@@ -46,7 +46,7 @@ import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { OctagonAlert, TriangleAlert } from '../icons'
-import { Check, CircleCheck, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, X, Footprints, type LucideIcon } from 'lucide-react'
+import { Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, X, Footprints, type LucideIcon } from 'lucide-react'
 
 /** A small icon for each quick reply; the words are its label. */
 const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
@@ -549,6 +549,17 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const typedMention = mentionOff || people.length === 0 ? null : mentionQuery(text, caret)
   const [full, setFull] = useState(false)
   const [sending, setSending] = useState<PendingMessage[]>([])
+  // A new card at the end (sent, still sending, or arrived) always brings the end of the history into view, so it is fully visible; loading older messages does not change the last one, so it never jumps.
+  const lastMessageId = messages[messages.length - 1]?.id
+  useEffect(() => {
+    if (phase !== 'ready') return
+    const box = logBox.current
+    if (!box) return
+    const down = () => { box.scrollTop = box.scrollHeight }
+    down()
+    const frame = requestAnimationFrame(down)
+    return () => cancelAnimationFrame(frame)
+  }, [phase, lastMessageId, sending.length])
   const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => {
     const answer = readAnswerJob(p)
     if (answer) return answer.kind === 'vote' ? api.chatConversations.vote(answer.conversation, answer.messageId, Number(answer.value)) : api.chatConversations.rsvp(answer.conversation, answer.messageId, answer.value as ChatRsvp)
@@ -717,7 +728,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             <p className="muted">{t(`urgent.explain.${level}`)}</p>
           </fieldset>
           </details>}
-          <TextArea label={t('chat.message')} value={text} rows={4} maxLength={MAX_TEXT} autoComplete="off"
+          <TextArea label={t('chat.message')} value={text} rows={3} maxLength={MAX_TEXT} autoComplete="off"
             onChange={(e) => {
               setText(e.target.value)
               setCaret(e.target.selectionStart ?? e.target.value.length)
@@ -1179,7 +1190,7 @@ function ChatMenu({ conversation, messages, now, busy, onMute, onArchive, onBloc
     <>
     {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- Escape is a shortcut for a menu whose controls all work by themselves */}
     <div ref={root} className="chat-menu" onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); close() } }}>
-      <Button variant="secondary" aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}>{t('conv.menu')}</Button>
+      <Button variant="secondary" icon={EllipsisVertical} aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}>{t('conv.menu')}</Button>
       {open && (
         <div className="chat-menu__panel" role="group" aria-label={t('conv.menu')}>
           <h3>{headingCase(t('conv.menuMute'))}</h3>
