@@ -295,3 +295,25 @@
 .cw-key:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
 
 .gx-card__meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin: var(--space-2) 0 0; padding: 0; list-style: none; font-size: 0.875rem; }
+
+/* Hover lift and glow on every game button (tools, digit pads, letter keys, Wordle keys), the same as the How to Play panel. Mouse only; the press still shrinks them. */
+.game-level span { transition: background-color var(--t-fast) var(--ease); }
+.sd-tool, .sd-digit, .cw-key, .wd-key {
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+@media (hover: hover) {
+  :is(.sd-tool, .sd-digit, .cw-key, .wd-key):hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
+  }
+  .cw-key--here:hover:not(:disabled) {
+    box-shadow: inset 0 0 0 2px var(--primary), 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
+  }
+  .game-level:not(:has(input:checked)):hover span { background: var(--brand-tint, color-mix(in srgb, var(--primary) 18%, var(--bg))); }
+}
+:is(.sd-tool, .sd-digit, .cw-key, .wd-key):active:not(:disabled) { transform: translateY(0) scale(0.95); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .sd-tool, .sd-digit, .cw-key, .wd-key, .game-level span { transition: none; }
+  :is(.sd-tool, .sd-digit, .cw-key, .wd-key):is(:hover, :active):not(:disabled) { transform: none; }
+}
+:root[data-motion='reduced'] :is(.sd-tool, .sd-digit, .cw-key, .wd-key):is(:hover, :active):not(:disabled) { transform: none; }
