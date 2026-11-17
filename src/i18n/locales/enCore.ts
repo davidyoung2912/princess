@@ -12589,7 +12589,6 @@ export const enCore = {
   'cst.planBody': 'Stanley turned this message into a poll for the group. Nothing is posted until you choose.',
   'cst.planPost': 'Post the poll',
   'cst.notNow': 'Not now',
-  'cst.words': 'What does this mean?',
   'cst.wordsTitle': 'Plain words',
   'cst.wordsNone': 'Stanley found no cruise words in this message.',
   'cck.ask': 'Ask Stanley about this message',

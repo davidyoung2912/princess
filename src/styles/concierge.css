@@ -37,8 +37,16 @@
 .stanley__empty p { margin: 0; font-size: var(--fs-caption); }
 .stanley__empty { overflow-y: auto; min-height: 0; }
 .stanley__tries { list-style: none; margin: var(--space-1) 0 0; padding: 0; display: grid; gap: var(--space-1); }
-.stanley__log { flex: 1 1 auto; min-height: 6rem; overflow-y: auto; margin: 0; gap: var(--space-2); }
+.stanley__log { flex: 1 1 auto; min-height: 6rem; overflow-y: auto; margin: 0; gap: var(--space-2); padding: var(--space-2); border: 2px solid var(--primary); border-radius: var(--radius-card); background: var(--sky-tint); }
 .stanley .ai-msg { padding: var(--space-2) var(--space-3); }
+/* Your questions stay white and Stanley's replies have a very light yellow, so the two read apart on the blue panel (the "You" / "Stanley" label still says it in words). */
+.stanley__log .ai-msg--user { background: var(--bg); }
+.stanley__log .ai-msg--assistant { background: color-mix(in srgb, var(--warning-tint) 55%, var(--bg)); }
+/* Hovering (or focusing inside) a message lifts it slightly and gives it a soft blue glow. Reduced-motion settings stop the transition (motion.css) and the lift. */
+.stanley__log .ai-msg { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+.stanley__log .ai-msg:hover, .stanley__log .ai-msg:focus-within { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), 0 4px 14px color-mix(in srgb, var(--primary) 35%, transparent); }
+@media (prefers-reduced-motion: reduce) { .stanley__log .ai-msg:hover, .stanley__log .ai-msg:focus-within { transform: none; } }
+:root[data-motion='reduced'] .stanley__log .ai-msg:hover, :root[data-motion='reduced'] .stanley__log .ai-msg:focus-within { transform: none; }
 .stanley__form { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: var(--space-2); flex: none; }
 .stanley__form .field { display: contents; }
 .stanley__form .field label { grid-column: 1 / -1; font-size: var(--fs-caption); margin-bottom: var(--space-1); }
@@ -192,3 +200,7 @@ img.tip__icon { box-sizing: border-box; width: 3.5rem; height: 3.5rem; padding: 
 /* Hidden for now: the row of links under the log (explain this screen, ask a person, show crew, pocket card). */
 .stanley__explain { display: none; }
 .stanley__form .field label { font-size: var(--fs-body, 1rem); }
+
+/* The info button's 44px tap height was what spaced the suggested questions out; keep it at 28px here (still above the 24px WCAG 2.2 minimum). */
+.stanley__tries .why-btn { min-height: 1.75rem; min-width: 1.75rem; }
+.stanley__tries .link-button { padding-block: 0; }

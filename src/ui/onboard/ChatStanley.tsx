@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { CalendarPlus, Lightbulb, ShieldCheck } from 'lucide-react'
+import { CalendarPlus, ShieldCheck } from 'lucide-react'
 import stanleyPicture from '../../assets/stanley-small.png'
 import type { ApiError } from '../../api/errors'
 import type { ChatCatchUp, ChatIcebreakers, ChatMessage, ChatMessageCheck, ChatPlanPreview, ChatReword, ChatRewordMode, ChatStanleyTap, ChatTerm } from '../../api/chatTypes'
@@ -197,7 +197,6 @@ export function StanleyMessageActions({ conversationId, message, mine, onPosted,
   return (
     <>
       <button type="button" className="chat-act chat-act--icon" disabled={plan.busy} aria-label={t('cst.plan')} title={t('cst.plan')} onClick={() => void plan.run()}><CalendarPlus aria-hidden="true" /></button>
-      <button type="button" className="chat-act chat-act--icon" disabled={words.busy} aria-label={t('cst.words')} title={t('cst.words')} onClick={() => void words.run()}><Lightbulb aria-hidden="true" /></button>
       {mayLook && <button type="button" className="chat-act chat-act--icon" disabled={look.busy} aria-label={t('cck.ask')} title={t('cck.ask')} onClick={() => void look.run()}><ShieldCheck aria-hidden="true" /></button>}
       {(plan.error || words.error || look.error) && <span className="chat-act__problem"><Problem error={plan.error ?? words.error ?? look.error} /></span>}
       {preview && <PlanDialog conversationId={conversationId} preview={preview} onPosted={onPosted} onClose={() => setPreview(null)} />}

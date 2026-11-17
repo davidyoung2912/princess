@@ -81,7 +81,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
           <div className="stanley__empty">
             <p>{awayFacts ? t('away.mode') : t('stanley.empty')}</p>
             {awayFacts && <ul className="stanley__tries">{AWAY_CHIPS.map((c) => <li key={c}><button type="button" className="link-button" onClick={() => pick(t(`away.chip.${c}` as StringKey))}>{t(`away.chip.${c}` as StringKey)}</button></li>)}</ul>}
-            {!awayFacts && <ul className="stanley__tries">{(['stanley.try.1', 'stanley.try.2', 'stanley.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button><WhyThis kind="suggestion" fact={t('stanley.why.fact.suggestion')} what={t(k)} /></li>)}</ul>}
+            {!awayFacts && <ul className="stanley__tries">{(['stanley.try.1', 'stanley.try.2', 'stanley.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button></li>)}</ul>}
           </div>
         ) : (
           <ol className="ai-log stanley__log" role="log" aria-live="polite" aria-label={t('stanley.log')}>

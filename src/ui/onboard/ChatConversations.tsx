@@ -3,7 +3,6 @@ import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useSta
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
 import { useStanleyAsk } from '../ai/useStanleyAsk'
-import { StanleyAnswerCard } from '../ai/StanleyAnswerCard'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, GroupStanley, ChatThread, ChatUrgency } from '../../api/chatTypes'
@@ -653,18 +652,6 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
       {room?.room && <RoomNotes room={room} />}
-      {!permanent && <details className="chat-more">
-        <summary>{t('conv.tools')}</summary>
-      {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
-      {conversation?.kind === 'huddle' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('chuddle.details')}</Button>}
-      {room && <Button variant="secondary" onClick={() => setDetails(true)}>{t(room.kind === 'channel' ? 'room.channelDetails' : 'room.details')}</Button>}
-      {conversation && !permanent && phase === 'ready' && (
-        <ChatMenu conversation={conversation} messages={messages} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} onFind={goToPin} />
-      )}
-      {conversation && !permanent && !room && phase === 'ready' && <StanleyTapNote conversationId={id} tap={tap} onChanged={setTap} />}
-      {conversation && !permanent && !room && phase === 'ready' && !offline && showCatchUp(tap, unreadAfter(messages, firstUnread, mine)) && <CatchUpButton conversationId={id} />}
-      {conversation && !permanent && !room && <Options conversation={conversation} messages={messages} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
-      </details>}
       {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
       {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
       {details && conversation?.kind === 'huddle' && <HuddleDetails id={id} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
@@ -711,7 +698,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
       {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && room && roomPostState(room) !== 'open' ? <p className="muted" role="note">{t(roomClosedKey(roomPostState(room)))}</p> : phase === 'ready' && !room && !canPost(conversation) ? <p className="muted" role="note">{t('announce.only')}</p> : phase === 'ready' && (
         <>
-        <form ref={form} className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+        <form ref={form} className="composer composer--chat" onSubmit={(e) => { e.preventDefault(); void submit() }}>
           {replyTo?.id && (
             <div className="chat-replying" role="group" aria-label={t('conv.replyingTo', { who: replyTo.from === mine ? t('chat.you') : (replyTo.fromName ?? '') })}>
               <p className="chat-replying__text"><strong>{t('conv.replyingTo', { who: replyTo.from === mine ? t('chat.you') : (replyTo.fromName ?? '') })}</strong><span className="muted"> {replyTo.text || t('conv.photo')}</span></p>
@@ -730,7 +717,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             <p className="muted">{t(`urgent.explain.${level}`)}</p>
           </fieldset>
           </details>}
-          <TextArea label={t('chat.message')} value={text} rows={2} maxLength={MAX_TEXT} autoComplete="off"
+          <TextArea label={t('chat.message')} value={text} rows={4} maxLength={MAX_TEXT} autoComplete="off"
             onChange={(e) => {
               setText(e.target.value)
               setCaret(e.target.selectionStart ?? e.target.value.length)
@@ -801,6 +788,18 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       <ActionError error={ack.error} />
       <ActionError error={jump.error} />
       {react.error && <p role="alert" className="field__error">{t('conv.reactFailed')}</p>}
+      {!permanent && <details className="chat-more chat-more--tools">
+        <summary>{t('conv.tools')}</summary>
+      {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
+      {conversation?.kind === 'huddle' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('chuddle.details')}</Button>}
+      {room && <Button variant="secondary" onClick={() => setDetails(true)}>{t(room.kind === 'channel' ? 'room.channelDetails' : 'room.details')}</Button>}
+      {conversation && !permanent && phase === 'ready' && (
+        <ChatMenu conversation={conversation} messages={messages} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} onFind={goToPin} />
+      )}
+      {conversation && !permanent && !room && phase === 'ready' && <StanleyTapNote conversationId={id} tap={tap} onChanged={setTap} />}
+      {conversation && !permanent && !room && phase === 'ready' && !offline && showCatchUp(tap, unreadAfter(messages, firstUnread, mine)) && <CatchUpButton conversationId={id} />}
+      {conversation && !permanent && !room && <Options conversation={conversation} messages={messages} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      </details>}
     </section>
     </CoordinatorProvider>
     </StanleyTapProvider>
@@ -822,7 +821,7 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
     if (item.kind === 'server') return <MessageRow key={item.key} m={item.message} mine={mine} shipTime={shipTime} conversationId={conversationId} kind="stanley" peerName="" ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} />
     const asked = item.kind === 'question'
     return (
-      <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
+      <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg chat-msg--answer'}>
         <p className="chat-msg__meta"><strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.from')}</strong></p>
         <p>{item.text}</p>
       </li>
@@ -862,28 +861,16 @@ function PushPromptNote({ prompt }: { prompt: ReturnType<typeof pushPrompt> }) {
     : <Banner kind="info" title={t('stanley.chat.pushDeclinedTitle')}><p>{t('stanley.chat.pushDeclinedBody')}</p></Banner>
 }
 
-/** The free-text box. The question is asked and answered right here, on the chat page, with the waiting dots under the box; his dialog shares the same in-memory thread. */
+/** The free-text box. The question is asked and answered right here, on the chat page: it and the answer land in the thread above (the same in-memory thread his dialog uses), with waiting dots until it does. */
 function AskStanley() {
   const [text, setText] = useState('')
-  const { submit, busy, problem, reveal, cooldown, messages } = useStanleyAsk()
+  const { submit, busy, problem, cooldown } = useStanleyAsk()
   const ask = questionFrom(text)
   return (
     <div className="composer composer--ask">
-      {messages.length > 0 && (
-        <ol className="ai-log stanley__log" role="log" aria-live="polite" aria-label={t('stanley.log')}>
-          {messages.map((m) => (
-            <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
-              <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
-              {m.card ? <StanleyAnswerCard card={m.card} /> : <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>}
-              {m.actions && m.actions.length > 0 && <p className="stanley__actions">{m.actions.map((a) => <LinkButton key={a.path} variant="secondary" to={a.path}>{a.label}</LinkButton>)}</p>}
-            </li>
-          ))}
-        </ol>
-      )}
       {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
       <form className="composer" onSubmit={(e) => { e.preventDefault(); if (ask) void submit(ask, () => setText('')) }}>
         <TextArea label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
-        <p className="muted">{t('stanley.chat.askHint')}</p>
         {problem && <p role="alert" className="field__error">{problem}</p>}
         {cooldown > 0 && <p role="status" className="muted">{t('stanley.cooldown', { seconds: cooldown })}</p>}
         <Button type="submit" disabled={!ask || busy || cooldown > 0}>{t('stanley.chat.askButton')}</Button>
