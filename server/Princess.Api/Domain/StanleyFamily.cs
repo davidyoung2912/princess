@@ -1,14 +1,14 @@
 namespace Princess.Api.Domain;
 
 /// <summary>What the Family pack looks at: dates and the ages of the travellers on the booking (by position only, never a name).</summary>
-public sealed record FamilyFacts(DateOnly Today, DateOnly Departure, IReadOnlyList<int> Ages);
+public sealed record FamilyFacts(DateOnly Today, DateOnly Departure, IReadOnlyList<int> Ages, int Nights = 0);
 
 public sealed record FamilyFinding(string Id, string Rule, string Title, string Detail, string Route);
 
 public sealed record FamilyDto(bool HasTrip, IReadOnlyList<FamilyFinding> Findings, IReadOnlyList<string> NotChecked, string? AsOf);
 
 /// <summary>
-/// The Family pack, first part (P9e, docs/stanley-actions-and-proactive-plan.md section 14.4): SR-F.1 kids club ready and SR-F.4 everyone's muster.
+/// The Family pack, (P9e, docs/stanley-actions-and-proactive-plan.md section 14.4): SR-F.1 kids club ready, SR-F.4 everyone's muster and SR-F.5 find my family.
 /// Pure and deterministic. It registers no child, messages no teen and marks nothing done; each finding is a screen for the guardian to open.
 /// It says nothing unless the booking has a traveller under 18.
 /// </summary>
@@ -27,7 +27,14 @@ public static class StanleyFamilyRules
     {
         var list = new List<FamilyFinding>();
         var toGo = f.Departure.DayNumber - f.Today.DayNumber;
-        if (toGo < 0 || !f.Ages.Any(a => a < 18)) return list;
+        if (!f.Ages.Any(a => a < 18)) return list;
+        if (toGo < 0 && f.Today.DayNumber <= f.Departure.DayNumber + f.Nights)
+        {
+            list.Add(new("find-family", "SR-F.5", "Agree a meeting point",
+                "With children aboard, the family screen has the meeting-point card. Agree the place and the time together, in person. I send nobody a message.", Family));
+            return list;
+        }
+        if (toGo < 0) return list;
         var club = f.Ages.Count(a => a is >= 3 and < 18);
         if (toGo == 0)
             list.Add(new("family-muster", "SR-F.4", "Sailing day: muster for everyone",

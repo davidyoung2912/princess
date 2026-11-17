@@ -27,6 +27,16 @@ public class StanleyFamilyTests
         Assert.Empty(StanleyFamilyRules.Findings(On(0, 44, 41)));
         Assert.Empty(StanleyFamilyRules.Findings(On(30, 44, 12)));
         Assert.Empty(StanleyFamilyRules.Findings(On(-1, 44, 12)));
+        Assert.Empty(StanleyFamilyRules.Findings(new(Departure.AddDays(8), Departure, [44, 12], 7)));
+    }
+
+    [Fact]
+    public void AboardGivesMeetingPointAndSendsNothing()
+    {
+        var x = Assert.Single(StanleyFamilyRules.Findings(new(Departure.AddDays(3), Departure, [44, 12], 7)));
+        Assert.Equal("SR-F.5", x.Rule);
+        Assert.Contains("nobody a message", x.Detail);
+        Assert.Empty(StanleyFamilyRules.Findings(new(Departure.AddDays(3), Departure, [44, 41], 7)));
     }
 
     [Fact]

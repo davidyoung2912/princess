@@ -70,6 +70,8 @@ public static class StanleyRuleCards
             "Is the kids club something we should plan for?", ["journey-family"], ["sailing dates", "traveller ages"]),
         Check("SR-F.4", "Everyone's muster", ["board"], "It is the day of sailing and a traveller is under 18", "the sailing date and the ages on the booking", "the day of sailing ends",
             "Where does everyone go for muster?", ["journey-family"], ["sailing dates", "traveller ages"]),
+        Check("SR-F.5", "Find my family", ["sea"], "The ship is sailing and a traveller is under 18", "the sailing date, the nights and the ages on the booking", "the cruise ends",
+            "Where should we meet if we get separated?", ["journey-family"], ["sailing dates", "traveller ages"]),
         Check("ACT-03", "Drafts for approval", ["sea", "port"], "A sailing day is open", "the bundle for the day and the all-aboard time", "the guest copies the note or closes it",
             "Draft a note to my party", ["journey-solo"], ["booked tours and dinners", "sailing days and all-aboard times"]),
         Check("TRUST-05", "Trip so far", ["sea", "port", "disembark"], "Stanley has done something for the guest", "counts of what Stanley did and what the guest undid, from the ledger", "the guest closes it; it keeps no score",

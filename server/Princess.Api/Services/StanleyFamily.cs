@@ -16,6 +16,6 @@ public sealed class StanleyFamilyService(StanleyCheckupService checkup, IOptions
         if (!options.Value.Switches.Tools || user.IsSupervised) return none;
         var (facts, _) = await checkup.FactsAsync(user, ct);
         if (facts is null) return none;
-        return StanleyFamilyRules.Build(new FamilyFacts(facts.Today, facts.Departure, facts.Travellers.Select(t => t.Age).ToList()), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+        return StanleyFamilyRules.Build(new FamilyFacts(facts.Today, facts.Departure, facts.Travellers.Select(t => t.Age).ToList(), facts.Nights), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
     }
 }
