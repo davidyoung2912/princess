@@ -48,6 +48,8 @@ export function tabScreenIds(tab: NavTab, stage: JourneyStage): readonly string[
 export function activeTabKey(pathname: string, stage: JourneyStage, area: TabColour): string | null {
   const landing = tabAtPath(pathname, stage)
   if (landing) return landing.key
+  // Chat is global: it belongs to no stage and no tab, so no tab is lit while the guest is in it.
+  if (isChatPath(pathname)) return null
   return navTabs(stage).find((tab) => tab.colour === area)?.key ?? null
 }
 
@@ -79,21 +81,22 @@ export const splitMe = (ids: readonly string[]): { main: string[]; settings: str
 /** Reference screens a guest can open at any stage, whichever tabs the stage lists: the cruise, sailings, ships, explore, trip cost, ports and countries guides and their lists, and the ship's reference pages (deck map, venues, shops, Wi-Fi, laundry, accessibility, allergy and family information). */
 export const ALWAYS_OPEN_SCREENS: readonly string[] = ['H06', 'H07', 'H08', 'H09', 'H12', 'H47', 'H48', 'H49', 'H50', 'H52', 'H53', 'H54', 'S01', 'S02', 'S03', 'S16', 'S17', 'S20', 'S23', 'S24', 'S31', 'S33', 'S35', 'S41', 'S42']
 
+/** Whether an address is Chat or one of its pages. Chat is global, so it is in no stage and no tab. */
+export const isChatPath = (pathname: string): boolean => pathname === '/chat' || pathname.startsWith('/chat/')
+
 /**
  * What an address does at a stage. 'show' opens it; 'home' sends the guest Home (a stale address: a screen the stage does not use, or a tab it does not have).
  * Addresses outside the registry (the kit, public links, unknown addresses) are left to the router.
  */
-const CHAT_PAGES: readonly string[] = ['C02', 'C03', 'C04', 'C05', 'C06', 'C07']
-
 export function accessAt(pattern: string | null, pathname: string, stage: JourneyStage): 'show' | 'home' {
   if (pattern === '/tab/:slug') return tabAtPath(pathname, stage) ? 'show' : 'home'
   if (pattern === '/plan' || pattern === '/ship') return tabAtPath(pattern, stage) ? 'show' : 'home'
   if (!pattern) return 'show'
   const screen = screenForPath(pattern)
   if (!screen || screen.family === 'X') return 'show'
-  // The pages reached from Chat (people, rooms, search, children, Guest Services, one conversation) are open wherever Chat is.
-  const id = CHAT_PAGES.includes(screen.id) ? 'C01' : screen.id
-  return ALWAYS_OPEN_SCREENS.includes(id) || stageUses(id, stage) ? 'show' : 'home'
+  // Chat and its pages (people, rooms, search, children, Guest Services, one conversation) are global: open at every stage, in no tab.
+  if (screen.family === 'C') return 'show'
+  return ALWAYS_OPEN_SCREENS.includes(screen.id) || stageUses(screen.id, stage) ? 'show' : 'home'
 }
 
 /** The colour the shell wears for a screen, as {@link areaFor} says, or the tab's own colour on a landing page. */

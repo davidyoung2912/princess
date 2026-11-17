@@ -15,9 +15,9 @@ describe('final coverage audit (P9)', () => {
     expect(SCREEN_LIST).toHaveLength(252)
   })
 
-  it('reaches every screen from a tab in at least one stage, except the four outside by design', () => {
+  it('reaches every screen from a tab in at least one stage, except the four outside by design (and Chat, which is global)', () => {
     const unreachable = SCREEN_LIST.filter((s) => !JOURNEY_STAGES.some((st) => stageUses(s.id, st))).map((s) => s.id)
-    expect(unreachable.sort()).toEqual(['C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29', 'X30', 'X31', 'X32', 'X33', 'X34', 'X35', 'X36', 'X37', 'X38', 'X39', 'X40', 'X41', 'X42', 'X43', 'X44', 'X45', 'X46', 'X47', 'X48'])
+    expect(unreachable.sort()).toEqual(['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29', 'X30', 'X31', 'X32', 'X33', 'X34', 'X35', 'X36', 'X37', 'X38', 'X39', 'X40', 'X41', 'X42', 'X43', 'X44', 'X45', 'X46', 'X47', 'X48'])
   })
 
   // Relaxed: the app is English only for now (CLAUDE.md).

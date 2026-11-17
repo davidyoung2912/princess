@@ -86,14 +86,14 @@ describe('screen registry (P2)', () => {
     }
   })
 
-  it('leaves exactly the developer page, the account page, the stage overview and the two link-only pages outside every stage', () => {
+  it('leaves exactly the developer page, the account page, the stage overview and the two link-only pages outside every stage (and Chat, which belongs to none)', () => {
     const outside = SCREEN_LIST.filter((s) => !JOURNEY_STAGES.some((st) => stageUses(s.id, st))).map((s) => s.id)
-    expect(outside.sort()).toEqual(['C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29', 'X30', 'X31', 'X32', 'X33', 'X34', 'X35', 'X36', 'X37', 'X38', 'X39', 'X40', 'X41', 'X42', 'X43', 'X44', 'X45', 'X46', 'X47', 'X48'])
+    expect(outside.sort()).toEqual(['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29', 'X30', 'X31', 'X32', 'X33', 'X34', 'X35', 'X36', 'X37', 'X38', 'X39', 'X40', 'X41', 'X42', 'X43', 'X44', 'X45', 'X46', 'X47', 'X48'])
   })
 
-  it('counts the screens each stage uses as the plan lists them (chat is one more at the five stages that had no way in)', () => {
+  it('counts the screens each stage uses as the plan lists them (Chat is global, so it is not counted)', () => {
     const counts = Object.fromEntries(JOURNEY_STAGES.map((s) => [s, screensOfStage(s).length]))
-    expect(counts).toEqual({ dream: 48, discover: 52, book: 51, manage: 66, prebook: 80, getToShip: 69, embark: 72, sea: 98, port: 97, disembark: 53, remember: 59 })
+    expect(counts).toEqual({ dream: 47, discover: 51, book: 50, manage: 65, prebook: 79, getToShip: 68, embark: 71, sea: 97, port: 96, disembark: 52, remember: 58 })
   })
 
   it('lets guests browse the ship from Dream on, but keeps the on-board services for on board', () => {
@@ -105,18 +105,11 @@ describe('screen registry (P2)', () => {
     expect(stageUses('S15', 'prebook')).toBe(false)
   })
 
-  it('moves a screen between tabs by data alone: Chat (C01) is listed in a tab, not coded into one', () => {
-    expect(placementIn('C01', 'manage').tabs).toEqual(['Group'])
-    expect(placementIn('C01', 'sea').tabs).toEqual(['People'])
-    expect(primaryTab('C01', 'discover')).toEqual({ label: 'Cost', colour: 'gold' })
-  })
-
-  it('gives chat a way in at every one of the eleven stages (chat plan phase 5, section 6.2)', () => {
-    const entry: Record<string, string[]> = {
-      dream: ['Ask'], discover: ['Cost'], book: ['Booking', 'Travellers'], manage: ['Group'], prebook: ['Group'], getToShip: ['Plan'],
-      embark: ['Board'], sea: ['People'], port: ['People'], disembark: ['People'], remember: ['Memories', 'Next'],
+  it('keeps Chat (C01) out of every stage and every tab: it is global, reached from the top bar', () => {
+    for (const stage of JOURNEY_STAGES) {
+      expect(placementIn('C01', stage).tabs, stage).toEqual([])
+      expect(primaryTab('C01', stage), stage).toBeNull()
     }
-    for (const [stage, tabs] of Object.entries(entry)) expect(placementIn('C01', stage as never).tabs, stage).toEqual(tabs)
   })
 
   it('picks the primary tab: the first listing tab, else Me, else Home', () => {

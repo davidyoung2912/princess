@@ -19,9 +19,9 @@ import { useChatSummary } from '../hooks/useChatSummary'
 import { useChatNotice } from '../hooks/useChatNotice'
 import { ChatToast } from './ChatToast'
 import { chatBadge } from '../domain/chatConnections'
-import { accessAt, activeTabKey, areaAt, earlierAt, navTabs, shellArea, tabAtPath } from '../routes/stageNav'
+import { accessAt, activeTabKey, areaAt, isChatPath, earlierAt, navTabs, shellArea, tabAtPath } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
-import { Help, Search } from './icons'
+import { Help, MessagesSquare, Search } from './icons'
 import { SCREEN_ICONS } from './screenIcons'
 import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
@@ -194,6 +194,10 @@ export function Shell() {
               {dot && <span className="stanley-dot" aria-hidden="true" />}
             </button>
           )}
+          <Link to="/chat" className="topbar__chat" aria-label={chatCount > 0 ? `${t('route.chat')}. ${t('people.tabBadge', { count: chatCount })}` : t('route.chat')} aria-current={isChatPath(pathname) ? 'page' : undefined}>
+            <MessagesSquare aria-hidden="true" />
+            {chatCount > 0 && <span className="topbar__count" aria-hidden="true">{chatCount > 9 ? '9+' : chatCount}</span>}
+          </Link>
           <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
             <Help aria-hidden="true" />
             <span>{th('help.button')}</span>
@@ -202,7 +206,7 @@ export function Shell() {
             <img src={logo} alt="" width="512" height="512" />
           </Link>
         </header>
-        <TestBar menu={<PhoneMenu stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
+        <TestBar menu={<PhoneMenu chatCount={chatCount} stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
       </div>
       <nav className="tabs no-print" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
         <Link to="/account" className="tabs__logo" aria-label={t('account.logo')}>
@@ -215,7 +219,6 @@ export function Shell() {
             <Link key={tab.key} to={tab.path} data-colour={tab.colour} className="tabs__item" aria-current={active ? 'page' : undefined}>
               <Icon aria-hidden="true" />
               <span>{tabText(tab, stage).label}</span>
-              {tab.key === 'chat' && chatCount > 0 && <><span className="tabs__count" aria-hidden="true">{chatCount > 9 ? '9+' : chatCount}</span><span className="visually-hidden">{t('people.tabBadge', { count: chatCount })}</span></>}
               {alerts.has(tab.key) && <><span className="tabs__dot" aria-hidden="true" /><span className="visually-hidden">{t('stage.tile.attention')}</span></>}
             </Link>
           )
