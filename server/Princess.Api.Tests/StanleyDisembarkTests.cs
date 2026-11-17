@@ -15,6 +15,8 @@ public class StanleyDisembarkTests
         var list = StanleyDisembarkRules.Findings(On(1));
         Assert.Contains(list, x => x.Rule == "SR-10.1" && x.Route == "/home/disembark/bags");
         Assert.Contains(list, x => x.Rule == "SR-10.3" && x.Route == "/home/disembark/customs" && x.Detail.Contains("do not fill it in"));
+        Assert.Contains(list, x => x.Rule == "SR-10.2" && x.Route == "/me/bill/final");
+        Assert.Contains(list, x => x.Rule == "SR-10.4" && x.Route == "/me/money");
         Assert.DoesNotContain(list, x => x.Rule == "SR-10.6");
     }
 

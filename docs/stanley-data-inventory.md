@@ -232,12 +232,14 @@ Nothing new is stored. `GET /me/stanley/embark` works out its answer from the sa
 
 It never fills in, submits or sends check-in, and sets no reminder. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: whether the phone plan or card is set up, the muster station, and flights and traffic.
 
-## Disembark pack, first part (phase P9d, SR-10.1, SR-10.3 and SR-10.6)
+## Disembark pack (phase P9d, SR-10.1 to SR-10.4 and SR-10.6)
 
 Nothing new is stored. `GET /me/stanley/disembark` works out its answer from the sailing date and the number of nights, and returns it without keeping it.
 
 | Input | Used for | In the answer |
 |---|---|---|
 | sailing date and nights | the day the ship gets in: bags and customs on the evening before, the last look on the morning | a title and a screen to open |
+
+The last evening also points to the final bill (SR-10.2) and the tips (SR-10.4); neither reads an amount.
 
 It never tags a bag, fills in or submits customs, picks an exit time or sends anything, and sets no reminder. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: whether bags are tagged or the customs form is done, the exit time and onward travel, and the final bill.
