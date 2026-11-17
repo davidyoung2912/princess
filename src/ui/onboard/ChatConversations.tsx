@@ -652,7 +652,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
       {room?.room && <RoomNotes room={room} />}
-      <details className="chat-more">
+      {!permanent && <details className="chat-more">
         <summary>{t('conv.tools')}</summary>
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
       {conversation?.kind === 'huddle' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('chuddle.details')}</Button>}
@@ -663,7 +663,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {conversation && !permanent && !room && phase === 'ready' && <StanleyTapNote conversationId={id} tap={tap} onChanged={setTap} />}
       {conversation && !permanent && !room && phase === 'ready' && !offline && showCatchUp(tap, unreadAfter(messages, firstUnread, mine)) && <CatchUpButton conversationId={id} />}
       {conversation && !permanent && !room && <Options conversation={conversation} messages={messages} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
-      </details>
+      </details>}
       {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
       {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
       {details && conversation?.kind === 'huddle' && <HuddleDetails id={id} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
@@ -866,7 +866,7 @@ function AskStanley() {
   const [text, setText] = useState('')
   const ask = questionFrom(text)
   return (
-    <form className="composer" onSubmit={(e) => { e.preventDefault(); if (ask) { requestStanley(ask); setText('') } }}>
+    <form className="composer composer--ask" onSubmit={(e) => { e.preventDefault(); if (ask) { requestStanley(ask); setText('') } }}>
       <TextArea label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
       <p className="muted">{t('stanley.chat.askHint')}</p>
       <Button type="submit" disabled={!ask}>{t('stanley.chat.askButton')}</Button>

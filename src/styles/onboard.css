@@ -525,3 +525,13 @@ button.chat-quote { cursor: pointer; }
 
 /* Stanley's welcome at the top of a room's details: set apart a little from the rules below it. */
 .chost-welcome { margin: var(--space-2) 0; padding: var(--space-2); border-radius: var(--radius-2, 8px); background: var(--surface-2, rgba(0, 0, 0, 0.04)); }
+
+/* The thread header (name, who it speaks for, notes) is a tight block; the global paragraph gap made it airy. */
+#thread-h { margin-bottom: var(--space-1); }
+#thread-h ~ p { margin-bottom: var(--space-1); }
+#thread-h ~ .chat-more { margin: var(--space-1) 0; }
+#thread-h ~ .chat-more[open] > summary { margin-bottom: var(--space-1); }
+#thread-h ~ .chat-more > :not(summary) + :not(summary) { margin-top: var(--space-2); }
+
+/* The Ask Stanley button is a main call to action: the normal CTA height and its own width, not stretched across the compact composer grid. */
+.composer--ask > .btn { justify-self: start; min-height: var(--target-min); padding-inline: var(--space-5); margin-block: var(--space-1); }
