@@ -70,13 +70,13 @@ function Composer({ sailingId, today, now, id }: { sailingId: string; today: num
     setMood(null)
   }
   return (
-    <>
+    <div className="diary-composer">
       <TextArea label={t('diary.add')} hint={t('diary.addHint', { day: today > 0 ? today : 0 })} value={text} maxLength={ENTRY_MAX} onChange={(e) => setText(e.target.value)} />
       <div className="stanley-ask__options" role="group" aria-label={t('diary.mood')}>
         {MOODS.map((m) => <button key={m} type="button" className="chip-q stanley-ask__opt" aria-pressed={mood === m} onClick={() => setMood(mood === m ? null : m)}>{t(`diary.mood.${m}` as StringKey)}</button>)}
       </div>
       <div className="actions"><Button id={id} onClick={add} disabled={text.trim() === ''}>{t('diary.save')}</Button></div>
-    </>
+    </div>
   )
 }
 

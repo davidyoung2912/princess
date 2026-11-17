@@ -178,3 +178,7 @@ img.tip__icon { box-sizing: border-box; width: 3.5rem; height: 3.5rem; padding: 
 .icon-list > li { display: flex; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-3); }
 .icon-list > li > div { min-width: 0; }
 .explorer-icon { flex: none; width: 1.5rem; height: 1.5rem; margin-top: 0.25rem; color: var(--primary); }
+
+/* The diary composer: the text box, mood chips and Add button sit in an even column so nothing touches. */
+.diary-composer { display: flex; flex-direction: column; gap: var(--space-3); margin-block: var(--space-3) var(--space-4); }
+.diary-composer .actions { margin: 0; }
