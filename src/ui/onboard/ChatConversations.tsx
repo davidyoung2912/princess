@@ -5,7 +5,7 @@ import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
-import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, ChatThread, ChatUrgency } from '../../api/chatTypes'
+import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, GroupStanley, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
@@ -57,6 +57,7 @@ import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
+import { CoordinatorButton, CoordinatorProvider, RemainingCard, RemindersSwitch } from './ChatCoordinator'
 import { RoomDetails, RulesDialog } from './ChatRooms'
 import { ChatSearch, SaveChat } from './ChatSearch'
 import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWrite, Icebreakers, PolishDraft, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
@@ -259,6 +260,14 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     if (tapKind !== 'party' && tapKind !== 'direct' && tapKind !== 'group') return
     let live = true
     api.chatConversations.stanleyTap(id).then((x) => { if (live) setTap(x) }, () => undefined)
+    return () => { live = false }
+  }, [id, tapKind])
+  // Phase 11: whether the caller is an admin of this made group and Stanley may help in it (the tally and reminder buttons). Asked once per group.
+  const [groupStanley, setGroupStanley] = useState<{ data: GroupStanley | null }>({ data: null })
+  useEffect(() => {
+    if (tapKind !== 'group') return
+    let live = true
+    api.chatConversations.groupStanley(id).then((x) => { if (live) setGroupStanley({ data: x }) }, () => undefined)
     return () => { live = false }
   }, [id, tapKind])
   const [pins, setPins] = useState<ChatPin[]>(cached?.pins ?? [])
@@ -627,6 +636,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const staleTitle = permanent && age ? `${t('conv.stale')} ${t('stanley.notice.asOf', { time: age })}` : t('conv.stale')
   return (
     <StanleyTapProvider value={tap}>
+    <CoordinatorProvider value={conversation?.kind === 'group' && groupStanley.data ? { groupId: id, state: groupStanley.data } : null}>
     <section aria-labelledby="thread-h">
       <h2 id="thread-h" className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</h2>
       {permanent && <><p className="muted">{t('stanley.chat.speaking', { name: subtitleOf(conversation) })}</p><p className="muted" role="note">{t('stanley.chat.permanent')}</p></>}
@@ -784,6 +794,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       <ActionError error={jump.error} />
       {react.error && <p role="alert" className="field__error">{t('conv.reactFailed')}</p>}
     </section>
+    </CoordinatorProvider>
     </StanleyTapProvider>
   )
 }
@@ -984,6 +995,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
             <button type="button" className="chat-act chat-act--icon" aria-label={t('conv.reply')} title={t('conv.reply')} onClick={() => onReply?.(m)}><ReplyIcon aria-hidden="true" /></button>
             {pinning && onPin && <button type="button" className="chat-act chat-act--icon" aria-label={t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')} title={t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')} onClick={() => onPin(m.id, pinning === 'pin')}>{pinning === 'pin' ? <PinIcon aria-hidden="true" /> : <PinOff aria-hidden="true" />}</button>}
             <StanleyMessageActions conversationId={conversationId} message={m} onPosted={onChanged ?? noop} />
+            <CoordinatorButton message={m} />
           </>
         )
         return own && onEdit && onDelete
@@ -1247,6 +1259,8 @@ function Options({ conversation, awayBusy, onAway, mentionsBusy, onMentionsOnly,
         </>
       )}
       {conversation.kind === 'group' && <GroupStanleySwitch groupId={conversation.id} />}
+      {conversation.kind === 'group' && <RemainingCard />}
+      {conversation.kind === 'group' && <RemindersSwitch groupId={conversation.id} />}
       <div className="chip-row">
         <Chip pressed={on} onToggle={() => void flip.run(!on)}>{t('chat.receipts')}</Chip>
       </div>

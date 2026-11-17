@@ -275,6 +275,13 @@ export type NoticeLane = 'critical' | 'important' | 'reminder' | 'info' | 'sugge
  */
 export interface GroupStanley { on: boolean; canChange: boolean }
 
+/** Phase 11: what an admin sees before posting a tally or sending a reminder. `shareText` and `reminderText` are exactly what would be posted and sent; `willRemind` is a count (nobody is named); `reason` says why a reminder cannot go now. */
+export interface ChatCoordinatorPreview { status: string; compromise?: string; shareText: string; reminderText: string; willRemind: number; canRemind: boolean; reason?: 'closed' | 'tooSoon' | 'none' }
+export interface ChatReminded { reminded: number; line: string }
+/** One poll or plan still waiting for someone: counts only. */
+export interface ChatRemainingItem { messageId: string; kind: 'poll' | 'plan'; title: string; answered: number; total: number; closed: boolean; closesAt?: number }
+export interface ChatRemaining { waiting: number; outstanding: number; items: ChatRemainingItem[] }
+
 export interface ChatNotice { lane: NoticeLane; kind: string; path: string; expired: boolean; superseded: boolean; expiresAt?: number; actions?: string[]; replies?: NoticeReply[]; subject?: string }
 export type NoticeReply = 'why' | 'what' | 'later'
 /** What the guest's Stanley level gives: `off` posts no suggestion, `trip` only what affects the trip, `suggest` adds suggestions, `guide` adds a step-by-step. */
@@ -346,6 +353,17 @@ export interface ChatConversationsApi {
   /** Whether Stanley may offer to share cards in a made group, and whether the caller (an admin) can change it. */
   groupStanley(groupId: string): Promise<GroupStanley>
   setGroupStanley(groupId: string, on: boolean): Promise<GroupStanley>
+  /** Admin only. The exact tally and reminder text for a poll or plan, and how many a reminder would reach. Rejects `forbidden` (`notAdmin`, `off`, `child`, `notGroup`), `invalid` (`notPoll`) or `notFound`. */
+  coordinatorPreview(groupId: string, messageId: string): Promise<ChatCoordinatorPreview>
+  /** Admin only: posts the tally to the group under "Alex asked Stanley to share this". Rejects as the preview does, or `tooMany` (`busy`). */
+  shareTally(groupId: string, messageId: string): Promise<void>
+  /** Admin only: reminds the people who have not answered, privately. Rejects as the preview does, or `conflict` (`closed`, `tooSoon`). */
+  remindGroup(groupId: string, messageId: string): Promise<ChatReminded>
+  /** Admin only: the open polls and plans that still wait for someone, in counts. */
+  remaining(groupId: string): Promise<ChatRemaining>
+  /** Whether you switched Stanley's reminders off in this group. */
+  remindersMuted(groupId: string): Promise<boolean>
+  setRemindersMuted(groupId: string, muted: boolean): Promise<boolean>
   /** The photo of one message as a data URL. A photo never changes, so it can be kept. Rejects `notFound`. */
   photo(id: string, messageId: string, index?: number): Promise<string>
   /** Marks everything read, on every device. */
