@@ -260,6 +260,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'X18', path: '/exercise-explorer', titleKey: 'screen.X18.title', subtextKey: 'screen.X18.subtext', family: 'X' },
   { id: 'X19', path: '/activities-explorer', titleKey: 'screen.X19.title', subtextKey: 'screen.X19.subtext', family: 'X' },
   { id: 'X30', path: '/games-explorer', titleKey: 'screen.X30.title', subtextKey: 'screen.X30.subtext', family: 'X' },
+  { id: 'X32', path: '/games-explorer/sudoku', titleKey: 'screen.X32.title', subtextKey: 'screen.X32.subtext', family: 'X' },
   { id: 'X31', path: '/games-explorer/cruise-wordle', titleKey: 'screen.X31.title', subtextKey: 'screen.X31.subtext', family: 'X' },
   { id: 'X20', path: '/ship-explorer', titleKey: 'screen.X20.title', subtextKey: 'screen.X20.subtext', family: 'X' },
   { id: 'X21', path: '/dining-today/:venueId', titleKey: 'screen.X21.title', subtextKey: 'screen.X21.subtext', family: 'X' },

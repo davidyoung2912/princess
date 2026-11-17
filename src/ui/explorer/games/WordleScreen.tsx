@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { clock } from '../../../domain/games/sudoku'
 import { MAX_GUESSES, WORD_LENGTH, backspace, keyStates, newGame, pickTarget, scoreGuess, shareText, submitGuess, typeLetter, type LetterState, type WordleGame } from '../../../domain/games/wordle'
+import { startVisibleInterval } from '../../../hooks/visibleInterval'
 import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Card } from '../../Card'
+import { Ask, Clock } from '../../icons'
 import { MoreLinks } from '../Parts'
 
 const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
@@ -20,6 +23,7 @@ export function WordleScreen() {
   const [message, setMessage] = useState('')
   const [announce, setAnnounce] = useState('')
   const [shake, setShake] = useState(false)
+  const [seconds, setSeconds] = useState(0)
   const gameRef = useRef(game)
   const settledRef = useRef(0)
   const timers = useRef<number[]>([])
@@ -75,6 +79,8 @@ export function WordleScreen() {
   }, [press])
 
   const over = game.status !== 'playing' && settled === game.guesses.length
+  // The clock runs while the page is showing, and stops when the game is over.
+  useEffect(() => (game.status === 'playing' ? startVisibleInterval(() => setSeconds((s) => s + 1), 1000) : undefined), [game.status])
   useEffect(() => { if (over) resultRef.current?.focus() }, [over])
 
   const playAgain = () => {
@@ -82,6 +88,7 @@ export function WordleScreen() {
     timers.current = []
     settledRef.current = 0
     setSettled(0)
+    setSeconds(0)
     setMessage('')
     apply(newGame(pickTarget(Math.random, gameRef.current.target)))
   }
@@ -101,18 +108,11 @@ export function WordleScreen() {
   return (
     <div className="page">
       <div className="wd">
-        <details className="wd-help">
-          <summary>{t('wordle.help.title')}</summary>
-          <p>{t('wordle.help.1')}</p>
-          <ul className="wd-help__list">
-            <li><span className="wd-swatch" data-state="correct" aria-hidden="true" /> {t('wordle.help.correct')}</li>
-            <li><span className="wd-swatch" data-state="present" aria-hidden="true" /> {t('wordle.help.present')}</li>
-            <li><span className="wd-swatch" data-state="absent" aria-hidden="true" /> {t('wordle.help.absent')}</li>
-          </ul>
-          <p>{t('wordle.help.2')}</p>
-        </details>
 
-        <p className="wd-count" aria-hidden="true">{t('wordle.count', { n: Math.min(row + 1, MAX_GUESSES), max: MAX_GUESSES })}</p>
+        <p className="wd-meta">
+          <span aria-hidden="true">{t('wordle.count', { n: Math.min(row + 1, MAX_GUESSES), max: MAX_GUESSES })}</span>
+          <span className="game-clock" role="timer" aria-label={t('wordle.time')}><Clock aria-hidden="true" focusable="false" />{clock(seconds)}</span>
+        </p>
         <p className="wd-message" role="status">{message}</p>
         <p className="visually-hidden" role="status">{announce}</p>
 
@@ -170,6 +170,16 @@ export function WordleScreen() {
             </div>
           ))}
         </div>
+        <details className="game-help">
+          <summary><Ask aria-hidden="true" focusable="false" />{t('wordle.help.title')}</summary>
+          <p>{t('wordle.help.1')}</p>
+          <ul className="wd-help__list">
+            <li><span className="wd-swatch" data-state="correct" aria-hidden="true" /> {t('wordle.help.correct')}</li>
+            <li><span className="wd-swatch" data-state="present" aria-hidden="true" /> {t('wordle.help.present')}</li>
+            <li><span className="wd-swatch" data-state="absent" aria-hidden="true" /> {t('wordle.help.absent')}</li>
+          </ul>
+          <p>{t('wordle.help.2')}</p>
+        </details>
       </div>
       <MoreLinks links={[{ to: '/games-explorer', label: t('route.gamesExplorer') }]} />
     </div>

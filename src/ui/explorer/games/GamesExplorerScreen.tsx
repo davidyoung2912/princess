@@ -1,8 +1,10 @@
 import { Link } from 'react-router'
 import { gamesOf } from '../../../domain/games/catalogue'
 import { t, headingCase } from '../../../i18n'
-import { WordGame } from '../../icons'
+import { SudokuGame, WordGame } from '../../icons'
 import { MoreLinks } from '../Parts'
+
+const ICONS: Record<string, typeof WordGame> = { 'cruise-wordle': WordGame, sudoku: SudokuGame }
 
 /** The Games Explorer: every game has a page of its own, listed here under games for one player and games for a group. */
 export function GamesExplorerScreen() {
@@ -16,7 +18,7 @@ export function GamesExplorerScreen() {
         <ul className="card-grid">
           {solo.map((g) => (
             <li key={g.id} className="card exp-card gx-card">
-              <WordGame className="gx-card__icon" aria-hidden="true" focusable="false" />
+              {(() => { const Icon = ICONS[g.id] ?? WordGame; return <Icon className="gx-card__icon" aria-hidden="true" focusable="false" /> })()}
               <div>
                 <h3 className="card__title"><Link className="exp-card__link" to={g.path}>{t(g.titleKey)}</Link></h3>
                 <p className="muted">{t(g.bodyKey)}</p>
