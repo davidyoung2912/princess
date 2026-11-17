@@ -248,6 +248,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/games-explorer/jigsaw-sudoku', titleKey: 'route.jigsawSudoku', tab: null, phase: 0 },
   { path: '/games-explorer/killer-sudoku', titleKey: 'route.killerSudoku', tab: null, phase: 0 },
   { path: '/games-explorer/binairo', titleKey: 'route.binairo', tab: null, phase: 0 },
+  { path: '/games-explorer/futoshiki', titleKey: 'route.futoshiki', tab: null, phase: 0 },
   { path: '/exercise-explorer', titleKey: 'route.exerciseExplorer', tab: null, phase: 0 },
   { path: '/exercise-explorer/:venueId', titleKey: 'route.exerciseVenue', tab: null, phase: 0 },
   { path: '/spa-explorer', titleKey: 'route.spaExplorer', tab: null, phase: 0 },

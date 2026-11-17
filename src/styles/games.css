@@ -195,3 +195,25 @@
 .bn-tools { grid-template-columns: repeat(3, 1fr); }
 .bn-pad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; width: 100%; }
 .bn-pad__key .bn-shape { width: 1.7rem; height: 1.7rem; color: var(--text); }
+
+/* Futoshiki: separate squares with a gap between them, where the < and > signs sit (turned to point up or down between rows). */
+.fs-board { --fs-gap: clamp(0.7rem, 4.4vw, 1.2rem); display: grid; gap: var(--fs-gap); width: min(100%, 30rem); padding: 0.4rem; box-sizing: border-box; touch-action: manipulation; user-select: none; }
+.fs-row { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: var(--fs-gap); }
+.fs-cell {
+  position: relative; aspect-ratio: 1; display: grid; place-items: center; box-sizing: border-box; min-width: 0;
+  border: 2px solid var(--border-strong); border-radius: 6px; background: var(--bg); color: var(--primary);
+  font-size: clamp(1.1rem, 6vw, 1.85rem); font-weight: 600; line-height: 1; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.fs-cell--given { color: var(--text); font-weight: 800; background: color-mix(in srgb, var(--text) 8%, var(--bg)); }
+.fs-cell--same { background: color-mix(in srgb, var(--primary) 20%, var(--bg)); }
+.fs-cell--hint { background: color-mix(in srgb, var(--warning) 28%, var(--bg)); }
+.fs-cell--selected { background: color-mix(in srgb, var(--primary) 32%, var(--bg)); box-shadow: 0 0 0 3px var(--primary); z-index: 1; }
+.fs-cell--repeat { color: var(--sd-error); text-decoration: underline wavy; text-underline-offset: 0.18em; }
+.fs-cell--dead { background: var(--sd-dead); border-color: var(--sd-dead-edge); }
+.fs-cell:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; z-index: 2; }
+.fs-sign { position: absolute; display: grid; place-items: center; width: var(--fs-gap); height: var(--fs-gap); font-size: clamp(0.8rem, 3.8vw, 1.15rem); font-weight: 800; line-height: 1; color: var(--text); pointer-events: none; }
+.fs-sign--right { left: 100%; top: 50%; margin-top: calc(var(--fs-gap) / -2); }
+.fs-sign--down { top: 100%; left: 50%; margin-left: calc(var(--fs-gap) / -2); transform: rotate(90deg); }
+.fs-sign--broken { color: var(--sd-error); border-radius: 50%; box-shadow: 0 0 0 2px var(--sd-error); }
+.fs-board .sd-notes { inset: 1px; }
+.fs-pad { grid-template-columns: repeat(var(--n), 1fr); }

@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35) and **Binairo** (X36). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -47,7 +47,9 @@ Built as planned. `binairo.ts` builds a full grid row by row from balanced rows 
 - Levels by size and clues: Easy 6x6, Medium 8x8, Hard 10x10, Expert 12x12. Tap a cell to cycle empty, 0, 1; pad for phones; given cells locked.
 - Generator: random valid full grid by backtracking, then clue removal with uniqueness and logic checks (avoid triples, fill a line once one symbol has its half, uniqueness of rows). Hints explain which of those rules applies. Red marks for a triple, an over-full line or a duplicate line.
 
-### G4: Futoshiki (X37)
+### G4: Futoshiki (X37) — built
+
+Built as planned. `futoshiki.ts` makes a Latin square by backtracking, shows every sign (plus givens only if logic needs them), then takes away signs and givens one at a time while plain logic still solves it (easy keeps 4 givens, medium 4, hard 3, expert none), so the answer is unique with no guessing. Logic is candidate elimination by row and column, sign bounds pushed to a fixed point (so chains work), naked singles and hidden singles; a move that needs the signs is reported as `sign` (naming the neighbouring sign that forces it) or `signRow`/`signColumn`. `FutoshikiScreen.tsx`: separate squares with the signs drawn in the gaps (turned to point up or down between rows), notes, digit pad with remaining counts, red squares for repeats and dead squares, a circled broken sign, and spoken labels that name each sign next to a square.
 
 - N by N Latin square (each digit once per row and column) with greater-than and less-than signs between neighbouring cells, and a few given digits. Levels: 4x4, 5x5, 6x6, 7x7.
 - Generator: Latin square, a random set of inequality signs, givens removed while unique. Logic solver: candidate elimination by the signs, naked and hidden singles, chains of signs.

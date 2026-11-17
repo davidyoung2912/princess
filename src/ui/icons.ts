@@ -89,6 +89,7 @@ export {
   Shapes as JigsawSudokuGame,
   Calculator as KillerSudokuGame,
   CircleDot as BinairoGame,
+  ChevronsLeftRight as FutoshikiGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,
