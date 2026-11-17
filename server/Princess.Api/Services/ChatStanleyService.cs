@@ -145,6 +145,21 @@ public sealed class ChatStanleyService(IChatStore store, IChatStanleyStore uses,
         return new([.. ChatStanleyRules.Explain(chosen.Text).Select(t => new ChatTermDto(t.Word, t.Meaning))]);
     }
 
+    /// <summary>
+    /// Stanley's private look at one message (phase 4): what it asks for (money, gift cards, a number, another app, pressure) and a few polite replies. Pattern checks only, no model; the message is not stored or logged
+    /// and the sender is never told. Never the caller's own message, a supervised child's, or an important or urgent one. 400 <c>notMessage</c>; 403 <c>kind|child|off|urgent|stopped</c>; 404.
+    /// </summary>
+    public async Task<ChatCheckDto> CheckAsync(UserRecord actor, Guid conversationId, ChatPlanBody? body, CancellationToken ct)
+    {
+        var room = await RequireOnAsync(actor, conversationId, options.Value.Switches.ChatCheck, "R10", ct);
+        var (chosen, _) = await ChosenAsync(actor, room, body?.MessageId ?? Guid.Empty, ct);
+        var sender = room.People.FirstOrDefault(p => p.UserId == chosen.FromUserId);
+        if (ChatNudgeRules.Refusal(chosen.FromUserId == actor.Id, sender?.IsSupervised == true, chosen.Urgency) is { } refusal) throw refusal == "notMessage" ? ApiException.Invalid(refusal) : ApiException.Forbidden(refusal);
+        var flags = ChatNudgeRules.Check(chosen.Text);
+        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "chat.check", Outcome = AuditOutcome.Success, Target = "conversation:" + conversationId, Detail = flags.Count + " flags" }, ct);
+        return new(ChatNudgeRules.Headline(flags), [.. flags.Select(f => new ChatCheckFlagDto(f, ChatNudgeRules.Explain(f)))], ChatNudgeRules.Replies(flags), ChatNudgeRules.Calm, ChatNudgeRules.Looks(flags));
+    }
+
     /// <summary>A short message to edit before sending: running late, or asking to meet. Nothing is sent. 400 <c>draft</c> for an unknown kind, an unusable place or time, or minutes outside 5 to 180.</summary>
     public Task<ChatDraftDto> DraftAsync(ChatDraftBody? body) =>
         !options.Value.Switches.ChatDraft ? throw ApiException.Forbidden(StanleySwitches.Stopped) : Task.FromResult(new ChatDraftDto(ChatStanleyRules.Draft(body?.Kind, body?.Minutes, body?.Place, body?.Time) ?? throw ApiException.Invalid("draft")));

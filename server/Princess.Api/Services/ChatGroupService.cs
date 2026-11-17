@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
@@ -10,7 +11,7 @@ namespace Princess.Api.Services;
 /// The creator can invite, remove and rename; anyone can leave. A member reads only what was said from the moment they joined (the window in <see cref="ChatConversationRules.CanRead"/>).
 /// A group has 25 people at most, counting the creator and the invitations still waiting. A supervised child cannot make a group. Declines are quiet: the creator is never told who said no.
 /// </summary>
-public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IUserClock clock, ChatNotifier notifier)
+public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IUserClock clock, ChatNotifier notifier, IChatStore chat, IChatStanleyStore stanley, IOptions<StanleyOptions> options)
 {
     private static string Short(ChatGroupPersonRow p) => ChatConnectionRules.ShortName(p.FirstName, p.LastName);
 
@@ -149,6 +150,23 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var result = await store.AcceptInviteAsync(row.Id, ChatGroupRules.JoinedLine(who), ChatGroupRules.MaxMembers, now, ct);
         if (result == "full") throw ApiException.Conflict("full");
         if (result is not null) throw ApiException.Conflict("answered");
+        await WelcomeAsync(row.GroupId, row.GroupName, now, ct);
+    }
+
+    /// <summary>
+    /// Stanley's one welcome line when a made group first has someone besides its creator (docs/chat-stanley-plan.md, phase 5). It names the group and says what he can do, no one's name and no plans. Never where a supervised child is
+    /// a member, where the creator turned his help off, or where his chat route is switched off. A person who muted him hides it like any of his lines. A failure here never undoes the join.
+    /// </summary>
+    private async Task WelcomeAsync(long groupId, string groupName, DateTime now, CancellationToken ct)
+    {
+        if (!options.Value.Switches.Chat) return;
+        try
+        {
+            var members = await store.ListActiveAsync(groupId, ct);
+            if (!ChatHostRules.ShouldWelcome(members.Count == 2, false) || members.Any(m => m.IsSupervised) || await stanley.IsOffAsync(groupId, ct)) return;
+            await chat.AddGroupStanleyMessageAsync(groupId, ChatHostRules.GroupWelcome(groupName), true, now, ct);
+        }
+        catch (Exception e) when (e is not OperationCanceledException) { }
     }
 
     // ---- helpers ----

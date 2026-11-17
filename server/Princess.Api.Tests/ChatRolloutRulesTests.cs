@@ -146,8 +146,8 @@ public sealed class ChatRolloutRulesTests
     [Fact]
     public void EachChatRoleHasItsOwnSwitchThatTurnsOffAlone()
     {
-        string[] roles = ["chatHerald", "chatCatchUp", "chatPlan", "chatWords", "chatDraft", "chatCoordinator", "chatRelay"];
-        Action<StanleySwitches>[] off = [s => s.ChatHerald = false, s => s.ChatCatchUp = false, s => s.ChatPlan = false, s => s.ChatWords = false, s => s.ChatDraft = false, s => s.ChatCoordinator = false, s => s.ChatRelay = false];
+        string[] roles = ["chatHerald", "chatCatchUp", "chatPlan", "chatWords", "chatDraft", "chatCheck", "chatCoordinator", "chatRelay"];
+        Action<StanleySwitches>[] off = [s => s.ChatHerald = false, s => s.ChatCatchUp = false, s => s.ChatPlan = false, s => s.ChatWords = false, s => s.ChatDraft = false, s => s.ChatCheck = false, s => s.ChatCoordinator = false, s => s.ChatRelay = false];
         for (var i = 0; i < roles.Length; i++)
         {
             var s = new StanleySwitches();

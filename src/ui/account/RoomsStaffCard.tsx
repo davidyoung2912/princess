@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ApiError } from '../../api/errors'
 import type { ChatRoomAdminItem, ChatRoomModerator, ChatRoomMute, ChatRoomPerson, ChatRoomPost, ChatRoomStaffAction } from '../../api/chatTypes'
 import { canOpenRoom, checkNewRoom, MIN_MODERATORS, staffOrder, staffProblem } from '../../domain/chatRooms'
+import { USE_KIND_LABEL, usedPercent } from '../../domain/chatStanley'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
@@ -40,6 +41,7 @@ export function RoomsStaffCard() {
       <Held />
       <Questions />
       <Flags />
+      <StanleyUse />
     </Card>
   )
 }
@@ -205,6 +207,34 @@ function Flags() {
         ))}
       </Load>
       <Problem error={decide.error} />
+    </section>
+  )
+}
+
+/** Stanley in chat for staff: his calls per day and the share of his suggestions guests used. Counts only; no text and no person. */
+function StanleyUse() {
+  const u = useMine(() => api.chatRoomsStaff.stanleyUse(7))
+  return (
+    <section aria-labelledby="rs-use-h">
+      <h3 id="rs-use-h">{headingCase(t('rs.use'))}</h3>
+      <p className="muted">{t('rs.useBody')}</p>
+      <Load state={u}>
+        {(d) => {
+          const pct = usedPercent(d)
+          return (
+            <>
+              <p>{pct === null ? t('rs.useNoShare', { count: d.suggestions }) : t('rs.useShare', { used: d.used, count: d.suggestions, percent: pct })}</p>
+              {d.truncated && <p className="muted" role="status">{t('rs.useTruncated')}</p>}
+              <table className="plain-table">
+                <caption className="visually-hidden">{t('rs.useByKind')}</caption>
+                <thead><tr><th scope="col">{t('rs.useKind')}</th><th scope="col">{t('rs.useCalls')}</th></tr></thead>
+                <tbody>{d.byKind.map((k) => <tr key={k.action}><th scope="row">{USE_KIND_LABEL[k.action] ?? k.action}</th><td>{k.calls}</td></tr>)}</tbody>
+              </table>
+              <ul className="plain-bullets" aria-label={t('rs.usePerDay')}>{d.perDay.map((x) => <li key={x.date}>{t('rs.useDay', { date: x.date, count: x.calls })}</li>)}</ul>
+            </>
+          )
+        }}
+      </Load>
     </section>
   )
 }

@@ -448,6 +448,7 @@ describe('Chat gates (chat phase 14): Stanley in a thread', () => {
     ['ChatPlan', 'ChatStanleyService.cs', 'R4 make it a plan'],
     ['ChatWords', 'ChatStanleyService.cs', 'R8 plain words'],
     ['ChatDraft', 'ChatStanleyService.cs', 'R9 drafting'],
+    ['ChatCheck', 'ChatStanleyService.cs', 'R10 ask about a message'],
     ['ChatCoordinator', 'ChatCoordinatorService.cs', 'R5 coordinator'],
     ['ChatRelay', 'ChatRelayService.cs', 'R7 relay and R12 recap'],
     ['ChatHerald', 'StanleyMomentService.cs', 'R2 suggestion cards'],
@@ -458,6 +459,15 @@ describe('Chat gates (chat phase 14): Stanley in a thread', () => {
     expect(options).toMatch(new RegExp(`public bool ${name} \\{ get; set; \\} = true;`))
     expect(options).toContain(`("${name[0].toLowerCase()}${name.slice(1)}", ${name})`)
     expect(svc(file)).toContain(`Switches.${name}`)
+  })
+
+  it('"Ask Stanley about this message" is pattern checks only: no model, no tools, no stored text, and the sender is never told', () => {
+    const service = svc('ChatStanleyService.cs')
+    const check = service.slice(service.indexOf('public async Task<ChatCheckDto> CheckAsync'), service.indexOf('public Task<ChatDraftDto> DraftAsync'))
+    expect(check).toContain('ChatNudgeRules.Check')
+    expect(check).not.toMatch(/model|Meter|notifier|AddMessageAsync|AddSystemLineAsync/)
+    expect(check).not.toContain('chosen.Text }')   // the audit detail is a count, never the words
+    expect(read('server/Princess.Api/Domain/ChatNudgeRules.cs')).not.toMatch(/IConciergeModel|HttpClient/)
   })
 
   it('a stopped role answers 403 "stopped", and the critical lanes of the notice relay do not depend on any chat role switch', () => {

@@ -405,6 +405,7 @@ v1.MapReviewEndpoints();
 v1.MapStanleyNoticeStatsEndpoints();
 v1.MapChatRolloutEndpoints();
 v1.MapChatStageMeasureEndpoints();
+v1.MapChatStanleyUseEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>

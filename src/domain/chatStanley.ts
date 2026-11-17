@@ -1,5 +1,5 @@
 /** Stanley on tap in a thread (docs/chat-features-research.md, phase 10). Framework-free; mirrors the limits of `ChatStanleyRules` on the server, which decides everything else. */
-import type { ChatCatchUp, ChatMessage, ChatPlanPreview, ChatStanleyTap } from '../api/chatTypes'
+import type { ChatCatchUp, ChatMessage, ChatMessageCheck, ChatStanleyUse, ChatPlanPreview, ChatStanleyTap } from '../api/chatTypes'
 
 /** The catch-up button shows once more than this many messages are unread (the server's `UnreadThreshold`). */
 export const UNREAD_THRESHOLD = 15
@@ -37,7 +37,18 @@ export const showCatchUp = (tap: Pick<ChatStanleyTap, 'available'> | undefined, 
 export const mayHelpWith = (tap: Pick<ChatStanleyTap, 'available'> | undefined, m: Pick<ChatMessage, 'text' | 'system' | 'stanley' | 'kind' | 'deleted'>): boolean =>
   tap?.available === true && !m.system && !m.stanley && !m.deleted && m.kind === undefined && m.text.trim().length > 0
 
-export type StanleyProblem = 'tooShort' | 'limit' | 'off' | 'child' | 'noPlan' | 'notMessage' | 'offline' | 'draft' | 'other'
+/**
+ * Whether "Ask Stanley about this message" is offered: Stanley's help is on, and it is another person's plain message of normal urgency (never your own, and never an important or urgent
+ * message, which comes from staff or a guardian and is shown as it is). The server decides again.
+ */
+export const mayCheck = (tap: Pick<ChatStanleyTap, 'available'> | undefined, m: Pick<ChatMessage, 'text' | 'system' | 'stanley' | 'kind' | 'deleted' | 'from' | 'urgency'>, mine: string): boolean =>
+  mayHelpWith(tap, m) && m.from !== mine && (m.urgency ?? 'normal') === 'normal'
+
+/** One polite sentence for a screen reader when the look at a message opens. */
+export const checkAnnouncement = (c: Pick<ChatMessageCheck, 'headline' | 'flags'>): string =>
+  c.flags.length === 0 ? c.headline : `${c.headline} ${c.flags.length === 1 ? 'One thing noticed.' : `${c.flags.length} things noticed.`}`
+
+export type StanleyProblem = 'urgent' | 'tooShort' | 'limit' | 'off' | 'child' | 'noPlan' | 'notMessage' | 'offline' | 'draft' | 'other'
 
 /** The kind of failure from an API error's `message` (the server's problem title) and code, so a screen picks one sentence. */
 export function stanleyProblem(code: string, message: string | undefined): StanleyProblem {
@@ -47,6 +58,7 @@ export function stanleyProblem(code: string, message: string | undefined): Stanl
     case 'catchUpLimit': return 'limit'
     case 'off': return 'off'
     case 'child': return 'child'
+    case 'urgent': return 'urgent'
     case 'noPlan': return 'noPlan'
     case 'notMessage': return 'notMessage'
     case 'draft': return 'draft'
@@ -76,3 +88,15 @@ export function canDraft(kind: 'late' | 'meet', minutesRaw: string, place: strin
 
 /** The preview as the plain list a screen reader reads: the question, then each option. */
 export const planSummary = (p: ChatPlanPreview): string => `${p.question} ${p.options.join(', ')}`
+
+/** The kinds of call staff see, in plain words (the audit action each writes is the key). */
+export const USE_KIND_LABEL: Record<string, string> = {
+  'chat.reword': 'Reword and polish',
+  'chat.icebreakers': 'Icebreakers',
+  'chat.catchUp': 'Catch me up',
+  'chat.askStanley': 'Asked in a chat',
+  'chat.check': 'Asked about a message',
+}
+
+/** A share as a whole percent, or null when the server gave none (too few suggestions to say). */
+export const usedPercent = (u: Pick<ChatStanleyUse, 'usedShare'>): number | null => (typeof u.usedShare === 'number' ? Math.round(u.usedShare * 100) : null)

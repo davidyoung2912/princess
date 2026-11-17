@@ -90,6 +90,7 @@ Each Stanley role in a thread has its own switch (`Stanley:Switches:<Name>=false
 | R7 and R12 Relay and recap | `ChatRelay` | "Get a person" draft and the trip recap |
 | R8 Plain words | `ChatWords` | "What does this mean?" |
 | R9 Drafting | `ChatDraft` | "Help me write" |
+| R10 Ask about a message | `ChatCheck` | "Ask Stanley about this message" |
 | R1 `@Stanley`, wording help | `ChatAsk`, `Chat` | (existing) |
 
 | Incident | Detect | Contain | Then |

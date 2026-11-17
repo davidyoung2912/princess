@@ -43,6 +43,10 @@ public static class ChatStanleyEndpoints
             .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
             .WithSummary("The cruise words in one message that the library knows, in plain words (no model). 400 notMessage; 403 kind|child|off; 404.");
 
+        chat.MapPost("/conversations/{id:guid}/stanley/check", async (Guid id, ChatPlanBody body, ICurrentUser me, ChatStanleyService svc, CancellationToken ct) => Results.Ok(await svc.CheckAsync(await me.LoadAsync(ct), id, body, ct)))
+            .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
+            .WithSummary("Ask Stanley about this message: a private look at one message the caller chose (money, gift cards, a phone number, another app, pressure) and up to three polite replies. Pattern checks only, nothing stored, the sender is never told. 400 notMessage; 403 kind|child|off|urgent|stopped; 404.");
+
         chat.MapPost("/stanley/draft", async (ChatDraftBody body, ICurrentUser me, ChatStanleyService svc, CancellationToken ct) => { await me.LoadAsync(ct); return Results.Ok(await svc.DraftAsync(body)); })
             .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
             .WithSummary("A short message to edit before sending: `late` (5 to 180 minutes, a place) or `meet` (a place, optionally a time). Nothing is sent. 400 draft.");

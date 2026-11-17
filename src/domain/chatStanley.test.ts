@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isAskStanley, withAsk, canDraft, catchUpAnnouncement, cleanMinutes, hasHighlights, mayHelpWith, planSummary, showCatchUp, stanleyProblem, unreadAfter, UNREAD_THRESHOLD } from './chatStanley'
+import { USE_KIND_LABEL, usedPercent, mayCheck, checkAnnouncement, isAskStanley, withAsk, canDraft, catchUpAnnouncement, cleanMinutes, hasHighlights, mayHelpWith, planSummary, showCatchUp, stanleyProblem, unreadAfter, UNREAD_THRESHOLD } from './chatStanley'
 
 const m = (id: string, from: string, extra: Record<string, unknown> = {}) => ({ id, from, ...extra })
 
@@ -95,5 +95,50 @@ describe('asking Stanley', () => {
     expect(withAsk('what is on in Cozumel?')).toBe('@Stanley what is on in Cozumel?')
     expect(withAsk('  hello')).toBe('@Stanley hello')
     expect(withAsk('@Stanley already')).toBe('@Stanley already')
+  })
+})
+
+describe('Ask Stanley about this message (stanley plan phase 4)', () => {
+  const on = { available: true }
+  const msg = { text: 'Can you send me some money?', system: false, stanley: false, deleted: false, from: 'p2', kind: undefined, urgency: undefined } as Parameters<typeof mayCheck>[1]
+
+  it('is offered on another person\'s plain message when Stanley is on', () => {
+    expect(mayCheck(on, msg, 'me')).toBe(true)
+  })
+
+  it('is not offered on your own message, an urgent or important one, or where Stanley is off', () => {
+    expect(mayCheck(on, { ...msg, from: 'me' }, 'me')).toBe(false)
+    expect(mayCheck(on, { ...msg, urgency: 'urgent' }, 'me')).toBe(false)
+    expect(mayCheck(on, { ...msg, urgency: 'important' }, 'me')).toBe(false)
+    expect(mayCheck({ available: false }, msg, 'me')).toBe(false)
+    expect(mayCheck(undefined, msg, 'me')).toBe(false)
+  })
+
+  it('is not offered on cards, system lines, Stanley\'s lines or deleted messages', () => {
+    expect(mayCheck(on, { ...msg, kind: 'card' }, 'me')).toBe(false)
+    expect(mayCheck(on, { ...msg, system: true }, 'me')).toBe(false)
+    expect(mayCheck(on, { ...msg, stanley: true }, 'me')).toBe(false)
+    expect(mayCheck(on, { ...msg, deleted: true }, 'me')).toBe(false)
+  })
+
+  it('maps the urgent refusal to its own sentence and announces what was noticed', () => {
+    expect(stanleyProblem('forbidden', 'urgent')).toBe('urgent')
+    expect(checkAnnouncement({ headline: 'Nothing.', flags: [] })).toBe('Nothing.')
+    expect(checkAnnouncement({ headline: 'Heads up.', flags: [{ key: 'money', text: 'x' }] })).toBe('Heads up. One thing noticed.')
+    expect(checkAnnouncement({ headline: 'Heads up.', flags: [{ key: 'money', text: 'x' }, { key: 'phone', text: 'y' }] })).toBe('Heads up. 2 things noticed.')
+  })
+})
+
+describe('staff counts for Stanley in chat (stanley plan phase 7)', () => {
+    it('shows a share as a whole percent, or nothing when the server gave none', () => {
+    expect(usedPercent({ usedShare: 0.2 })).toBe(20)
+    expect(usedPercent({ usedShare: 0.256 })).toBe(26)
+    expect(usedPercent({ usedShare: null })).toBeNull()
+    expect(usedPercent({})).toBeNull()
+  })
+
+  it('has plain words for every kind of call the server counts', () => {
+    for (const k of ['chat.reword', 'chat.icebreakers', 'chat.catchUp', 'chat.askStanley', 'chat.check']) expect(USE_KIND_LABEL[k]).toBeTruthy()
+    for (const label of Object.values(USE_KIND_LABEL)) expect(label).not.toMatch(/\bAI\b/)
   })
 })

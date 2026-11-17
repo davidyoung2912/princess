@@ -460,6 +460,13 @@ export interface ChatConversationsApi {
   makePlan(id: string, messageId: string): Promise<ChatPlanPreview>
   /** The cruise words in one message, in plain words. Rejects `invalid` (`notMessage`), `forbidden` (`kind`, `child`, `off`) or `notFound`. */
   explainWords(id: string, messageId: string): Promise<ChatTerm[]>
+  /**
+   * Stanley's private look at one message from someone else (money, gift cards, a number, another app, pressure) with polite replies to use. Nothing is sent or stored and the sender is not told.
+   * Rejects `invalid` (`notMessage`), `forbidden` (`kind`, `child`, `off`, `urgent`, `stopped`) or `notFound`.
+   */
+  checkMessage(id: string, messageId: string): Promise<ChatMessageCheck>
+  /** Counts that the guest used one of Stanley's suggestions (nothing about the text is kept). Never needed for the tap to work; rejects `invalid` (`kind`). */
+  suggestionUsed(kind: 'reword' | 'icebreakers' | 'reply'): Promise<void>
   /** A short message to edit before sending. Nothing is sent. Rejects `invalid` (`draft`). */
   draftMessage(input: ChatDraftInput): Promise<string>
   /** Whether Stanley's friendly chat help is on for you, and the lines the request screens show. */
@@ -478,6 +485,11 @@ export interface ChatStanleyTap { available: boolean; canSwitch: boolean; off: b
 /** `written` is true when a model wrote `decided` and `open` from the same messages instead of quoting them; `latest` is always real quotes. */
 export interface ChatCatchUp { label: string; messages: number; since: number; decided: string[]; open: string[]; latest: string[]; written?: boolean }
 export interface ChatPlanPreview { question: string; options: string[] }
+/** `key` is money, giftCard, phone, offApp or pressure. `worrying` is true when more than one thing, or money or gift cards, showed up. */
+export interface ChatCheckFlag { key: 'money' | 'giftCard' | 'phone' | 'offApp' | 'pressure'; text: string }
+export interface ChatMessageCheck { headline: string; flags: ChatCheckFlag[]; replies: string[]; note: string; worrying: boolean }
+/** `usedShare` is absent until enough suggestions were given (the server's rule). `truncated` means a count hit its cap, so the numbers are a floor. */
+export interface ChatStanleyUse { days: number; perDay: { date: string; calls: number }[]; byKind: { action: string; calls: number }[]; suggestions: number; used: number; usedShare?: number | null; truncated: boolean }
 export interface ChatTerm { word: string; meaning: string }
 /** `lines` are Stanley's wording keyed by what each is for: waiting, sent, expired, cooldown, tooManyOpen, tooMany, alreadyAsked, blocked. */
 export interface ChatStanleyStatus { on: boolean; lines: Record<string, string> }
@@ -663,6 +675,8 @@ export interface ChatRoomsStaffApi {
   questions(): Promise<ChatSuggestedQuestion[]>
   decideQuestion(id: string, decision: 'popular' | 'reject'): Promise<void>
   summary(days?: number): Promise<ChatRoomSummary>
+  /** Stanley in chat for staff (stanley plan, phase 7): calls per day and the share of suggestions used. Counts only. `days` is 1 to 30. */
+  stanleyUse(days?: number): Promise<ChatStanleyUse>
   /** Posts guests asked Stanley to flag (phase 12), oldest first. No words: the room, the reason and when. */
   hostFlags(): Promise<ChatHostFlag[]>
   /** Marks a flag looked at. Rejects `notFound` when it is gone or already decided. */

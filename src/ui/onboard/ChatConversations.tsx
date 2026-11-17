@@ -586,6 +586,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     const box = form.current?.querySelector('textarea')
     requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
   }
+  const runUse = useLatest((draft: string) => putInBox(draft))
   const submit = async (quick?: string) => {
     const body = (quick ?? text).trim()
     if (!body) return
@@ -692,7 +693,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             <Fragment key={m.id}>
               {m.id === dividerId && <li id="chat-unread" className="chat-divider" tabIndex={-1} aria-label={t('conv.newMessagesDivider')}><span>{t('conv.newMessagesDivider')}</span></li>}
               <MessageRow m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked}
-                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} canPin={conversation?.canPin === true} pinned={pins.length} onPin={runPin} held={heldAnswers.get(m.id)} onHold={holdAnswer} />
+                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} canPin={conversation?.canPin === true} pinned={pins.length} onPin={runPin} held={heldAnswers.get(m.id)} onHold={holdAnswer} onUse={runUse} />
             </Fragment>
           ))}
         {bubbles.map((b) => (
@@ -914,6 +915,8 @@ interface MessageRowProps {
   /** Phase 4: a vote or plan answer for this message held for signal (the value), and the way to hold another. */
   held?: string
   onHold?: (job: Record<string, string>) => boolean
+  /** Phase 4 of the Stanley plan: a polite reply from "Ask Stanley about this message" goes in the message box (nothing is sent). */
+  onUse?: (text: string) => void
 }
 
 /** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
@@ -939,7 +942,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
 }
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
-const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete, canPin, pinned, onPin, held, onHold }: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete, canPin, pinned, onPin, held, onHold, onUse }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
@@ -958,13 +961,13 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     // Deleted for everyone: the fact and who and when, nothing of what it said.
     return <li id={`msg-${m.id}`} className="chat-msg chat-msg--deleted"><p className="muted"><strong>{m.from === mine ? t('chat.you') : (m.fromName ?? '')}</strong> · {t('conv.deleted')} · {shipTime(m.at)}</p></li>
   }
-  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} canPin={canPin} pinned={pinned} onPin={onPin} held={held} onHold={onHold} />
+  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} canPin={canPin} pinned={pinned} onPin={onPin} held={held} onHold={onHold} onUse={onUse} />
 })
 
 const noop = (): void => {}
 
 /** A person's message: the quote of what it answers, the text or photo, the chips, and the React and Reply buttons (a long press with a finger opens the reactions too). */
-function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete, canPin = false, pinned = 0, onPin, held, onHold }: MessageRowProps) {
+function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete, canPin = false, pinned = 0, onPin, held, onHold, onUse }: MessageRowProps) {
   const own = m.from === mine
   // A typed card or place is drawn from the server's own fields; an older plan card travels as text with a marker.
   const typed = isTyped(m) && m.card ? m.card : null
@@ -1001,7 +1004,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
             <button ref={reactButton} type="button" className="chat-act chat-act--icon" aria-expanded={picking} aria-label={t('conv.react')} title={t('conv.react')} onClick={() => setPicking((v) => !v)}><Smile aria-hidden="true" /></button>
             <button type="button" className="chat-act chat-act--icon" aria-label={t('conv.reply')} title={t('conv.reply')} onClick={() => onReply?.(m)}><ReplyIcon aria-hidden="true" /></button>
             {pinning && onPin && <button type="button" className="chat-act chat-act--icon" aria-label={t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')} title={t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')} onClick={() => onPin(m.id, pinning === 'pin')}>{pinning === 'pin' ? <PinIcon aria-hidden="true" /> : <PinOff aria-hidden="true" />}</button>}
-            <StanleyMessageActions conversationId={conversationId} message={m} onPosted={onChanged ?? noop} />
+            <StanleyMessageActions conversationId={conversationId} message={m} mine={mine} onPosted={onChanged ?? noop} onUse={onUse} onBlocked={onBlocked} />
             <CoordinatorButton message={m} />
           </>
         )

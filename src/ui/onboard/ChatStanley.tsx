@@ -1,15 +1,16 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { CalendarPlus, Lightbulb } from 'lucide-react'
+import { CalendarPlus, Lightbulb, ShieldCheck } from 'lucide-react'
 import stanleyPicture from '../../assets/stanley-small.png'
 import type { ApiError } from '../../api/errors'
-import type { ChatCatchUp, ChatIcebreakers, ChatMessage, ChatPlanPreview, ChatReword, ChatRewordMode, ChatStanleyTap, ChatTerm } from '../../api/chatTypes'
+import type { ChatCatchUp, ChatIcebreakers, ChatMessage, ChatMessageCheck, ChatPlanPreview, ChatReword, ChatRewordMode, ChatStanleyTap, ChatTerm } from '../../api/chatTypes'
 import { newClientId } from '../../domain/chatThread'
-import { canDraft, catchUpAnnouncement, isAskStanley, cleanMinutes, hasHighlights, LATE_MAX, LATE_MIN, mayHelpWith, PLACE_MAX, stanleyProblem, TIME_MAX } from '../../domain/chatStanley'
+import { canDraft, catchUpAnnouncement, checkAnnouncement, mayCheck, isAskStanley, cleanMinutes, hasHighlights, LATE_MAX, LATE_MIN, mayHelpWith, PLACE_MAX, stanleyProblem, TIME_MAX } from '../../domain/chatStanley'
 import { canAskReword, hasSuggestion, rewordProblem, showRewordHelp, MODE_LABEL } from '../../domain/chatWriting'
 import { useAction } from '../../hooks/useAction'
 import { useStanleyStatus } from '../../hooks/useStanleyStatus'
 import { api } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
+import { REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
 import { Field } from '../Field'
@@ -25,6 +26,11 @@ function Problem({ error }: { error: ApiError | null }) {
   if (!error) return null
   const why = stanleyProblem(error.code, error.message)
   return why === 'other' ? <ActionError error={error} /> : <p role="alert" className="field__error">{t(`cst.problem.${why}` as StringKey)}</p>
+}
+
+/** Tells the server, as a count and nothing else, that the guest used one of Stanley's suggestions. It never blocks the tap and a failure is ignored. */
+function noteUsed(kind: 'reword' | 'icebreakers' | 'reply'): void {
+  void api.chatConversations.suggestionUsed(kind).catch(() => undefined)
 }
 
 /** A short list of quotes under a heading; nothing is drawn when there are none. */
@@ -125,22 +131,78 @@ function WordsDialog({ terms, onClose }: { terms: readonly ChatTerm[]; onClose: 
 }
 
 /**
- * "Make this a plan" and "What does this mean?" under a plain message. Both are private until the guest posts the poll. Nothing is drawn when Stanley's help is off in this conversation or the message is not plain text.
+ * "Ask Stanley about this message" (docs/chat-stanley-plan.md, phase 4): a private look at one message from someone else. Stanley names what it asks for and offers polite replies; Report, Mute and Block are
+ * the guest's own taps, each one step. Nothing is sent, stored or told to the sender.
  */
-export function StanleyMessageActions({ conversationId, message, onPosted }: { conversationId: string; message: ChatMessage; onPosted: () => void }) {
+function CheckDialog({ conversationId, message, check, onUse, onBlocked, onClose }: { conversationId: string; message: ChatMessage; check: ChatMessageCheck; onUse?: (text: string) => void; onBlocked?: () => void; onClose: () => void }) {
+  const who = message.fromName ?? ''
+  const [reason, setReason] = useState<ChatReportReason>('rude')
+  const [done, setDone] = useState<'reported' | 'muted' | 'blocked' | null>(null)
+  const report = useAction(async () => { await api.aboard.chat.report(message.id, reason); setDone('reported') })
+  const mute = useAction(async () => { await api.chatConversations.mute(conversationId, true, 'day'); setDone('muted') })
+  const block = useAction(async () => { await api.aboard.chat.block(message.from, true); setDone('blocked'); onBlocked?.() })
+  return (
+    <Dialog title={t('cck.title')} onClose={onClose}>
+      <p role="status">{checkAnnouncement(check)}</p>
+      <p><strong>{check.headline}</strong></p>
+      {check.flags.length > 0 && <ul className="plain-bullets">{check.flags.map((f) => <li key={f.key}>{f.text}</li>)}</ul>}
+      <p className="muted">{check.note}</p>
+      {onUse && check.replies.length > 0 && (
+        <>
+          <h3>{t('cck.replies')}</h3>
+          <ul className="plain-bullets">
+            {check.replies.map((r) => (
+              <li key={r}>{r} <Button variant="tertiary" onClick={() => { noteUsed('reply'); onUse(r); onClose() }}>{t('cw.use')}<span className="visually-hidden"> {r}</span></Button></li>
+            ))}
+          </ul>
+          <p className="muted">{t('cck.repliesBody')}</p>
+        </>
+      )}
+      <h3>{t('cck.actions')}</h3>
+      {done ? <p role="status">{t(`cck.done.${done}` as StringKey, { name: who })}</p> : (
+        <>
+          <div className="field">
+            <label htmlFor="cck-reason">{t('safe.reason')}</label>
+            <select id="cck-reason" className="field__input" value={reason} onChange={(e) => setReason(e.target.value as ChatReportReason)}>
+              {REPORT_REASONS.map((r) => <option key={r} value={r}>{t(`safe.r.${r}` as StringKey)}</option>)}
+            </select>
+          </div>
+          <div className="button-row">
+            <Button variant="secondary" disabled={report.busy} onClick={() => void report.run()}>{t('cck.report')}</Button>
+            <Button variant="secondary" disabled={mute.busy} onClick={() => void mute.run()}>{t('cck.mute')}</Button>
+            <Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('cck.block', { name: who || t('cck.them') })}</Button>
+          </div>
+          <p className="muted">{t('cck.actionsBody')}</p>
+        </>
+      )}
+      <ActionError error={report.error ?? mute.error ?? block.error} />
+    </Dialog>
+  )
+}
+
+/**
+ * "Make this a plan", "What does this mean?" and "Ask Stanley about this message" under a plain message. All are private (a plan is posted only when the guest posts the poll). Nothing is drawn when Stanley's
+ * help is off in this conversation or the message is not plain text.
+ */
+export function StanleyMessageActions({ conversationId, message, mine, onPosted, onUse, onBlocked }: { conversationId: string; message: ChatMessage; mine: string; onPosted: () => void; onUse?: (text: string) => void; onBlocked?: () => void }) {
   const tap = useContext(TapContext)
   const [preview, setPreview] = useState<ChatPlanPreview | null>(null)
   const [terms, setTerms] = useState<ChatTerm[] | null>(null)
+  const [check, setCheck] = useState<ChatMessageCheck | null>(null)
   const plan = useAction(async () => { setPreview(await api.chatConversations.makePlan(conversationId, message.id)) })
   const words = useAction(async () => { setTerms(await api.chatConversations.explainWords(conversationId, message.id)) })
+  const look = useAction(async () => { setCheck(await api.chatConversations.checkMessage(conversationId, message.id)) })
   if (!mayHelpWith(tap, message)) return null
+  const mayLook = mayCheck(tap, message, mine)
   return (
     <>
       <button type="button" className="chat-act chat-act--icon" disabled={plan.busy} aria-label={t('cst.plan')} title={t('cst.plan')} onClick={() => void plan.run()}><CalendarPlus aria-hidden="true" /></button>
       <button type="button" className="chat-act chat-act--icon" disabled={words.busy} aria-label={t('cst.words')} title={t('cst.words')} onClick={() => void words.run()}><Lightbulb aria-hidden="true" /></button>
-      {(plan.error || words.error) && <span className="chat-act__problem"><Problem error={plan.error ?? words.error} /></span>}
+      {mayLook && <button type="button" className="chat-act chat-act--icon" disabled={look.busy} aria-label={t('cck.ask')} title={t('cck.ask')} onClick={() => void look.run()}><ShieldCheck aria-hidden="true" /></button>}
+      {(plan.error || words.error || look.error) && <span className="chat-act__problem"><Problem error={plan.error ?? words.error ?? look.error} /></span>}
       {preview && <PlanDialog conversationId={conversationId} preview={preview} onPosted={onPosted} onClose={() => setPreview(null)} />}
       {terms && <WordsDialog terms={terms} onClose={() => setTerms(null)} />}
+      {check && <CheckDialog conversationId={conversationId} message={message} check={check} onUse={onUse} onBlocked={onBlocked} onClose={() => setCheck(null)} />}
     </>
   )
 }
@@ -240,7 +302,7 @@ function RewordSheet({ text, mode, onUse, onClose }: { text: string; mode: ChatR
       <p role="status">{result ? result.message : t('cw.thinking')}</p>
       {result && hasSuggestion(result) && <p><strong>{result.suggestion}</strong></p>}
       <div className="button-row">
-        {result && hasSuggestion(result) && <Button onClick={() => { onUse(result.suggestion); onClose() }}>{t('cw.use')}</Button>}
+        {result && hasSuggestion(result) && <Button onClick={() => { noteUsed('reword'); onUse(result.suggestion); onClose() }}>{t('cw.use')}</Button>}
         <Button variant="secondary" onClick={onClose}>{t(result && hasSuggestion(result) ? 'cw.ignore' : 'cw.close')}</Button>
       </div>
       <WritingProblem error={ask.error} />
@@ -297,7 +359,7 @@ export function Icebreakers({ onPick }: { onPick?: (line: string) => void }) {
           <p className="muted">{t(onPick ? 'cw.iceBody' : 'cw.iceIdeas')}</p>
           <ul className="plain-list">
             {shown.lines.map((line) => (
-              <li key={line}>{onPick ? <button type="button" className="chat-act" onClick={() => onPick(line)}>{line}</button> : line}</li>
+              <li key={line}>{onPick ? <button type="button" className="chat-act" onClick={() => { noteUsed('icebreakers'); onPick(line) }}>{line}</button> : line}</li>
             ))}
           </ul>
           {shown.canMore && <Button type="button" variant="tertiary" disabled={ask.busy} onClick={() => void ask.run(true).catch(() => undefined)}>{t('cw.more')}</Button>}

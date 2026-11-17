@@ -47,3 +47,9 @@ public sealed record ChatIcebreakersBody(bool More = false);
 
 /// <summary>Up to three openers. <c>CanMore</c>: another set can be asked for.</summary>
 public sealed record ChatIcebreakersDto(List<string> Lines, bool CanMore);
+
+/// <summary>One thing a chosen message asks for (<c>Key</c>: money, giftCard, phone, offApp or pressure) and Stanley's plain words about it.</summary>
+public sealed record ChatCheckFlagDto(string Key, string Text);
+
+/// <summary>Stanley's private look at one message: a headline, what it asks for, and up to three polite replies to use. Nothing is sent, stored or told to the sender.</summary>
+public sealed record ChatCheckDto(string Headline, List<ChatCheckFlagDto> Flags, List<string> Replies, string Note, bool Worrying);

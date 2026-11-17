@@ -91,7 +91,7 @@ So that nothing below is proposed twice.
 | Safety | Guardian read-only view (audited), report and block per message, staff review, 30-day retention, access log |
 | Performance | Device cache of list and thread, 30-message pages, older on scroll, "New messages" chip that never jumps the page |
 | Notices today | `PushService` and `PushRules` (eleven kinds: `allAboard`, `backAboard`, `scheduleChange`, `disruption`, `payment`, `reminder`, `travel`, `reservation`, `case`, `change`, `helper`), a keyed `PushNotice` with `Bypass`, a daily budget, calm mode, redaction for the lock screen; plus on-screen notices (updates banner, muster prompt). **Gap:** notices are evaluated when the app asks (`/me/push/dispatch`), not on a server schedule or event, and they are not in chat |
-| Stanley | Planned in `chat-stanley-plan.md`: request cards, reword, icebreakers, ask Stanley in a conversation, group welcome, optional nudges. Stanley elsewhere in the app: `StanleyService`, `IConciergeModel`, model meter, limits, moments and the TripWatch alerts |
+| Stanley | Built from `chat-stanley-plan.md` (phases 1 to 5 and 7; the optional nudges were dropped on 2026-11-16): request cards, reword, icebreakers, ask Stanley in a conversation, ask about a message, group welcome, staff counts. Stanley elsewhere in the app: `StanleyService`, `IConciergeModel`, model meter, limits, moments and the TripWatch alerts |
 
 Known gaps already on record: the **Delivered** state is not tracked; push fan-out for 25-person groups is sequential; no re-invite after a decline cool-down; chat is built and surfaced for on-board stages and for "Group" tabs only, with search scoped to a **sailing** the guest has a confirmed booking for, and messages are kept only **30 days after the cruise**.
 

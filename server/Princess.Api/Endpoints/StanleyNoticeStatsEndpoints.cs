@@ -1,8 +1,11 @@
+using Princess.Api.Audit;
 using Princess.Api.Auth;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 
 namespace Princess.Api.Endpoints;
+
+public sealed record ChatSuggestionUsedBody(string? Kind);
 
 /// <summary>One line of the relay's counts. No person, no text.</summary>
 public sealed record StanleyNoticeCountDto(string Kind, string Lane, string Event, int Count);
@@ -59,6 +62,41 @@ public static class StanleyNoticeStatsEndpoints
             })
             .WithTags("Stanley")
             .WithSummary("Administrators only (403 otherwise): how chat is used at each stage (shortlists shared in huddles, party chats used within 48 hours, reminders that ended up muted, groups with a plan or poll, meet-ups, kept chats, recaps shared, reports per 1000 messages) over the last `days` (at least 14). Aggregate counts only; measures the data cannot give are listed as unmeasured.");
+    }
+
+    /// <summary>Staff view of Stanley in chat (stanley plan, phase 7): his calls per day and the share of his suggestions guests used. Counts only, from audit rows that hold no text and no person.</summary>
+    public static void MapChatStanleyUseEndpoints(this IEndpointRouteBuilder api)
+    {
+        api.MapGet("/admin/chat-stanley/summary", async (int? days, ICurrentUser me, IAuditStore audit, IClock clock, CancellationToken ct) =>
+            {
+                if (me.ActorPublicId is not null) throw ApiException.Forbidden();
+                if ((await me.LoadAsync(ct)).Role != "admin") throw ApiException.Forbidden();
+                var window = Math.Clamp(days ?? 7, 1, 30);
+                var now = clock.UtcNow;
+                var from = now.Date.AddDays(-(window - 1));
+                var rows = new List<AuditEntry>();
+                var truncated = false;
+                foreach (var action in ChatStanleyUseRules.CallActions.Append(ChatStanleyUseRules.UsedAction))
+                {
+                    var page = await audit.QueryAsync(new AuditQuery { ActionPrefix = action, Category = AuditCategory.Domain, From = from, Max = 500 }, ct);
+                    truncated |= page.Count >= 500;
+                    rows.AddRange(page);
+                }
+                return Results.Ok(ChatStanleyUseRules.Summarise(rows, now, window, truncated));
+            })
+            .WithTags("Stanley")
+            .WithSummary("Administrators only (403 otherwise): Stanley's chat calls per day (reword, icebreakers, catch-up, @Stanley, ask about a message), by kind, and the share of his suggestions that guests used, over the last `days` (1 to 30, default 7). The share is absent until 20 suggestions were given. Counts only: no text, no person.");
+
+        api.MapPost("/me/chat/stanley/used", async (ChatSuggestionUsedBody body, ICurrentUser me, IAuditLog audit, CancellationToken ct) =>
+            {
+                await me.LoadAsync(ct);
+                var kind = ChatStanleyUseRules.ParseUsed(body?.Kind) ?? throw ApiException.Invalid("kind");
+                await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = ChatStanleyUseRules.UsedAction, Outcome = AuditOutcome.Success, Target = "chat", Detail = kind }, ct);
+                return Results.NoContent();
+            })
+            .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
+            .WithTags("Chat Stanley")
+            .WithSummary("The guest tapped Use this on one of Stanley's suggestions (`kind`: reword, icebreakers or reply). Counts only: nothing about the text or the conversation is kept. 400 kind.");
     }
 
     /// <summary>The totals and the fail-open share (of notices posted or failed open) from the log's grouped counts.</summary>

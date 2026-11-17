@@ -237,6 +237,8 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     setStanleyMuted: (id, muted) => send('put', `/me/chat/conversations/${seg(id)}/stanley/mute`, { muted }),
     catchUp: (id) => send('post', `/me/chat/conversations/${seg(id)}/stanley/catch-up`),
     makePlan: (id, messageId) => send('post', `/me/chat/conversations/${seg(id)}/stanley/plan`, { messageId }),
+    suggestionUsed: async (kind) => { await send('post', '/me/chat/stanley/used', { kind }) },
+    checkMessage: (id, messageId) => send('post', `/me/chat/conversations/${seg(id)}/stanley/check`, { messageId }),
     explainWords: async (id, messageId) => (await send<{ terms: ChatTerm[] }>('post', `/me/chat/conversations/${seg(id)}/stanley/words`, { messageId })).terms,
     draftMessage: async (input) => (await send<{ text: string }>('post', '/me/chat/stanley/draft', input)).text,
     stanleyStatus: () => get('/me/chat/stanley'),
@@ -337,6 +339,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     questions: () => get('/admin/chat/rooms/questions'),
     decideQuestion: async (id, decision) => { await send('post', `/admin/chat/rooms/questions/${seg(id)}`, { decision }) },
     summary: (days) => get(`/admin/chat/rooms/summary${days ? `?days=${days}` : ''}`),
+    stanleyUse: (days) => get(`/admin/chat-stanley/summary${days ? `?days=${days}` : ''}`),
     hostFlags: () => get('/admin/chat/host/flags'),
     decideHostFlag: async (id) => { await send('post', `/admin/chat/host/flags/${seg(id)}`) },
   }
