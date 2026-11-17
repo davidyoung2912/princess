@@ -16,7 +16,7 @@ public sealed record RolloutVerdict(string Name, string Verdict, IReadOnlyList<R
 /// </summary>
 public static class ChatRolloutRules
 {
-    public const string NotEnough = "notEnough", Ok = "ok", Rewrite = "rewrite", Pause = "pause";
+    public const string NotEnough = "notEnough", Ok = "ok", Rewrite = "rewrite", Pause = "pause", Unmeasured = "unmeasured";
     public const int MinCards = 200, MinGuests = 50, MinDays = 14;
 
     public const string StageStaff = "staff", StageCohort = "cohort", StageEveryone = "everyone";
@@ -77,6 +77,12 @@ public static class ChatRolloutRules
         return new("suggestion", Sum(StanleyNoticeRules.EventPosted), 0, Sum(StanleyNoticeRules.EventSnooze) + dont, dont, 0, 0, 0, 0, 0, 0, 0, null, null);
     }
 
+    /// <summary>
+    /// A role whose data has no signal to judge yet (the host roles, chat phase 12: nothing records a dismissal, a mute or a report against them). Too small a sample is <c>notEnough</c>; a big enough one is <c>unmeasured</c>, never
+    /// <c>ok</c>, because a signal with no data must not look like good news. Either one keeps the role from being widened.
+    /// </summary>
+    public static RolloutVerdict JudgeCounts(string name, int things, int guests) => new(name, EnoughSample(things, guests) ? Unmeasured : NotEnough, []);
+
     /// <summary>A hard stop is any one of the three named cases: it switches the role off at once and needs a written review before it is on again.</summary>
     public static bool IsHardStop(string? kind) => kind is not null && HardStops.Contains(kind);
 
@@ -89,7 +95,7 @@ public static class ChatRolloutRules
         if (hardStop) return false;
         if (stage == StageStaff) return true;
         if (stage != StageCohort) return false;
-        if (verdicts.Count == 0 || verdicts.Any(v => v.Verdict == NotEnough)) return false;
+        if (verdicts.Count == 0 || verdicts.Any(v => v.Verdict is NotEnough or Unmeasured)) return false;
         if (verdicts.Any(v => v.Verdict == Pause)) return false;
         return verdicts.SelectMany(v => v.Signals).Count(x => x.Verdict == Rewrite) <= 1;
     }

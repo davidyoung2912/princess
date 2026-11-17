@@ -39,6 +39,7 @@ export function RoomsStaffCard() {
       {creating && <CreateRoom onClose={() => setCreating(false)} onCreated={() => { setCreating(false); rooms.retry() }} />}
       <Held />
       <Questions />
+      <Flags />
     </Card>
   )
 }
@@ -170,6 +171,33 @@ function Held() {
                 <div className="button-row">
                   <Button disabled={decide.busy} onClick={() => void decide.run(h.id, 'release')}>{t('rs.release')}</Button>
                   <Button variant="secondary" disabled={decide.busy} onClick={() => void decide.run(h.id, 'reject')}>{t('rs.reject')}</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ))}
+      </Load>
+      <Problem error={decide.error} />
+    </section>
+  )
+}
+
+/** Posts guests flagged through Stanley (chat phase 12). Closing a flag only marks it looked at; removing, muting or pinning are the room tools above. */
+function Flags() {
+  const flags = useMine(() => api.chatRoomsStaff.hostFlags())
+  const decide = useAction(async (id: string) => { await api.chatRoomsStaff.decideHostFlag(id); flags.retry() })
+  return (
+    <section aria-labelledby="rs-flags-h">
+      <h3 id="rs-flags-h">{headingCase(t('rs.flags'))}</h3>
+      <p className="muted">{t('rs.flagsBody')}</p>
+      <Load state={flags}>
+        {(items) => (items.length === 0 ? <p>{t('rs.flagsNone')}</p> : (
+          <ul className="plain-list">
+            {items.map((f) => (
+              <li key={f.id}>
+                <p>{t('rs.flagLine', { room: f.roomName, reason: t(`chost.reason.${f.reason}` as StringKey), when: when(f.at) })}</p>
+                <div className="button-row">
+                  <Button variant="secondary" disabled={decide.busy} onClick={() => void decide.run(f.id).catch(() => undefined)}>{t('rs.flagDone')}</Button>
                 </div>
               </li>
             ))}

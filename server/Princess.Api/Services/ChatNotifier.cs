@@ -38,6 +38,13 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     public Task GroupApprovalAsync(long guardianUserId, Guid inviteId, string child, CancellationToken ct) =>
         Deliver(guardianUserId, "groupApproval", Notice(ChatGroupRules.NoticeKey("approval", inviteId), ChatGroupRules.ApprovalNotice(child), inviteId), true, ct);
 
+    /// <summary>
+    /// Stanley introduced two guests who both asked (chat phase 12). A normal notice: it obeys do-not-disturb and the notice budget. The words name no one and no interest, so nothing private is on a lock screen; the line itself is
+    /// in the guest's own Stanley thread.
+    /// </summary>
+    public Task IntroductionAsync(long toUserId, Guid introId, CancellationToken ct) =>
+        Deliver(toUserId, "introduction", new PushNotice(ChatGroupRules.NoticeKey("intro", introId) + ":" + toUserId, "chat", "chat", false, 50, "/chat", ChatHostRules.IntroNotice.Title, ChatHostRules.IntroNotice.Body, new() { ["intro"] = introId.ToString("N") }), true, ct);
+
     private static PushNotice Notice(string key, (string Title, string Body) text, Guid id) =>
         new(key, "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["invite"] = id.ToString("N") });
 

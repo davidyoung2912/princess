@@ -20,7 +20,7 @@ public sealed class ChatHostOptions
 /// send an ordinary chat request. Room answers come from the curated library only. A flag goes to staff as ids and a reason. Stanley never removes, mutes, pins or closes anything, and says nothing where the member muted him
 /// or a supervised child is present. Nothing here logs or audits a name or a message.
 /// </summary>
-public sealed class ChatHostService(IChatHostStore store, IChatStore chat, ChatService chatService, IChatGroupStore groups, IChatHuddleStore profiles, IUserClock userClock, IClock clock, IAuditLog audit, IOptions<ChatHostOptions> options, IOptions<ChatRoomOptions> roomOptions)
+public sealed class ChatHostService(IChatHostStore store, IChatStore chat, ChatService chatService, IChatGroupStore groups, IChatHuddleStore profiles, IUserClock userClock, IClock clock, IAuditLog audit, IOptions<ChatHostOptions> options, IOptions<ChatRoomOptions> roomOptions, ChatNotifier notifier)
 {
     public const string IntroTail = " You can send a chat request from your chats if you like.";
     private const int MaxMeetUps = 20;
@@ -144,6 +144,10 @@ public sealed class ChatHostService(IChatHostStore store, IChatStore chat, ChatS
             var line = ChatHostRules.IntroLine(Short(p.A), Short(p.B), p.Interest) + IntroTail;
             await chat.AddStanleyLineAsync(p.A, line, "ship", "Introduction to " + Short(p.B), now, ct);
             await chat.AddStanleyLineAsync(p.B, line, "ship", "Introduction to " + Short(p.A), now, ct);
+            // A phone notice that names no one; it obeys do-not-disturb and a failed send never fails the opt-in (the notifier swallows it). The line itself waits in each Stanley thread.
+            var introId = Guid.NewGuid();
+            await notifier.IntroductionAsync(p.A, introId, ct);
+            await notifier.IntroductionAsync(p.B, introId, ct);
             if (p.A == me) mine = Short(p.B); else if (p.B == me) mine = Short(p.A);
         }
         return mine;

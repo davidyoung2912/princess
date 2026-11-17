@@ -118,6 +118,17 @@ public static class ChatHostRules
     /// <summary>The words of an introduction: two short names and the one interest they both chose. Never anything else about either.</summary>
     public static string IntroLine(string nameA, string nameB, string interest) => $"{nameA} and {nameB} both said they would like to meet someone who enjoys {interest}.";
 
+    /// <summary>The phone notice for an introduction: it names no one and no interest.</summary>
+    public static readonly (string Title, string Body) IntroNotice = ("Stanley made an introduction", "Open your chats to see who.");
+
+    // ---- Rollout (phase 14 thresholds, for roles R6 and R11) ----
+
+    /// <summary>
+    /// The rollout verdict for a host role from counts only: <paramref name="things"/> is what the role did (meet-ups started and introductions made for R6, library answers posted for R11) and <paramref name="guests"/> the distinct guests it
+    /// touched. Nothing records a dismissal, a mute or a report against these roles yet (a guest flags a person's post, never Stanley's line), so a big enough sample is "unmeasured", never "ok".
+    /// </summary>
+    public static RolloutVerdict Verdict(string name, int things, int guests) => ChatRolloutRules.JudgeCounts(name, things, guests);
+
     // ---- Room answers from the library ----
 
     /// <summary>One curated room answer: words that must all appear in a question (lower case), and the answer. The answer says where to look; it never states a live time, price or availability.</summary>

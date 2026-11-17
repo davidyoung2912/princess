@@ -134,3 +134,31 @@ public sealed class ChatHostRulesTests
         Assert.True(ChatHostRules.ShouldWelcome(true, false));
     }
 }
+
+public sealed class ChatHostRolloutTests
+{
+    [Fact]
+    public void ARoleWithTooLittleToJudgeSaysSo()
+    {
+        Assert.Equal(ChatRolloutRules.NotEnough, ChatHostRules.Verdict(ChatHostRules.Host, 10, 5).Verdict);
+        Assert.Equal(ChatRolloutRules.NotEnough, ChatHostRules.Verdict(ChatHostRules.RoomHost, 199, 0).Verdict);
+    }
+
+    [Fact]
+    public void AnUnmeasuredRoleIsNeverCalledOkAndCannotBeWidened()
+    {
+        var big = ChatHostRules.Verdict(ChatHostRules.Host, 300, 80);
+        Assert.Equal(ChatRolloutRules.Unmeasured, big.Verdict);
+        Assert.Empty(big.Signals);
+        Assert.False(ChatRolloutRules.MayWiden(ChatRolloutRules.StageCohort, false, [big]));
+        Assert.False(ChatRolloutRules.MayWiden(ChatRolloutRules.StageCohort, false, [ChatHostRules.Verdict(ChatHostRules.RoomHost, 5, 0)]));
+    }
+
+    [Fact]
+    public void TheIntroductionNoticeNamesNoOneAndNoInterest()
+    {
+        var (title, body) = ChatHostRules.IntroNotice;
+        foreach (var interest in ChatHostRules.Interests) Assert.DoesNotContain(interest, title + body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotMatch(@"\b[A-Z][a-z]+ [A-Z]\.", title + body);
+    }
+}

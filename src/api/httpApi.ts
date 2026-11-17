@@ -337,6 +337,8 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     questions: () => get('/admin/chat/rooms/questions'),
     decideQuestion: async (id, decision) => { await send('post', `/admin/chat/rooms/questions/${seg(id)}`, { decision }) },
     summary: (days) => get(`/admin/chat/rooms/summary${days ? `?days=${days}` : ''}`),
+    hostFlags: () => get('/admin/chat/host/flags'),
+    decideHostFlag: async (id) => { await send('post', `/admin/chat/host/flags/${seg(id)}`) },
   }
   const chatGuardian: HttpGroups['chatGuardian'] = {
     children: () => get('/me/chat/children'),

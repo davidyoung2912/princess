@@ -662,7 +662,14 @@ export interface ChatRoomsStaffApi {
   questions(): Promise<ChatSuggestedQuestion[]>
   decideQuestion(id: string, decision: 'popular' | 'reject'): Promise<void>
   summary(days?: number): Promise<ChatRoomSummary>
+  /** Posts guests asked Stanley to flag (phase 12), oldest first. No words: the room, the reason and when. */
+  hostFlags(): Promise<ChatHostFlag[]>
+  /** Marks a flag looked at. Rejects `notFound` when it is gone or already decided. */
+  decideHostFlag(id: string): Promise<void>
 }
+
+/** A flag a guest raised on a post. The post's words are not here; staff read it in the room's posts. */
+export interface ChatHostFlag { id: string; roomId: string; roomName: string; messageId: string; reason: HostFlagReason; at: number }
 
 export type AvatarGroup = 'people' | 'sketch' | 'robots' | 'critters'
 

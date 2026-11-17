@@ -567,3 +567,24 @@ describe('Host gates (chat phase 12): Stanley as host for strangers and room hos
     expect(read2('Services/ChatHostService.cs')).not.toMatch(/RoomHostOn \{ get; set; \} = true/)
   })
 })
+
+describe('Host gates (chat phase 12d): staff see flags, the roles are measured, the push names no one', () => {
+  const read2 = (f: string): string => read(`server/Princess.Api/${f}`)
+
+  it('the rollout summary carries the host roles and never calls an unmeasured role ok', () => {
+    const ep = read2('Endpoints/StanleyNoticeStatsEndpoints.cs')
+    expect(ep).toContain('ChatHostRules.Verdict(ChatHostRules.Host')
+    expect(ep).toContain('ChatHostRules.Verdict(ChatHostRules.RoomHost')
+    expect(read2('Domain/ChatRolloutRules.cs')).toContain('Verdict is NotEnough or Unmeasured')
+  })
+
+  it('the introduction push uses the fixed words and no name or interest', () => {
+    expect(read2('Services/ChatNotifier.cs')).toContain('ChatHostRules.IntroNotice.Title')
+    expect(read2('Services/ChatHostService.cs')).toMatch(/notifier\.IntroductionAsync\(p\.A, introId/)
+  })
+
+  it('staff can list and close flags from the account page', () => {
+    expect(read('src/ui/account/RoomsStaffCard.tsx')).toContain('hostFlags()')
+    expect(read('src/ui/account/RoomsStaffCard.tsx')).toContain('decideHostFlag')
+  })
+})

@@ -5830,4 +5830,9 @@ export const enLate = {
   'chost.topic.wifi': 'Wi-Fi',
   'chost.topic.tender': 'tenders',
   'chost.topic.lost': 'lost and found',
+  'rs.flags': 'Posts flagged by guests',
+  'rs.flagsBody': 'A guest asked Stanley to flag these. Nothing has happened to the post or the person. Look at the room\'s posts above, use the room tools if needed, then mark the flag done.',
+  'rs.flagsNone': 'No flags waiting.',
+  'rs.flagLine': 'In {room}: {reason}. {when}',
+  'rs.flagDone': 'Mark done',
 } as const

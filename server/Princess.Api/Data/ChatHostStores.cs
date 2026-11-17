@@ -75,7 +75,12 @@ public interface IChatHostStore
     Task<(bool Ok, Guid RoomId)> AddFlagAsync(long userId, Guid messageId, string reason, DateTime now, CancellationToken ct);
     Task<List<ChatHostFlagRow>> ListOpenFlagsAsync(int max, CancellationToken ct);
     Task<bool> DecideFlagAsync(Guid flagId, DateTime now, CancellationToken ct);
+
+    /// <summary>Counts only, since a time: what R6 did (meet-ups and introductions, with the distinct guests who started, answered or were introduced), what R11 did (Stanley's lines in rooms), and flags raised.</summary>
+    Task<HostCounts> CountsSinceAsync(DateTime since, CancellationToken ct);
 }
+
+public sealed record HostCounts(int MeetUps, int Introductions, int HostGuests, int RoomLines, int Flags);
 
 public sealed class DapperChatHostStore(IDbConnectionFactory db) : IChatHostStore
 {
@@ -249,5 +254,23 @@ public sealed class DapperChatHostStore(IDbConnectionFactory db) : IChatHostStor
     {
         await using var c = await db.OpenAsync(ct);
         return await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatHostFlags SET DecidedAt = @now WHERE PublicId = @flagId AND DecidedAt IS NULL", new { flagId, now }, null, ct)) > 0;
+    }
+
+    public async Task<HostCounts> CountsSinceAsync(DateTime since, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var r = await c.QuerySingleAsync<HostCounts>(Sql.Cmd("""
+            SELECT (SELECT COUNT(*) FROM dbo.ChatMeetUps WHERE CreatedAt >= @since) AS MeetUps,
+                   (SELECT COUNT(*) FROM dbo.ChatIntroductions WHERE CreatedAt >= @since) AS Introductions,
+                   (SELECT COUNT(*) FROM (
+                        SELECT StartedBy AS UserId FROM dbo.ChatMeetUps WHERE CreatedAt >= @since
+                        UNION SELECT UserId FROM dbo.ChatMeetUpAnswers WHERE AnsweredAt >= @since
+                        UNION SELECT UserLow FROM dbo.ChatIntroductions WHERE CreatedAt >= @since
+                        UNION SELECT UserHigh FROM dbo.ChatIntroductions WHERE CreatedAt >= @since) g) AS HostGuests,
+                   (SELECT COUNT(*) FROM dbo.ChatMessages m JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+                     WHERE g.Kind = 'room' AND m.FromUserId IS NULL AND m.IsSystem = 1 AND m.Subtitle = 'Stanley' AND m.[At] >= @since) AS RoomLines,
+                   (SELECT COUNT(*) FROM dbo.ChatHostFlags WHERE CreatedAt >= @since) AS Flags
+            """, new { since }, null, ct));
+        return r;
     }
 }
