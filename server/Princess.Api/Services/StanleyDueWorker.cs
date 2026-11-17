@@ -105,7 +105,20 @@ public sealed class StanleyDueWorker(IServiceScopeFactory scopes, IOptions<Sched
             foreach (var r in rows) await Close(r, StanleyDueState.Dropped, "noUser");
             return (0, 0, droppedCount, 0);
         }
-        ctx = ctx with { OffClasses = new HashSet<string>(ctx.OffClasses.Concat(o.OffClasses ?? [])) };
+        // The operator's switches (section 20.2): a class switched off is dropped like a configured one; a global pause puts every non-critical item back until it is released.
+        var ops = sp.GetService<IStanleyOpsStore>() is { } opsStore ? await opsStore.ListAsync(ct) : [];
+        ctx = ctx with { OffClasses = new HashSet<string>(ctx.OffClasses.Concat(o.OffClasses ?? []).Concat(StanleyOpsRules.OffClasses(ops))) };
+        if (StanleyOpsRules.GlobalPaused(ops))
+        {
+            var keep = new List<StanleyDueRow>();
+            foreach (var r in rows)
+            {
+                if (r.Critical) { keep.Add(r); continue; }
+                await store.RescheduleAsync(r.Id, _owner, now + RetryAfter, "paused", ct);
+                backCount++;
+            }
+            rows = keep;
+        }
 
         var byKey = rows.ToDictionary(r => r.IdemKey);
         var live = new List<StanleyDue>();

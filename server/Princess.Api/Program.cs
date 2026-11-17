@@ -228,6 +228,7 @@ services.AddOptions<SchedulerOptions>().BindConfiguration(SchedulerOptions.Secti
 services.AddHostedService<WatchSchedulerService>();
 services.AddScoped<IStanleyDueStore, DapperStanleyDueStore>();
 services.AddScoped<IStanleyBreakerStore, DapperStanleyBreakerStore>();
+services.AddScoped<IStanleyOpsStore, DapperStanleyOpsStore>();
 services.AddScoped<IStanleyDueContext, PushStanleyDueContext>();
 services.AddHostedService<StanleyDueWorker>();
 services.AddHostedService<ChatUrgentRetryService>();
@@ -410,6 +411,7 @@ v1.MapDemoEndpoints();
 v1.MapAuditEndpoints();
 v1.MapReviewEndpoints();
 v1.MapStanleyNoticeStatsEndpoints();
+v1.MapStanleyOpsEndpoints();
 v1.MapChatRolloutEndpoints();
 v1.MapChatStageMeasureEndpoints();
 v1.MapChatStanleyUseEndpoints();

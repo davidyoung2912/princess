@@ -41,7 +41,12 @@ public interface IStanleyDueStore
     /// <summary>Puts a claimed item back as pending for a later time (a paused class, a failed delivery).</summary>
     Task<bool> RescheduleAsync(long id, string owner, DateTime dueAt, string? reason, CancellationToken ct);
     Task<int> DeleteOlderThanAsync(DateTime cutoff, CancellationToken ct);
+    /// <summary>How many items each class has in each state. Counts only, no guest.</summary>
+    Task<List<StanleyDueCount>> CountsAsync(CancellationToken ct);
 }
+
+/// <summary>One line of the queue's health: a class, a state and how many.</summary>
+public sealed record StanleyDueCount(string ClassId, string State, int Count);
 
 public sealed class MemoryStanleyDueStore : IStanleyDueStore
 {
@@ -105,6 +110,11 @@ public sealed class MemoryStanleyDueStore : IStanleyDueStore
         }
     }
 
+    public Task<List<StanleyDueCount>> CountsAsync(CancellationToken ct)
+    {
+        lock (_rows) return Task.FromResult(_rows.GroupBy(r => (r.ClassId, r.State)).Select(g => new StanleyDueCount(g.Key.ClassId, g.Key.State, g.Count())).ToList());
+    }
+
     public Task<int> DeleteOlderThanAsync(DateTime cutoff, CancellationToken ct)
     {
         lock (_rows) return Task.FromResult(_rows.RemoveAll(r => r.DueAt < cutoff && r.State != StanleyDueState.Pending && r.State != StanleyDueState.Claimed));
@@ -145,6 +155,12 @@ public sealed class DapperStanleyDueStore(IDbConnectionFactory db) : IStanleyDue
         return await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.StanleyRuleDue SET [State] = 'pending', DueAt = @dueAt, Reason = @reason, LeaseOwner = NULL, LeaseUntil = NULL WHERE Id = @id AND [State] = 'claimed' AND LeaseOwner = @owner", new { id, owner, dueAt, reason }, null, ct)) > 0;
     }
 
+    public async Task<List<StanleyDueCount>> CountsAsync(CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<StanleyDueCount>(Sql.Cmd("SELECT ClassId, [State], COUNT(*) AS [Count] FROM dbo.StanleyRuleDue GROUP BY ClassId, [State]", null, null, ct))).ToList();
+    }
+
     public async Task<int> DeleteOlderThanAsync(DateTime cutoff, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
@@ -157,6 +173,8 @@ public interface IStanleyBreakerStore
 {
     Task<BreakerState> GetAsync(string classId, CancellationToken ct);
     Task SaveAsync(string classId, BreakerState state, CancellationToken ct);
+    /// <summary>Every class that has a breaker row.</summary>
+    Task<Dictionary<string, BreakerState>> ListAsync(CancellationToken ct);
 }
 
 public sealed class MemoryStanleyBreakerStore : IStanleyBreakerStore
@@ -172,6 +190,11 @@ public sealed class MemoryStanleyBreakerStore : IStanleyBreakerStore
     {
         lock (_states) _states[classId] = state;
         return Task.CompletedTask;
+    }
+
+    public Task<Dictionary<string, BreakerState>> ListAsync(CancellationToken ct)
+    {
+        lock (_states) return Task.FromResult(new Dictionary<string, BreakerState>(_states));
     }
 }
 
@@ -194,4 +217,13 @@ public sealed class DapperStanleyBreakerStore(IDbConnectionFactory db) : IStanle
             "IF @@ROWCOUNT = 0 INSERT INTO dbo.StanleyBreaker (ClassId, WindowStart, [Count], PausedUntil) VALUES (@classId, @WindowStart, @Count, @PausedUntil)",
             new { classId, state.WindowStart, state.Count, state.PausedUntil }, null, ct));
     }
+
+    public async Task<Dictionary<string, BreakerState>> ListAsync(CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ListRow>(Sql.Cmd("SELECT ClassId, WindowStart, [Count], PausedUntil FROM dbo.StanleyBreaker", null, null, ct)))
+            .ToDictionary(r => r.ClassId, r => new BreakerState(r.WindowStart, r.Count, r.PausedUntil));
+    }
+
+    private sealed class ListRow { public string ClassId { get; set; } = ""; public DateTime WindowStart { get; set; } public int Count { get; set; } public DateTime? PausedUntil { get; set; } }
 }

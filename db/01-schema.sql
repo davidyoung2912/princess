@@ -4046,3 +4046,31 @@ CREATE TABLE dbo.StanleyBreaker (
 );
 END
 GO
+
+-- The operator's switches for Stanley's proactive output (one row per class, and one global row), each with the reason and who set it.
+IF OBJECT_ID(N'dbo.StanleyOpsSwitch', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.StanleyOpsSwitch (
+  Scope VARCHAR(10) NOT NULL,
+  Name VARCHAR(40) NOT NULL,
+  [Off] BIT NOT NULL,
+  Reason NVARCHAR(200) NOT NULL,
+  ByPublicId UNIQUEIDENTIFIER NOT NULL,
+  [At] DATETIME2(0) NOT NULL,
+  CONSTRAINT PK_StanleyOpsSwitch PRIMARY KEY (Scope, Name),
+  CONSTRAINT CK_StanleyOpsSwitch_Scope CHECK (Scope IN ('class','global'))
+);
+END
+GO
+
+-- A global pause one administrator asked for and a second must approve (at most one row).
+IF OBJECT_ID(N'dbo.StanleyOpsProposal', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.StanleyOpsProposal (
+  [Off] BIT NOT NULL,
+  Reason NVARCHAR(200) NOT NULL,
+  ByPublicId UNIQUEIDENTIFIER NOT NULL,
+  [At] DATETIME2(0) NOT NULL
+);
+END
+GO

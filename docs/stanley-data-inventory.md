@@ -100,3 +100,14 @@ It is read-only (it never writes, books or changes anything, and a fix is only a
 ## Classifier flags and the act-or-ask gate (phase P3a)
 
 Nothing new is stored. `StanleyClassifier` computes four flags per item from facts the server already holds: **free** (no cover charge, no ticket or tour price), **fee-free until** (the table or show time, two days before a tour's port day, 24 hours before a spa start, half a stateroom request's usual time), **only me** (no other traveller on the booking) and **reversible until**. `StanleyActGate` reads those flags with the class state (on, paused, practice, daily count, undo window, refusals of this kind, step-up), fact age and source health, overlap with booked items, serious case, ship alert, quiet hours and supervised-child flag, and answers act or ask with reasons from a closed set. It holds ids, times and counts only, never the guest's words, and sends nothing anywhere.
+
+## Operations console (phase P3b)
+
+| Data | Fields | Purpose | Provider | Retention |
+|---|---|---|---|---|
+| Operator switches | scope (class or global), class id, off or on, the operator's reason (5 to 200 characters), the administrator's public id, time | Let operations stop one class of proactive output, or all of it, without a deploy; the due worker reads them every pass | Server database (`dbo.StanleyOpsSwitch`) | Kept; the latest state per class. No guest data and no guest text |
+| Global pause proposal | off, reason, proposing administrator's public id, time | The two-person rule: a global pause applies only when a second administrator asks for it within an hour | Server database (`dbo.StanleyOpsProposal`, at most one row) | Replaced or cleared on every global change; lapses after an hour |
+| Console health | per class: counts of scheduled items by state, breaker state and count | Show what the scheduler is doing | Read from the due queue and breaker tables | Not stored; counts only, never a guest |
+
+Every switch, pause and breaker reset writes an audit line (`stanley.ops.*`) with the class and the operator's reason; never any guest field.
+
