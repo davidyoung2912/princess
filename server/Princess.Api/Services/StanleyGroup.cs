@@ -115,7 +115,7 @@ public sealed class StanleyGroupService(StanleyCheckupService checkup, IChatSafe
             if (!(await ChoiceAsync(guest, ct)).On) continue;
             var due = (await reminders.ListAsync(guest.Id, now.AddHours(-StanleyReminderRules.LateHours), ct))
                 .Where(r => r.State != StanleyReminderRules.StateCancelled && StanleyGroupRules.HelperCopy(r.AnchorType, r.AnchorId, r.Private))
-                .Select(r => new StanleyReminderDue(r.PublicId, StanleyGroupRules.HelperText(guest.FirstName, r.Text), TripRules.ToMs(r.DueAt)));
+                .Select(r => new StanleyReminderDue(r.PublicId, StanleyGroupRules.HelperText(guest.FirstName ?? "", r.Text), TripRules.ToMs(r.DueAt)));
             list.AddRange(StanleyReminderRules.Sendable(due, TripRules.ToMs(now)));
         }
         return list;

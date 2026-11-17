@@ -160,8 +160,8 @@ public static class ChatProactiveRules
                     list.Add(new("sea.bag-night", Onboard, ClassDue, "Bags go out tonight\nOpen Leave to see when and where.", "/home/disembark/bags", f.Now.AddHours(12), Hash("sea.bag-night")));
                 break;
             case StageRules.Port:
-                if (f.DigestGroup is { } digest && f.ShipHour is >= ChatGroupMomentRules.DigestFromHour and < ChatGroupMomentRules.DigestToHour)
-                    list.Add(new(ChatGroupMomentRules.GroupDigestKey, Onboard, ClassSuggestion, ChatGroupMomentRules.DigestOfferText, ChatGroupMomentRules.GroupPath(digest), f.Now.AddHours(5), Hash($"{digest:N}{f.Now:yyyyMMdd}digest"), digest.ToString()));
+                if (f.DigestGroup is { } portDigest && f.ShipHour is >= ChatGroupMomentRules.DigestFromHour and < ChatGroupMomentRules.DigestToHour)
+                    list.Add(new(ChatGroupMomentRules.GroupDigestKey, Onboard, ClassSuggestion, ChatGroupMomentRules.DigestOfferText, ChatGroupMomentRules.GroupPath(portDigest), f.Now.AddHours(5), Hash($"{portDigest:N}{f.Now:yyyyMMdd}digest"), portDigest.ToString()));
                 if (f.LunchGroup is { } lunch && f.ShipHour >= ChatGroupMomentRules.LunchFromHour)
                     list.Add(new(ChatGroupMomentRules.GroupLunchKey, Onboard, ClassSuggestion, ChatGroupMomentRules.LunchOfferText, ChatGroupMomentRules.GroupPath(lunch), f.Now.AddHours(4), Hash($"{lunch:N}{f.Now:yyyyMMdd}"), lunch.ToString()));
                 list.Add(new("port.all-aboard", Onboard, ClassDue, "Check your all-aboard time\nOpen Port to see it, and your tender if there is one.", "/ship/port", f.Now.AddHours(10), Hash($"port.all-aboard{f.Now:yyyyMMdd}")));
