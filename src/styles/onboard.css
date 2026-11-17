@@ -620,3 +620,43 @@ button.chat-quote { cursor: pointer; }
 
 /* "Share from the app" and "Plan with the group" use the same expanding-panel style as "Chat tools and settings", stacked with a small gap. */
 .chat-share.chat-more--tools { margin-top: var(--space-2); }
+
+/* A little more room between the scrolling history and the Message box below it. */
+.chat-scroll { margin-bottom: var(--space-3); }
+
+/* In Stanley's chat the ask box has no rule above it, and sits a little further below the history. */
+.composer--ask, .composer--ask .composer { border-top: 0; }
+.composer--ask { margin-top: var(--space-4); }
+
+/* Stanley's chat ask box: the form takes the full width (so the question box is wide, like the Ask Stanley window), with the label at the Ask window's size and the "kept on this device" note below it all. */
+.composer--ask { grid-template-columns: minmax(0, 1fr); }
+.composer--ask .field label { font-size: var(--fs-body, 1rem); }
+.composer--ask .composer--chat { width: 100%; }
+/* Paragraphs have a reading-width cap, which let the note squeeze onto the same line as the box and button; let them take the whole line so it wraps below. */
+.composer--chat > p { max-width: none; }
+/* The note under the ask box: one sentence per line, with more room above it. */
+.composer__note { margin-top: var(--space-3); }
+.composer__note-line { display: block; }
+
+/* The small action icons on a message card (react, reply, pin, calendar, edit, delete) lift and glow on hover or keyboard focus. Reduced motion stops the lift. */
+.chat-act.chat-act--icon { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease); }
+.chat-act.chat-act--icon:is(:hover, :focus-visible):not(:disabled) { transform: translateY(-2px) scale(1.08); box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 10px color-mix(in srgb, var(--primary-bright, var(--primary)) 40%, transparent); }
+.chat-act.chat-act--icon:active:not(:disabled) { transform: scale(0.94); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .chat-act.chat-act--icon { transition: none; } .chat-act.chat-act--icon:is(:hover, :focus-visible, :active) { transform: none; } }
+:root[data-motion='reduced'] .chat-act.chat-act--icon:is(:hover, :focus-visible, :active) { transform: none; }
+
+/* The icons on a message card get the same bounding circle, size and spacing as the quick-reply buttons. */
+.chat-act.chat-act--icon { box-sizing: border-box; min-height: 2rem; min-width: 2rem; padding: 0; border: 2px solid var(--primary); background: var(--sky-tint); color: var(--text); border-radius: 50%; }
+.chat-act.chat-act--icon svg { width: 1.1rem; height: 1.1rem; }
+.chat-msg__tools { gap: var(--space-2); }
+.chat-act.chat-act--icon:is(:hover, :focus-visible):not(:disabled) { background: var(--brand-tint); }
+/* The newest card is always laid out in full (the placeholder size used to skip off-screen cards made it measure short), so scrolling to the end shows all of it. */
+.chat-log > .chat-msg:last-child, .chat-log > :last-child .chat-msg { content-visibility: visible; }
+
+/* The emoji reaction picker: light blue buttons that lift and glow on hover or keyboard focus. Reduced motion stops the lift. */
+.chat-picker__btn { background: var(--sky-tint); transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
+.chat-picker__btn:is(:hover, :focus-visible) { transform: translateY(-2px) scale(1.08); background: var(--brand-tint); border-color: var(--primary); box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 12px color-mix(in srgb, var(--primary-bright, var(--primary)) 40%, transparent); }
+.chat-picker__btn:active { transform: scale(0.94); box-shadow: none; }
+.chat-picker__btn[aria-pressed='true'] { background: var(--brand-tint); }
+@media (prefers-reduced-motion: reduce) { .chat-picker__btn { transition: none; } .chat-picker__btn:is(:hover, :focus-visible, :active) { transform: none; } }
+:root[data-motion='reduced'] .chat-picker__btn:is(:hover, :focus-visible, :active) { transform: none; }

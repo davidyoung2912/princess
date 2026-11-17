@@ -5,7 +5,7 @@
 import type { ChatConversation, ChatMessage, NoticeLane, NoticeReply } from '../api/chatTypes'
 
 /** The question and answer history Stanley keeps on the device (the shape the Ask dialog holds, narrowed to what the thread shows). */
-export interface DeviceTurn { id: string; role: 'user' | 'assistant'; text: string; at: number }
+export interface DeviceTurn { id: string; role: 'user' | 'assistant'; text: string; at: number; shipAt?: number }
 
 export const isStanleyChat = (c: Pick<ChatConversation, 'kind' | 'permanent'>): boolean => c.permanent === true || c.kind === 'stanley'
 
@@ -21,7 +21,7 @@ export type ThreadItem =
 export function threadItems(server: readonly ChatMessage[], device: readonly DeviceTurn[]): ThreadItem[] {
   const items: ThreadItem[] = [
     ...server.map((message): ThreadItem => ({ key: `s:${message.id}`, at: message.at, kind: 'server', message })),
-    ...device.filter((d) => d.text.trim() !== '').map((d): ThreadItem => ({ key: `d:${d.id}`, at: d.at, kind: d.role === 'user' ? 'question' : 'answer', text: d.text })),
+    ...device.filter((d) => d.text.trim() !== '').map((d): ThreadItem => ({ key: `d:${d.id}`, at: d.shipAt ?? d.at, kind: d.role === 'user' ? 'question' : 'answer', text: d.text })),
   ]
   return items.map((x, i) => ({ x, i })).sort((a, b) => a.x.at - b.x.at || (a.x.kind === 'server' ? 0 : 1) - (b.x.kind === 'server' ? 0 : 1) || a.i - b.i).map((e) => e.x)
 }

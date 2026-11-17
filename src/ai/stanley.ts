@@ -1,3 +1,4 @@
+import { demoNow } from '../demo/store'
 import { redactCardData } from './cardData'
 import { MAX_MESSAGE, screen, type Handoff } from './guard'
 import type { AnswerAction, StanleySource } from './stanleyRoute'
@@ -16,6 +17,8 @@ export interface StanleyMessage {
   role: 'user' | 'assistant'
   text: string
   at: number
+  /** When it was said on the ship's clock (the one notices use), set when it joins the thread, so the Stanley chat can order it among the notices. `at` stays the phone's clock (cooldowns use it). */
+  shipAt?: number
   /** On an assistant message: what kind of reply it was. Only `answer` carries text from the server. */
   kind?: StanleyKind | 'unreachable'
   handoff?: Handoff | null
@@ -133,7 +136,7 @@ const listeners = new Set<() => void>()
 export const getStanleyThread = (): readonly StanleyMessage[] => thread
 export const subscribeStanley = (fn: () => void): (() => void) => { listeners.add(fn); return () => { listeners.delete(fn) } }
 export function setStanleyThread(next: readonly StanleyMessage[]) {
-  thread = next.slice(-MAX_SENT)
+  thread = next.slice(-MAX_SENT).map((m) => (m.shipAt === undefined ? { ...m, shipAt: demoNow() } : m))
   listeners.forEach((fn) => fn())
 }
 

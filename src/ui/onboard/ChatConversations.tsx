@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
-import { useStanleyAsk } from '../ai/useStanleyAsk'
+import { useStanleyAsk, useStanleyBusy } from '../ai/useStanleyAsk'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, GroupStanley, ChatThread, ChatUrgency } from '../../api/chatTypes'
@@ -221,6 +221,12 @@ function UrgencyTag({ level }: { level: Exclude<ChatUrgency, 'normal'> }) {
   return <span className={`urgency-tag urgency-tag--${level}`}><Icon aria-hidden="true" /> <span>{t(level === 'urgent' ? 'urgent.label' : 'important.label')}</span></span>
 }
 
+/** After a card grows (a delete or edit panel, the reaction picker, an error), bring the whole card into view in the history; nothing moves if it already fits. */
+const keepCardInView = (from: Element | null | undefined): number | undefined => {
+  const card = from?.closest('.chat-msg')
+  if (!card) return undefined
+  return window.requestAnimationFrame(() => card.scrollIntoView({ block: 'nearest', behavior: 'auto' }))
+}
 const prefersReducedMotion = (): boolean => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /** Whether the message history (its own scrolling box) is at its end. */
@@ -551,6 +557,9 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const [sending, setSending] = useState<PendingMessage[]>([])
   // A new card at the end (sent, still sending, or arrived) always brings the end of the history into view, so it is fully visible; loading older messages does not change the last one, so it never jumps.
   const lastMessageId = messages[messages.length - 1]?.id
+  // In Stanley's chat the questions and answers are held on the device, not in `messages`; a new one (or the waiting dots) should also bring the end into view.
+  const deviceTurns = useSyncExternalStore(subscribeStanley, getStanleyThread).length
+  const stanleyWaiting = useStanleyBusy()
   useEffect(() => {
     if (phase !== 'ready') return
     const box = logBox.current
@@ -558,8 +567,13 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     const down = () => { box.scrollTop = box.scrollHeight }
     down()
     const frame = requestAnimationFrame(down)
-    return () => cancelAnimationFrame(frame)
-  }, [phase, lastMessageId, sending.length])
+    // A card can grow after it first appears (its text and buttons settle, or its real height replaces the placeholder size), so keep following the end for a moment.
+    const list = box.querySelector('ol')
+    const watcher = typeof ResizeObserver === 'undefined' || !list ? null : new ResizeObserver(down)
+    watcher?.observe(list as Element)
+    const stop = window.setTimeout(() => watcher?.disconnect(), 1500)
+    return () => { cancelAnimationFrame(frame); window.clearTimeout(stop); watcher?.disconnect() }
+  }, [phase, lastMessageId, sending.length, deviceTurns, stanleyWaiting])
   const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => {
     const answer = readAnswerJob(p)
     if (answer) return answer.kind === 'vote' ? api.chatConversations.vote(answer.conversation, answer.messageId, Number(answer.value)) : api.chatConversations.rsvp(answer.conversation, answer.messageId, answer.value as ChatRsvp)
@@ -825,8 +839,10 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
   messages: ChatMessage[]; mine: string; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onChanged: () => void; onBlocked: () => void
 }) {
   const device = useSyncExternalStore(subscribeStanley, getStanleyThread)
+  const waiting = useStanleyBusy()
   const items = threadItems(messages, device)
-  return items.map((item, i) => {
+  const dots = waiting ? <li key="waiting" className="chat-msg chat-msg--answer"><p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong></p><p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p></li> : null
+  const rows = items.map((item, i) => {
     const heading = startsDay(items, i) ? <li key={`h:${item.key}`} className="chat-day"><h3>{new Date(item.at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h3></li> : null
     const row = ((): ReactNode => {
     if (item.kind === 'server') return <MessageRow key={item.key} m={item.message} mine={mine} shipTime={shipTime} conversationId={conversationId} kind="stanley" peerName="" ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} />
@@ -840,6 +856,7 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
     })()
     return <Fragment key={item.key}>{heading}{row}</Fragment>
   })
+  return <>{rows}{dots}</>
 }
 
 const LANE_KEY = { critical: 'stanley.notice.lane.critical', important: 'stanley.notice.lane.important', reminder: 'stanley.notice.lane.reminder', info: 'stanley.notice.lane.info', suggestion: 'stanley.notice.lane.suggestion' } as const
@@ -879,13 +896,12 @@ function AskStanley() {
   const ask = questionFrom(text)
   return (
     <div className="composer composer--ask">
-      {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
-      <form className="composer" onSubmit={(e) => { e.preventDefault(); if (ask) void submit(ask, () => setText('')) }}>
+      <form className="composer composer--chat" onSubmit={(e) => { e.preventDefault(); if (ask) void submit(ask, () => setText('')) }}>
         <TextArea label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
         {problem && <p role="alert" className="field__error">{problem}</p>}
         {cooldown > 0 && <p role="status" className="muted">{t('stanley.cooldown', { seconds: cooldown })}</p>}
-        <Button type="submit" disabled={!ask || busy || cooldown > 0}>{t('stanley.chat.askButton')}</Button>
-        <p className="muted">{t('stanley.chat.history')}</p>
+        <Button type="submit" disabled={!ask || busy || cooldown > 0}>{t('stanley.send')}</Button>
+        <p className="muted composer__note">{t('stanley.chat.history').split(/(?<=\.)\s+/).map((line) => <span key={line} className="composer__note-line">{line}</span>)}</p>
       </form>
     </div>
   )
@@ -894,7 +910,7 @@ function AskStanley() {
 /** The shell of the Stanley notices settings. The categories, quiet hours and budget are the existing notification settings; the relay that fills this chat with them comes in the next slice. */
 function StanleyNotices() {
   return (
-    <details className="chat-options">
+    <details className="chat-options chat-more--tools">
       <summary>{t('stanley.chat.noticesTitle')}</summary>
       <p className="muted">{t('stanley.chat.noticesBody')}</p>
       <p><Link to="/me/notifications">{t('stanley.chat.noticesLink')}</Link></p>
@@ -992,6 +1008,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
   const mlevel = urgencyOf(m)
   const [picking, setPicking] = useState(false)
   const reactButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => { if (picking) { const f = keepCardInView(reactButton.current); return () => { if (f !== undefined) cancelAnimationFrame(f) } } }, [picking])
   const press = useLongPress(() => { if (canAct && onReact) setPicking(true) })
   const closePicker = () => { setPicking(false); reactButton.current?.focus() }
   const you = t('conv.youLower')
@@ -1117,6 +1134,7 @@ function OwnChange({ m, onEdit, onDelete, lead }: { lead: ReactNode; m: ChatMess
   const [problem, setProblem] = useState<ChangeProblem | null>(null)
   const [busy, setBusy] = useState(false)
   const root = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (mode !== 'idle' || problem) { const f = keepCardInView(root.current); return () => { if (f !== undefined) cancelAnimationFrame(f) } } }, [mode, problem])
   const back = (selector: string) => setTimeout(() => root.current?.querySelector<HTMLElement>(selector)?.focus(), 0)
   const close = (selector: string) => { setMode('idle'); setProblem(null); back(selector) }
   const run = async (job: () => Promise<void>, after: string) => {

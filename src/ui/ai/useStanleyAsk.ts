@@ -38,6 +38,12 @@ function wording(turn: StanleyTurn): string {
   }
 }
 
+/** Whether a question is waiting for its answer. Kept outside the hook so the Stanley chat's history can show the waiting dots where the answer will land. */
+let waiting = false
+const waitingListeners = new Set<() => void>()
+const setBusy = (on: boolean) => { waiting = on; waitingListeners.forEach((fn) => fn()) }
+export const useStanleyBusy = (): boolean => useSyncExternalStore((fn) => { waitingListeners.add(fn); return () => { waitingListeners.delete(fn) } }, () => waiting, () => waiting)
+
 /**
  * Asking Stanley, shared by his dialog and the Stanley chat page so a question can be asked and answered where the guest already is.
  * The thread is the in-memory one both show; `submit` adds the question, waits (busy shows the typing dots) and adds the answer.
@@ -54,7 +60,7 @@ export function useStanleyAsk() {
   const screenId = screenForPath(useLocation().pathname)?.id
   const { state: mem } = useMemory()
   const [problem, setProblem] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const busy = useStanleyBusy()
   const [reveal, setReveal] = useState<{ id: string; steps: string[]; i: number } | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const messages = useSyncExternalStore(subscribeStanley, getStanleyThread, getStanleyThread)
@@ -71,6 +77,7 @@ export function useStanleyAsk() {
     setNow(Date.now())
     if (cooldownSeconds(getStanleyThread(), Date.now())) return
     const p = stanleyProblem(text)
+    if (p === 'empty') return
     if (p) { setProblem(t(`stanley.problem.${p}` as StringKey, { max: MAX_MESSAGE })); return }
     setProblem(null)
     const at = Date.now()
