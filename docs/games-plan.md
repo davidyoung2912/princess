@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39) and **Codeword** (X40). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39) and **Codeword** (X40). All ten games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -79,7 +79,9 @@ Built as planned. `codewordWords.ts` holds about 1,680 words of 2 to 7 letters (
 - Needs a word source: curate a compact English word list (common words of 2 to 7 letters, plus cruise and travel words) as a TypeScript module, checking the bundle size; load the Codeword screen lazily as the other screens are.
 - Generator: symmetric block layout, fill with words from the list so most of the alphabet appears, assign a random letter to number code, reveal letters until the solution is unique and logic-solvable (pattern and word-list reasoning). Hint reveals a letter with the word it completes.
 
-### G8: polish and review
+### G8: polish and review — built
+
+Built. Each catalogue entry now carries `levels`, `minutes` and `players`, and the explorer cards show them as a small list (levels, players, rough time). The consistency pass found all eight game screens already on the shared `parts.tsx` pieces (clock, hint box, level bar, How to Play, solved card), boards fluid with `min(100%, 30rem)` and clamped fonts, and reduced motion handled; the one duplicate left is the cage-growing loop in `killer.ts` and `kenken.ts`, kept apart because the two differ in size rules and a merge risks changing generated puzzles.
 
 - Games Explorer cards show level range, players and a rough time for each game; solo and multi-player sections stay as they are.
 - Consistency pass across all nine games: timer, hint, level picker, How to Play, solved card, keyboard and screen reader labels, contrast in every theme, reduced motion, small phones (320px wide).

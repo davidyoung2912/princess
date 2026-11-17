@@ -22,6 +22,11 @@ export function GamesExplorerScreen() {
               <div>
                 <h3 className="card__title"><Link className="exp-card__link" to={g.path}>{t(g.titleKey)}</Link></h3>
                 <p className="muted">{t(g.bodyKey)}</p>
+                <ul className="gx-card__meta muted" aria-label={t('gx.meta.label')}>
+                  <li>{t('gx.meta.levels', { count: g.levels })}</li>
+                  <li>{t('gx.meta.players', { count: g.players })}</li>
+                  <li>{g.minutes[0] === g.minutes[1] ? t('gx.meta.timeOne', { min: g.minutes[0] }) : t('gx.meta.time', { min: g.minutes[0], max: g.minutes[1] })}</li>
+                </ul>
               </div>
             </li>
           ))}
