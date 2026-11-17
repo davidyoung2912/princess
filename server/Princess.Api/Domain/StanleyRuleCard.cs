@@ -48,6 +48,10 @@ public static class StanleyRuleCards
             "Who has not answered our poll?", ["journey-family"], ["open polls and answer counts"]),
         Check("ACT-03", "Drafts for approval", ["sea", "port"], "A sailing day is open", "the bundle for the day and the all-aboard time", "the guest copies the note or closes it",
             "Draft a note to my party", ["journey-solo"], ["booked tours and dinners", "sailing days and all-aboard times"]),
+        Check("TRUST-05", "Trip so far", ["sea", "port", "disembark"], "Stanley has done something for the guest", "counts of what Stanley did and what the guest undid, from the ledger", "the guest closes it; it keeps no score",
+            "What have you done for me so far?", ["journey-solo"], ["Stanley ledger counts"]),
+        Check("TRUST-03", "Level suggestion", ["sea", "port"], "Three yeses with no undo, or two undos, of one kind", "counts of confirmed and undone acts of one kind, from the ledger", "the guest opens the screen or ignores it; nothing changes either way",
+            "Should you do more of this for me?", ["journey-solo"], ["Stanley ledger counts"]),
     ];
 
     /// <summary>A rung 1 notice: answers when asked, never changes anything, and its fix is only a screen to open.</summary>

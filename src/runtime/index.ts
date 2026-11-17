@@ -126,6 +126,11 @@ export const stanleyCheckup = {
   get: () => http.get<unknown>('/me/stanley/checkup'),
 }
 
+/** Stanley's trip so far and level suggestions (phase P9a). Read-only; a suggestion changes nothing. */
+export const stanleyTripSoFar = {
+  get: () => http.get<unknown>('/me/stanley/trip-so-far'),
+}
+
 /** The missed-ship guard and group gaps (phase P8). Read-only; nothing is sent and no poll is answered. */
 export const stanleyShipGroup = {
   get: () => http.get<unknown>('/me/stanley/ship-group'),

@@ -180,3 +180,13 @@ Nothing new is stored. `GET /me/stanley/ship-group` works out its answer from th
 | open polls and answer counts | "2 people have not answered" | the question and two counts; silence is never read as a yes |
 
 The guard sends nothing and rings nobody; the push notices for the way back already exist and are separate. It is read-only, off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: where the guest is, and who has no dinner booked (dinners are held for the booking, not each person).
+
+## Trip so far and level suggestions (phase P9a v1, trust features 19.3 and 19.5)
+
+Nothing new is stored. `GET /me/stanley/trip-so-far` counts the guest's own ledger (the action store): acts still in place, acts undone, and the two added together as "you said yes to". It returns the counts and any suggestions without keeping them.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| Stanley ledger counts (kind and done or undone per act) | the three counts, and a suggestion when one kind has three yeses and no undo (offer more) or two undos (offer to ask first) | numbers and one sentence per kind; no titles, no guest words |
+
+A suggestion is words and a link to the "what Stanley can do" screen. It never changes a level, switches a row on or acts. The answer lists what it does not measure: time saved, and whether a suggestion was right unless it was undone. It is off for a supervised account and when the tools switch is off, and is not sent to a model.
