@@ -128,7 +128,7 @@ public static class StanleyRuleCards
             "Be more careful.", ["journey-solo"], ["the sentence, read once and not kept"]),
         new("AUT-02", "Deadline reminders", ["manage", "prebook"], 4, 4, StanleyActClass.Act,
             "The guest has switched on setting their reminders (CL-08) at level 4 and the trip has a date that can cost something", StanleyTrigger.State,
-            "check-in opening, the final payment date and state of the booking, and the sailing dates", 15, "a reminder on the guest's own list with a receipt",
+            "check-in opening, the final payment date and state of the booking, the sailing dates and the exit time", 15, "a reminder on the guest's own list with a receipt",
             ["auto.AUT-02.title", "auto.AUT-02.detail"], [], 30, 120, "Stanley:Switches:Authority", ["reminders set", "reminders removed within two hours", "reminders removed later"],
             "Set my deadline reminders.", ["journey-solo"], ["payment due date", "check-in window"],
             "A plain list, one line per reminder with its time in words; every undo a button with words; no colour-only meaning",

@@ -298,3 +298,7 @@ It sets nothing recurring, nothing that is not a date on the trip, pays and book
 ### Bag night reminder (phase P10a, second part)
 
 AUT-02 also sets one reminder at 3 pm ship time on the day before the ship gets in ("Bags go out tonight. The bags screen has the tags."), key `aut02:bags:<date>`, from the sailing dates already read. Same limits, receipt and undo as the others; it tags, packs and chooses nothing. Documents, dining and exit-time reminders, AUT-05 and AUT-07 are still to do.
+
+### Exit time reminder (phase P10a, third part)
+
+AUT-02 also sets one reminder an hour before the cabin has to be empty on the last morning ("Your cabin needs to be empty in an hour. The getting off screen has the last look list."), key `aut02:exit:<date>`, from the disembarkation times the Getting off screen already uses. Same limits, receipt and undo as the others; it tags, packs and chooses nothing. Documents and dining reminders, AUT-05 and AUT-07 are still to do.

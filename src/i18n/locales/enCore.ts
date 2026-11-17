@@ -10510,7 +10510,7 @@ export const enCore = {
   'stanleyDisembark.clear': 'Nothing to add right now.',
   'stanleyDisembark.open': 'Open',
   'stanleyAuto.title': 'My deadline reminders',
-  'stanleyAuto.intro': 'If you have let me set your reminders, I add one for the day online check-in opens and two before your final payment is due, and one for the afternoon before the ship gets in, when the bags go out. Each is on your reminders list and can be removed. I set nothing else and never pay or book anything.',
+  'stanleyAuto.intro': 'If you have let me set your reminders, I add one for the day online check-in opens and two before your final payment is due, and one for the afternoon before the ship gets in, when the bags go out, and one an hour before your cabin has to be empty on the last morning. Each is on your reminders list and can be removed. I set nothing else and never pay or book anything.',
   'stanleyAuto.run': 'Set my deadline reminders',
   'stanleyAuto.working': 'Setting them.',
   'stanleyAuto.error': 'I could not do that just now.',
