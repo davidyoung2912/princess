@@ -17,6 +17,7 @@ export const GAMES: readonly GameEntry[] = [
   { id: 'killer-sudoku', path: '/games-explorer/killer-sudoku', mode: 'single', titleKey: 'gx.game.killer.title', bodyKey: 'gx.game.killer.body' },
   { id: 'binairo', path: '/games-explorer/binairo', mode: 'single', titleKey: 'gx.game.binairo.title', bodyKey: 'gx.game.binairo.body' },
   { id: 'futoshiki', path: '/games-explorer/futoshiki', mode: 'single', titleKey: 'gx.game.futoshiki.title', bodyKey: 'gx.game.futoshiki.body' },
+  { id: 'kenken', path: '/games-explorer/kenken', mode: 'single', titleKey: 'gx.game.kenken.title', bodyKey: 'gx.game.kenken.body' },
 ]
 
 export const gamesOf = (mode: GameEntry['mode']): GameEntry[] => GAMES.filter((g) => g.mode === mode)

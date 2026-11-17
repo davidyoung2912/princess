@@ -16,6 +16,7 @@ import {
   Calculator as KillerSudokuGame,
   CircleDot as BinairoGame,
   ChevronsLeftRight as FutoshikiGame,
+  Grid2x2 as KenKenGame,
   Compass,
   CalendarDays as Plan,
   Drama,
@@ -196,5 +197,5 @@ export const SCREEN_ICONS: Record<string, LucideIcon> = {
   M10: Receipt, M11: ScrollText, M12: Banknote, M13: ReceiptText, M14: HeartHandshake, M15: History, M16: Images, M17: BookHeart, M18: Sparkles,
   M19: Star, M20: Smile, M21: HeartPulse, M22: CalendarPlus, M23: Leaf, M24: PackageSearch, M25: Lock, M26: Mail, M27: Printer, M28: Bell,
   M29: Vibrate, M30: Feather, M31: Flower, M32: Wind, M33: Settings, M34: Activity, M43: Sparkles, M44: History, M45: AlarmClock, M35: LifeBuoy, M36: Phone, M37: Wrench, M38: HandHelping,
-  M39: Signal, M40: Bug, M41: FlaskConical, X01: Blocks, X02: Sun, X03: Radar, X04: Share2, X05: UserRound, X06: Compass, X07: Sparkles, X08: Drama, X09: CloudSun, X10: Compass, X11: Plan, X12: Map, X13: UtensilsCrossed, X21: UtensilsCrossed, X22: Flower2, X23: Drama, X24: Dumbbell, X25: ShoppingBag, X26: Activities, X27: Plan, X17: Flower2, X18: Dumbbell, X19: Activities, X30: Games, X31: WordGame, X32: SudokuGame, X33: DiagonalSudokuGame, X34: JigsawSudokuGame, X35: KillerSudokuGame, X36: BinairoGame, X37: FutoshikiGame, X20: Ship, X14: ShoppingBag, X28: MapPin, X29: MapPin, X15: BookOpen, X16: Map,
+  M39: Signal, M40: Bug, M41: FlaskConical, X01: Blocks, X02: Sun, X03: Radar, X04: Share2, X05: UserRound, X06: Compass, X07: Sparkles, X08: Drama, X09: CloudSun, X10: Compass, X11: Plan, X12: Map, X13: UtensilsCrossed, X21: UtensilsCrossed, X22: Flower2, X23: Drama, X24: Dumbbell, X25: ShoppingBag, X26: Activities, X27: Plan, X17: Flower2, X18: Dumbbell, X19: Activities, X30: Games, X31: WordGame, X32: SudokuGame, X33: DiagonalSudokuGame, X34: JigsawSudokuGame, X35: KillerSudokuGame, X36: BinairoGame, X37: FutoshikiGame, X38: KenKenGame, X20: Ship, X14: ShoppingBag, X28: MapPin, X29: MapPin, X15: BookOpen, X16: Map,
 }

@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37) and **KenKen** (X38). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -55,7 +55,9 @@ Built as planned. `futoshiki.ts` makes a Latin square by backtracking, shows eve
 - Generator: Latin square, a random set of inequality signs, givens removed while unique. Logic solver: candidate elimination by the signs, naked and hidden singles, chains of signs.
 - Signs drawn between cells (rotated for vertical), notes, hint explains the sign that forces a digit. Red marks for a broken sign, repeated digit or a cell with no candidates.
 
-### G5: KenKen (X38)
+### G5: KenKen (X38) — built
+
+Built as planned. `kenken.ts` reuses `latinSquare` and `linesOf` from Futoshiki. It cuts the square into connected cages (one-cell cages are givens, subtract and divide only on two cells), then adds extra given digits until plain logic finishes and takes back any that are not needed, so the answer is unique with no guessing. Logic is row and column elimination, cage tuple pruning to a fixed point, naked and hidden singles; hints name the cage, its target and the digits it can still use. Levels: Easy 4x4, Medium 5x5, Hard 6x6, Expert 7x7 (generates in milliseconds). `KenKenScreen.tsx` draws bold cage outlines with the target and sign in the corner, notes, digit pad with counts, red squares for repeats, broken cages and dead squares.
 
 - N by N Latin square with bold cages, each showing a target and an operation (add, subtract, multiply, divide; subtract and divide only on two-cell cages; one-cell cages are givens). Levels: 4x4 up to 6x6 (Expert 7x7 if it generates quickly).
 - Generator: Latin square, random cage partition, choose an operation that suits each cage, solve for uniqueness. Hints name the cage and the combinations left.

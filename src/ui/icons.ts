@@ -90,6 +90,7 @@ export {
   Calculator as KillerSudokuGame,
   CircleDot as BinairoGame,
   ChevronsLeftRight as FutoshikiGame,
+  Grid2x2 as KenKenGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,

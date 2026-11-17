@@ -217,3 +217,28 @@
 .fs-sign--broken { color: var(--sd-error); border-radius: 50%; box-shadow: 0 0 0 2px var(--sd-error); }
 .fs-board .sd-notes { inset: 1px; }
 .fs-pad { grid-template-columns: repeat(var(--n), 1fr); }
+
+/* KenKen: a joined grid with bold cage outlines and the target and sign in each cage's top-left corner. */
+.kk-board { width: min(100%, 30rem); border: 2px solid var(--sd-line); background: var(--bg); box-sizing: border-box; touch-action: manipulation; user-select: none; }
+.kk-row { display: grid; grid-template-columns: repeat(var(--n), 1fr); }
+.kk-cell {
+  position: relative; aspect-ratio: 1; display: grid; place-items: center; box-sizing: border-box; min-width: 0;
+  border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg); color: var(--primary);
+  font-size: clamp(1.1rem, 6vw, 1.85rem); font-weight: 600; line-height: 1; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.kk-cell--given { color: var(--text); font-weight: 800; background: color-mix(in srgb, var(--text) 8%, var(--bg)); }
+.kk-cell--same { background: color-mix(in srgb, var(--primary) 20%, var(--bg)); }
+.kk-cell--hint { background: color-mix(in srgb, var(--warning) 28%, var(--bg)); }
+.kk-cell--selected { background: color-mix(in srgb, var(--primary) 32%, var(--bg)); box-shadow: inset 0 0 0 3px var(--primary); z-index: 1; }
+.kk-cell--repeat { color: var(--sd-error); text-decoration: underline wavy; text-underline-offset: 0.18em; }
+.kk-cell--dead { background: var(--sd-dead); box-shadow: inset 0 0 0 2px var(--sd-dead-edge); }
+.kk-cell--dead.kk-cell--selected { box-shadow: inset 0 0 0 3px var(--primary); }
+.kk-cell:focus-visible { outline: 3px solid var(--text); outline-offset: -3px; z-index: 2; }
+.kk-cage { position: absolute; inset: 0; pointer-events: none; border: 0 solid var(--sd-line); }
+.kk-cage--t { border-top-width: 3px; }
+.kk-cage--r { border-right-width: 3px; }
+.kk-cage--b { border-bottom-width: 3px; }
+.kk-cage--l { border-left-width: 3px; }
+.kk-cage b { position: absolute; top: 2px; left: 4px; padding: 0 1px; font-size: clamp(0.55rem, 2.6vw, 0.8rem); line-height: 1; font-weight: 800; color: var(--text); background: inherit; }
+.kk-board .sd-notes { inset: 0.9rem 2px 2px; }
+.kk-pad { grid-template-columns: repeat(var(--n), 1fr); }
