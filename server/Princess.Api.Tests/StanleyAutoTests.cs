@@ -12,10 +12,10 @@ public class StanleyAutoTests
         new(DateOnly.FromDateTime(now), now, Departure, 7, null!, payment, FinalDue, checkin, TripRules.CheckinOpensAt(Departure), TripRules.CheckinClosesAt(Departure), false, [], [], []);
 
     [Fact]
-    public void DatesThatMatterBecomeFourReminders()
+    public void DatesThatMatterBecomeFiveReminders()
     {
         var c = StanleyAutoRules.Candidates(Facts(new(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc)));
-        Assert.Equal(4, c.Count);
+        Assert.Equal(5, c.Count);
         Assert.Contains(c, x => x.Key == "aut02:bags:2027-03-27");
         Assert.All(c, x => Assert.StartsWith(StanleyAutoRules.Marker, x.Key));
         Assert.Equal(c.Count, c.Select(x => x.Key).Distinct().Count());
@@ -30,8 +30,12 @@ public class StanleyAutoTests
         Assert.DoesNotContain(StanleyAutoRules.Candidates(Facts(new(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc))), x => x.Key.Contains(":docs:"));
 
     [Fact]
+    public void NoTravellersStillGivesADiningFreezeReminderBeforeTheFreeze() =>
+        Assert.Contains(StanleyAutoRules.Candidates(Facts(new(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc))), x => x.Key.Contains(":dining:"));
+
+    [Fact]
     public void APaidBalanceAndAnOpenCheckinLeaveOnlyBagNight() =>
-        Assert.Equal(["bags"], StanleyAutoRules.Candidates(Facts(new(2027, 3, 10, 0, 0, 0, DateTimeKind.Utc), "paid", "open")).Select(x => x.Key.Split(':')[1]));
+        Assert.Equal(["dining", "bags"], StanleyAutoRules.Candidates(Facts(new(2027, 3, 10, 0, 0, 0, DateTimeKind.Utc), "paid", "open")).Select(x => x.Key.Split(':')[1]));
 
     [Fact]
     public void WhatIsAlreadySetPastOrOutOfRangeIsNotSetAgain()
@@ -40,7 +44,7 @@ public class StanleyAutoTests
         var all = StanleyAutoRules.Candidates(Facts(now));
         var (add, waiting) = StanleyAutoRules.Plan(all, new HashSet<string> { all.Single(x => x.Key.Contains("pay2")).Key }, 1, now);
         Assert.Equal(["pay7"], add.Select(x => x.Key.Split(':')[1]));
-        Assert.Equal(2, waiting.Count);
+        Assert.Equal(3, waiting.Count);
         Assert.All(waiting, w => Assert.Contains("Not yet in range", w));
     }
 

@@ -306,3 +306,7 @@ AUT-02 also sets one reminder an hour before the cabin has to be empty on the la
 ### Documents reminder (phase P10a, fourth part)
 
 AUT-02 also sets one reminder at 9 am ship time two weeks before sailing ("Two weeks to sailing and a document is not ready. The documents screen shows which."), key `aut02:docs:<date>`, only when the booking is not made by an agent and the check-up already finds a traveller's document not ready. It reads only the ready or not-ready state the check-up holds, no number, name or document detail. Same limits, receipt and undo as the others. Dining reminders, AUT-05 and AUT-07 are still to do.
+
+### Dining plan reminder (phase P10a, fifth part)
+
+AUT-02 also sets one reminder at 9 am ship time five days before sailing ("Your dining plan freezes in 3 days. The dining screen is where to change it."), key `aut02:dining:<date>`, only when the booking is not made by an agent and the freeze date (three days before sailing) has not passed. It reads only the sailing date and today's date, nothing about any table. Same limits, receipt and undo as the others. AUT-05 and AUT-07 are still to do.

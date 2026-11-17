@@ -17,7 +17,7 @@ public sealed record AutoRunDto(bool On, string Class, List<AutoMade> Made, List
 public static class StanleyAutoRules
 {
     public const string ClassId = "AUT-02", Row = "CL-08", Marker = "aut02:";
-    public const int MaxPerTrip = 30, PaymentLeadFar = 7, PaymentLeadNear = 2, UndoMinutes = 120, ExitLeadMinutes = 60, DocsLead = 14;
+    public const int MaxPerTrip = 30, PaymentLeadFar = 7, PaymentLeadNear = 2, UndoMinutes = 120, ExitLeadMinutes = 60, DocsLead = 14, DiningFreezeLead = 5;
     private static readonly TimeOnly Morning = new(9, 0), BagNight = new(15, 0);
 
     /// <summary>The dates on the trip that can cost something and are still ahead. A paid balance and a check-in that has opened give none.</summary>
@@ -33,6 +33,8 @@ public static class StanleyAutoRules
         }
         if (!f.AgentBooking && f.Travellers.Any(t => t.Docs.Results.Any(r => r.Status != "ready")))
             list.Add(new($"{Marker}docs:{f.Departure:yyyy-MM-dd}", "Two weeks to sailing and a document is not ready. The documents screen shows which.", TripRules.ZonedToUtc(f.Departure.AddDays(-DocsLead), Morning)));
+        if (!f.AgentBooking && f.Today <= f.Departure.AddDays(-DiningPlanRules.FreezeDays))
+            list.Add(new($"{Marker}dining:{f.Departure:yyyy-MM-dd}", "Your dining plan freezes in 3 days. The dining screen is where to change it.", TripRules.ZonedToUtc(f.Departure.AddDays(-DiningFreezeLead), Morning)));
         if (f.Nights >= 1)
         {
             var last = f.Departure.AddDays(f.Nights);
@@ -65,6 +67,5 @@ public static class StanleyAutoRules
     [
         "Reminders that follow (AUT-01) are done by the reminders themselves when a time moves.",
         "Lists kept current (AUT-05) and saved for me (AUT-07) are not built yet.",
-        "Dining reminders are not set yet.",
     ];
 }
