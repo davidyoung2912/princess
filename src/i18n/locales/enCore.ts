@@ -2333,6 +2333,7 @@ export const enCore = {
   'pack.weather': 'Weather',
   'pack.weatherLine': 'Highs around {high} and lows around {low}.',
   'pack.progress': '{done} of {total} packed',
+  'pack.jump': 'Jump to a section of the packing list',
   'pack.share': 'Share list',
   'pack.print': 'Print',
   'pack.copied': 'The list is copied. Paste it into a message.',

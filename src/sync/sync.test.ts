@@ -75,6 +75,27 @@ describe('pull', () => {
     }
   })
 
+  it('keeps a change that is still being saved when another pull reads the older server copy', async () => {
+    const t = setup()
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    let release: () => void = () => {}
+    const held = new Promise<void>((r) => { release = r })
+    const inner = t.server.remote
+    t.setRemote({ ...inner, put: async (key, data, base, scope) => { await held; return inner.put(key, data, base, scope) } })
+    t.store.values.set('p1', { n: 9 })
+    t.sync.changed('k', 'p1')
+    void t.timers.fire()
+    await tick()
+    const pulling = t.sync.pull()   // reads the server's copy before the save has landed
+    await tick()
+    expect(t.store.values.get('p1')).toEqual({ n: 9 })
+    release()
+    await pulling
+    expect(t.store.values.get('p1')).toEqual({ n: 9 })
+    expect(t.server.docs.get('k')?.data).toEqual({ n: 9 })
+  })
+
   it('takes the server copy on a new device', async () => {
     const t = setup()
     t.server.docs.set('k', { version: 3, data: { n: 7 } })

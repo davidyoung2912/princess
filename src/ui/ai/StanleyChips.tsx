@@ -10,6 +10,7 @@ import type { JourneyStage } from '../../routes/hubs'
 import { stanleyLevelFor } from '../../settings/settings'
 import { t, th, headingCase } from '../../i18n'
 import { useSettings } from '../../hooks/useSettings'
+import { Ask, Chat } from '../icons'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
 
@@ -32,8 +33,8 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
           <h2 id="stanley-chips-h" className="stanley-card__title">{headingCase(t('stanley.chips.intro'))}</h2>
         </div>
         <ul className="stanley-chips__list" aria-label={t('stanley.chips.label')}>
-          {chips.map((e) => <li key={e.id}><button type="button" className="chip-q" onClick={() => setOpen(e)}>{questionOf(e)}</button></li>)}
-          <li><button type="button" className="chip-q chip-q--more" onClick={onAsk}>{t('stanley.chips.more')}</button></li>
+          {chips.map((e) => <li key={e.id}><button type="button" className="chip-q" onClick={() => setOpen(e)}><Ask className="chip-q__icon" size={16} aria-hidden="true" />{questionOf(e)}</button></li>)}
+          <li><button type="button" className="chip-q chip-q--more" onClick={onAsk}><Chat className="chip-q__icon" size={16} aria-hidden="true" />{t('stanley.chips.more')}</button></li>
         </ul>
       </div>
       {open && <StanleyAnswer entry={open} onClose={() => setOpen(null)} onAsk={() => { setOpen(null); onAsk() }} />}

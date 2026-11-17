@@ -225,6 +225,10 @@ services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.Secti
 services.AddHostedService<RetentionPurgeService>();
 services.AddOptions<SchedulerOptions>().BindConfiguration(SchedulerOptions.Section);
 services.AddHostedService<WatchSchedulerService>();
+services.AddScoped<IStanleyDueStore, DapperStanleyDueStore>();
+services.AddScoped<IStanleyBreakerStore, DapperStanleyBreakerStore>();
+services.AddScoped<IStanleyDueContext, PushStanleyDueContext>();
+services.AddHostedService<StanleyDueWorker>();
 services.AddHostedService<ChatUrgentRetryService>();
 services.AddHttpContextAccessor();
 services.AddScoped<ICurrentUser, CurrentUser>();

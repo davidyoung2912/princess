@@ -184,7 +184,7 @@ export function KeepStub({ pass }: { pass: BoardingView }) {
   const kept = hasStub(state.embark.stubs, pass.number)
   const stub = { id: newMemoryId(), number: pass.number, date: pass.departure, terminal: pass.terminal.name || TERMINALS.usual, guests: pass.passes.length, savedAt: now }
   return (
-    <div className="no-print">
+    <div className="no-print keep-stub">
       {kept ? (
         <p role="status">{t('dl6.stub.kept')} <Link to="/me/memories">{t('route.memories')}</Link></p>
       ) : (

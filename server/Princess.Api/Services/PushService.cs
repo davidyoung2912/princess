@@ -121,6 +121,25 @@ public sealed class PushService(
         if (delivered > 0) await store.AddDeliveryAsync(target.Id, new(n.Key, n.Kind, n.Bypass, "sent", null, delivered, paramsJson, now, false), now, ct);
     }
 
+    /// <summary>
+    /// The guest's limits for proactive Stanley output right now (phase P2c): the strictest phone budget, what has been sent today, whether quiet hours or do-not-disturb hold things,
+    /// calm mode, and whether a safety alert reached the phone in the last half hour and is still unacknowledged (a ship alert in progress holds everything else back).
+    /// </summary>
+    public async Task<ArbiterContext> ProactiveContextAsync(UserRecord actor, CancellationToken ct)
+    {
+        var subs = await store.ListSubscriptionsAsync(actor.Id, ct);
+        var now = await clock.NowAsync(actor, ct);
+        var booking = await trips.CurrentAsync(actor, now, ct);
+        var departure = booking is null ? (DateOnly?)null : DateOnly.FromDateTime(booking.Departure);
+        var zone = departure is { } d ? Itinerary.ShipZoneAt(d, now) : Itinerary.ShipHomeZone;
+        var local = InZone(now, zone);
+        var prefs = await PrefsAsync(actor.Id, ct);
+        var log = await store.ListDeliveriesAsync(actor.Id, 200, ct);
+        var sentToday = log.Count(l => l.Outcome == "sent" && !l.Bypass && !IsOtherChannel(l.NoticeKey) && InZone(l.At, zone).Date == local.Date);
+        var shipAlert = log.Any(l => l.Outcome == "sent" && l.Bypass && !l.Acked && !IsOtherChannel(l.NoticeKey) && now - l.At < TimeSpan.FromMinutes(30));
+        return new(subs.Count == 0 ? 0 : subs.Min(s => s.Budget), sentToday, PushRules.QuietOrDnd(prefs, TimeOnly.FromDateTime(local), Shipboard.Ms(now)), false, subs.Any(s => s.Calm), shipAlert, new HashSet<string>());
+    }
+
     private async Task RunAsync(UserRecord actor, List<PushSubscriptionRow> subs, CancellationToken ct)
     {
         var now = await clock.NowAsync(actor, ct);

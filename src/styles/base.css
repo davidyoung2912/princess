@@ -95,6 +95,9 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
 /* Choice rows: a native radio or checkbox with a label, large enough to tap. */
 .choice { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target-min); cursor: pointer; }
 .choice input { width: 1.5rem; height: 1.5rem; accent-color: var(--sec); flex: none; }
+/* Every checkbox and radio is large enough to see and tap, wherever it sits (the browser's own are about 13px). Ones hidden for a custom control keep their own styling. */
+input[type='checkbox']:not(.visually-hidden), input[type='radio']:not(.visually-hidden) { width: 1.5rem; height: 1.5rem; accent-color: var(--sec); flex: none; }
+.check-row > input[type='checkbox'] { margin: 0.125rem 0 0; }
 .choice small { display: block; color: var(--text-muted); font-size: var(--fs-caption); }
 
 .swatches { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); padding: 0; margin: 0 0 var(--space-4); list-style: none; }

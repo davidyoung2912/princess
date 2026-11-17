@@ -154,6 +154,9 @@ export function createSync(opts: SyncOptions) {
     const doc = await remote.get(key, scopeOf(b))
     if (!current(acct)) return
     s.pulled = true
+    // A save that started before this answer was read is still on its way: push() clears `dirty` as it starts, so the server's copy here may be older than this device's.
+    // Applying it would overwrite the guest's own change (a welcome just marked seen would come back), so the save wins and its result is kept.
+    if (s.running) { await s.running; if (s.dirty) await run(key); b.pulled?.(idOf(b)); return }
     if (!doc) {
       s.version = 0
       // The server is the source: with nothing saved there, this device's copy is not imported. Two exceptions are the guest's own acts: a change made

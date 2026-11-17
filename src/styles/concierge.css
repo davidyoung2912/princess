@@ -55,7 +55,7 @@
 
 /* Stanley's question chips, answer sheet and empty states (SG1). */
 .stanley-chips { margin-top: var(--space-4); }
-.stanley-card { display: grid; gap: var(--space-3); padding: var(--space-4); background: color-mix(in srgb, var(--sec) 12%, color-mix(in srgb, var(--sec-tint) 60%, var(--surface, var(--bg)))); border: var(--border-width) solid color-mix(in srgb, var(--sec) 45%, var(--surface, var(--bg))); border-radius: var(--radius-card); color: var(--text); box-shadow: var(--shadow-card); }
+.stanley-card { display: grid; gap: var(--space-3); padding: var(--space-4); background: color-mix(in srgb, var(--sec) 24%, var(--sec-tint)); border: var(--border-width) solid color-mix(in srgb, var(--sec) 45%, var(--surface, var(--bg))); border-radius: var(--radius-card); color: var(--text); box-shadow: var(--shadow-card); }
 .stanley-card__head { display: flex; align-items: center; gap: var(--space-3); }
 .stanley-card__face { box-sizing: border-box; width: 3.75rem; height: 3.75rem; padding: 0.5rem; border-radius: 50%; object-fit: contain; flex: none; background: var(--bg); }
 .stanley-card__title { margin: 0; font-size: var(--fs-body, 1rem); }
@@ -66,6 +66,7 @@
 .chip-q { min-height: var(--target-min); padding: var(--space-1) var(--space-3); font: inherit; font-size: var(--fs-caption); color: var(--text); background: var(--surface-info); border: 2px solid var(--border-strong); border-radius: var(--radius-pill); cursor: pointer; text-align: left; }
 .chip-q:hover { background: var(--sky-tint); }
 .chip-q--more { font-weight: 600; }
+.chip-q__icon { display: inline-block; vertical-align: -0.2em; margin-right: var(--space-1); color: var(--sec); }
 .stanley-answer { display: block; }
 .stanley-answer p { margin: 0 0 var(--space-2); }
 .stanley-answer__q { font-weight: 600; }

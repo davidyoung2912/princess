@@ -4004,3 +4004,45 @@ CREATE INDEX IX_ChatHostFlags_Open ON dbo.ChatHostFlags (DecidedAt, CreatedAt);
 CREATE INDEX IX_ChatHostFlags_User ON dbo.ChatHostFlags (FlaggedBy, CreatedAt);   -- five a day
 END
 GO
+
+-- The Stanley due queue (docs/stanley-actions-and-proactive-plan.md, phase P2c; shared with reminders R3). One row per thing that has come due for a guest: ids and keys only, never the guest's words.
+-- IdemKey is unique, so the same fact on the same occasion is queued once. A worker claims rows under a lease (LeaseOwner, LeaseUntil); a lease that runs out lets another worker take the row over.
+-- State is pending, claimed, done, held or dropped; Reason says why a row was held or dropped (budget, quiet, shipAlert, stale, duplicate, classOff, breaker, failed...). Closed rows are removed after a week.
+IF OBJECT_ID(N'dbo.StanleyRuleDue', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.StanleyRuleDue (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StanleyRuleDue PRIMARY KEY,
+  UserId BIGINT NOT NULL,
+  IdemKey NVARCHAR(160) NOT NULL CONSTRAINT UX_StanleyRuleDue_IdemKey UNIQUE,
+  DueAt DATETIME2(0) NOT NULL,
+  TriggerKind VARCHAR(12) NOT NULL,
+  ClassId VARCHAR(40) NOT NULL,
+  RankNo INT NOT NULL,
+  Critical BIT NOT NULL CONSTRAINT DF_StanleyRuleDue_Critical DEFAULT 0,
+  Subject NVARCHAR(80) NOT NULL CONSTRAINT DF_StanleyRuleDue_Subject DEFAULT N'',
+  FactKey NVARCHAR(120) NOT NULL CONSTRAINT DF_StanleyRuleDue_FactKey DEFAULT N'',
+  [State] VARCHAR(10) NOT NULL CONSTRAINT DF_StanleyRuleDue_State DEFAULT 'pending',
+  LeaseOwner NVARCHAR(80) NULL,
+  LeaseUntil DATETIME2(0) NULL,
+  Reason VARCHAR(24) NULL,
+  CreatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_StanleyRuleDue_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_StanleyRuleDue_State CHECK ([State] IN ('pending','claimed','done','held','dropped')),
+  CONSTRAINT CK_StanleyRuleDue_Trigger CHECK (TriggerKind IN ('time','change','inventory','state'))
+);
+CREATE INDEX IX_StanleyRuleDue_Due ON dbo.StanleyRuleDue ([State], DueAt) INCLUDE (LeaseUntil);
+CREATE INDEX IX_StanleyRuleDue_User ON dbo.StanleyRuleDue (UserId, [State]);
+END
+GO
+
+-- The circuit breaker for each class of proactive output: how many cards it sent in the current window, and until when it is paused. Counters only.
+IF OBJECT_ID(N'dbo.StanleyBreaker', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.StanleyBreaker (
+  ClassId VARCHAR(40) NOT NULL CONSTRAINT PK_StanleyBreaker PRIMARY KEY,
+  WindowStart DATETIME2(0) NOT NULL,
+  [Count] INT NOT NULL,
+  PausedUntil DATETIME2(0) NULL
+);
+END
+GO

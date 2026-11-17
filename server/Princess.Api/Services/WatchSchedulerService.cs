@@ -10,6 +10,18 @@ public sealed class SchedulerOptions
     public int IntervalMinutes { get; set; } = 15;
     /// <summary>The most people looked after in one run. When more are signed up, the next run carries on after the last one checked and wraps round at the end.</summary>
     public int MaxPeople { get; set; } = 500;
+    /// <summary>Seconds between passes of the due-queue worker (<see cref="StanleyDueWorker"/>). 0 switches it off.</summary>
+    public int DueIntervalSeconds { get; set; } = 10;
+    /// <summary>The most due items claimed in one pass.</summary>
+    public int DueBatch { get; set; } = 200;
+    /// <summary>How long a worker holds the items it claimed before another may take them over.</summary>
+    public int LeaseSeconds { get; set; } = 120;
+    /// <summary>More cards than this from one class inside the window pauses the class. 0 turns the breaker off.</summary>
+    public int BreakerLimit { get; set; } = 500;
+    public int BreakerWindowMinutes { get; set; } = 10;
+    public int BreakerPauseMinutes { get; set; } = 60;
+    /// <summary>Classes an operator has switched off (kill switch). Their items are dropped, never delivered.</summary>
+    public string[]? OffClasses { get; set; }
 }
 
 /// <summary>

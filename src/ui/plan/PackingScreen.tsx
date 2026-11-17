@@ -46,6 +46,13 @@ export function PackingScreen() {
                 <p>{t('pack.weatherLine', { high: formatTemp(p.weather.highF, settings.units), low: formatTemp(p.weather.lowF, settings.units) })} {p.weather.note}</p>
               </Card>
               <p className="muted">{t('dl5.pack.shared')}</p>
+              <nav aria-label={t('pack.jump')}>
+                <ul className="naut-jump">
+                  {[...PACK_GROUPS.filter((g) => p.items.some((i) => i.group === g)).map((g) => ({ id: `pg-${g}`, label: th(`pack.group.${g}` as never) })), ...(p.hidden && p.hidden.length > 0 ? [{ id: 'pg-hidden', label: th('pack.hidden') }] : [])].map((s) => (
+                    <li key={s.id}><a href={`#${s.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ block: 'start' }); document.getElementById(s.id)?.focus() }}>{s.label}</a></li>
+                  ))}
+                </ul>
+              </nav>
               <p className="progress-line" role="status">{t('pack.progress', { done: p.ticked.length, total: p.items.length })}</p>
               <progress className="meter" max={p.items.length} value={p.ticked.length} aria-label={t('pack.progress', { done: p.ticked.length, total: p.items.length })} />
               <div className="button-row">
@@ -67,7 +74,7 @@ export function PackingScreen() {
                 if (items.length === 0) return null
                 return (
                   <section key={g} aria-labelledby={`pg-${g}`}>
-                    <h2 id={`pg-${g}`}>{th(`pack.group.${g}` as never)}</h2>
+                    <h2 id={`pg-${g}`} tabIndex={-1}>{th(`pack.group.${g}` as never)}</h2>
                     {items.map((i) => (
                       <div key={i.id} className="check-row">
                         <input type="checkbox" id={`p-${i.id}`} checked={p.ticked.includes(i.id)} disabled={tick.busy} onChange={() => void tick.run(i.id, !p.ticked.includes(i.id))} />
@@ -82,7 +89,7 @@ export function PackingScreen() {
               })}
               {p.hidden && p.hidden.length > 0 && (
                 <section aria-labelledby="pg-hidden">
-                  <h2 id="pg-hidden">{th('pack.hidden')}</h2>
+                  <h2 id="pg-hidden" tabIndex={-1}>{th('pack.hidden')}</h2>
                   {p.hidden.map((i) => (
                     <div key={i.id} className="check-row">
                       <div className="check-row__text"><strong>{i.label}</strong></div>
