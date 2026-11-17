@@ -52,7 +52,7 @@ import { Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, Pi
 const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
 import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
-import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
+import { BlockedList, MessageSafety, PhotoAttach } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
@@ -795,6 +795,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && problem !== 'held' && <p className="muted">{t('chat.kept')}</p>}
           <HelpMeReword problem={problem} text={text} onUse={putInBox} />
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
+          {!room && conversation?.kind !== 'huddle' && <PhotoAttach conversationId={id} caption={text} onSent={() => { setText(''); setReplyTo(null); wasNear.current = true; void load() }} />}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
           {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">
             {QUICK_REPLY_KEYS.map((k) => { const Icon = QUICK_ICONS[k]; return <button key={k} type="button" className="chat-quick__btn" aria-label={t(`conv.quick.${k}`)} title={t(`conv.quick.${k}`)} onClick={() => void submit(t(`conv.quick.${k}`))}><Icon aria-hidden="true" /></button> })}
@@ -1317,7 +1318,6 @@ function Options({ conversation, messages, awayBusy, onAway, mentionsBusy, onMen
       {!conversation.closed && (
         <>
           <PlanCardSender conversationId={conversation.id} onSent={onSent} />
-          {conversation.kind !== 'huddle' && <PhotoSender conversationId={conversation.id} onSent={onSent} />}
         </>
       )}
       <BlockedList version={blockedVersion} reload={reload} />

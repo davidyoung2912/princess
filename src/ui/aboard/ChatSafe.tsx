@@ -1,4 +1,5 @@
-import { useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
+import { ImagePlus } from 'lucide-react'
 import { FieldLabel } from '../Field'
 import { MAX_PHOTO_BYTES, PHOTO_MIN_AGE, PHOTO_TYPES, REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import type { PersonaId } from '../../domain/people'
@@ -66,12 +67,12 @@ const readAsDataUrl = (file: Blob): Promise<string> => new Promise((resolve, rej
 })
 
 /**
- * Send photos into one conversation (MSG-01, phase 9b): up to ten at once, each shrunk on the device first, JPEG, PNG or WebP, adults only.
- * The words go with the message; a photo still over the limit after shrinking is left out and the guest is told.
+ * Attach photos to a chat message (MSG-01, phase 9b): a button beside Send. Up to ten at once, each shrunk on the device first, JPEG, PNG or WebP, adults only.
+ * The words in the message box go with the photos as their caption and the box is emptied once they are sent; a photo still over the limit after shrinking is left out and the guest is told.
  */
-export function PhotoSender({ conversationId, onSent }: { conversationId: string; onSent: () => void }) {
+export function PhotoAttach({ conversationId, caption, onSent }: { conversationId: string; caption: string; onSent: () => void }) {
   const me = usePersona()
-  const [caption, setCaption] = useState('')
+  const input = useRef<HTMLInputElement>(null)
   const [note, setNote] = useState<{ badType: number; over: number; big: number } | null>(null)
   const send = useAction(async (files: File[]) => {
     const ready: { type: string; bytes: number; dataUrl: string }[] = []
@@ -84,11 +85,10 @@ export function PhotoSender({ conversationId, onSent }: { conversationId: string
     setNote((n) => (n ? { ...n, big } : n))
     const [first, ...more] = ready
     if (!first) return
-    await api.chatConversations.sendPhoto(conversationId, { ...first, caption, ...(more.length > 0 ? { more } : {}) })
-    setCaption('')
+    await api.chatConversations.sendPhoto(conversationId, { ...first, caption: caption.trim(), ...(more.length > 0 ? { more } : {}) })
     onSent()
   })
-  if (!me || me.age < PHOTO_MIN_AGE) return <p className="muted">{t('safe.photoAdults', { age: PHOTO_MIN_AGE })}</p>
+  if (!me || me.age < PHOTO_MIN_AGE) return null
   const pick = (e: ChangeEvent<HTMLInputElement>) => {
     const files = [...(e.target.files ?? [])]
     e.target.value = ''
@@ -98,16 +98,18 @@ export function PhotoSender({ conversationId, onSent }: { conversationId: string
     setNote({ badType: plan.badType, over: plan.over, big: 0 })
     if (plan.keep.length > 0) void send.run(plan.keep.map((i) => files[i]))
   }
+  const label = t('safe.photo')
   return (
-    <div className="field">
-      <label htmlFor="chat-photo">{t('safe.photo')}</label>
-      <p className="field__hint">{t('safe.photoHint', { mb: MAX_PHOTO_BYTES / 1_000_000, max: MAX_PHOTOS_PER_MESSAGE })}</p>
-      <input id="chat-photo" type="file" multiple accept={PHOTO_TYPES.join(',')} onChange={pick} disabled={send.busy} />
+    <>
+      <input ref={input} type="file" multiple hidden tabIndex={-1} accept={PHOTO_TYPES.join(',')} onChange={pick} />
+      <button type="button" className="chat-quick__btn chat-attach" aria-label={label} title={t('safe.photoHint', { mb: MAX_PHOTO_BYTES / 1_000_000, max: MAX_PHOTOS_PER_MESSAGE })} disabled={send.busy} onClick={() => input.current?.click()}>
+        <ImagePlus aria-hidden="true" />
+      </button>
       {send.busy && <p role="status" className="muted">{t('cphoto.preparing')}</p>}
       {note && note.badType > 0 && <p role="alert" className="field__error">{t('safe.badType')}</p>}
       {note && note.over > 0 && <p role="alert" className="field__error">{t('cphoto.tooMany', { max: MAX_PHOTOS_PER_MESSAGE })}</p>}
       {note && note.big > 0 && <p role="alert" className="field__error">{t('safe.badSize', { mb: MAX_PHOTO_BYTES / 1_000_000 })}</p>}
       <AboardError error={send.error} />
-    </div>
+    </>
   )
 }

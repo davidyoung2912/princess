@@ -38,6 +38,12 @@ function usePhoto(conversationId: string, messageId: string, index: number, want
   return { src, failed: mine?.failed === true }
 }
 
+/** A file name for a saved photo, from the data URL's type. */
+const saveName = (src: string, name: string, index: number): string => {
+  const type = /^data:image\/([a-z0-9]+)/i.exec(src)?.[1]?.toLowerCase() ?? 'jpeg'
+  return `${name.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'photo'}-${index + 1}.${type === 'jpeg' ? 'jpg' : type}`
+}
+
 const photoAlt = (name: string, index: number, count: number): string =>
   count > 1 ? t('cphoto.altOf', { name, n: index + 1, count }) : t('chat.photoAlt', { name })
 
@@ -87,6 +93,9 @@ function Viewer({ conversationId, items, start, onClose }: { conversationId: str
       >
         {failed ? <p role="alert" className="field__error">{t('cphoto.failed')}</p> : src ? <img className="chat-viewer__img" src={src} alt={alt} /> : <p className="muted" role="status">{t('account.loading')}</p>}
         <p className="muted" role="status">{t('cphoto.position', { n: at + 1, count: items.length, name: item.fromName, time: shipTime(item.at) })}</p>
+        <div className="button-row">
+          {src && <a className="btn btn--secondary" href={src} download={saveName(src, item.fromName, item.index)}>{t('cphoto.save')}</a>}
+        </div>
         {items.length > 1 && (
           <div className="button-row">
             <Button variant="secondary" disabled={at === 0} onClick={() => go(-1)}>{t('cphoto.prev')}</Button>

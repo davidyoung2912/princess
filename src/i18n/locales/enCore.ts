@@ -5878,7 +5878,6 @@ export const enCore = {
   'safe.unblock': 'Show again',
   'safe.photo': 'Send a photo',
   'safe.photoHint': 'JPEG, PNG or WebP, under {mb} MB each, up to {max} at a time. They are made smaller on your phone first.',
-  'safe.photoAdults': 'Photos in chat are for guests {age} and over. Parents see their children’s chats.',
   'safe.badType': 'That is not a JPEG, PNG or WebP photo.',
   'safe.badSize': 'That photo is over {mb} MB. Choose a smaller one.',
   'chat.photoAlt': 'A photo from {name}',
@@ -5898,6 +5897,7 @@ export const enCore = {
   'cphoto.openText': 'Photo from {name}, {time}',
   'cphoto.more': 'Show more photos',
   'cphoto.older': 'Only photos in the messages already on your screen are shown. Scroll back in the chat to bring older ones in.',
+  'cphoto.save': 'Save photo',
   'cphoto.preparing': 'Getting your photos ready…',
   'cphoto.tooMany': 'Only the first {max} photos were used.',
 

@@ -487,8 +487,8 @@ button.chat-quote { cursor: pointer; }
 
 /* Message actions are small icon buttons at the top right of the card. */
 .chat-msg__tools { position: absolute; top: var(--space-1); inset-inline-end: var(--space-2); display: flex; flex-wrap: wrap; justify-content: flex-end; max-width: 60%; gap: 0; }
-.chat-act.chat-act--icon { display: inline-grid; place-items: center; min-height: 2rem; min-width: 2rem; padding: 0; border-radius: 50%; text-decoration: none; }
-.chat-act--icon svg { width: 1.1rem; height: 1.1rem; }
+.chat-act.chat-act--icon { display: inline-grid; place-items: center; min-height: 1.6rem; min-width: 1.6rem; padding: 0; border-radius: 50%; text-decoration: none; }
+.chat-act--icon svg { width: 0.88rem; height: 0.88rem; }
 .chat-act--icon:hover, .chat-act--icon:focus-visible { background: color-mix(in srgb, var(--primary) 12%, transparent); }
 .chat-msg:has(> .chat-msg__tools) > .chat-msg__meta, .chat-msg:has(> .chat-msg__actions-wrap) > .chat-msg__meta { padding-inline-end: 8rem; }
 
@@ -646,8 +646,8 @@ button.chat-quote { cursor: pointer; }
 :root[data-motion='reduced'] .chat-act.chat-act--icon:is(:hover, :focus-visible, :active) { transform: none; }
 
 /* The icons on a message card get the same bounding circle, size and spacing as the quick-reply buttons. */
-.chat-act.chat-act--icon { box-sizing: border-box; min-height: 2rem; min-width: 2rem; padding: 0; border: 2px solid var(--primary); background: var(--sky-tint); color: var(--text); border-radius: 50%; }
-.chat-act.chat-act--icon svg { width: 1.1rem; height: 1.1rem; }
+.chat-act.chat-act--icon { box-sizing: border-box; min-height: 1.6rem; min-width: 1.6rem; padding: 0; border: 2px solid var(--primary); background: var(--sky-tint); color: var(--text); border-radius: 50%; }
+.chat-act.chat-act--icon svg { width: 0.88rem; height: 0.88rem; }
 .chat-msg__tools { gap: var(--space-2); }
 .chat-act.chat-act--icon:is(:hover, :focus-visible):not(:disabled) { background: var(--brand-tint); }
 /* The newest card is always laid out in full (the placeholder size used to skip off-screen cards made it measure short), so scrolling to the end shows all of it. */
@@ -660,3 +660,7 @@ button.chat-quote { cursor: pointer; }
 .chat-picker__btn[aria-pressed='true'] { background: var(--brand-tint); }
 @media (prefers-reduced-motion: reduce) { .chat-picker__btn { transition: none; } .chat-picker__btn:is(:hover, :focus-visible, :active) { transform: none; } }
 :root[data-motion='reduced'] .chat-picker__btn:is(:hover, :focus-visible, :active) { transform: none; }
+
+/* The attach-photos button sits beside Send in the message row. */
+.composer--chat > .chat-attach { order: 3; flex: none; min-height: var(--target-min); min-width: var(--target-min); }
+.chat-attach:disabled { opacity: 0.6; cursor: progress; }
