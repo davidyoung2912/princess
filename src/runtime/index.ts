@@ -162,6 +162,11 @@ export const stanleyEmbark = {
   get: () => http.get<unknown>('/me/stanley/embark'),
 }
 
+/** The Disembark pack, first part (phase P9d). Read-only; nothing is filled in or sent. */
+export const stanleyDisembark = {
+  get: () => http.get<unknown>('/me/stanley/disembark'),
+}
+
 /** The trip checklist and smart defaults (phase P5). Read-only; a default is shown, never applied. */
 export const stanleyChecklist = {
   get: () => http.get<unknown>('/me/stanley/checklist'),

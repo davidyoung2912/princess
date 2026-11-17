@@ -182,6 +182,7 @@ services.AddScoped<StanleyChecklistService>();
 services.AddScoped<StanleyShipGroupService>();
 services.AddScoped<StanleyPrebookService>();
 services.AddScoped<StanleyEmbarkService>();
+services.AddScoped<StanleyDisembarkService>();
 services.AddScoped<StanleyTripSoFarService>();
 services.AddScoped<StanleyStandingService>();
 services.AddScoped<StanleyControlService>();
