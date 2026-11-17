@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { DiningView } from '../../api/types'
 import type { SpaView } from '../../api/spaTypes'
-import { diningBookingCard, spaBookingCard } from './bookingState'
+import { diningBookingCard, excursionBookingCard, spaBookingCard } from './bookingState'
 
 const view = (o: Partial<DiningView> = {}): DiningView => ({
   window: { open: true }, plan: 'anytime', seating: null, reservations: [], party: [], mealsLeft: 2, canBook: true, daysToDeparture: 20, ...o,
@@ -71,5 +71,29 @@ describe('spaBookingCard', () => {
   it('is finished after the cruise and never open while the server has not answered', () => {
     expect(spaBookingCard(spa(), 'after').status).toBe('finished')
     expect(spaBookingCard(null, 'ahead').canReserve).toBe(false)
+  })
+})
+
+describe('excursionBookingCard', () => {
+  const exc = (o: Partial<Parameters<typeof excursionBookingCard>[0] & object> = {}) => ({ canBook: true, creditLeft: 30000, cart: [], cartTotal: 0, ...o })
+  it('is open for someone who can book, with the credit left', () => {
+    const m = excursionBookingCard(exc(), 'ahead')
+    expect(m.status).toBe('open')
+    expect(m.canReserve).toBe(true)
+    expect(m.facts.map((f) => f.key)).toEqual(['bk.exc.credit'])
+  })
+  it('counts what waits in the cart and does not collapse aboard while something is in it', () => {
+    const m = excursionBookingCard(exc({ creditLeft: 0, cart: [{}] as never }), 'aboard')
+    expect(m.facts).toEqual([{ key: 'bk.exc.cart', params: { count: 1 } }])
+    expect(m.compact).toBe(false)
+    expect(excursionBookingCard(exc({ creditLeft: 0 }), 'aboard').compact).toBe(true)
+  })
+  it('is read only with the reason, finished after the cruise, and never open without an answer', () => {
+    const ro = excursionBookingCard(exc({ canBook: false }), 'ahead')
+    expect(ro.status).toBe('readOnly')
+    expect(ro.canReserve).toBe(false)
+    expect(ro.detail?.key).toBe('plan.readOnly.body')
+    expect(excursionBookingCard(exc(), 'after').status).toBe('finished')
+    expect(excursionBookingCard(null, 'ahead').canReserve).toBe(false)
   })
 })

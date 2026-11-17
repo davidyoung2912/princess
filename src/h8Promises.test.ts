@@ -159,8 +159,8 @@ describe('H8 wire-through promises', () => {
     expect(read('src/ui/SharingNote.tsx')).not.toMatch(/medical'?\)/)
   })
   it('the excursion catalogue flags what could be hard for the profile and can hide those tours', () => {
-    const src = read('src/ui/plan/ExcursionsScreen.tsx')
-    expect(src).toMatch(/difficultyConcerns\(x, mem\.access\)\.length === 0/)
+    const src = read('src/ui/explorer/excursions/ExcursionsExplorerScreens.tsx')
+    expect(src).toMatch(/difficultyConcerns\(x\.item, mem\.access\)\.length === 0/)
     expect(src).toMatch(/concerns=\{difficultyConcerns\(o\.item, mem\.access\)\}/)
     expect(en['exc.concerns']).toMatch(/profile/)
   })

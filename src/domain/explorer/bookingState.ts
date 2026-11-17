@@ -1,6 +1,7 @@
 import type { SpaView } from '../../api/spaTypes'
-import type { DiningView } from '../../api/types'
+import type { DiningView, ExcursionsView } from '../../api/types'
 import type { StringKey } from '../../i18n/locales/en'
+import { formatMoney } from '../money'
 import { actionGate, type GateStatus } from './actionGate'
 import type { TileLine } from './lens'
 import type { ExplorerStage } from './stage'
@@ -62,4 +63,25 @@ export function spaBookingCard(view: SpaView | null, stage: ExplorerStage): Book
     : gate.status === 'needsBooking' ? { key: 'explorers.afterBooking' }
     : null
   return { status: gate.status, headline: { key: SPA_HEADLINE[gate.status] }, detail, facts, canReserve: gate.status === 'open', compact: stage === 'aboard' && gate.status === 'open', paymentsLink: false }
+}
+
+const EXC_HEADLINE: Record<GateStatus, StringKey> = {
+  open: 'bk.exc.open', opensOn: 'bk.exc.open', needsBooking: 'bk.exc.needsBooking', readOnly: 'plan.readOnly.title', closed: 'explorers.closed', finished: 'bk.exc.finished',
+}
+
+/**
+ * The excursions booking card: whether the guest can book a tour, the excursion credit left and what waits in the cart to be paid.
+ * Excursions have no booking window (tours that would not fit the ship's day are simply not offered), so it is open to anyone who can book.
+ */
+export function excursionBookingCard(view: Pick<ExcursionsView, 'canBook' | 'creditLeft' | 'cart' | 'cartTotal'> | null, stage: ExplorerStage): BookingCardModel {
+  const gate = actionGate('excursions', { hasBooking: true, finished: stage === 'after', canBook: view ? view.canBook : null })
+  const facts: TileLine[] = []
+  if (view) {
+    if (view.creditLeft > 0) facts.push({ key: 'bk.exc.credit', params: { amount: formatMoney(view.creditLeft) } })
+    if (view.cart.length > 0) facts.push({ key: 'bk.exc.cart', params: { count: view.cart.length } })
+  }
+  const detail: TileLine | null = gate.status === 'readOnly' ? { key: 'plan.readOnly.body' }
+    : gate.status === 'needsBooking' ? { key: 'explorers.afterBooking' }
+    : null
+  return { status: gate.status, headline: { key: EXC_HEADLINE[gate.status] }, detail, facts, canReserve: gate.status === 'open', compact: stage === 'aboard' && gate.status === 'open' && facts.length === 0, paymentsLink: false }
 }

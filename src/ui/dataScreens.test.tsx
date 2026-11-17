@@ -118,8 +118,8 @@ describe('top task: all-aboard time (Home)', () => {
 })
 
 describe('top task: my excursions', () => {
-  it('shows the credit, the tours for the port and says nothing is booked yet', async () => {
-    await open('/plan/excursions')
+  it('shows the credit and says nothing is booked yet on the whole-trip view', async () => {
+    await open('/excursions-explorer?view=trip')
     await seen(/You have \$300 of excursion credit/)
     expect(within(main()).getByText('You have not booked any excursions yet.')).toBeTruthy()
   })

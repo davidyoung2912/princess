@@ -5937,4 +5937,11 @@ export const enLate = {
   'bk.spa.party': 'Up to {max} people in one appointment',
   'exp.trip.bookSpa': 'Book a treatment',
   'spa.explorerLink': 'Book a treatment, or see your appointments, in the Spa Explorer',
+  'bk.exc.open': 'Tours can be booked now, before you sail and on board',
+  'bk.exc.needsBooking': 'Booking a tour opens once your cruise booking is confirmed',
+  'bk.exc.finished': 'Your cruise has finished, so tours are read only',
+  'bk.exc.credit': 'Excursion credit left: {amount}',
+  'bk.exc.cart': '{count} in your cart, ready to pay',
+  'exp.trip.bookTour': 'See tours',
+  'exp.trip.toursIn': '{count} tours in {port}',
 } as const
