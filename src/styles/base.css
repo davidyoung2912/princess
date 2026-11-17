@@ -97,6 +97,12 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
 .choice input { width: 1.5rem; height: 1.5rem; accent-color: var(--sec); flex: none; }
 /* Every checkbox and radio is large enough to see and tap, wherever it sits (the browser's own are about 13px). Ones hidden for a custom control keep their own styling. */
 input[type='checkbox']:not(.visually-hidden), input[type='radio']:not(.visually-hidden) { width: 1.5rem; height: 1.5rem; accent-color: var(--sec); flex: none; }
+/* Checkboxes match the stage overview's outlined square with a tick (radios stay native). */
+input[type='checkbox']:not(.visually-hidden) { appearance: none; width: 1.25rem; height: 1.25rem; display: inline-grid; place-content: center; margin: 0; color: var(--primary); background: transparent; border: 2px solid currentColor; border-radius: 0.25rem; cursor: pointer; }
+input[type='checkbox']:not(.visually-hidden)::before { content: ''; width: 0.875rem; height: 0.875rem; background: currentColor; transform: scale(0); -webkit-mask: var(--tick) center / contain no-repeat; mask: var(--tick) center / contain no-repeat; --tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5L20 7'/%3E%3C/svg%3E"); }
+input[type='checkbox']:not(.visually-hidden):checked::before { transform: scale(1); }
+input[type='checkbox']:not(.visually-hidden):disabled { opacity: 0.5; cursor: not-allowed; }
+@media (forced-colors: active) { input[type='checkbox']:not(.visually-hidden)::before { background: CanvasText; } }
 .check-row > input[type='checkbox'] { margin: 0.125rem 0 0; }
 .choice small { display: block; color: var(--text-muted); font-size: var(--fs-caption); }
 
@@ -164,3 +170,16 @@ main.page > h1 { color: var(--primary); }
 .price__amount, .fare__total, .booking-number, .trip-count, .bill__big, .help-now__big, .wrapped-card__big { color: var(--sec); }
 progress, meter { accent-color: var(--sec); }
 .page-header__row .page-header__art { margin-inline-start: auto; flex: none; display: grid; place-items: center; width: 6rem; height: 6rem; border-radius: 50%; background: color-mix(in srgb, var(--on-header) 88%, transparent); }
+/* Checkbox and radio hover: a soft glow and a small grow, like the buttons, on the control or anywhere on its label row. The stage overview's tick icons do the same. Reduced motion keeps the glow and drops the grow. */
+:is(input[type='checkbox'], input[type='radio']):not(.visually-hidden), .welcome__tick svg { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease); }
+.welcome__tick svg { border-radius: 0.25rem; }
+input[type='radio']:not(.visually-hidden) { border-radius: 50%; }
+:is(input[type='checkbox'], input[type='radio']):not(.visually-hidden, :disabled):hover, label:hover > :is(input[type='checkbox'], input[type='radio']):not(.visually-hidden, :disabled), .welcome__tick:hover svg {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-bright, var(--primary)) 25%, transparent), 0 0 16px color-mix(in srgb, var(--primary-bright, var(--primary)) 60%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(input[type='checkbox'], input[type='radio']):not(.visually-hidden), .welcome__tick svg { transition: none; }
+  :is(input[type='checkbox'], input[type='radio']):not(.visually-hidden):hover, label:hover > :is(input[type='checkbox'], input[type='radio']):not(.visually-hidden), .welcome__tick:hover svg { transform: none; }
+}
+:root[data-motion='reduced'] :is(input[type='checkbox'], input[type='radio']):not(.visually-hidden), :root[data-motion='reduced'] .welcome__tick svg { transform: none; }

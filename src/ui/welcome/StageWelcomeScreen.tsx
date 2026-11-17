@@ -14,7 +14,6 @@ import { getContext, subscribeContext } from '../../account/context'
 import { wasVisited } from '../../routes/stageProgress'
 import { loadTicks, subscribeTicks, toggleNeed } from '../../settings/welcomeNeeds'
 import { Square, SquareCheck } from '../icons'
-import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { StageHero } from '../StageHero'
 import { StanleyIntro } from './StanleyIntro'
@@ -52,6 +51,16 @@ function StageWelcomeStage() {
   const steps = nextSteps(stage, facts).map((x, i) => ({ ...x, done: x.done || wasVisited(visits, stage, focusSailingId, i + 1) }))
   const doneCount = steps.filter((x) => x.done).length
   const remaining = steps.length - doneCount
+  const nextUpIndex = steps.findIndex((x) => !x.done)
+  const nextUp = nextUpIndex >= 0 ? steps[nextUpIndex] : null
+  const sections = [
+    { id: 'welcome-before', label: t(first ? 'welcome.eyebrowFirst' : 'welcome.h.transition') },
+    { id: 'welcome-focus', label: t('welcome.h.focus') },
+    { id: 'welcome-need', label: t('welcome.h.need') },
+    { id: 'welcome-lead', label: c.next ? t('welcome.h.leadTo', { next: words(stage, 'nextName') }) : t('welcome.h.leadEnd') },
+    { id: 'welcome-steps', label: t('welcome.h.progress') },
+    { id: 'welcome-moveon', label: c.next ? t('welcome.h.moveOn', { next: words(stage, 'nextName') }) : t('welcome.h.moveOnEnd') },
+  ]
   return (
     <div className="page welcome">
       <StageHero stage={stage} />
@@ -66,15 +75,20 @@ function StageWelcomeStage() {
           {c.next && <li className="welcome__stage"><span className="welcome__tag">{t('welcome.next')}</span>{stageName(c.next)}</li>}
         </ol>
       </nav>
-      <Card labelledBy="welcome-before-h">
+      <nav aria-label={t('welcome.jump')}>
+        <ul className="naut-jump">
+          {sections.map((x) => <li key={x.id}><a href={`#${x.id}`}>{x.label}</a></li>)}
+        </ul>
+      </nav>
+      <section id="welcome-before" aria-labelledby="welcome-before-h">
         <h2 id="welcome-before-h">{th(first ? 'welcome.eyebrowFirst' : 'welcome.h.transition')}</h2>
         <p>{words(stage, first ? 'intro' : 'transition')}</p>
-      </Card>
-      <Card labelledBy="welcome-focus-h">
+      </section>
+      <section id="welcome-focus" aria-labelledby="welcome-focus-h">
         <h2 id="welcome-focus-h">{th('welcome.h.focus')}</h2>
         <p>{words(stage, 'focus')}</p>
-      </Card>
-      <Card labelledBy="welcome-need-h">
+      </section>
+      <section id="welcome-need" aria-labelledby="welcome-need-h">
         <h2 id="welcome-need-h">{th('welcome.h.need')}</h2>
         <p>{words(stage, 'needIntro')}</p>
         <ul className="welcome__needs">
@@ -95,12 +109,12 @@ function StageWelcomeStage() {
           })}
         </ul>
         <p className="muted">{t('welcome.needNote')}</p>
-      </Card>
-      <Card labelledBy="welcome-lead-h">
-        <h2 id="welcome-lead-h">{c.next ? th('welcome.h.leadTo', { stage: stageName(c.next) }) : th('welcome.h.leadEnd')}</h2>
+      </section>
+      <section id="welcome-lead" aria-labelledby="welcome-lead-h">
+        <h2 id="welcome-lead-h">{c.next ? th('welcome.h.leadTo', { next: words(stage, 'nextName') }) : th('welcome.h.leadEnd')}</h2>
         <p>{words(stage, 'lead')}</p>
-      </Card>
-      <Card hero labelledBy="welcome-steps-h">
+      </section>
+      <section id="welcome-steps" aria-labelledby="welcome-steps-h">
         <h2 id="welcome-steps-h">{th('welcome.h.progress')}</h2>
         <p className="muted">{t('welcome.progress', { done: doneCount, total: steps.length })}</p>
         <ol className="welcome__steps">
@@ -112,9 +126,23 @@ function StageWelcomeStage() {
           })}
         </ol>
         <p>{remaining === 0 ? t('welcome.allDone') : t('welcome.toGo', { count: remaining })}</p>
-        <p><strong>{t('welcome.moveOnLabel')}</strong> {words(stage, 'moveOn')}</p>
         <div className="button-row"><LinkButton to={back((state as { from?: unknown } | null)?.from)} replace>{t('welcome.go')}</LinkButton></div>
-      </Card>
+      </section>
+      <section id="welcome-moveon" aria-labelledby="welcome-moveon-h">
+        <h2 id="welcome-moveon-h">{c.next ? th('welcome.h.moveOn', { next: words(stage, 'nextName') }) : th('welcome.h.moveOnEnd')}</h2>
+        <p>{words(stage, 'moveOn')}</p>
+        {nextUp ? (
+          <>
+            <p><strong>{t('welcome.moveOn.first')}</strong> {words(stage, `step.${nextUpIndex + 1}`)}</p>
+            <div className="button-row"><LinkButton to={nextUp.to}>{t('welcome.moveOn.cta')}</LinkButton></div>
+          </>
+        ) : (
+          <>
+            <p><strong>{t('welcome.moveOn.ready')}</strong></p>
+            <div className="button-row"><LinkButton to="/" replace>{t('welcome.moveOn.home')}</LinkButton></div>
+          </>
+        )}
+      </section>
     </div>
   )
 }

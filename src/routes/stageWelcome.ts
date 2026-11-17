@@ -137,6 +137,8 @@ export interface WelcomeContent {
   leadKey: string
   /** What actually moves the guest on from this stage: the real triggers of the stage engine, not the steps. */
   moveOnKey: string
+  /** What the next stage is about, in a phrase that fits "How to move on to ..." (null on the last stage, which has its own headings). */
+  nextNameKey: string | null
   steps: WelcomeStep[]
   /** One line on what to have ready, and the list. */
   needIntroKey: string
@@ -159,6 +161,7 @@ export function welcomeContent(stage: JourneyStage): WelcomeContent {
     focusKey: `welcome.${stage}.focus`,
     leadKey: `welcome.${stage}.lead`,
     moveOnKey: `welcome.${stage}.moveOn`,
+    nextNameKey: at === JOURNEY_STAGES.length - 1 ? null : `welcome.${stage}.nextName`,
     needIntroKey: `welcome.${stage}.needIntro`,
     needs: NEED_LINKS[stage].map((to, i) => ({ key: `welcome.${stage}.need.${i + 1}`, to })),
     steps: nextSteps(stage, ALL_STEPS).map((s, i) => ({ key: `welcome.${stage}.step.${i + 1}`, to: s.to })),
@@ -168,7 +171,7 @@ export function welcomeContent(stage: JourneyStage): WelcomeContent {
 /** Every locale key the page needs for a stage, for the test that checks the copy is complete. */
 export function welcomeKeys(stage: JourneyStage): string[] {
   const c = welcomeContent(stage)
-  return [c.titleKey, c.transitionKey ?? c.introKey, c.focusKey, c.needIntroKey, ...c.needs.map((n) => n.key), c.leadKey, c.moveOnKey, ...c.steps.map((s) => s.key)].filter((k): k is string => k !== null)
+  return [c.titleKey, c.transitionKey ?? c.introKey, c.focusKey, c.needIntroKey, ...c.needs.map((n) => n.key), c.leadKey, c.moveOnKey, c.nextNameKey, ...c.steps.map((s) => s.key)].filter((k): k is string => k !== null)
 }
 
 /** True when the English text for every key of a stage's welcome exists, so a page is never shown with bare keys. */

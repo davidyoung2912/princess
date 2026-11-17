@@ -45,6 +45,7 @@ import { pageArt } from './pageArt'
 import { DeepLinkNote } from './DeepLinkNote'
 import { useActiveDeck } from '../hooks/useShipCatalogue'
 import { TipCard } from './TipCard'
+import { StageOverviewCta } from './home/StageOverviewCta'
 
 /** Pages that take no tip card: the chat list and a conversation, where the room is needed for the messages. */
 const NO_TIP_SCREENS: readonly string[] = ['C01', 'C07']
@@ -246,6 +247,7 @@ export function Shell() {
         {route && !route.public && <CatchUp />}
         {route && !route.public && <BrowseDepthNote />}
         {route && !route.public && !NO_TIP_SCREENS.includes(screen?.id ?? '') && <TipCard id={tipIdFor(landing ? undefined : screen?.id, landing?.key)} />}
+        {landing?.key === 'home' && <StageOverviewCta />}
         {route && !route.public && !landing && <StanleyCoach screenId={screen?.id} />}
         <Suspense fallback={<PageSkeleton />}>
           <Outlet />
