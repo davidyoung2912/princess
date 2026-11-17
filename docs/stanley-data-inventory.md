@@ -314,3 +314,8 @@ AUT-02 also sets one reminder at 9 am ship time five days before sailing ("Your 
 ### All aboard reminder (phase P10a, sixth part)
 
 AUT-02 also sets one reminder an hour before all aboard on each port day ("All aboard in <port> is in an hour. Time to head back to the ship."), key `aut02:aboard:<date>`, from the published port schedule only. It reads no location and no booking. Same limits (30 per trip in all), receipt and two-hour undo as the others; those further off than the reminders' horizon wait for a later run. All of the AUT-02 dates are now covered; AUT-05 and AUT-07 are still to do.
+
+### Lists kept current, packing list (phase P10a, AUT-05 first part)
+
+`POST /me/stanley/auto/lists` (same permission row CL-08, same switch and gates as AUT-02) says what the packing list's suggested items added or dropped since the last run. The only thing stored is a list of suggested item ids in the guest's own state store (key `stanley.auto.lists.packing`), replaced each time something changes. The first run only records and says so. It reads the packing list the guest already sees; it never changes a list, a tick, a hidden item or an item the guest added, and sends nothing. The document bring list, trip checklist, shortlist and comparison, and AUT-07, are still to do.
+

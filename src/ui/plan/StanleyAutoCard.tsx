@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { normalizeAutoRun, type AutoRun } from '../../ai/stanleyAuto'
+import { normalizeAutoLists, normalizeAutoRun, type AutoLists, type AutoRun } from '../../ai/stanleyAuto'
 import { t, th } from '../../i18n'
 import { stanleyAuto } from '../../runtime'
 import { Button } from '../Button'
@@ -13,6 +13,7 @@ const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyl
  */
 export function StanleyAutoCard() {
   const [result, setResult] = useState<AutoRun | null>(null)
+  const [lists, setLists] = useState<AutoLists | null>(null)
   const [failed, setFailed] = useState(false)
   const [busy, setBusy] = useState(false)
   const live = useRef(true)
@@ -26,17 +27,35 @@ export function StanleyAutoCard() {
     )
   }
 
+  const checkLists = () => {
+    live.current = true
+    setBusy(true)
+    stanleyAuto.lists().then(
+      (raw) => { if (live.current) { const next = normalizeAutoLists(raw); setLists(next); setFailed(next === null); setBusy(false) } },
+      () => { if (live.current) { setFailed(true); setBusy(false) } },
+    )
+  }
+
   return (
     <Card labelledBy="auto-h">
       <h2 id="auto-h" className="card__title">{th('stanleyAuto.title')}</h2>
       <p>{t('stanleyAuto.intro')}</p>
-      <div className="button-row"><Button onClick={run} disabled={busy}>{t('stanleyAuto.run')}</Button></div>
+      <div className="button-row"><Button onClick={run} disabled={busy}>{t('stanleyAuto.run')}</Button> <Button onClick={checkLists} disabled={busy}>{t('stanleyAuto.lists')}</Button></div>
       <div aria-live="polite">
         {busy && <p role="status">{t('stanleyAuto.working')}</p>}
         {failed && <p role="alert" className="field__error">{t('stanleyAuto.error')}</p>}
         {result && !result.on && <p>{t('stanleyAuto.off')}</p>}
         {result?.on && result.made.length === 0 && result.waiting.length === 0 && <p role="status">{t('stanleyAuto.none')}</p>}
       </div>
+      {lists && !lists.on && <p>{t('stanleyAuto.off')}</p>}
+      {lists?.on && lists.firstLook && <p role="status">{t('stanleyAuto.listsFirst')}</p>}
+      {lists?.on && !lists.firstLook && lists.changes.length === 0 && <p role="status">{t('stanleyAuto.listsSame')}</p>}
+      {lists?.on && lists.changes.map((c) => (
+        <section key={c.list} aria-label={c.list}>
+          {c.added.length > 0 && <><h3>{th('stanleyAuto.listsAdded')}</h3><ul>{c.added.map((a) => <li key={a}>{a}</li>)}</ul></>}
+          {c.removed.length > 0 && <><h3>{th('stanleyAuto.listsRemoved')}</h3><ul>{c.removed.map((a) => <li key={a}>{a}</li>)}</ul></>}
+        </section>
+      ))}
       {result?.on && result.made.length > 0 && (
         <section aria-labelledby="auto-made">
           <h3 id="auto-made">{th('stanleyAuto.made')}</h3>
@@ -50,10 +69,10 @@ export function StanleyAutoCard() {
           <ul>{result.waiting.map((w) => <li key={w}>{w}</li>)}</ul>
         </section>
       )}
-      {result && result.notChecked.length > 0 && (
+      {(lists ?? result) && (lists ?? result)!.notChecked.length > 0 && (
         <section aria-labelledby="auto-not">
           <h3 id="auto-not">{th('stanleyCheckup.notChecked')}</h3>
-          <ul>{result.notChecked.map((n) => <li key={n}>{n}</li>)}</ul>
+          <ul>{(lists ?? result)!.notChecked.map((n) => <li key={n}>{n}</li>)}</ul>
         </section>
       )}
     </Card>

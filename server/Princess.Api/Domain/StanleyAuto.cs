@@ -9,6 +9,12 @@ public sealed record AutoMade(string Key, string Text, DateTime DueAt, string Re
 /// <summary>What a run did: <c>On</c> says whether the guest has let Stanley do this, <c>Made</c> what was set, <c>Waiting</c> what was left for a later run and why, <c>NotChecked</c> what was not read.</summary>
 public sealed record AutoRunDto(bool On, string Class, List<AutoMade> Made, List<string> Waiting, List<string> NotChecked, string? AsOf);
 
+/// <summary>What changed on one list since the guest's last look: what Stanley's suggestions now add and what they no longer include. Item words only; nothing the guest typed.</summary>
+public sealed record AutoListChange(string List, List<string> Added, List<string> Removed);
+
+/// <summary>A list run: <c>FirstLook</c> says this was the first time the list was read, so it only recorded where things stand.</summary>
+public sealed record AutoListsDto(bool On, bool FirstLook, List<AutoListChange> Changes, List<string> NotChecked, string? AsOf);
+
 /// <summary>
 /// Rung 4, the safe classes (docs/stanley-actions-and-proactive-plan.md, phase P10a). v1 is AUT-02, deadline reminders: with the guest's own switch on (CL-08, level 4) Stanley sets a reminder for a date on the trip that can cost
 /// something (check-in opens, final payment), never recurring and never tied to anything but a date on the trip, at most <see cref="MaxPerTrip"/> in all. A reminder is not an item the classifier prices, so the gate here is
@@ -74,6 +80,37 @@ public static class StanleyAutoRules
     public static readonly string[] NotChecked =
     [
         "Reminders that follow (AUT-01) are done by the reminders themselves when a time moves.",
-        "Lists kept current (AUT-05) and saved for me (AUT-07) are not built yet.",
+        "Saved for me (AUT-07) is not built yet. Lists kept current (AUT-05) is a separate run that only covers the packing list.",
+    ];
+
+    public const string ListsKey = "stanley.auto.lists.packing";
+
+    /// <summary>What the suggested packing items now add and drop against the ids recorded last time. The guest's own items are never in either list, and a first look (no record) reports nothing.</summary>
+    public static AutoListChange? Diff(IReadOnlyList<PackItem> now, IReadOnlyCollection<string>? before)
+    {
+        if (before is null) return null;
+        var suggested = now.Where(i => i.Group != "mine").ToList();
+        var was = before.ToHashSet(StringComparer.Ordinal);
+        var added = suggested.Where(i => !was.Contains(i.Id)).Select(i => i.Label).ToList();
+        var ids = suggested.Select(i => i.Id).ToHashSet(StringComparer.Ordinal);
+        var removed = was.Where(id => !ids.Contains(id)).Select(PrettyId).Order(StringComparer.Ordinal).ToList();
+        return added.Count == 0 && removed.Count == 0 ? null : new("packing", added, removed);
+    }
+
+    private static string PrettyId(string id) => id.Replace('-', ' ').Replace('_', ' ');
+
+    public static string ToJson(IEnumerable<PackItem> items) => System.Text.Json.JsonSerializer.Serialize(items.Where(i => i.Group != "mine").Select(i => i.Id).Distinct().Order(StringComparer.Ordinal).ToList());
+
+    public static List<string>? Parse(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json)?.Where(x => !string.IsNullOrWhiteSpace(x)).Take(400).ToList(); }
+        catch (System.Text.Json.JsonException) { return null; }
+    }
+
+    public static readonly string[] ListsNotChecked =
+    [
+        "Only the packing list is kept current so far. The document bring list, trip checklist, shortlist and comparison are not.",
+        "Your own items, ticks and hidden items are never changed.",
     ];
 }

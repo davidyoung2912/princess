@@ -28,3 +28,20 @@ export function normalizeAutoRun(raw: unknown): AutoRun | null {
     asOf: str(o.asOf, 30) || null,
   }
 }
+
+/** AUT-05, lists kept current (`POST /me/stanley/auto/lists`): what the packing suggestions added or dropped since the last run. */
+export interface AutoListChange { list: string; added: string[]; removed: string[] }
+export interface AutoLists { on: boolean; firstLook: boolean; changes: AutoListChange[]; notChecked: string[]; asOf: string | null }
+
+export function normalizeAutoLists(raw: unknown): AutoLists | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  if (typeof o.on !== 'boolean') return null
+  const changes = (Array.isArray(o.changes) ? o.changes : []).slice(0, 5).flatMap((c): AutoListChange[] => {
+    if (!c || typeof c !== 'object') return []
+    const x = c as Record<string, unknown>
+    const name = str(x.list, 30)
+    return name ? [{ list: name, added: list(x.added, 60, 120), removed: list(x.removed, 60, 120) }] : []
+  })
+  return { on: o.on, firstLook: o.firstLook === true, changes, notChecked: list(o.notChecked, 10, 200), asOf: str(o.asOf, 30) || null }
+}

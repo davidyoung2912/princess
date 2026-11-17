@@ -65,4 +65,29 @@ public class StanleyAutoTests
         Assert.Equal(StanleyAutoRules.Row, "CL-08");
         Assert.Equal(StanleyAutoRules.MaxPerTrip, card.DailyCap);
     }
+
+    private static readonly PackItem Hat = new("hat", "sun", "Sun hat", "Sunny"), Coat = new("coat", "rain", "Rain jacket", "Wet"), Mine = new("c1", "mine", "My book", "Added by you.");
+
+    [Fact]
+    public void AFirstLookReportsNothing() => Assert.Null(StanleyAutoRules.Diff([Hat], null));
+
+    [Fact]
+    public void ANewSuggestionIsAddedAndADroppedOneIsRemoved()
+    {
+        var change = StanleyAutoRules.Diff([Hat, Coat], ["hat", "gone-item"]);
+        Assert.NotNull(change);
+        Assert.Equal(["Rain jacket"], change.Added);
+        Assert.Equal(["gone item"], change.Removed);
+    }
+
+    [Fact]
+    public void TheGuestsOwnItemsAreNeverReported() => Assert.Null(StanleyAutoRules.Diff([Hat, Mine], ["hat"]));
+
+    [Fact]
+    public void TheRecordRoundTripsWithoutTheGuestsOwnItems()
+    {
+        var ids = StanleyAutoRules.Parse(StanleyAutoRules.ToJson([Coat, Hat, Mine]));
+        Assert.Equal(["coat", "hat"], ids);
+        Assert.Null(StanleyAutoRules.Parse("not json"));
+    }
 }
