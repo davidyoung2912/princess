@@ -22,6 +22,7 @@ import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
 import { RequestsBanner } from './ChatPeople'
 import { Conversations } from './ChatConversations'
+import { HuddleJoin } from './ChatHuddle'
 import { canFindPeople, canUseGuestServices } from '../../domain/chatKeep'
 import { conversationFromSearch } from '../../domain/chatThread'
 
@@ -53,6 +54,7 @@ export function ChatScreen() {
       <p>{t('chat.free')}</p>
       {!people && <Card info><p>{t('chat.beforeBooking')}</p></Card>}
       {people && <RequestsBanner onOpen={() => { void nav('/chat/people') }} />}
+      <HuddleJoin />
       <Conversations />
       <section aria-labelledby="chat-more-h">
         <h2 id="chat-more-h">{heading('chat.more.title')}</h2>
