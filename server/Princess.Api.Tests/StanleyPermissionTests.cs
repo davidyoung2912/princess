@@ -65,10 +65,9 @@ public class StanleyPermissionTests
     [Fact]
     public void ARowWhoseAbilityIsNotBuiltClaimsNothing()
     {
-        var doc = new StanleyPermissionDoc(4, new() { ["CL-01"] = true, ["CL-10"] = true });
+        var doc = new StanleyPermissionDoc(4, new() { ["CL-01"] = true });
         var v = StanleyPermissionRules.View(doc, false, false, true, 0);
         Assert.Equal("soon", v.Rows.Single(r => r.Id == "CL-01").State);
-        Assert.Equal("soon", v.Rows.Single(r => r.Id == "CL-10").State);
         Assert.All(StanleyPermissionRules.Rows.Where(r => !r.Built), r => Assert.False(StanleyPermissionRules.IsOn(doc, r, 4, false)));
     }
 
@@ -137,7 +136,7 @@ public class StanleyPermissionTests
         var words = StanleyPermissionRules.Rows.SelectMany(r => new[] { r.Wording, r.Example, r.Never }).Concat(StanleyPermissionRules.Levels(true).SelectMany(l => new[] { l.Name, l.Line }));
         Assert.All(words, w => Assert.DoesNotMatch(@"\bAI\b", w));
         Assert.All(StanleyPermissionRules.Rows, r => Assert.NotEmpty(r.Never));
-        Assert.Equal(10, StanleyPermissionRules.Rows.Count);
+        Assert.Equal(12, StanleyPermissionRules.Rows.Count);
     }
 
     [Fact]
@@ -169,7 +168,6 @@ public class StanleyPermissionTests
         var w = Build();
         Assert.False(await w.Svc.MayAsync(Me, "CL-99", default));
         Assert.False(await w.Svc.MayAsync(Me, "CL-01", default));
-        Assert.False(await w.Svc.MayAsync(Me, "CL-10", default));
     }
 
     [Fact]
@@ -273,9 +271,8 @@ public class StanleyPermissionTests
     {
         var w = Build(authority: true);
         Assert.Equal("notYet", (await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-01", Row(true), default))).Title);
-        Assert.Equal("notYet", (await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-10", Row(true), default))).Title);
         await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-77", Row(true), default));
-        await w.Svc.SetRowAsync(Me, "CL-10", Row(false), default);
+        await w.Svc.SetRowAsync(Me, "CL-01", Row(false), default);
     }
 
     [Fact]

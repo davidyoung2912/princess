@@ -81,3 +81,39 @@ export function normalizeAutoDrafts(raw: unknown): AutoDrafts | null {
   })
   return { on: o.on, drafts, saved: list(o.saved, 4, 120), notChecked: list(o.notChecked, 10, 300), asOf: str(o.asOf, 30) || null }
 }
+
+/** AUT-04, AUT-08 and AUT-09 (`POST /me/stanley/auto/dinners`, `timings`, `orders`): what Stanley booked, moved or sent, each with a receipt that can be undone for two hours. */
+export interface AutoAct { key: string; text: string; receipt: string }
+export interface AutoActs { on: boolean; made: AutoAct[]; waiting: string[]; notChecked: string[]; asOf: string | null }
+
+export function normalizeAutoActs(raw: unknown): AutoActs | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  if (typeof o.on !== 'boolean') return null
+  const made = (Array.isArray(o.made) ? o.made : []).slice(0, 10).flatMap((m): AutoAct[] => {
+    if (!m || typeof m !== 'object') return []
+    const x = m as Record<string, unknown>
+    const key = str(x.key, 80), text = str(x.text, 160)
+    return key && text ? [{ key, text, receipt: str(x.receipt, 20) }] : []
+  })
+  return { on: o.on, made, waiting: list(o.waiting, 20, 240), notChecked: list(o.notChecked, 10, 400), asOf: str(o.asOf, 30) || null }
+}
+
+/** The guest's usual main-dining time and standing stateroom order (`GET` and `PUT /me/stanley/auto/standing`). */
+export interface AutoStanding { usualDinner: string; orderItem: string; orderTime: string; dinnerTimes: string[]; orderItems: string[]; notChecked: string[] }
+
+export function normalizeAutoStanding(raw: unknown): AutoStanding | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  if (typeof o.usualDinner !== 'string' || typeof o.orderItem !== 'string') return null
+  const clock = /^\d\d:\d\d$/
+  const time = str(o.orderTime, 5)
+  return {
+    usualDinner: clock.test(o.usualDinner) ? o.usualDinner : '',
+    orderItem: ['ice', 'towels', 'pillows'].includes(o.orderItem) ? o.orderItem : '',
+    orderTime: clock.test(time) ? time : '',
+    dinnerTimes: list(o.dinnerTimes, 12, 5).filter((x) => clock.test(x)),
+    orderItems: list(o.orderItems, 3, 20).filter((x) => ['ice', 'towels', 'pillows'].includes(x)),
+    notChecked: list(o.notChecked, 10, 400),
+  }
+}

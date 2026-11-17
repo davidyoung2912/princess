@@ -251,6 +251,144 @@ public class StanleyAutoTests
     }
 }
 
+public class StanleyAutoBookingTests
+{
+    private static readonly DateOnly Departure = new(2027, 3, 20);
+
+    private static CheckupFacts Trip(DateOnly today, IReadOnlyList<StanleyItem>? meals = null, IReadOnlyList<CheckTour>? tours = null) =>
+        new(today, today.ToDateTime(new TimeOnly(9, 0), DateTimeKind.Utc), Departure, 7, TimelineBook.For(null, Departure), "paid", null, "open", TripRules.CheckinOpensAt(Departure), TripRules.CheckinClosesAt(Departure), false, [], tours ?? [], meals ?? []);
+
+    [Fact]
+    public void OnlyNightsWithNoDinnerAndWithinThreeDaysAreBooked()
+    {
+        var all = StanleyAutoRules.DinnerNights(Trip(Departure.AddDays(2)));
+        Assert.NotEmpty(all);
+        Assert.All(all, d => Assert.InRange(d, 3, 5));
+        var some = StanleyAutoRules.DinnerNights(Trip(Departure.AddDays(2), [new StanleyItem(all[0], "Eclipse Dining Room", "18:00")]));
+        Assert.DoesNotContain(all[0], some);
+        Assert.Equal(all.Count - 1, some.Count);
+    }
+
+    [Fact]
+    public void ADinnerStartIsOnTheShipsClockForThatNight()
+    {
+        var f = Trip(Departure);
+        Assert.True(StanleyAutoRules.DinnerStartMs(f, 2, "20:00") > StanleyAutoRules.DinnerStartMs(f, 2, "18:00"));
+        Assert.True(StanleyAutoRules.DinnerStartMs(f, 3, "18:00") > StanleyAutoRules.DinnerStartMs(f, 2, "20:30"));
+    }
+
+    [Fact]
+    public void ADinnerOnATourIsFlaggedAndOneClearOfItIsNot()
+    {
+        var f = Trip(Departure, tours: [new CheckTour(3, "Old town", "17:00", 3)]);
+        Assert.True(StanleyAutoRules.OnATour(f, 3, "18:30"));
+        Assert.False(StanleyAutoRules.OnATour(f, 3, "20:30"));
+        Assert.False(StanleyAutoRules.OnATour(f, 4, "18:30"));
+    }
+
+    [Fact]
+    public void OnlyChangedItineraryDaysInRangeCount()
+    {
+        StandingChange C(string id, string kind, int? day, string consequence) => new(id, kind, day, "Show moved", consequence, false, []);
+        var days = StanleyAutoRules.ChangedDays(
+            [C("a", ChangeKinds.Itinerary, 4, ChangeConsequence.Conflict), C("b", ChangeKinds.Itinerary, 4, ChangeConsequence.Conflict), C("c", ChangeKinds.Itinerary, 5, ChangeConsequence.Optional),
+             C("d", ChangeKinds.Tender, 6, ChangeConsequence.Conflict), C("e", ChangeKinds.Itinerary, 1, ChangeConsequence.Conflict), C("f", ChangeKinds.Itinerary, null, ChangeConsequence.Conflict), C("g", ChangeKinds.Itinerary, 7, ChangeConsequence.Improvement)], 3, 7);
+        Assert.Equal([4, 7], days);
+    }
+
+    [Fact]
+    public void ARequestIsRepeatedOnlyAfterThreeAsksAndNeverARepair()
+    {
+        var asked = new[] { ("ice", false), ("ice", false), ("ice", false), ("towels", false), ("towels", false), ("towels", true), ("plumbing", false), ("plumbing", false), ("plumbing", false) };
+        Assert.Equal(["ice"], StanleyAutoRules.Repeated(asked));
+    }
+
+    [Fact]
+    public void AStandingOrderIsDueFromTheTimeChosen()
+    {
+        var at = new DateTime(2027, 3, 21, 19, 5, 0);
+        Assert.True(StanleyAutoRules.OrderDue("19:00", at));
+        Assert.False(StanleyAutoRules.OrderDue("19:30", at));
+        Assert.False(StanleyAutoRules.OrderDue("late", at));
+    }
+
+    [Theory]
+    [InlineData("25:00", "", "", "usual")]
+    [InlineData("18:30", "plumbing", "19:00", "item")]
+    [InlineData("18:30", "ice", "19:00", "notRepeated")]
+    [InlineData("", "towels", "7pm", "time")]
+    public void AChoiceThatIsNotAllowedIsRefusedWithAClosedReason(string usual, string item, string time, string reason)
+    {
+        var problem = StanleyAutoRules.StandingProblem(usual, item, time, item == "towels" ? new[] { "towels" } : Array.Empty<string>());
+        Assert.Equal(reason, problem);
+    }
+
+    [Fact]
+    public void AGoodChoiceIsAcceptedAndStoredAsTimesAndIdsOnly()
+    {
+        Assert.Null(StanleyAutoRules.StandingProblem("18:30", "ice", "19:00", ["ice"]));
+        Assert.Null(StanleyAutoRules.StandingProblem("", "", "", []));
+        var json = StanleyAutoRules.StandingToJson(new("18:30", "ice", "19:00"));
+        Assert.Equal(new StanleyAutoRules.AutoStanding("18:30", "ice", "19:00"), StanleyAutoRules.ParseStanding(json));
+        Assert.Equal(new StanleyAutoRules.AutoStanding("", "", ""), StanleyAutoRules.ParseStanding("""{"usualDinner":"soon","orderItem":"plumbing","orderTime":"x"}"""));
+        Assert.Equal(new StanleyAutoRules.AutoStanding("", "", ""), StanleyAutoRules.ParseStanding("not json"));
+    }
+
+    [Fact]
+    public void TheGateAsksInsteadOfActingOnAPaidSharedOrSoonTable()
+    {
+        var now = new DateTimeOffset(2027, 3, 21, 12, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds();
+        StanleyGateResult Gate(StanleyItemFlags flags, int today = 0, int undone = 0, int minutes = 12 * 60) =>
+            StanleyActGate.Decide(new(flags, new(true, false, false, today, StanleyAutoRules.DinnerCap, StanleyAutoRules.UndoMinutes, undone, true), now, minutes, 0, 15, true, false, false, false, false));
+        var main = DiningRules.Venues.First(v => v.Kind == "main");
+        var tomorrow = now + 24 * 3_600_000L;
+        Assert.True(Gate(StanleyClassifier.Dining(main, tomorrow, 0)).Act);
+        Assert.Contains("paid", Gate(StanleyClassifier.Dining(DiningRules.Venues.First(v => v.Kind == "specialty"), tomorrow, 0)).Reasons);
+        Assert.Contains("shared", Gate(StanleyClassifier.Dining(main, tomorrow, 2)).Reasons);
+        Assert.Contains("feeSoon", Gate(StanleyClassifier.Dining(main, now + 3_600_000L, 0)).Reasons);
+        Assert.Contains("overCap", Gate(StanleyClassifier.Dining(main, tomorrow, 0), today: 2).Reasons);
+        Assert.Contains("declined", Gate(StanleyClassifier.Dining(main, tomorrow, 0), undone: 2).Reasons);
+        Assert.Contains("quiet", Gate(StanleyClassifier.Dining(main, tomorrow, 0), minutes: 23 * 60).Reasons);
+    }
+
+    [Fact]
+    public void ARequestIsNeverHeldBackByQuietHoursAndItsUndoIsOnlyUntilTheCrewIsOnTheWay()
+    {
+        var now = new DateTimeOffset(2027, 3, 21, 12, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds();
+        foreach (var id in StanleyAutoRules.OrderItems)
+        {
+            var item = ServiceRules.RequestItemById(id)!;
+            var undo = StanleyAutoRules.OrderUndoMinutes(item);
+            Assert.InRange(undo, 1, item.EtaMin / 2);
+            var gate = StanleyActGate.Decide(new(StanleyClassifier.Service(item, now), new(true, false, false, 0, StanleyAutoRules.OrderCap, undo, 0, true), now, 23 * 60, 0, 15, true, false, false, false, false));
+            Assert.True(gate.Act, string.Join(",", gate.Reasons));
+        }
+    }
+
+    [Fact]
+    public void TheNewRowsAreBuiltAtLevelFourAndNeedTheCode()
+    {
+        foreach (var id in new[] { StanleyAutoRules.DinnerRow, StanleyAutoRules.TimingRow, StanleyAutoRules.OrderRow })
+        {
+            var row = StanleyPermissionRules.Row(id)!;
+            Assert.True(row.Built);
+            Assert.Equal(4, row.NeedsLevel);
+            Assert.True(StanleyPermissionRules.RowNeedsStepUp(row, true));
+            Assert.NotEmpty(row.Never);
+        }
+    }
+
+    [Fact]
+    public void TheNotCheckedWordsNameEveryClassAndSayNoShowsAreNotWatched()
+    {
+        var text = string.Join(" ", StanleyAutoRules.BookingNotChecked);
+        Assert.Contains("AUT-04", text);
+        Assert.Contains("AUT-08", text);
+        Assert.Contains("AUT-09", text);
+        Assert.Contains("turned up", text);
+    }
+}
+
 internal static class StanleyAutoRulesTestHelper
 {
     public static int Minutes(string hhmm) => int.Parse(hhmm[..2]) * 60 + int.Parse(hhmm[3..]);

@@ -378,6 +378,8 @@ Plain words, no "AI", one radio group. Each level includes the one above it; the
 | CL-08 | Set my reminders for me (deadlines, check-in, bag night, all aboard) | "I added 6 reminders for your trip. Change any of them." | 4 | 4 | AUT-02 |
 | CL-09 | Plan my days and keep the plan up to date with free things | "I added a free show at 8:30 as Stanley's pick. Remove it if you like." | 4 | 4 | AUT-03 |
 | CL-10 | Book the free things I always want (main dining, free shows) | "I booked your usual table for four at 6:00. Undo for 2 hours." | 4 | 4 | AUT-04 |
+| CL-11 | Keep my dinner time when a show moves | "The show moved, so I moved your dinner back to 8:00. Undo for 2 hours." | 4 | 4 | AUT-08 |
+| CL-12 | Repeat a free stateroom request I always make | "I sent the ice you ask for every evening. Cancel it if you like." | 4 | 4 | AUT-09 |
 
 **Skipping** leaves level 2 with CL-01, CL-02 and CL-03 on. Per-stage extras (section 12) are offered at stage entry, not here.
 
@@ -416,7 +418,7 @@ AUT-04, AUT-08 and AUT-09 affect staff or a booking, so they ship last and only 
 
 ## 12. Per-stage deep dive: what Stanley can do at each of the 11 stages if allowed
 
-**How to read it.** Stages and tabs come from `docs/stage-experience-plan.md` 5.1. **Stage welcome ask** is the two to four extras offered at stage entry (through the stage welcome), shown only for abilities the level allows. Rule IDs are `SR-<stage>.<n>`; retired IDs are not reused. **Rung** is the highest the rule uses: a level 3 guest gets it as "prepare", a level 4 guest as "act" only where an AUT class is named. "Needs" is a gap that must exist first (all rows also need the scheduler). Rules expire at disembark unless stated. Cross-journey rows (CL-01 to CL-10) apply from Manage on and are not repeated. **Reminder timings in this section defer to the reminders document** (lead times 31.2, ladders 31.1, all-aboard ladder 31.3); a rule here says *whether* a reminder exists, that document says *when*.
+**How to read it.** Stages and tabs come from `docs/stage-experience-plan.md` 5.1. **Stage welcome ask** is the two to four extras offered at stage entry (through the stage welcome), shown only for abilities the level allows. Rule IDs are `SR-<stage>.<n>`; retired IDs are not reused. **Rung** is the highest the rule uses: a level 3 guest gets it as "prepare", a level 4 guest as "act" only where an AUT class is named. "Needs" is a gap that must exist first (all rows also need the scheduler). Rules expire at disembark unless stated. Cross-journey rows (CL-01 to CL-12) apply from Manage on and are not repeated. **Reminder timings in this section defer to the reminders document** (lead times 31.2, ladders 31.1, all-aboard ladder 31.3); a rule here says *whether* a reminder exists, that document says *when*.
 
 ### 12.1 Dream (Explore, Ask)
 Today: quiz, grounded planner chat, compare, dream board, favourites, price alerts. Stage welcome ask: SR-1.1, SR-1.3.
@@ -1105,7 +1107,7 @@ Authorisation per endpoint, step-up required, revert link works once, confirm to
 | **P9f: Remember pack, then Dream, Discover, Book packs** | SR-11.x, then SR-1.x to SR-3.x (last; earn least) | M | P9a | As above |
 | **P10a: Rung 4 safe classes** | AUT-01, 02, 05, 07 | M | P9a, **G3** | Each class acts only on eligible items |
 | **P10b: Rung 4 plan classes** | AUT-03, 06 | M | P10a | Undo rate under 5% for a full cohort season |
-| **P10c: Rung 4 booking and staff classes** | AUT-08, then AUT-04, then AUT-09 | M | P10b, **G4** | Venue sign-off, no-show breaker proven, undo under 5% |
+| **P10c: Rung 4 booking and staff classes** (built v1 with rows CL-10 to CL-12; venue sign-off and the no-show breaker are still to be proven at G4) | AUT-08, then AUT-04, then AUT-09 | M | P10b, **G4** | Venue sign-off, no-show breaker proven, undo under 5% |
 | **P11: Group, voice, shared briefs** | VAL-07, ACT-07, reminders R8 | M | P9 | A shared brief is posted only after the organiser confirms |
 | **P12: Hardening and launch checks** (also before each gate) | Manual screen-reader and 200% zoom pass, privacy and legal review of final wording, soak and cost report, chaos and red team, S1 rehearsal, support training (= reminders R13) | M | any gate | Section 9 targets met |
 

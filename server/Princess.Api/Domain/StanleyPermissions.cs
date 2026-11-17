@@ -39,7 +39,7 @@ public sealed record StanleyStepUpDto(bool Sent, string? Token = null);
 public static class StanleyPermissionRules
 {
     /// <summary>The version of the consent wording below. Change it whenever a row's wording or the level lines change, so the history shows what the guest agreed to.</summary>
-    public const int WordingVersion = 1;
+    public const int WordingVersion = 2;
     public const int DefaultLevel = 2;
     public const string StateKey = "stanleyPermissions", ConsentKey = "stanleyConsent", StepUpKey = "stanleyStepUp";
     public static readonly string[] Sources = ["welcome", "settings", "stage"];
@@ -64,7 +64,9 @@ public static class StanleyPermissionRules
         new("CL-07", "preparing", "Tell me when a table or space opens, with a ready booking", "A table for four opened on Thursday at 7:30.", "Never holds a table or books it without your yes.", 3, true),
         new("CL-08", "handling", "Set my reminders for me (deadlines, check-in, bag night, all aboard)", "I added 6 reminders for your trip. Change any of them.", "Only reminders tied to a date on your trip.", 4, true),
         new("CL-09", "handling", "Plan my days and keep the plan up to date with free things", "I added a free show at 8:30 as Stanley's pick. Remove it if you like.", "Never removes what you added and never adds anything that costs money.", 4, true),
-        new("CL-10", "handling", "Book the free things I always want (main dining, free shows)", "I booked your usual table for four at 6:00. Undo for 2 hours.", "Never books anything with a charge.", 4, false),
+        new("CL-10", "handling", "Book the free things I always want (main dining, free shows)", "I booked your usual table for four at 6:00. Undo for 2 hours.", "Never books anything with a charge.", 4, true),
+        new("CL-11", "handling", "Keep my dinner time when a show moves", "The show moved, so I moved your dinner back to 8:00. Undo for 2 hours.", "Never moves a paid booking or one for another person.", 4, true),
+        new("CL-12", "handling", "Repeat a free stateroom request I always make", "I sent the ice you ask for every evening. Cancel it if you like.", "Never orders anything with a charge.", 4, true),
     ];
 
     public static StanleyPermissionRow? Row(string? id) => Rows.FirstOrDefault(r => r.Id == id);

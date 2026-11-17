@@ -411,7 +411,7 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 if (left <= 0) throw ApiException.Conflict("full");
                 var who = scope.Named(table.GuestIds).Select(g => g.Name).ToList();
                 return new StanleyPreviewFacts($"Move {venue.Name} to night {toDay}, {toTime}", [$"{venue.Name}: night {table.Day}, {table.Time} → night {toDay}, {toTime}", "Your current table is kept until the new time is confirmed; it is moved in one step, so you are never left without one."],
-                    who, null, "No charge to move a table.", $"dinner|{table.PublicId}|{toDay}|{toTime}|{left}", new Dictionary<string, string> { ["tableId"] = table.PublicId.ToString(), ["day"] = toDay.ToString(), ["fromDay"] = table.Day.ToString(), ["fromTime"] = table.Time });
+                    who, null, "No charge to move a table.", $"dinner|{table.PublicId}|{toDay}|{toTime}|{left}", new Dictionary<string, string> { ["tableId"] = table.PublicId.ToString(), ["day"] = toDay.ToString(), ["fromDay"] = table.Day.ToString(), ["fromTime"] = table.Time, ["venueId"] = venue.Id, ["alone"] = AloneAt(scope, user, table) ? "1" : "0" });
             }
             case StanleyActionKinds.ReserveDinner:
             {
@@ -470,6 +470,13 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
 
     private static StanleyPollRequest PollRequestOf(StanleyIntent intent) =>
         new(intent.Arg("question"), [.. intent.Arg("options").Split('|', StringSplitOptions.RemoveEmptyEntries)], int.TryParse(intent.Arg("days"), out var d) ? d : 3);
+
+    /// <summary>Whether the table is the guest's own and nobody else's (one place, theirs). Rung 4 moves only such a table.</summary>
+    private static bool AloneAt(Scope scope, UserRecord user, TableRow table)
+    {
+        var ids = scope.Ids(table.GuestIds);
+        return scope.PersonByUser(user.Id) is { } me && ids.Count == 1 && ids.Contains(me.Id);
+    }
 
     private static List<ScopePerson> WhoFor(UserRecord user, BookingRow booking, Scope scope, string who)
     {

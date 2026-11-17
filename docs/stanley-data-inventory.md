@@ -21,7 +21,7 @@ Written for phase 4 of `docs/stanley-gap-analysis-and-plan.md`. It lists every f
 
 | Data | Fields | Purpose | Provider | Retention |
 |---|---|---|---|---|
-| Permissions | level (1 to 4), the rows the guest changed by hand (CL-01 to CL-10, on or off), paused until | Decide which unprompted Stanley steps are allowed; the one check is `StanleyPermissionService.MayAsync` | Server (person state document `stanleyPermissions`) | Account life; no free text |
+| Permissions | level (1 to 4), the rows the guest changed by hand (CL-01 to CL-12, on or off), paused until | Decide which unprompted Stanley steps are allowed; the one check is `StanleyPermissionService.MayAsync` | Server (person state document `stanleyPermissions`) | Account life; no free text |
 | Consent history | ability, state, wording version, source (welcome, settings, stage), time | Show what the guest agreed to and which wording | Server (person state document `stanleyConsent`, last 200 lines) | Account life; never any text the guest typed |
 | Step-up | code hash and expiry (HMAC under a key from the signing key), token hash and expiry | Confirm it is the guest before Stanley is given more to do | Server (person state document `stanleyStepUp`); the code is emailed to the address on the account | Code 10 minutes, token 10 minutes and single use |
 
@@ -352,3 +352,23 @@ AUT-02's run also sets one reminder at 6 pm ship time the evening before sailing
 ### Drafts saved (AUT-06)
 
 `POST /me/stanley/auto/drafts` and `GET /me/stanley/auto/drafts`. Works only when permission row CL-06 is on (now built) and the level in force is 4. It builds tonight's plan note and a "may be late back" note from the same bundle the Plan my evening helper uses (booked tours and dinner, ideas, the all aboard time) and keeps one of each in the guest's own state store (key `stanley.auto.drafts`), replaced only when its words change. A draft names times and places only, never a person. It sends, signs and submits nothing; the guest reads, changes and sends it themselves. Check-in, customs and feedback drafts are not saved.
+
+## Rung 4 booking and crew classes (phase P10c)
+
+All three work only when their permission row is on (level 4, switched on with the emailed code, not paused, not a supervised account) and every act goes through the act-or-ask gate (free, the guest's own, undoable, not in quiet hours for a reservation, under the daily cap, fewer than two undone). Each act is previewed as the guest by the same service the screens use, so that service's own checks (dining window, clashes, full tables, an adult at the table) apply, and each writes a ledger line with a receipt that can be undone from Did. The wording version of the permission rows is now 2.
+
+### Standing choices (AUT-04 and AUT-09)
+
+`GET` and `PUT /me/stanley/auto/standing`. The guest's usual main-dining time (one of the dinner times) and one standing stateroom request (ice, towels or pillows) with the time of day to send it, kept as ids and times only in the guest's own state store (`stanley.auto.standing`). A request can be chosen only after the guest has asked for it three times (cancelled requests do not count). No free text.
+
+### Free reservations I always want (AUT-04, row CL-10)
+
+`POST /me/stanley/auto/dinners`. Reserves a main-dining table (included in the fare, no charge) at the usual time on each of the next 3 nights with no dinner booked, at most 2 a day. The booker books for everyone on the booking; anyone else books only for themselves. Specialty dining, paid shows and another adult's own account are never booked. The ledger key is per sailing and night, so a night the guest undid is never booked again, and two undone tables stop the class. Whether the guest turned up is not checked (there is no attendance data), which the card says.
+
+### Keep my timings (AUT-08, row CL-11)
+
+`POST /me/stanley/auto/timings`. For a Keep my dinner rule the guest made (not in practice), on a day with a programme change on record, moves the guest's own main-dining table (theirs alone, no charge to move) to the rule's time when that table is free and does not sit on a booked tour, at most 2 a day. The undo moves it back in one step. A dinner that cannot be moved is only said. Reads the standing rules, the change list, booked tours and dinners.
+
+### My standing order (AUT-09, row CL-12)
+
+`POST /me/stanley/auto/orders`. Sends the one chosen free stateroom request once a day from the time the guest chose, only after three earlier asks, with no repair and no charge. Its undo is a cancel and works only until the crew is on the way (half the usual time), so the receipt says so rather than two hours. One ledger key per sailing, day and item.

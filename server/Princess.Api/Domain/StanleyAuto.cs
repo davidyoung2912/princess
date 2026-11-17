@@ -312,4 +312,99 @@ public static class StanleyAutoRules
         try { return [.. (System.Text.Json.JsonSerializer.Deserialize<List<SavedDraft>>(json, DocJson) ?? []).Where(d => StanleyBundleRules.DraftOk(d.Kind) && !string.IsNullOrEmpty(d.Text)).Take(4)]; }
         catch (System.Text.Json.JsonException) { return []; }
     }
+
+    // ---- AUT-04 free reservations, AUT-08 keep my timings, AUT-09 my standing order (phase P10c) ----
+
+    public const string DinnerClassId = "AUT-04", DinnerRow = "CL-10", TimingClassId = "AUT-08", TimingRow = "CL-11", OrderClassId = "AUT-09", OrderRow = "CL-12", StandingKey = "stanley.auto.standing";
+    public const int DinnerCap = 2, TimingCap = 2, OrderCap = 1, BookAhead = 3, RepeatTimes = 3;
+    /// <summary>The free stateroom requests a standing order may repeat. A repair, a charge or anything else is never repeated.</summary>
+    public static readonly string[] OrderItems = ["ice", "towels", "pillows"];
+
+    /// <summary>What the guest chose to be repeated: their usual main-dining time, and one stateroom request with the time of day to send it. Ids and times only, never the guest's words.</summary>
+    public sealed record AutoStanding(string UsualDinner, string OrderItem, string OrderTime);
+
+    public sealed record AutoActDto(string Key, string Text, string Receipt);
+
+    /// <summary>What a run of AUT-04, AUT-08 or AUT-09 did: what it did (each with a receipt that can be undone for two hours), what it left alone and why, and what it does not check.</summary>
+    public sealed record AutoActsDto(bool On, string Class, List<AutoActDto> Made, List<string> Waiting, List<string> NotChecked, string? AsOf);
+
+    public sealed record AutoStandingRequest(string? UsualDinner, string? OrderItem, string? OrderTime);
+
+    public sealed record AutoStandingDto(string UsualDinner, string OrderItem, string OrderTime, List<string> DinnerTimes, List<string> OrderItems, List<string> NotChecked);
+
+    public static readonly string[] BookingNotChecked =
+    [
+        "Free reservations (AUT-04) are only main dining, on a night with no dinner booked yet, at your usual time, for the next 3 nights, at most 2 a day. A booker books for the whole booking; anyone else only for themselves. Specialty dining, paid shows and anyone else's own account are never booked.",
+        "Whether you turned up at a table I booked is not checked. If you undo two tables I booked I stop booking and ask first, and a night you undid is never booked again.",
+        "Keep my timings (AUT-08) moves only a main-dining dinner that is yours alone, to the time of a Keep my dinner rule you made, on a day the programme changed, when the table is free. Nothing else is moved, and a booking that cannot move is only said.",
+        "My standing order (AUT-09) sends only ice, towels or pillows (never a repair), only one you have asked for three times, once a day at the time you chose. Whether the crew can bring it is theirs to say; you can cancel it until it is on its way.",
+    ];
+
+    public static string? StandingProblem(string? usual, string? item, string? time, IReadOnlyCollection<string> repeated)
+    {
+        if (usual is { Length: > 0 } && !DiningRules.DinnerTimes.Contains(usual)) return "usual";
+        if (item is { Length: > 0 })
+        {
+            if (!OrderItems.Contains(item)) return "item";
+            if (!repeated.Contains(item)) return "notRepeated";
+            if (time is null || !ClockTime(time)) return "time";
+        }
+        return null;
+    }
+
+    public static bool ClockTime(string t) => t.Length == 5 && t[2] == ':' && int.TryParse(t[..2], out var h) && int.TryParse(t[3..], out var m) && h is >= 0 and <= 23 && m is >= 0 and <= 59;
+
+    public static string StandingToJson(AutoStanding s) => System.Text.Json.JsonSerializer.Serialize(s, DocJson);
+
+    public static AutoStanding ParseStanding(string? json)
+    {
+        var none = new AutoStanding("", "", "");
+        if (string.IsNullOrWhiteSpace(json)) return none;
+        try
+        {
+            var d = System.Text.Json.JsonSerializer.Deserialize<AutoStanding>(json, DocJson);
+            if (d is null) return none;
+            var usual = DiningRules.DinnerTimes.Contains(d.UsualDinner ?? "") ? d.UsualDinner! : "";
+            var ok = OrderItems.Contains(d.OrderItem ?? "") && ClockTime(d.OrderTime ?? "");
+            return new(usual, ok ? d.OrderItem! : "", ok ? d.OrderTime! : "");
+        }
+        catch (System.Text.Json.JsonException) { return none; }
+    }
+
+    /// <summary>Items asked for at least <see cref="RepeatTimes"/> times (a cancelled request does not count) among those a standing order may repeat.</summary>
+    public static List<string> Repeated(IEnumerable<(string Item, bool Cancelled)> asked) =>
+        [.. asked.Where(a => !a.Cancelled && OrderItems.Contains(a.Item)).GroupBy(a => a.Item).Where(g => g.Count() >= RepeatTimes).Select(g => g.Key).OrderBy(i => i, StringComparer.Ordinal)];
+
+    /// <summary>The dinner nights worth booking: from today for <see cref="BookAhead"/> days, a night the ship has a dinner, with no dinner of any kind booked on it.</summary>
+    public static List<int> DinnerNights(CheckupFacts f)
+    {
+        var first = Math.Max(1, f.Today.DayNumber - f.Departure.DayNumber + 1);
+        var last = Math.Min(f.Timeline.Days.Count, first + BookAhead - 1);
+        var nights = new List<int>();
+        for (var day = first; day <= last; day++)
+            if (DiningRules.IsDinnerDay(f.Timeline, day) && !f.Meals.Any(m => m.Day == day)) nights.Add(day);
+        return nights;
+    }
+
+    /// <summary>The start of a dinner as epoch milliseconds, on the ship's clock for that night.</summary>
+    public static long DinnerStartMs(CheckupFacts f, int day, string time)
+    {
+        var date = f.Timeline.Departure.AddDays(day - 1);
+        var utc = Itinerary.LocalToUtc(date, TimeOnly.ParseExact(time, "HH:mm"), f.Timeline.ShipZoneOnDate(date));
+        return new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+    }
+
+    /// <summary>Days with a programme change on record that a Keep my dinner rule may react to.</summary>
+    public static List<int> ChangedDays(IEnumerable<StandingChange> changes, int firstDay, int lastDay) =>
+        [.. changes.Where(c => c.Kind == ChangeKinds.Itinerary && c.Day is { } d && d >= firstDay && d <= lastDay && c.Consequence != ChangeConsequence.Optional).Select(c => c.Day!.Value).Distinct().OrderBy(d => d)];
+
+    /// <summary>Whether a dinner at this time on this day would sit on a tour the guest booked.</summary>
+    public static bool OnATour(CheckupFacts f, int day, string time) =>
+        f.Tours.Any(t => t.Day == day && Overlap(t.Start, (int)Math.Round(t.Hours * 60), time, DayPlanRules.DinnerMinutes));
+
+    /// <summary>A request can be withdrawn only until the crew is on the way (half its usual time), so its undo window is that long, not two hours.</summary>
+    public static int OrderUndoMinutes(ServiceRequestItem item) => Math.Max(1, item.EtaMin / 2);
+
+    /// <summary>Whether it is time to send today's standing order: the chosen time has come on the guest's clock.</summary>
+    public static bool OrderDue(string time, DateTime guestNow) => ClockTime(time) && guestNow.Hour * 60 + guestNow.Minute >= Mins(time);
 }

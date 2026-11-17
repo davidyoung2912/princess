@@ -176,6 +176,11 @@ export const stanleyAuto = {
   removePick: (day: number, id: string) => http.delete<unknown>(`/me/stanley/auto/plan/${day}/${encodeURIComponent(id)}`),
   drafts: () => http.post<unknown>('/me/stanley/auto/drafts'),
   savedDrafts: () => http.get<unknown>('/me/stanley/auto/drafts'),
+  dinners: () => http.post<unknown>('/me/stanley/auto/dinners'),
+  timings: () => http.post<unknown>('/me/stanley/auto/timings'),
+  orders: () => http.post<unknown>('/me/stanley/auto/orders'),
+  standing: () => http.get<unknown>('/me/stanley/auto/standing'),
+  setStanding: (body: { usualDinner: string; orderItem: string; orderTime: string }) => http.put<unknown>('/me/stanley/auto/standing', body),
 }
 
 /** The Family pack, first part (phase P9e). Read-only; nothing is registered, marked or sent. */
