@@ -27,6 +27,7 @@ import { StanleyCheckupCard } from './StanleyCheckupCard'
 import { StanleyChecklistCard } from './StanleyChecklistCard'
 import { StanleyBundleCard } from './StanleyBundleCard'
 import { StanleyValueCard } from './StanleyValueCard'
+import { StanleyShipGroupCard } from './StanleyShipGroupCard'
 import { planSnapshot } from '../../ai/stanleyAction'
 import { reminderContext } from '../../ai/stanleyReminders'
 
@@ -121,6 +122,7 @@ export function AutopilotScreen() {
       <StanleyChecklistCard />
       <StanleyBundleCard />
       <StanleyValueCard />
+      <StanleyShipGroupCard />
       <StanleyBriefCard />
 
       <Card labelledBy="ap-check">

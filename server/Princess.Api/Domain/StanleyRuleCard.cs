@@ -42,6 +42,10 @@ public static class StanleyRuleCards
             "What do I still need to do?", ["journey-solo", "journey-family"], ["check-in progress per traveller", "booked tours and dinners"]),
         Check("ACT-04", "Smart defaults", ["prebook", "sea"], "The guest has told Stanley a preference", "the guest's own remembered dinner preference", "the guest sets the choice on the screen or forgets the item",
             "Book my dinner the way I like it", ["journey-solo"], ["remembered preferences"]),
+        Check("CHK-03", "Missed-ship guard", ["port"], "The guest said they are ashore or leaving on a port day", "the guest's own away status, the chosen head-back buffer, all-aboard and tender or pier", "the guest is back aboard or all aboard has passed and the missed-ship steps are shown",
+            "How long have I got before the ship leaves?", ["tender-delayed"], ["away status for today's port", "sailing days and all-aboard times"]),
+        Check("CHK-07", "Group gaps", ["prebook", "sea", "port"], "The party has an open poll", "who has not answered each open poll of the booking, as a count", "everyone has answered or the poll closes",
+            "Who has not answered our poll?", ["journey-family"], ["open polls and answer counts"]),
         Check("ACT-03", "Drafts for approval", ["sea", "port"], "A sailing day is open", "the bundle for the day and the all-aboard time", "the guest copies the note or closes it",
             "Draft a note to my party", ["journey-solo"], ["booked tours and dinners", "sailing days and all-aboard times"]),
     ];

@@ -126,6 +126,11 @@ export const stanleyCheckup = {
   get: () => http.get<unknown>('/me/stanley/checkup'),
 }
 
+/** The missed-ship guard and group gaps (phase P8). Read-only; nothing is sent and no poll is answered. */
+export const stanleyShipGroup = {
+  get: () => http.get<unknown>('/me/stanley/ship-group'),
+}
+
 /** The trip checklist and smart defaults (phase P5). Read-only; a default is shown, never applied. */
 export const stanleyChecklist = {
   get: () => http.get<unknown>('/me/stanley/checklist'),

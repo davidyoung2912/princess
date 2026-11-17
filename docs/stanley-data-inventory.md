@@ -168,3 +168,15 @@ Nothing new is stored. `GET /me/stanley/checklist` works out its answer from the
 | the guest's own remembered dinner preference (early or late only) | a suggestion shown beside "book a dinner", with where it came from | the word early or late; never applied |
 
 Memory must be on, the item must be the guest's own and not sensitive, and a trip item counts only for this sailing; "flexible" is not shown because there is nothing to suggest. It is read-only, off for a supervised account and when the tools switch is off, and is not sent to a model. Documents are left to the trip check-up and the answer says so.
+
+## Missed-ship guard and group gaps (phase P8, CHK-03 and CHK-07)
+
+Nothing new is stored. `GET /me/stanley/ship-group` works out its answer from the guest's own away status for today's port, the head-back buffer they chose, the sailing's all-aboard time and the open polls of their party, and returns it without keeping it. No names appear: a poll shows only how many have answered and how many have not.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| away status for today's port (the guest's own "ashore" or "leaving") | whether to speak about the way back at all | words only; nothing is said to a guest who has not said they are ashore |
+| sailing days and all-aboard times | the landing time, the same as the head-back notices, and whether all aboard has passed | the ship-time all-aboard and minutes left |
+| open polls and answer counts | "2 people have not answered" | the question and two counts; silence is never read as a yes |
+
+The guard sends nothing and rings nobody; the push notices for the way back already exist and are separate. It is read-only, off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: where the guest is, and who has no dinner booked (dinners are held for the booking, not each person).
