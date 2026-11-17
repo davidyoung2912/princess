@@ -17,7 +17,7 @@ const ART: Record<string, PageArt> = {
   '/ship/teen': { pose: 'pirate' },
   '/plan/checklist': { pose: 'checklist' },
   '/plan/packing': { head: 'formal' }, '/plan/ship-packing': { pose: 'suitcase' },
-  '/plan/dining': { head: 'chef' },
+  '/dining-today': { head: 'chef' },
   '/plan/day': { pose: 'planning' },
   '/plan/party': { pose: 'dancing' },
   '/plan/weather': { pose: 'umbrella' },

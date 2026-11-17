@@ -77,6 +77,16 @@ public static class ExplorerCatalogue
 
     public static ExplorerEventDef? EventOn(string? shipId, string? id) => Of(shipId).Events.FirstOrDefault(e => e.Id == id);
 
+    /// <summary>The treatment a saved-treatment key names (<c>treatment:&lt;ship&gt;.&lt;id&gt;</c>), or null when the ship or the treatment does not exist.</summary>
+    public static SpaTreatment? TreatmentOfKey(string? key)
+    {
+        if (key is null || !key.StartsWith("treatment:", StringComparison.Ordinal)) return null;
+        var rest = key["treatment:".Length..];
+        var dot = rest.IndexOf('.');
+        if (dot <= 0 || dot == rest.Length - 1) return null;
+        return For(rest[..dot])?.TreatmentList.FirstOrDefault(x => x.Id == rest[(dot + 1)..]);
+    }
+
     /// <summary>The ship a venue pin names (<c>venue:&lt;ship&gt;.&lt;venue&gt;</c>) and the venue, or null when either does not exist.</summary>
     public static (string ShipId, ExplorerVenue Venue)? VenueOfPinKey(string? key)
     {

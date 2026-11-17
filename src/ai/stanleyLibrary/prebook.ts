@@ -2,10 +2,10 @@ import type { LibraryEntry } from './types'
 
 /** Prebook: the planner. What to book, pack and decide before sailing. */
 export const PREBOOK: readonly LibraryEntry[] = [
-  { id: 'prebook.excursionsEarly', stages: ['prebook'], screens: ['P37'], link: '/plan/excursions', words: 'book ahead advance tours ashore' },
-  { id: 'prebook.shipOrOwn', stages: ['prebook'], screens: ['P37'], link: '/plan/excursions', words: 'independent ship tour guided ashore' },
-  { id: 'prebook.anytimeDining', stages: ['prebook'], screens: ['P38'], link: '/plan/dining', words: 'dinner restaurant time table fixed' },
-  { id: 'prebook.specialty', stages: ['prebook'], screens: ['P38'], link: '/plan/dining', words: 'restaurant extra charge cover special dinner' },
+  { id: 'prebook.excursionsEarly', stages: ['prebook'], screens: ['X28'], link: '/excursions-explorer', words: 'book ahead advance tours ashore' },
+  { id: 'prebook.shipOrOwn', stages: ['prebook'], screens: ['X28'], link: '/excursions-explorer', words: 'independent ship tour guided ashore' },
+  { id: 'prebook.anytimeDining', stages: ['prebook'], screens: ['X13'], link: '/dining-today', words: 'dinner restaurant time table fixed' },
+  { id: 'prebook.specialty', stages: ['prebook'], screens: ['X13'], link: '/dining-today', words: 'restaurant extra charge cover special dinner' },
   { id: 'prebook.evening', stages: ['prebook'], screens: ['P02', 'P03'], link: '/plan/packing', words: 'dress code formal clothes wear' },
   { id: 'prebook.notAllowed', stages: ['prebook'], screens: ['P02', 'P03'], link: '/plan/packing', words: 'banned forbidden prohibited bring pack iron kettle' },
   { id: 'prebook.phone', stages: ['prebook'], screens: ['P05'], link: '/plan/phone', words: 'roaming data wifi signal charges' },

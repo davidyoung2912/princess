@@ -9,7 +9,7 @@ export const EMBARK: readonly LibraryEntry[] = [
   { id: 'embark.bagsLate', stages: ['embark'], screens: ['H33', 'H34'], link: '/home/embarkation/steps', words: 'luggage suitcase missing delivered late' },
   { id: 'embark.meetFamily', stages: ['embark'], screens: ['H35', 'H32'], link: '/home/meeting-point', words: 'group lost meet family rendezvous' },
   { id: 'embark.sailAway', stages: ['embark'], screens: ['H34', 'H32'], link: '/plan/day', words: 'leave depart sail away time deck' },
-  { id: 'embark.firstDinner', stages: ['embark'], screens: ['S02', 'H34'], link: '/plan/dining', words: 'table reserve seating booking tonight' },
+  { id: 'embark.firstDinner', stages: ['embark'], screens: ['S02', 'H34'], link: '/dining-today', words: 'table reserve seating booking tonight' },
   { id: 'embark.wifiFirst', stages: ['embark'], screens: ['H34', 'H32'], words: 'signal internet wifi roaming data charges' },
   { id: 'embark.quiet', stages: ['embark'], screens: ['S01', 'S13'], link: '/ship/map', words: 'crowd noisy calm busy relax' },
 ]

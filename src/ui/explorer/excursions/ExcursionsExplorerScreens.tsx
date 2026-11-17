@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { tourKey } from '../../../domain/explorer/shortlist'
+import { SaveButton } from '../SaveButton'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../../api/types'
 import { formatDate, formatTime } from '../../../domain/cruise'
 import { bookingsOnDay, planKey, filterDayOffers, nearestTourDay, NO_DAY_FILTER, offersOnDay, type DayFilter } from '../../../domain/explorer/excursionDay'
@@ -272,6 +274,7 @@ function OfferCard({ offer, view, day, busy, onAdd, concerns }: { offer: Excursi
           <Button variant="secondary" disabled={busy || inCart} onClick={onAdd}>{inCart ? t('exc.inCart') : t('exc.add')}<span className="visually-hidden"> {x.name}</span></Button>
         )}
         <PlanToggle offer={offer} view={view} />
+        <SaveButton itemKey={tourKey(x.id)} title={x.name} />
       </div>
     </li>
   )

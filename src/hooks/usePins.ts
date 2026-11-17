@@ -1,5 +1,6 @@
 import { toggleTasteKey } from '../domain/explorer/recommend'
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
+import { toggleSavedKey } from '../domain/explorer/shortlist'
 import { pinsToUpload, reorderScreenKeys, screenIdsOf, screenPinKey, toggleScreenKey, toggleVenueKey, venueKeysOf, type VenuePinOutcome } from '../domain/pins'
 import { api } from '../runtime'
 import { channel } from '../runtime/channel'
@@ -59,6 +60,8 @@ export interface Pins {
   keys: readonly string[]
   /** Turns a taste key on or off; false when it could not be saved. */
   toggleTaste: (key: string) => Promise<boolean>
+  /** Saves a treatment or tour to the shortlist (`treatment:...`, `tour:...`), or takes it off. 'full' when ten of that kind are already saved. */
+  toggleSaved: (key: string) => Promise<'saved' | 'removed' | 'full' | 'failed'>
   toggleVenue: (shipId: string, venueId: string, inExplorer: (key: string) => boolean) => Promise<VenuePinOutcome | 'failed'>
 }
 
@@ -121,11 +124,20 @@ export function usePins(): Pins {
     return ok ? r.outcome : 'failed'
   }, [mine, apply])
 
+  const toggleSaved = useCallback(async (key: string): Promise<'saved' | 'removed' | 'full' | 'failed'> => {
+    if (!mine) return 'failed'
+    const had = snap.keys.includes(key)
+    const r = toggleSavedKey(snap.keys, key)
+    if (r.full) return 'full'
+    const ok = await apply(r.keys, () => api.discover.toggleFavourite(key))
+    return ok ? (had ? 'removed' : 'saved') : 'failed'
+  }, [mine, apply])
+
   const toggleTaste = useCallback(async (key: string): Promise<boolean> => {
     if (!mine) return false
     return apply(toggleTasteKey(snap.keys, key), () => api.discover.toggleFavourite(key))
   }, [mine, apply])
 
   const screens = screenIdsOf(keys)
-  return { keys, toggleTaste, ready: !!mine, failed: mine?.failed ?? false, screens, venueKeys: venueKeysOf(keys), isScreenPinned: (id) => screens.includes(id), toggleScreen, reorderScreens, toggleVenue }
+  return { keys, toggleTaste, ready: !!mine, failed: mine?.failed ?? false, screens, venueKeys: venueKeysOf(keys), isScreenPinned: (id) => screens.includes(id), toggleScreen, toggleSaved, reorderScreens, toggleVenue }
 }

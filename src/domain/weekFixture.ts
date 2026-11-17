@@ -2,7 +2,7 @@ import type { Week, WeekPrefs } from './autopilot'
 import type { PlanEntry } from './planChange'
 import { itinerary, type Sailing } from './sailings'
 
-const dinner: PlanEntry = { id: 'eclipse', title: 'Dinner', start: '18:30', minutes: 90, kind: 'dinner', outdoor: false, path: '/plan/dining' }
+const dinner: PlanEntry = { id: 'eclipse', title: 'Dinner', start: '18:30', minutes: 90, kind: 'dinner', outdoor: false, path: '/dining-today' }
 const trivia: PlanEntry = { id: 'trivia', title: 'Trivia', start: '14:00', minutes: 45, kind: 'event', placeId: 'live', outdoor: false, path: '/plan' }
 
 /** For tests only: a week shaped like the server's answer. Every day has trivia and dinner under the guest's wishes; a relaxed week keeps dinner and drops trivia. */

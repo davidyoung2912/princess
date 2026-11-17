@@ -88,8 +88,8 @@ function DayCard({ day, days }: { day: PlanDay; days: readonly PlanDay[] }) {
             <p className="muted">{t('plan.planned.note')}</p>
           </>
         )}
-        {!rest && day.gaps.includes('tour') && <p className="day-card__gap">{t('plan.gap.tour')} <Link to="/plan/excursions">{t('plan.gap.tourGo')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span></Link></p>}
-        {!rest && day.gaps.includes('dinner') && <p className="day-card__gap">{t('plan.gap.dinner')} <Link to="/plan/dining">{t('plan.gap.dinnerGo')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span></Link></p>}
+        {!rest && day.gaps.includes('tour') && <p className="day-card__gap">{t('plan.gap.tour')} <Link to="/excursions-explorer">{t('plan.gap.tourGo')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span></Link></p>}
+        {!rest && day.gaps.includes('dinner') && <p className="day-card__gap">{t('plan.gap.dinner')} <Link to="/dining-today">{t('plan.gap.dinnerGo')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span></Link></p>}
         <DayPolish day={day} />
         <DayCalendarButton day={day.day} days={days} />
       </Card>

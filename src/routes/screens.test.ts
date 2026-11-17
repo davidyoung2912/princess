@@ -12,7 +12,7 @@ describe('screen registry (P2)', () => {
     const entries = new Set(SCREEN_LIST.map((s) => s.path))
     expect(ROUTES.filter((r) => !TAB_FRONT_PATHS.includes(r.path) && !entries.has(r.path)).map((r) => r.path)).toEqual([])
     expect(SCREEN_LIST.filter((s) => !routes.has(s.path)).map((s) => s.path)).toEqual([])
-    expect(SCREEN_LIST).toHaveLength(235)
+    expect(SCREEN_LIST).toHaveLength(233)
   })
 
   it('has unique ids, paths and titles, each with a title and a subtext', () => {
@@ -88,7 +88,7 @@ describe('screen registry (P2)', () => {
 
   it('leaves exactly the developer page, the account page, the stage overview and the two link-only pages outside every stage', () => {
     const outside = SCREEN_LIST.filter((s) => !JOURNEY_STAGES.some((st) => stageUses(s.id, st))).map((s) => s.id)
-    expect(outside.sort()).toEqual(['C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X13', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X28', 'X29'])
+    expect(outside.sort()).toEqual(['C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29'])
   })
 
   it('counts the screens each stage uses as the plan lists them (chat is one more at the five stages that had no way in)', () => {
@@ -134,16 +134,16 @@ describe('screen colour (P3)', () => {
   })
 
   it('follows the tab the screen was opened from, but only if the stage lists it there', () => {
-    const colours = coloursFor('P37', 'prebook')
+    const colours = coloursFor('X28', 'prebook')
     expect(colours.length).toBeGreaterThan(0)
-    expect(areaFor('P37', 'prebook', colours[0], null, 'blue')).toBe(colours[0])
-    expect(areaFor('P37', 'prebook', 'plum', null, 'blue')).toBe(primaryTab('P37', 'prebook')!.colour)
+    expect(areaFor('X28', 'prebook', colours[0], null, 'blue')).toBe(colours[0])
+    expect(areaFor('X28', 'prebook', 'plum', null, 'blue')).toBe(primaryTab('X28', 'prebook')!.colour)
   })
 
   it('keeps the colour of the area just left when the stage lists the screen under it, then falls back to the primary tab', () => {
-    const [first, second] = coloursFor('P37', 'prebook').length > 1 ? coloursFor('P37', 'prebook') : [undefined, undefined]
-    if (first && second) expect(areaFor('P37', 'prebook', undefined, second, 'blue')).toBe(second)
-    expect(areaFor('P37', 'prebook', undefined, null, 'blue')).toBe(primaryTab('P37', 'prebook')!.colour)
+    const [first, second] = coloursFor('X28', 'prebook').length > 1 ? coloursFor('X28', 'prebook') : [undefined, undefined]
+    if (first && second) expect(areaFor('X28', 'prebook', undefined, second, 'blue')).toBe(second)
+    expect(areaFor('X28', 'prebook', undefined, null, 'blue')).toBe(primaryTab('X28', 'prebook')!.colour)
   })
 
   it('uses the old tab colour for a screen the stage does not use', () => {

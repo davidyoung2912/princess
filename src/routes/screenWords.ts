@@ -63,8 +63,8 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/home/clearance': 'port entry rules; visa; passport rules; entry requirements',
   '/plan/day': 'build my day; day plan; what to do today; itinerary',
   '/plan/reservations': 'reservations; bookings; my bookings; tables and tours',
-  '/plan/excursions': 'excursions; tours; shore trip; things to do in port',
-  '/plan/dining': 'dining reservations; dinner; book a table; restaurant booking',
+  '/excursions-explorer': 'excursions; tours; shore trip; things to do in port',
+  '/dining-today': 'dining reservations; dinner; book a table; restaurant booking',
   '/plan/checklist': 'checklist; to do before the cruise; what to do first; tasks',
   '/plan/packing': 'packing list; what to pack; bring; clothes',
   '/plan/travel': 'getting to the port; drive to the port; parking; directions',
@@ -209,7 +209,7 @@ export const SCREEN_WORDS: Record<string, string> = {
 
 /** One search result for every screen a guest can reach: its title, plus the plain phrases that lead to it. */
 export function screenHits(title: (key: StringKey) => string, stage?: JourneyStage, earlier = false): Hit[] {
-  return ROUTES.filter((r) => r.tab !== null && !r.path.includes(':') && r.path !== '/kit' && (!stage || (earlier ? earlierAt(r.path, stage) : accessAt(r.path, r.path, stage) === 'show'))).map((r) => ({ kind: 'screen', id: r.path, title: title(r.titleKey), detail: '', words: SCREEN_WORDS[r.path] ?? '', to: r.path }))
+  return ROUTES.filter((r) => (r.tab !== null || r.path in SCREEN_WORDS) && !r.path.includes(':') && r.path !== '/kit' && (!stage || (earlier ? earlierAt(r.path, stage) : accessAt(r.path, r.path, stage) === 'show'))).map((r) => ({ kind: 'screen', id: r.path, title: title(r.titleKey), detail: '', words: SCREEN_WORDS[r.path] ?? '', to: r.path }))
 }
 
 /** A thing a guest wants to do at one stage, the plain words they would type, and the screen that should come up. Two taps: Search, then the result. */

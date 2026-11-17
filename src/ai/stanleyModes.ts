@@ -103,7 +103,7 @@ export function modeSteps(mode: ModeId, f: ModeFacts): ModeStep[] {
         { id: 'muster', at: e.musterAt, to: '/ship/muster', done: e.musterDone },
         { id: 'walk', at: null, to: '/ship/map' },
         ...(e.sailAwayAt !== null ? [{ id: 'sailAway', at: e.sailAwayAt, to: '/plan/day' }] : []),
-        { id: 'dinner', at: null, to: '/plan/dining' },
+        { id: 'dinner', at: null, to: '/dining-today' },
       ]
     }
     case 'portDay': {

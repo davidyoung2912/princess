@@ -33,6 +33,9 @@ public static class ExplorerRules
     /// <summary>The most venues a guest can pin in one Explorer. A new pin past it is refused.</summary>
     public const int MaxVenuePins = 10;
 
+    /// <summary>The most treatments and the most tours a guest can keep on a shortlist (each kind has its own limit).</summary>
+    public const int MaxSavedItems = 10;
+
     public static ExplorerVenueDto Dto(string shipId, ExplorerVenue v) =>
         new(v.Id, shipId, v.Explorer, v.Kind, v.Title, v.Short, v.Long, v.PlaceId, v.DeckLabel, v.Cover, v.MinAge, v.Bookable, v.Order, v.Features, v.Accessibility, v.Family ?? [], v.KidsMenu ?? []);
 
@@ -164,6 +167,18 @@ public static class ExplorerRules
             var prefix = TastePrefix(key) ?? throw ApiException.Invalid("taste");
             var rest = key[prefix.Length..];
             if (rest.Length is 0 or > 64 || !rest.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '-' or '_' or '.' or ':')) throw ApiException.Invalid("taste");
+        }
+        else if (key.StartsWith("treatment:", StringComparison.Ordinal))
+        {
+            // A shortlisted treatment must exist on its ship; each kind of saved item has its own limit.
+            _ = ExplorerCatalogue.TreatmentOfKey(key) ?? throw ApiException.Invalid("treatment");
+            if (current.Count(k => k.StartsWith("treatment:", StringComparison.Ordinal)) >= MaxSavedItems) throw ApiException.Invalid("pinsFull");
+        }
+        else if (key.StartsWith("tour:", StringComparison.Ordinal))
+        {
+            var id = key["tour:".Length..];
+            if (!ExcursionRules.Catalogue.Any(x => x.Id == id)) throw ApiException.Invalid("tour");
+            if (current.Count(k => k.StartsWith("tour:", StringComparison.Ordinal)) >= MaxSavedItems) throw ApiException.Invalid("pinsFull");
         }
         else if (key.StartsWith("venue:", StringComparison.Ordinal))
         {

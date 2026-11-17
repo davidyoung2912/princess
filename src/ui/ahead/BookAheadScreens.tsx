@@ -97,7 +97,7 @@ export function BookAheadScreen() {
   )
 }
 
-const SAVED_LINK: Record<string, string> = { item: '/plan/ahead', excursion: '/plan/excursions', venue: '/plan/dining', addon: '/me/packages' }
+const SAVED_LINK: Record<string, string> = { item: '/plan/ahead', excursion: '/excursions-explorer', venue: '/dining-today', addon: '/me/packages' }
 
 function savedName(key: string): string {
   const [kind, id] = key.split(':')
@@ -124,7 +124,7 @@ export function CartScreen() {
           {(v) => v.cart.length === 0 ? <p className="muted">{t('cart.noTours')}</p> : (
             <>
               <ul className="plain-bullets">{v.cart.map((l) => <li key={l.excursionId}>{excursionById(l.excursionId)?.name} · {formatMoney(l.total)}</li>)}</ul>
-              <p><Link to="/plan/excursions">{t('cart.payTours', { total: formatMoney(v.cartTotal) })}</Link></p>
+              <p><Link to="/excursions-explorer">{t('cart.payTours', { total: formatMoney(v.cartTotal) })}</Link></p>
             </>
           )}
         </Load>
@@ -166,7 +166,7 @@ export function CartScreen() {
         </Load>
       </section>
       <p className="muted">{t('cart.priceNote')}</p>
-      <p><Link to="/plan/dining">{t('route.dining')}</Link> · <Link to="/me/packages">{t('route.packages')}</Link> · <Link to="/plan/ahead">{t('route.ahead')}</Link></p>
+      <p><Link to="/dining-today">{t('route.dining')}</Link> · <Link to="/me/packages">{t('route.packages')}</Link> · <Link to="/plan/ahead">{t('route.ahead')}</Link></p>
       <Back to="/plan" label={t('route.plan')} />
     </div>
   )

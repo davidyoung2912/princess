@@ -26,12 +26,12 @@ const PROBLEM: Record<ConfirmProblem, StringKey> = { expired: 'action.expired', 
 /** Where the receipt can be found again, by kind of action. */
 const WHERE: Partial<Record<StanleyAction['kind'], { path: string; label: StringKey }>> = {
   order_item: { path: '/ship/requests', label: 'action.go.requests' },
-  add_excursion: { path: '/plan/excursions', label: 'action.go.excursions' },
-  move_dinner: { path: '/plan/dining', label: 'action.go.dining' },
-  reserve_dinner: { path: '/plan/dining', label: 'action.go.dining' },
+  add_excursion: { path: '/excursions-explorer', label: 'action.go.excursions' },
+  move_dinner: { path: '/dining-today', label: 'action.go.dining' },
+  reserve_dinner: { path: '/dining-today', label: 'action.go.dining' },
   draft_case: { path: '/me/cases', label: 'action.go.cases' },
   plan_change: { path: '/plan/autopilot', label: 'action.go.changes' },
-  change_seating: { path: '/plan/dining', label: 'action.go.dining' },
+  change_seating: { path: '/dining-today', label: 'action.go.dining' },
 }
 
 /**

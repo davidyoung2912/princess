@@ -25,7 +25,7 @@ export const DISRUPTIONS: readonly DisruptionDef[] = [
       { what: 'disrupt.portSkipped.c2.what', before: 'disrupt.portSkipped.c2.before', after: 'disrupt.portSkipped.c2.after' },
     ],
     options: [{ id: 'credit', label: 'disrupt.portSkipped.o1' }, { id: 'talk', label: 'disrupt.portSkipped.o2' }],
-    compensation: 'disrupt.portSkipped.comp', link: '/plan/excursions',
+    compensation: 'disrupt.portSkipped.comp', link: '/excursions-explorer',
   },
   {
     id: 'belizeTender', severity: 'important', title: 'disrupt.belizeTender.title',

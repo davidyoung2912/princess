@@ -139,8 +139,8 @@ describe('answers held for signal', () => {
 
 describe('plans for something booked', () => {
   it('knows an excursion or dinner plan from its screen', () => {
-    expect(isBookingPlan({ path: '/plan/excursions' })).toBe(true)
-    expect(isBookingPlan({ path: '/plan/dining' })).toBe(true)
+    expect(isBookingPlan({ path: '/excursions-explorer' })).toBe(true)
+    expect(isBookingPlan({ path: '/dining-today' })).toBe(true)
     expect(isBookingPlan({ path: '/explore/venue/x' })).toBe(false)
     expect(isBookingPlan({})).toBe(false)
   })

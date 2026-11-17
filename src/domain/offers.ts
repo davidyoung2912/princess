@@ -25,7 +25,7 @@ export interface OfferDef {
 export const OFFERS: readonly OfferDef[] = [
   { id: 'package', stages: ['before'], to: '/me/packages', hiddenWithPackage: true },
   { id: 'upgrade', stages: ['before'], to: '/plan/upgrades' },
-  { id: 'excursions', stages: ['before', 'aboard'], to: '/plan/excursions' },
+  { id: 'excursions', stages: ['before', 'aboard'], to: '/excursions-explorer' },
   { id: 'clubs', stages: ['before'], to: '/plan/clubs' },
   { id: 'drinks', stages: ['aboard'], to: '/ship/drinks', hiddenWithPackage: true, celebration: true },
   { id: 'spa', stages: ['aboard'], to: '/ship/spa' },

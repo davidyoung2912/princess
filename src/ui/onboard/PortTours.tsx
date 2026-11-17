@@ -10,7 +10,7 @@ export function Tours({ tours, port }: { tours: TourToday[]; port: string }) {
   return (
     <section aria-labelledby="tours-h">
       <h2 id="tours-h">{th('port.tours')}</h2>
-      {tours.length === 0 ? <p>{t('port.noTours', { port: PORTS[port as keyof typeof PORTS]?.name ?? port })} <Link to="/plan/excursions">{t('route.excursions')}</Link></p> : (
+      {tours.length === 0 ? <p>{t('port.noTours', { port: PORTS[port as keyof typeof PORTS]?.name ?? port })} <Link to="/excursions-explorer">{t('route.excursions')}</Link></p> : (
         <ul className="card-grid">
           {tours.map((x) => (
             <li key={x.id} className="card">

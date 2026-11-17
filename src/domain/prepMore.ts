@@ -110,10 +110,10 @@ export const OCCASIONS = ['birthday', 'anniversary', 'honeymoon', 'reunion', 'fi
 export type Occasion = (typeof OCCASIONS)[number]
 /** Where to go first for each occasion: authored, in order. */
 export const STARTERS: Record<Occasion, readonly string[]> = {
-  birthday: ['/plan/dining', '/plan/day', '/plan/packing'],
-  anniversary: ['/plan/dining', '/plan/excursions', '/me/memories'],
-  honeymoon: ['/plan/dining', '/plan/excursions', '/plan/day'],
-  reunion: ['/plan/party', '/plan/dining', '/plan/split'],
+  birthday: ['/dining-today', '/plan/day', '/plan/packing'],
+  anniversary: ['/dining-today', '/excursions-explorer', '/me/memories'],
+  honeymoon: ['/dining-today', '/excursions-explorer', '/plan/day'],
+  reunion: ['/plan/party', '/dining-today', '/plan/split'],
   firstCruise: ['/plan/checklist', '/plan/packing', '/home/cruise'],
 }
 export const STYLES = ['relaxed', 'active', 'foodie', 'family'] as const

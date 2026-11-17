@@ -80,7 +80,7 @@ export const isPoll = (m: Pick<ChatMessage, 'kind' | 'poll'>): boolean => m.kind
 export const isPlan = (m: Pick<ChatMessage, 'kind' | 'card'>): boolean => m.kind === 'plan' && m.card !== undefined
 
 /** The screens a plan for something booked opens (an excursion or a dinner). Answering such a plan books nothing; each person books their own place there. */
-const BOOKED_PLAN_PATHS = ['/plan/excursions', '/plan/dining']
+const BOOKED_PLAN_PATHS = ['/excursions-explorer', '/dining-today']
 
 /** Whether a plan is for an excursion or a dinner, which has to be booked by each person on its own screen. */
 export const isBookingPlan = (card: Pick<ChatCard, 'path'>): boolean => card.path !== undefined && BOOKED_PLAN_PATHS.includes(card.path)

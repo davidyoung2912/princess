@@ -1,11 +1,11 @@
 import { Fragment, Suspense, useSyncExternalStore, type ReactNode } from 'react'
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
 import { getLocale, subscribeLocale } from './i18n'
 import { SCREENS } from './screens'
 import { NotFound } from './ui/NotFound'
 import { Shell } from './ui/Shell'
 import { SignInGate } from './ui/SignInScreen'
-import { ROUTES, isPublicPath } from './routes/routes'
+import { REDIRECTS, ROUTES, isPublicPath } from './routes/routes'
 
 /** Every screen, built from the route table, inside the shell. Separate from the router so tests can render it in memory. */
 export function AppRoutes() {
@@ -20,10 +20,21 @@ export function AppRoutes() {
           const Screen = SCREENS[route.path]
           return <Route key={route.path} path={route.path} element={<Screen />} />
         })}
+        {REDIRECTS.map((r) => <Route key={r.from} path={r.from} element={<ForwardTo to={r.to} />} />)}
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
+}
+
+/** Sends an old address to its new home, keeping any query the old link carried (the target's own query wins). */
+function ForwardTo({ to }: { to: string }) {
+  const { search } = useLocation()
+  const [path, own = ''] = to.split('?')
+  const merged = new URLSearchParams(search)
+  for (const [k, v] of new URLSearchParams(own)) merged.set(k, v)
+  const q = merged.toString()
+  return <Navigate to={q ? `${path}?${q}` : path} replace />
 }
 
 /** The app root: the browser router around the routes. */

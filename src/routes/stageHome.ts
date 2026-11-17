@@ -59,8 +59,8 @@ export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
       ]
     case 'prebook':
       return [
-        { key: 'stage.next.prebook.1', to: '/plan/excursions', done: false },
-        { key: 'stage.next.prebook.2', to: '/plan/dining', done: false },
+        { key: 'stage.next.prebook.1', to: '/excursions-explorer', done: false },
+        { key: 'stage.next.prebook.2', to: '/dining-today', done: false },
         { key: 'stage.next.prebook.3', to: '/plan/packing', done: false },
       ]
     case 'getToShip':
@@ -78,7 +78,7 @@ export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
     case 'sea': {
       const steps: NextStepItem[] = [
         { key: 'stage.next.sea.1', to: '/plan/day', done: false },
-        { key: 'stage.next.sea.2', to: '/plan/dining', done: false },
+        { key: 'stage.next.sea.2', to: '/dining-today', done: false },
       ]
       if (f.aboard?.lastFullDay) steps.push({ key: 'stage.next.sea.3', to: '/home/disembark/bags', done: false })
       return steps
@@ -86,7 +86,7 @@ export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
     case 'port':
       return [
         { key: 'stage.next.port.1', to: '/ship/port', done: false },
-        { key: 'stage.next.port.2', to: '/plan/excursions', done: false },
+        { key: 'stage.next.port.2', to: '/excursions-explorer', done: false },
         { key: 'stage.next.port.3', to: '/ship/safe-ashore', done: false },
       ]
     case 'disembark':

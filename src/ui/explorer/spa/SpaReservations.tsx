@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import type { ExplorerDay } from '../../../api/explorerTypes'
 import type { SpaAppointment, SpaView } from '../../../api/spaTypes'
 import { formatTime } from '../../../domain/cruise'
+import { treatmentKey } from '../../../domain/explorer/shortlist'
 import { shortDate } from '../../../domain/explorer/presentation'
 import { formatMoney } from '../../../domain/money'
 import { dinnerDays } from '../../../domain/dining'
@@ -19,6 +20,7 @@ import { Button } from '../../Button'
 import { Dialog } from '../../Dialog'
 import { PlanError } from '../../plan/common'
 import { names } from '../../plan/people'
+import { SaveButton } from '../SaveButton'
 import { ReservationList, type ReservationItem } from '../Parts'
 
 interface Props {
@@ -105,7 +107,10 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
                 <h3 className="card__title">{x.title}</h3>
                 <p>{x.detail}</p>
                 <p className="muted">{t('spa.minutes', { n: x.minutes })} · {formatMoney(x.price)}{x.minAge ? ` · ${t('exp.venue.minAge', { age: x.minAge })}` : ''}</p>
-                {card.canReserve && <Button variant="secondary" onClick={() => openEditor('new', x.id)}>{t('spa.bookThis')}<span className="visually-hidden"> {x.title}</span></Button>}
+                <div className="button-row">
+                  {card.canReserve && <Button variant="secondary" onClick={() => openEditor('new', x.id)}>{t('spa.bookThis')}<span className="visually-hidden"> {x.title}</span></Button>}
+                  <SaveButton itemKey={treatmentKey(venues[0]?.venue.shipId ?? '', x.id)} title={x.title} />
+                </div>
               </li>
             ))}
           </ul>

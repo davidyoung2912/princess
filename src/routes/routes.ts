@@ -66,8 +66,6 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/plan/day', titleKey: 'route.buildDay', tab: 'plan', phase: 9 },
   { path: '/plan/reservations', titleKey: 'route.reservations', tab: 'plan', phase: 6 },
   { path: '/plan/reservations/:id', titleKey: 'route.reservation', tab: 'plan', phase: 6 },
-  { path: '/plan/excursions', titleKey: 'route.excursions', tab: 'plan', phase: 4 },
-  { path: '/plan/dining', titleKey: 'route.dining', tab: 'plan', phase: 4 },
   { path: '/plan/checklist', titleKey: 'route.checklist', tab: 'plan', phase: 4 },
   { path: '/plan/packing', titleKey: 'route.packing', tab: 'plan', phase: 4 },
   { path: '/plan/travel', titleKey: 'route.travel', tab: 'plan', phase: 4 },
@@ -267,3 +265,9 @@ export const isPublicPath = (pathname: string): boolean =>
     const base = cut < 0 ? r.path : r.path.slice(0, cut)
     return (cut < 0 && pathname === base) || pathname.startsWith(`${base}/`)
   })
+
+/** Old addresses that only forward, kept because saved links, notifications, emails and the server still carry them. The target is a route above; a query string on the old link is kept. */
+export const REDIRECTS: readonly { from: string; to: string }[] = [
+  { from: '/plan/dining', to: '/dining-today?view=trip' },
+  { from: '/plan/excursions', to: '/excursions-explorer?view=trip' },
+]

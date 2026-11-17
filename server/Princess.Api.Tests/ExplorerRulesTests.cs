@@ -92,4 +92,23 @@ public class ExplorerRulesTests
         var full = ExplorerCatalogue.For("sun-princess")!.Venues.Where(v => v.Explorer == venue.Explorer).Take(ExplorerRules.MaxVenuePins).Select(v => $"venue:sun-princess.{v.Id}").ToList();
         if (full.Count == ExplorerRules.MaxVenuePins && !full.Contains(key)) Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed(full, key));
     }
+
+    [Fact]
+    public void Shortlisted_treatments_and_tours_name_real_things_and_have_their_own_limits()
+    {
+        var treatment = ExplorerCatalogue.For("sun-princess")!.TreatmentList[0];
+        var key = $"treatment:sun-princess.{treatment.Id}";
+        ExplorerRules.RequirePinAllowed([], key);
+        Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed([], "treatment:sun-princess.nowhere"));
+        Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed([], "treatment:nowhere.x"));
+        ExplorerRules.RequirePinAllowed([], $"tour:{ExcursionRules.Catalogue[0].Id}");
+        Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed([], "tour:nowhere"));
+
+        var tours = ExcursionRules.Catalogue.Take(ExplorerRules.MaxSavedItems).Select(x => $"tour:{x.Id}").ToList();
+        if (tours.Count == ExplorerRules.MaxSavedItems)
+        {
+            Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed(tours, $"tour:{ExcursionRules.Catalogue[^1].Id}"));
+            ExplorerRules.RequirePinAllowed(tours, key);   // a full list of tours leaves room for a treatment
+        }
+    }
 }

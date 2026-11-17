@@ -38,7 +38,7 @@ export function RecomposerCard() {
               <strong>{formatTime(i.time)}</strong> {t(i.kind === 'tour' ? 'plan.entry.tour' : 'plan.entry.dinner', { name: i.name })} <span className="muted">· {i.guests.map(firstName).join(', ')}</span>
               <p className="muted">{t(i.kind === 'tour' ? 'recompose.tour' : 'recompose.dinner')}</p>
               {i.alternatives.length > 0 && (
-                <p>{t('recompose.instead')} {i.alternatives.map((a, n) => <span key={a.id}>{n > 0 ? ', ' : ''}<Link to={`/plan/excursions`}>{excursionById(a.id)?.name ?? a.name}</Link></span>)}</p>
+                <p>{t('recompose.instead')} {i.alternatives.map((a, n) => <span key={a.id}>{n > 0 ? ', ' : ''}<Link to={`/excursions-explorer`}>{excursionById(a.id)?.name ?? a.name}</Link></span>)}</p>
               )}
             </li>
           ))}

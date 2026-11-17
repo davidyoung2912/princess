@@ -1,3 +1,5 @@
+import { carryOverVenue } from '../../../domain/explorer/shortlist'
+import { usePins } from '../../../hooks/usePins'
 import type { DiningView } from '../../../api/types'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import type { StringKey } from '../../../i18n'
@@ -87,12 +89,17 @@ function ReservePage({ venueId }: { venueId?: string }) {
   const reserve = params.get('reserve') ?? 'new'
   const back = `${venueId ? `${BASE}/${venueId}` : BASE}?day=${state.day}`
   const moving = reserve === 'new' ? undefined : view.data?.reservations.find((r) => r.id === reserve)
+  const pins = usePins()
+  const tables = (data.data?.venues ?? []).filter((x) => x.venue.bookable === 'dining')
+  // A new reservation starts on the first place the guest saved, when there is one; moving one, or a venue's own page, keeps its place.
+  const saved = !moving && !venueId ? carryOverVenue(pins.venueKeys, 'dining', tables.map((x) => x.venue)) : null
+  const choices = tables.map((x) => ({ id: x.venue.id, title: x.venue.title })).sort((a, b) => Number(b.id === saved) - Number(a.id === saved))
   return (
     <div className="page">
       <Saved copy={view}>
         {(v) => (
           <ReservationEditor
-            view={v} day={state.day} venues={(data.data?.venues ?? []).filter((x) => x.venue.bookable === 'dining').map((x) => ({ id: x.venue.id, title: x.venue.title }))}
+            view={v} day={state.day} venues={choices}
             venueId={venueId} reservation={moving} backTo={back} backLabel={t('route.diningToday')}
             onClose={() => { void navigate(back) }} onDone={() => { view.retry() }}
           />

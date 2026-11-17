@@ -148,7 +148,7 @@ export interface LineDef { kind: LineKind; venue: PulseId; maxWait: number; /** 
 
 export const LINES: readonly LineDef[] = [
   { kind: 'show', venue: 'arena', maxWait: 25, virtual: false, path: '/ship/venues' },
-  { kind: 'dining', venue: 'eatery', maxWait: 30, virtual: true, path: '/plan/dining' },
+  { kind: 'dining', venue: 'eatery', maxWait: 30, virtual: true, path: '/dining-today' },
   { kind: 'service', venue: 'guest-services', maxWait: 20, virtual: false, path: '/ship/help-now' },
 ]
 

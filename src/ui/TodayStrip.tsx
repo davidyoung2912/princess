@@ -5,7 +5,7 @@ import { th } from '../i18n'
 import { TileLiveLine } from './TileLiveLine'
 
 /** The tiles worth a glance today. */
-const TODAY_PATHS = ['/plan/dining', '/ship/venues', '/ship/port', '/me/bill', '/ship/order'] as const
+const TODAY_PATHS = ['/dining-today', '/ship/venues', '/ship/port', '/me/bill', '/ship/order'] as const
 
 /** "Today so far": a swipeable strip of small cards, one per thing with something to say right now (dinner, what is open, all-aboard, the bill). Cards with nothing to say are left out. */
 export function TodayStrip() {

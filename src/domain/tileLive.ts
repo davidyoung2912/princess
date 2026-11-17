@@ -184,7 +184,7 @@ export const TILE_DEFS: readonly TileDef[] = [
     },
   },
   {
-    path: '/plan/excursions',
+    path: '/excursions-explorer',
     source: 'excursions',
     line: (f, say) => {
       const e = f.excursions
@@ -194,7 +194,7 @@ export const TILE_DEFS: readonly TileDef[] = [
     },
   },
   {
-    path: '/plan/dining',
+    path: '/dining-today',
     source: 'dining',
     line: (f, say) => {
       const d = f.dining

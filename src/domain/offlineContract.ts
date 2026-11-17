@@ -58,8 +58,6 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/plan/day': 'needs-connection',
   '/plan/reservations': 'view-only',
   '/plan/reservations/:id': 'view-only',
-  '/plan/excursions': 'needs-connection',
-  '/plan/dining': 'needs-connection',
   '/plan/checklist': 'needs-connection',
   '/plan/packing': 'needs-connection',
   '/plan/travel': 'needs-connection',

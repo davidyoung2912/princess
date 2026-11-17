@@ -176,7 +176,7 @@ export const SCREEN_ICONS: Record<string, LucideIcon> = {
   P12: CircleCheckBig, P13: FileSignature, P14: PiggyBank, P15: Coins, P16: HandCoins, P17: TrendingDown, P18: BadgeDollarSign, P19: Dices,
   P20: Timer, P21: ClipboardPaste, P22: Lightbulb, P23: Banknote, P24: ShoppingBasket, P25: CircleArrowUp, P26: CalendarPlus, P27: Baby, P28: Gift,
   P29: Car, P30: Navigation, P31: CloudSun, P32: CloudLightning, P33: House, P34: CalendarClock, P35: CalendarCheck, P36: CalendarCheck,
-  P37: Binoculars, P38: Utensils, P39: WandSparkles, P40: AlarmClock, P41: Sparkles, P42: Heart, P43: ShieldCheck, P44: Scale, P45: HeartHandshake,
+  P39: WandSparkles, P40: AlarmClock, P41: Sparkles, P42: Heart, P43: ShieldCheck, P44: Scale, P45: HeartHandshake,
   P46: LayoutGrid, P47: Users, P48: House, P49: Vote, P50: Link, P51: BookOpen, P52: Smile, S01: Map, S02: Utensils, S03: UtensilsCrossed,
   S04: Newspaper, S05: Search, S06: Footprints, S07: Umbrella, S08: Binoculars, S09: Navigation, S10: Waves, S11: Milestone, S12: Moon,
   S13: Activity, S14: MessageCircleQuestion, S15: Coffee, S16: Wine, S17: ShoppingBag, S18: Flower2, S19: ChefHat, S20: Shirt, S21: ConciergeBell,

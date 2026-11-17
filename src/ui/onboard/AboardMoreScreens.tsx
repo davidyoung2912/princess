@@ -225,7 +225,7 @@ export function DiningPrefsScreen() {
         <select id="dp-time" className="field__input" value={d.table.time} onChange={(e) => table({ time: e.target.value as typeof d.table.time })}>{(['any', 'early', 'late'] as const).map((s) => <option key={s} value={s}>{t(`dpref.time.${s}` as StringKey)}</option>)}</select>
         <label className="choice"><input type="checkbox" checked={d.table.quiet} onChange={(e) => table({ quiet: e.target.checked })} /><span>{t('dpref.quiet')}</span></label></Card>
       {d.favourites.length > 0 && <p role="status">{t('dpref.summary', { places: d.favourites.map((f) => placeById(f)?.name ?? f).join(', ') })}</p>}
-      <p><Link to="/plan/dining">{t('route.dining')}</Link></p>
+      <p><Link to="/dining-today">{t('route.dining')}</Link></p>
     </Page>
   )
 }

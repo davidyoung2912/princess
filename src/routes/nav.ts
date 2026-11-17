@@ -41,7 +41,7 @@ export const TOP_TASKS: readonly TaskDef[] = [
   { id: 'addPackage', labelKey: 'task.addPackage', taps: ['/me', '/me/packages'] },
   { id: 'allAboard', labelKey: 'task.allAboard', taps: ['/'] },
   { id: 'emergencyInfo', labelKey: 'task.emergencyInfo', taps: ['help'] },
-  { id: 'myExcursions', labelKey: 'task.myExcursions', taps: ['/plan', '/plan/excursions'] },
+  { id: 'myExcursions', labelKey: 'task.myExcursions', taps: ['/plan', '/excursions-explorer'] },
   { id: 'textSize', labelKey: 'task.textSize', taps: ['/me', '/me/settings'] },
 ]
 

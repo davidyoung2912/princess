@@ -104,10 +104,10 @@ describe('phase 2 tiles', () => {
     expect(path({ daysToDeparture: -2 }, '/me/trips')).toBeUndefined()
   })
   it('joins what is true about excursions and dining, and says nothing when nothing is', () => {
-    expect(text({ excursions: { booked: 2, inCart: 1, creditLeft: 30000 } }, '/plan/excursions')).toBe('2 booked · 1 in your cart · $300 credit left')
-    expect(path({ excursions: { booked: 0, inCart: 0, creditLeft: 0 } }, '/plan/excursions')).toBeUndefined()
-    expect(text({ dining: { seating: '18:00', reservations: 1, mealsLeft: 2 } }, '/plan/dining')).toBe('Dinner at 18:00 · 1 reserved · 2 specialty dinners included')
-    expect(path({ dining: { seating: null, reservations: 0, mealsLeft: 0 } }, '/plan/dining')).toBeUndefined()
+    expect(text({ excursions: { booked: 2, inCart: 1, creditLeft: 30000 } }, '/excursions-explorer')).toBe('2 booked · 1 in your cart · $300 credit left')
+    expect(path({ excursions: { booked: 0, inCart: 0, creditLeft: 0 } }, '/excursions-explorer')).toBeUndefined()
+    expect(text({ dining: { seating: '18:00', reservations: 1, mealsLeft: 2 } }, '/dining-today')).toBe('Dinner at 18:00 · 1 reserved · 2 specialty dinners included')
+    expect(path({ dining: { seating: null, reservations: 0, mealsLeft: 0 } }, '/dining-today')).toBeUndefined()
   })
   it('counts packages bought only when there are some', () => {
     expect(text({ packages: { bought: 3 } }, '/me/packages')).toBe('3 bought')
