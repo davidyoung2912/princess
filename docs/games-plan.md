@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42) and **Slitherlink** (X43) and **Crossmath** (X44). All fourteen games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42) and **Slitherlink** (X43) and **Crossmath** (X44) and **Nonogram** (X45). All fifteen games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -129,7 +129,10 @@ Built as planned, with equations of the form `a sign b = c` (signs and "=" alway
 
 Four more popular single-player logic puzzles in the same vein: each needs a generator whose puzzles have one answer that plain logic finds, rule-naming hints, red marks for broken rules, four levels and phone-first controls. Screen ids continue from X45. Build the riskiest generator first inside each phase. Reserve options if one is dropped: Skyscrapers (Latin square with edge visibility clues, reuses Futoshiki and KenKen pieces), Cryptogram (themed cruise quote, reuses the Codeword word lists and keyboard), Light Up and Masyu.
 
-### G13: Nonogram (X45)
+### G13: Nonogram (X45) — built
+
+Built as planned. `nonogram.ts` makes a blobby picture (random noise smoothed by neighbourhood majority, 35 to 75% filled, no empty line), writes the clues, and keeps it only if the line solver fills the whole grid, so the answer is unique with no guessing. `lineOptions` is an exact dynamic-programming solver for one line (checked against brute force in the tests); the grid solver repeats it over every row and column. Hints name the line and the reason: a 0 clue, runs that fill the line exactly, all runs already placed, the overlap of long runs, or the marks already made. Levels: Easy 5x5, Medium 8x8, Hard 10x10, Expert 15x15 (all generate in a few milliseconds). `NonogramScreen.tsx`: Fill and Cross tools, tap toggles, dragging paints a straight line (the first square decides paint or clear; the drag is one undo step), thicker lines every five squares, clues turn grey when their line is complete and red when it cannot be met, keyboard arrows with F, X, Space and Backspace. The release-gate drag test lists the screen, as tapping and keys do everything a drag does.
+
 
 - Numbers beside each row and column give the lengths of the runs of filled squares, in order. Fill or cross squares to reveal a picture. Levels 5x5 to 15x15 (Easy 5x5, Medium 8x8, Hard 10x10, Expert 15x15).
 - Generator: random picture (blobby regions so it looks like a shape, not noise), clues from the picture, kept only if a line solver (overlap, edge, gap and complete-run rules, repeated to a fixed point) fills the whole grid, so the answer is unique with no guessing. Retry when it stalls.

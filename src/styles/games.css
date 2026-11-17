@@ -384,6 +384,28 @@
 .sl-pad__swatch { display: grid; place-items: center; width: 1.7rem; height: 1.7rem; box-sizing: border-box; font-weight: 700; font-size: 1.2rem; line-height: 1; }
 .sl-pad__swatch--line { height: 0.4rem; margin: 0.65rem 0; border-radius: 0.2rem; background: var(--primary); }
 
+/* Nonogram: clues above and beside a square grid; filled squares are solid and crossed squares show a cross, so colour is never the only cue. */
+.nn-board { width: min(100%, 34rem); touch-action: none; user-select: none; }
+.nn-row { display: grid; grid-template-columns: calc(var(--rc) * 0.7fr) repeat(var(--n), 1fr); }
+.nn-corner { min-height: 0; }
+.nn-clue { display: flex; align-items: center; gap: 0.25em; font-size: clamp(0.6rem, 2.6vw, 0.95rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; color: var(--text); }
+.nn-clue--row { flex-direction: row; justify-content: flex-end; padding-right: 0.35em; }
+.nn-clue--col { flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 0.3em; }
+.nn-clue--met { color: var(--text-muted); font-weight: 400; text-decoration: line-through; }
+.nn-clue--bad { color: var(--sd-error); text-decoration: underline wavy; }
+.nn-cell { position: relative; display: grid; place-items: center; aspect-ratio: 1; box-sizing: border-box; border: 1px solid var(--sd-line); background: var(--bg); font-weight: 700; color: var(--text-muted); font-size: clamp(0.7rem, 3.4vw, 1.2rem); cursor: pointer; }
+.nn-cell--vline { border-right-width: 3px; }
+.nn-cell--hline { border-bottom-width: 3px; }
+.nn-cell--filled { background: var(--text); }
+.nn-cell--hint { background: color-mix(in srgb, var(--warning) 28%, var(--bg)); }
+.nn-cell--filled.nn-cell--hint { background: color-mix(in srgb, var(--warning) 45%, var(--text)); }
+.nn-cell--selected { box-shadow: inset 0 0 0 3px var(--primary); z-index: 1; }
+.nn-cell:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; z-index: 2; }
+.nn-pad__key { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+.nn-pad__key[aria-pressed='true'] { background: var(--primary); color: var(--bg); }
+.nn-pad__swatch { display: grid; place-items: center; width: 1.7rem; height: 1.7rem; box-sizing: border-box; border: 2px solid currentColor; font-weight: 700; font-size: 1.2rem; line-height: 1; }
+.nn-pad__swatch--filled { background: currentColor; }
+
 /* Crossmath: a sparse grid of numbers and signs; blank squares are the only ones that take focus. */
 .cm-board { display: grid; gap: 2px; width: min(100%, calc(var(--cols) * 3.4rem)); touch-action: manipulation; user-select: none; }
 .cm-row { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 2px; }

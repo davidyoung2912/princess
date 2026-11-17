@@ -233,9 +233,11 @@ describe('gate 6: accessibility', () => {
   it('nothing needs a drag, and hover is never the only way to reach something', () => {
     const src = walk('src').map((f) => ({ f, text: read(f) }))
     // The deck plan viewer pans by dragging, but every move also has a button and a key (zoom in and out, fit, arrow keys), so nothing needs the drag.
-    expect(src.filter((s) => /\bonDrag\w*=|draggable=\{?["']?true|onPointerMove=/.test(s.text)).map((s) => s.f)).toEqual(['src/ui/explorer/games/WordSearchScreen.tsx', 'src/ui/onboard/DeckPlanViewer.tsx'])
+    expect(src.filter((s) => /\bonDrag\w*=|draggable=\{?["']?true|onPointerMove=/.test(s.text)).map((s) => s.f)).toEqual(['src/ui/explorer/games/NonogramScreen.tsx', 'src/ui/explorer/games/WordSearchScreen.tsx', 'src/ui/onboard/DeckPlanViewer.tsx'])
     // Word Search can be dragged across a word, but tapping the first and last letters, or Enter on each from the keyboard, does the same, so nothing needs the drag.
     expect(read('src/ui/explorer/games/WordSearchScreen.tsx')).toMatch(/onKeyDown=/)
+    // Nonogram can be dragged along a line to mark several squares, but tapping each square, or F, X and Space from the keyboard, does the same, so nothing needs the drag.
+    expect(read('src/ui/explorer/games/NonogramScreen.tsx')).toMatch(/onKeyDown=/)
     const viewer = read('src/ui/onboard/DeckPlanViewer.tsx')
     expect(viewer).toMatch(/onClick=\{\(\) => zoomBy/)
     expect(viewer).toMatch(/onKeyDown=/)

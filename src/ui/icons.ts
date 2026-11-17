@@ -97,6 +97,7 @@ export {
   TextSearch as WordSearchGame,
   Spline as SlitherlinkGame,
   Calculator as CrossmathGame,
+  Image as NonogramGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,

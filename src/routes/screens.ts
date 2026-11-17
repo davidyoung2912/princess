@@ -265,6 +265,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'X34', path: '/games-explorer/jigsaw-sudoku', titleKey: 'screen.X34.title', subtextKey: 'screen.X34.subtext', family: 'X' },
   { id: 'X36', path: '/games-explorer/binairo', titleKey: 'screen.X36.title', subtextKey: 'screen.X36.subtext', family: 'X' },
   { id: 'X37', path: '/games-explorer/futoshiki', titleKey: 'screen.X37.title', subtextKey: 'screen.X37.subtext', family: 'X' },
+  { id: 'X45', path: '/games-explorer/nonogram', titleKey: 'screen.X45.title', subtextKey: 'screen.X45.subtext', family: 'X' },
   { id: 'X44', path: '/games-explorer/crossmath', titleKey: 'screen.X44.title', subtextKey: 'screen.X44.subtext', family: 'X' },
   { id: 'X43', path: '/games-explorer/slitherlink', titleKey: 'screen.X43.title', subtextKey: 'screen.X43.subtext', family: 'X' },
   { id: 'X42', path: '/games-explorer/word-search', titleKey: 'screen.X42.title', subtextKey: 'screen.X42.subtext', family: 'X' },
