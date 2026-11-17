@@ -3798,3 +3798,24 @@ BEGIN
   ALTER TABLE dbo.ChatGroupMembers ADD StanleyMuted BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_StanleyMuted DEFAULT 0;
 END
 GO
+
+-- Chat phase 11: the group coordinator (docs/chat-features-research.md, phase 11, role R5).
+-- ChatGroupMembers.RemindersMuted: this member does not want Stanley's reminders about polls and plans in this group (the organiser is never told who).
+-- ChatStanleyReminders: who was reminded about which poll or plan and when, so nobody is reminded more than once in 3 days in a thread. It holds no text, question or option. Rows older than a month are removed as new ones are added.
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'RemindersMuted') IS NULL
+BEGIN
+  ALTER TABLE dbo.ChatGroupMembers ADD RemindersMuted BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_RemindersMuted DEFAULT 0;
+END
+GO
+
+IF OBJECT_ID(N'dbo.ChatStanleyReminders', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatStanleyReminders (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatStanleyReminders PRIMARY KEY,
+  GroupId BIGINT NOT NULL, MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL, [At] DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_ChatStanleyReminders_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatStanleyReminders_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ChatStanleyReminders_Group_User ON dbo.ChatStanleyReminders (GroupId, UserId, [At]);
+END
+GO

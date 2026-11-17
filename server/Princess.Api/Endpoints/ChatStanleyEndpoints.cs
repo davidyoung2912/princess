@@ -46,5 +46,26 @@ public static class ChatStanleyEndpoints
         chat.MapPost("/stanley/draft", async (ChatDraftBody body, ICurrentUser me, ChatStanleyService svc, CancellationToken ct) => { await me.LoadAsync(ct); return Results.Ok(await svc.DraftAsync(body)); })
             .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
             .WithSummary("A short message to edit before sending: `late` (5 to 180 minutes, a place) or `meet` (a place, optionally a time). Nothing is sent. 400 draft.");
+
+        // The group coordinator (phase 11): tallies, reminders and "what remains" for the organiser of a made group.
+        chat.MapGet("/groups/{id:guid}/stanley/remaining", async (Guid id, ICurrentUser me, ChatCoordinatorService svc, CancellationToken ct) => Results.Ok(await svc.RemainingAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("The organiser's private \"what remains\": the open polls and plans that still wait for someone, in counts (never who). Only an admin of a group whose admin has let Stanley help. 403 notAdmin|off|child|notGroup; 404.");
+
+        chat.MapGet("/groups/{id:guid}/messages/{messageId:guid}/stanley", async (Guid id, Guid messageId, ICurrentUser me, ChatCoordinatorService svc, CancellationToken ct) => Results.Ok(await svc.PreviewAsync(await me.LoadAsync(ct), id, messageId, ct)))
+            .WithSummary("For a poll or plan: the exact tally text that would be posted, the exact reminder text, how many people a reminder would reach (a count) and why one cannot go now (`closed`, `tooSoon`, `none`). Admin only. 400 notPoll; 403 notAdmin|off|child|notGroup; 404.");
+
+        chat.MapPost("/groups/{id:guid}/messages/{messageId:guid}/stanley/share", async (Guid id, Guid messageId, ICurrentUser me, ChatCoordinatorService svc, CancellationToken ct) => { await svc.ShareAsync(await me.LoadAsync(ct), id, messageId, ct); return Results.NoContent(); })
+            .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
+            .WithSummary("The admin's tap on Post to the group: a line \"Alex asked Stanley to share this\", then Stanley's tally in counts. 400 notPoll; 403 notAdmin|off|child|notGroup; 404; 429 busy.");
+
+        chat.MapPost("/groups/{id:guid}/messages/{messageId:guid}/stanley/remind", async (Guid id, Guid messageId, ICurrentUser me, ChatCoordinatorService svc, CancellationToken ct) => Results.Ok(await svc.RemindAsync(await me.LoadAsync(ct), id, messageId, ct)))
+            .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
+            .WithSummary("The admin's tap on Remind: people who have not answered (not muted, blocked or a child, and not reminded in the last 3 days) get a private note in their own Stanley chat; the admin gets a count. 400 notPoll; 403 notAdmin|off|child|notGroup; 404; 409 closed|tooSoon.");
+
+        chat.MapGet("/groups/{id:guid}/stanley/reminders", async (Guid id, ICurrentUser me, ChatCoordinatorService svc, CancellationToken ct) => Results.Ok(await svc.RemindersAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("Whether the caller switched Stanley's reminders off in this group. 404 not a member of a made group.");
+
+        chat.MapPut("/groups/{id:guid}/stanley/reminders", async (Guid id, ChatRemindersMuteBody body, ICurrentUser me, ChatCoordinatorService svc, CancellationToken ct) => Results.Ok(await svc.SetRemindersMutedAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("The caller stops or allows Stanley's reminders in this group, for themselves only. Nobody is told. 400 muted; 404.");
     }
 }
