@@ -422,3 +422,23 @@
 .cm-cell--blank:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; z-index: 2; }
 .cm-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; width: 100%; }
 .cm-tray__key { flex: 0 0 auto; width: 3.4rem; height: 3rem; }
+
+/* Minesweeper: hidden squares are raised, open squares are flat with a number; flags and mines are shapes, so colour is never the only cue. */
+.ms-board { width: min(100%, 34rem); user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.ms-row { display: grid; grid-template-columns: repeat(var(--cols), 1fr); }
+.ms-cell { position: relative; display: grid; place-items: center; aspect-ratio: 1; box-sizing: border-box; border: 2px outset var(--sd-line); background: color-mix(in srgb, var(--text) 14%, var(--bg)); font-weight: 700; font-size: clamp(0.7rem, 3.6vw, 1.2rem); font-variant-numeric: tabular-nums; cursor: pointer; color: var(--text); }
+.ms-cell svg { width: 62%; height: 62%; }
+.ms-cell--open { border: 1px solid var(--sd-line); background: var(--bg); cursor: default; }
+.ms-cell--n1 { color: var(--primary); }
+.ms-cell--n3, .ms-cell--n4 { text-decoration: underline; }
+.ms-cell--mine { background: color-mix(in srgb, var(--sd-error) 18%, var(--bg)); }
+.ms-cell--boom { background: color-mix(in srgb, var(--sd-error) 45%, var(--bg)); }
+.ms-cell--bad { color: var(--sd-error); text-decoration: underline wavy; }
+.ms-cell--badflag { box-shadow: inset 0 0 0 2px var(--sd-error); }
+.ms-cell--hint { background: color-mix(in srgb, var(--warning) 28%, var(--bg)); }
+.ms-cell--selected { box-shadow: inset 0 0 0 3px var(--primary); z-index: 1; }
+.ms-cell:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; z-index: 2; }
+.ms-pad__key { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+.ms-pad__key[aria-pressed='true'] { background: var(--primary); color: var(--bg); }
+.ms-pad__key svg { width: 1.5rem; height: 1.5rem; }
+.ms-pad__swatch { width: 1.6rem; height: 1.6rem; box-sizing: border-box; border: 2px outset currentColor; }

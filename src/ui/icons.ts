@@ -98,6 +98,8 @@ export {
   Spline as SlitherlinkGame,
   Calculator as CrossmathGame,
   Image as NonogramGame,
+  Bomb as MinesweeperGame,
+  Flag,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,
