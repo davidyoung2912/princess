@@ -86,3 +86,31 @@ Built. Each catalogue entry now carries `levels`, `minutes` and `players`, and t
 - Games Explorer cards show level range, players and a rough time for each game; solo and multi-player sections stay as they are.
 - Consistency pass across all nine games: timer, hint, level picker, How to Play, solved card, keyboard and screen reader labels, contrast in every theme, reduced motion, small phones (320px wide).
 - Remove any duplicated code left from the earlier games, update this plan, run the full npm checks.
+
+## Round two (proposed, not started)
+
+Four more games, one phase each, built in this order (easiest to riskiest). Same checklist and rules as above; screen ids X41 to X44. Each ends with a commit and a stop. A final phase repeats the G8 consistency pass for the new games and updates the explorer card counts.
+
+### G9: Hitori (X41)
+
+- N by N grid of digits. Shade squares so no digit repeats in any row or column among the unshaded squares, no two shaded squares touch along a side, and all unshaded squares stay joined as one group.
+- Generator: Latin-style base grid, choose a valid shading (no touching, joined whites), fill each shaded square with a copy of a digit already in its row or column, then check uniqueness with a logic solver (pair and triple rules, sandwich, corner, "shading here would split the whites" connectivity). Levels 5x5 to 9x9 (Expert 10x10 if fast).
+- Tap cycles blank, shaded, circled (known to stay). Hints name the rule; red for a repeat among unshaded squares, two touching shaded squares or a split group. Shapes not colour alone for shaded and circled.
+
+### G10: Word Search with no spare letters (X42)
+
+- Every letter of the grid belongs to a word; no filler. Words run in all 8 directions and may cross. When all words are found, the letters that belong to no listed word are none, so the answer is instead a hidden phrase: the letters left uncovered after crossing off the word list at the start form it (Wonderword style: found words are cleared, and the leftover letters read as the answer). Decide the exact answer rule when the phase starts.
+- Needs a themed word list (cruise and travel, plus common words) in a lazy module, as for Codeword. Generator: pack words into a grid to cover every square (search with a step budget, retry), place the answer letters in the squares left over.
+- Drag or tap-first-then-last to select; keyboard cursor with Shift-arrows; found words struck off the list; a hint highlights the first letter of a word. Levels by grid size and word length.
+
+### G11: Slitherlink (X43)
+
+- Dot grid with numbers in some squares; draw one single closed loop along the dot lines so every number says how many of its four sides the loop uses. Levels 5x5 to 10x10 squares.
+- Generator: grow a random loop (random region of squares with a single boundary, no holes), write the numbers, remove clues while a logic solver (3s and 0s, adjacent 3s, corner rules, degree-two and degree-one dots, loop-closing) still finishes. Uniqueness comes from the logic solver, no guessing.
+- Tap an edge to cycle line, cross (known no line), empty; large invisible hit areas for phones; red for a dot with 3 lines, a number over-filled or a closed loop that is too short. Highest-risk generator: build and test it first.
+
+### G12: Crossmath (X44)
+
+- A crossword-style grid of numbers and signs (+, -, x, /) where each row and column reads as a true equation; some squares are given, the player fills the rest from a number tray (each tray number used once).
+- Generator: build equations on a grid, cross them so shared squares agree, blank out squares while the answer stays unique and plain logic (the only fit for a square, the last tray number) finishes. Levels by grid size, number range and which signs appear (Easy add and subtract to 20, Expert all four signs to 99).
+- Tray of numbers with counts, tap a blank then a tray number, keyboard digits. Hints show the equation with one blank. Red for a broken equation.
