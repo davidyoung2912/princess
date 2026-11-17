@@ -99,6 +99,9 @@ public static partial class ChatRoomRules
     /// </summary>
     public static bool NeedsHold(string kind, string text) => kind == Room && ContactPattern().IsMatch(text);
 
+    /// <summary>Whether text carries a link, phone number or email (used by rules that must keep such details out of a shared place).</summary>
+    public static bool HasContactDetail(string text) => ContactPattern().IsMatch(text);
+
     /// <summary>The words a held post is shown with to its sender.</summary>
     public const string HeldReason = "contact";
 

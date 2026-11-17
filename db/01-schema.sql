@@ -3917,3 +3917,86 @@ CREATE TABLE dbo.ChatHuddleCarry (
 );
 END
 GO
+
+-- Chat phase 12 (host for strangers and room host). A meet-up is a small post in a room or group with answers in / maybe / no. It holds no programme event, so an answer never touches anyone's plans.
+IF OBJECT_ID(N'dbo.ChatMeetUps', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatMeetUps (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatMeetUps PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT UQ_ChatMeetUps_PublicId UNIQUE,
+  GroupId BIGINT NOT NULL, StartedBy BIGINT NOT NULL,
+  Title NVARCHAR(80) NOT NULL, Place NVARCHAR(60) NULL, StartsAt DATETIME2(0) NULL, CreatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_ChatMeetUps_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatMeetUps_Users FOREIGN KEY (StartedBy) REFERENCES dbo.Users (Id)
+);
+CREATE INDEX IX_ChatMeetUps_Group ON dbo.ChatMeetUps (GroupId, CreatedAt);
+CREATE INDEX IX_ChatMeetUps_Starter ON dbo.ChatMeetUps (StartedBy, CreatedAt);   -- three a day
+END
+GO
+
+-- A member's answer. A "no" is stored so the person sees their own answer, and is never counted or shown to anyone else.
+IF OBJECT_ID(N'dbo.ChatMeetUpAnswers', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatMeetUpAnswers (
+  MeetUpId BIGINT NOT NULL, UserId BIGINT NOT NULL, Answer VARCHAR(5) NOT NULL, AnsweredAt DATETIME2(0) NOT NULL,
+  CONSTRAINT PK_ChatMeetUpAnswers PRIMARY KEY (MeetUpId, UserId),
+  CONSTRAINT FK_ChatMeetUpAnswers_MeetUps FOREIGN KEY (MeetUpId) REFERENCES dbo.ChatMeetUps (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatMeetUpAnswers_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id),
+  CONSTRAINT CK_ChatMeetUpAnswers_Answer CHECK (Answer IN ('in','maybe','no'))
+);
+END
+GO
+
+-- "Introduce me": the one interest a guest chose from a fixed list. It lapses after 24 hours or when withdrawn. Nothing else about the guest is stored here.
+IF OBJECT_ID(N'dbo.ChatIntroOptIns', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatIntroOptIns (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatIntroOptIns PRIMARY KEY,
+  UserId BIGINT NOT NULL, Interest VARCHAR(12) NOT NULL,
+  AskedAt DATETIME2(0) NOT NULL, EndsAt DATETIME2(0) NOT NULL, WithdrawnAt DATETIME2(0) NULL,
+  CONSTRAINT FK_ChatIntroOptIns_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ChatIntroOptIns_User ON dbo.ChatIntroOptIns (UserId, AskedAt);
+END
+GO
+
+-- Who was introduced to whom (the pair, once) so nobody is introduced twice and the daily cap can be counted. No words are stored.
+IF OBJECT_ID(N'dbo.ChatIntroductions', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatIntroductions (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatIntroductions PRIMARY KEY,
+  UserLow BIGINT NOT NULL, UserHigh BIGINT NOT NULL, Interest VARCHAR(12) NOT NULL, CreatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT UQ_ChatIntroductions_Pair UNIQUE (UserLow, UserHigh),
+  CONSTRAINT FK_ChatIntroductions_Low FOREIGN KEY (UserLow) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatIntroductions_High FOREIGN KEY (UserHigh) REFERENCES dbo.Users (Id)
+);
+END
+GO
+
+-- A member's own "mute Stanley here" for one room or group.
+IF OBJECT_ID(N'dbo.ChatHostMutes', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatHostMutes (
+  GroupId BIGINT NOT NULL, UserId BIGINT NOT NULL, MutedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT PK_ChatHostMutes PRIMARY KEY (GroupId, UserId),
+  CONSTRAINT FK_ChatHostMutes_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatHostMutes_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id)
+);
+END
+GO
+
+-- A flag a member asked Stanley to send to staff. It holds ids and a reason, never the words; staff read the post from the room itself. Staff decide; the flag changes nothing by itself.
+IF OBJECT_ID(N'dbo.ChatHostFlags', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatHostFlags (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatHostFlags PRIMARY KEY,
+  GroupId BIGINT NOT NULL, MessageId BIGINT NOT NULL, FlaggedBy BIGINT NOT NULL,
+  Reason VARCHAR(6) NOT NULL, CreatedAt DATETIME2(0) NOT NULL, DecidedAt DATETIME2(0) NULL,
+  CONSTRAINT FK_ChatHostFlags_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatHostFlags_Users FOREIGN KEY (FlaggedBy) REFERENCES dbo.Users (Id),
+  CONSTRAINT CK_ChatHostFlags_Reason CHECK (Reason IN ('spam','unsafe','rude','other'))
+);
+CREATE INDEX IX_ChatHostFlags_Open ON dbo.ChatHostFlags (DecidedAt, CreatedAt);
+CREATE INDEX IX_ChatHostFlags_User ON dbo.ChatHostFlags (FlaggedBy, CreatedAt);   -- five a day
+END
+GO
