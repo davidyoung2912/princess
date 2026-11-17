@@ -8,20 +8,23 @@ export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard', 'e
 
 const SIZE = 9
 const CELLS = 81
-const ALL = 0b111111111
-const bit = (d: number) => 1 << (d - 1)
-const count = (mask: number) => { let n = 0; for (let m = mask; m; m &= m - 1) n++; return n }
-const only = (mask: number) => 31 - Math.clz32(mask) + 1 // the digit of a one-bit mask
+export const ALL = 0b111111111
+export const bit = (d: number) => 1 << (d - 1)
+export const count = (mask: number) => { let n = 0; for (let m = mask; m; m &= m - 1) n++; return n }
+export const only = (mask: number) => 31 - Math.clz32(mask) + 1 // the digit of a one-bit mask
 
 export const rowOf = (i: number) => Math.floor(i / SIZE)
 export const colOf = (i: number) => i % SIZE
 export const boxOf = (i: number) => Math.floor(rowOf(i) / 3) * 3 + Math.floor(colOf(i) / 3)
 
-export type Variant = 'classic' | 'diagonal' | 'jigsaw'
+export type Variant = 'classic' | 'diagonal' | 'jigsaw' | 'killer'
 export type UnitKind = 'row' | 'column' | 'box' | 'diagonal' | 'region'
 
 /** Where two units overlap in two or more cells: a digit confined to the overlap in `a` cannot be elsewhere in `b`. */
 interface Overlap { a: number; b: number; cells: readonly number[] }
+
+/** A Killer Sudoku cage: connected cells whose digits are all different and add up to `sum`. */
+export interface Cage { cells: readonly number[]; sum: number }
 
 /** Everything a variant changes: which groups of nine must hold 1 to 9, who sees whom, and which region (box) each cell belongs to. */
 export interface Rules {
@@ -34,12 +37,16 @@ export interface Rules {
   /** Cells on either main diagonal (empty unless the variant has them). */
   diagonal: ReadonlySet<number>
   overlaps: readonly Overlap[]
+  /** Killer cages (empty for the other variants). Cage mates are peers, but a cage is not a unit: it need not hold every digit. */
+  cages: readonly Cage[]
+  /** The index in `cages` of the cage of every cell, or -1. */
+  cageOf: readonly number[]
 }
 
 const BOX_REGIONS: readonly number[] = Array.from({ length: CELLS }, (_, i) => boxOf(i))
 
 /** Builds the rules from a region map (nine regions of nine cells) and whether both main diagonals also hold 1 to 9. */
-export function makeRules(variant: Variant, region: readonly number[] = BOX_REGIONS): Rules {
+export function makeRules(variant: Variant, region: readonly number[] = BOX_REGIONS, cages: readonly Cage[] = []): Rules {
   const rows = Array.from({ length: 9 }, (_, r) => Array.from({ length: 9 }, (_, c) => r * 9 + c))
   const cols = Array.from({ length: 9 }, (_, c) => Array.from({ length: 9 }, (_, r) => r * 9 + c))
   const regions = Array.from({ length: 9 }, (_, g) => region.flatMap((v, i) => (v === g ? [i] : [])))
@@ -54,6 +61,7 @@ export function makeRules(variant: Variant, region: readonly number[] = BOX_REGI
   const peers = Array.from({ length: CELLS }, (_, i) => {
     const set = new Set<number>()
     for (const u of units) if (u.includes(i)) for (const c of u) if (c !== i) set.add(c)
+    for (const g of cages) if (g.cells.includes(i)) for (const c of g.cells) if (c !== i) set.add(c)
     return [...set]
   })
   const overlaps: Overlap[] = []
@@ -62,7 +70,9 @@ export function makeRules(variant: Variant, region: readonly number[] = BOX_REGI
     const cells = ua.filter((c) => ub.includes(c))
     if (cells.length >= 2) overlaps.push({ a, b, cells })
   }))
-  return { variant, units, kinds, peers, region, diagonal, overlaps }
+  const cageOf = Array<number>(CELLS).fill(-1)
+  cages.forEach((g, k) => g.cells.forEach((c) => { cageOf[c] = k }))
+  return { variant, units, kinds, peers, region, diagonal, overlaps, cages, cageOf }
 }
 
 export const CLASSIC: Rules = makeRules('classic')
@@ -73,14 +83,14 @@ export const UNITS: readonly (readonly number[])[] = CLASSIC.units
 /** The 20 cells that share a row, column or box with each cell. */
 export const PEERS: readonly (readonly number[])[] = CLASSIC.peers
 
-const shuffle = <T,>(items: readonly T[], random: () => number): T[] => {
+export const shuffle = <T,>(items: readonly T[], random: () => number): T[] => {
   const a = [...items]
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] }
   return a
 }
 
 /** Candidate digits (as a bit mask) for every cell of a grid; a filled cell has none. */
-function candidatesOf(grid: Grid, rules: Rules): number[] {
+export function candidatesOf(grid: Grid, rules: Rules): number[] {
   const out = Array<number>(CELLS).fill(0)
   for (let i = 0; i < CELLS; i++) {
     if (grid[i] !== 0) continue
@@ -141,7 +151,7 @@ export const fullGrid = (random: () => number = Math.random, rules: Rules = CLAS
 
 // ---- Jigsaw layouts ----
 
-const neighbours = (i: number): number[] => {
+export const neighbours = (i: number): number[] => {
   const r = rowOf(i)
   const c = colOf(i)
   return [...(r > 0 ? [i - 9] : []), ...(r < 8 ? [i + 9] : []), ...(c > 0 ? [i - 1] : []), ...(c < 8 ? [i + 1] : [])]

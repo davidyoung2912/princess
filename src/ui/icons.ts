@@ -87,6 +87,7 @@ export {
   Grid3x3 as SudokuGame,
   SquareSlash as DiagonalSudokuGame,
   Shapes as JigsawSudokuGame,
+  Calculator as KillerSudokuGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,

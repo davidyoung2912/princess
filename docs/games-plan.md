@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34) and **Killer Sudoku** (X35). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -31,7 +31,9 @@ Built as planned. `sudoku.ts` takes a `Rules` object (`makeRules`, `CLASSIC`, `D
 - Both reuse `SudokuScreen` (a `variant` prop); each gets its own route, screen id, catalogue entry, How to Play text, tips and Stanley answers.
 - Tests: uniqueness and logic-solvability per level for both variants, region connectivity and size, diagonal constraint, conflicts/dead cells/hints with the variant rules.
 
-### G2: Killer Sudoku (X35)
+### G2: Killer Sudoku (X35) — built
+
+Built as planned, with one change: the generator needs no guessing search. `killer.ts` cuts a full grid into cages, adds given digits until the logic solver (singles, cage-sum pruning from a combination table, and at hard and expert the 45 rule for innies and outies) finishes, then takes back unneeded givens down to the level's minimum; a puzzle that logic finishes is unique. `Rules` gained `cages` and `cageOf` (cage mates are peers); `SudokuScreen.tsx` has a `killer` variant with its own engine (`killerConflicts`, `killerDeadCells`, `nextKillerHint`) and dotted cage outlines drawn from cage boundaries.
 
 - Classic rules plus cages: connected groups of 1 to 5 cells with a target sum, no digit repeated inside a cage. Dotted cage outlines with the sum in the top-left corner of the cage.
 - Generator: full grid, random cage partition, sums from the solution; levels change cage sizes and how many digits are given. Uniqueness by a solver that prunes with cage sums; logic solver adds cage rules (cage combinations for a sum, the 45 rule for rows, columns and boxes).

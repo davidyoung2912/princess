@@ -111,6 +111,14 @@
 .sd-notes { position: absolute; inset: 2px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); font-size: clamp(0.5rem, 2.3vw, 0.75rem); font-weight: 700; color: var(--text-muted); }
 .sd-notes i { display: grid; place-items: center; font-style: normal; }
 
+.sd-cage { position: absolute; inset: 2px; pointer-events: none; border: 0 dashed var(--text-muted); }
+.sd-cage--t { border-top-width: 1.5px; }
+.sd-cage--r { border-right-width: 1.5px; }
+.sd-cage--b { border-bottom-width: 1.5px; }
+.sd-cage--l { border-left-width: 1.5px; }
+.sd-cage b { position: absolute; top: 0; left: 1px; padding: 0 1px; font-size: clamp(0.5rem, 2.3vw, 0.7rem); line-height: 1; font-weight: 700; color: var(--text); background: inherit; }
+.sd-board--killer .sd-notes { inset: 0.7rem 2px 2px; }
+.sd-board--killer .sd-cell { font-size: clamp(1rem, 5.2vw, 1.7rem); }
 .sd-messages { width: 100%; }
 .sd-warn { margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-card); background: var(--sd-dead); border-left: 4px solid var(--sd-dead-edge); font-weight: 600; color: var(--text); }
 .game-hint { margin-top: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-card); background: var(--warning-tint); border-left: 4px solid var(--warning); }

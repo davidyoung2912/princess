@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { DIFFICULTIES, clock, colOf, conflicts, deadCells, generatePuzzle, isSolved, nextHint, regionEdges, rowOf, type Difficulty, type Hint, type Technique, type Variant } from '../../../domain/games/sudoku'
+import { generateKiller, killerConflicts, killerDeadCells, nextKillerHint, type KillerHint, type KillerTechnique } from '../../../domain/games/killer'
+import { DIFFICULTIES, clock, colOf, conflicts, deadCells, generatePuzzle, isSolved, nextHint, regionEdges, rowOf, type Difficulty, type Rules, type Variant } from '../../../domain/games/sudoku'
 import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Notes, Undo } from '../../icons'
@@ -8,12 +9,13 @@ import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const bit = (d: number) => 1 << (d - 1)
-const HINT_KEYS: Record<Technique, StringKey> = { naked: 'sudoku.hint.naked', row: 'sudoku.hint.row', column: 'sudoku.hint.column', box: 'sudoku.hint.box', region: 'sudoku.hint.region', diagonal: 'sudoku.hint.diagonal' }
+const HINT_KEYS: Record<KillerTechnique, StringKey> = { cage: 'sudoku.hint.cageSingle', sum45: 'sudoku.hint.sum45', naked: 'sudoku.hint.naked', row: 'sudoku.hint.row', column: 'sudoku.hint.column', box: 'sudoku.hint.box', region: 'sudoku.hint.region', diagonal: 'sudoku.hint.diagonal' }
 /** The words that differ between the classic grid and its variants. */
 const WORDS: Record<Variant, { board: StringKey; repeats: StringKey; help1: StringKey; help2: StringKey }> = {
   classic: { board: 'sudoku.board', repeats: 'sudoku.repeats', help1: 'sudoku.help.1', help2: 'sudoku.help.2' },
   diagonal: { board: 'sudoku.diag.board', repeats: 'sudoku.diag.repeats', help1: 'sudoku.diag.help.1', help2: 'sudoku.diag.help.2' },
   jigsaw: { board: 'sudoku.jigsaw.board', repeats: 'sudoku.jigsaw.repeats', help1: 'sudoku.jigsaw.help.1', help2: 'sudoku.jigsaw.help.2' },
+  killer: { board: 'sudoku.killer.board', repeats: 'sudoku.killer.repeats', help1: 'sudoku.killer.help.1', help2: 'sudoku.killer.help.2' },
 }
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 
@@ -28,10 +30,21 @@ interface ShownHint { text: string; cells: number[]; fill?: { index: number; val
 export const SudokuScreen = () => <SudokuGame variant="classic" />
 export const DiagonalSudokuScreen = () => <SudokuGame variant="diagonal" />
 export const JigsawSudokuScreen = () => <SudokuGame variant="jigsaw" />
+export const KillerSudokuScreen = () => <SudokuGame variant="killer" />
+
+/** Each variant's own generator and checkers (Killer adds cage sums to all three). */
+const plain = (variant: Variant) => ({ generate: (level: Difficulty) => generatePuzzle(level, Math.random, variant), conflicts, deadCells, nextHint: nextHint as (g: readonly number[], s: readonly number[], r: Rules) => KillerHint | null })
+const ENGINES = {
+  classic: plain('classic'),
+  diagonal: plain('diagonal'),
+  jigsaw: plain('jigsaw'),
+  killer: { generate: (level: Difficulty) => generateKiller(level), conflicts: killerConflicts, deadCells: killerDeadCells, nextHint: nextKillerHint },
+} as const
 
 function SudokuGame({ variant }: { variant: Variant }) {
+  const engine = ENGINES[variant]
   const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generatePuzzle('easy', Math.random, variant))
+  const [game, setGame] = useState(() => engine.generate('easy'))
   const rules = game.rules
   const words = WORDS[variant]
   const [entries, setEntries] = useState<number[]>(() => Array(81).fill(0))
@@ -44,8 +57,8 @@ function SudokuGame({ variant }: { variant: Variant }) {
   const boardRef = useRef<HTMLDivElement>(null)
 
   const grid = useMemo(() => game.puzzle.map((v, i) => v || entries[i]), [game, entries])
-  const repeated = useMemo(() => conflicts(grid, rules), [grid, rules])
-  const dead = useMemo(() => deadCells(grid, rules), [grid, rules])
+  const repeated = useMemo(() => engine.conflicts(grid, rules), [engine, grid, rules])
+  const dead = useMemo(() => engine.deadCells(grid, rules), [engine, grid, rules])
   const solved = isSolved(grid, game.solution)
 
   const { seconds, reset: resetClock } = useGameClock(!solved)
@@ -92,7 +105,7 @@ function SudokuGame({ variant }: { variant: Variant }) {
   }
 
   const showHint = () => {
-    const h: Hint | null = nextHint(grid, game.solution, rules)
+    const h = engine.nextHint(grid, game.solution, rules)
     if (!h) return
     setHints((n) => n + 1)
     if (h.kind === 'mistake') {
@@ -100,7 +113,13 @@ function SudokuGame({ variant }: { variant: Variant }) {
       setHint({ text: t(h.cells.length === 1 ? 'sudoku.hint.mistake1' : 'sudoku.hint.mistakeN', { n: h.cells.length }), cells: h.cells, remove: h.cells })
       return
     }
-    const where = { r: rowOf(h.index) + 1, c: colOf(h.index) + 1, d: h.value }
+    if (h.kind === 'cage') {
+      const cage = rules.cages[h.cage]
+      setSelected(cage.cells[0])
+      setHint({ text: t('sudoku.hint.cage', { n: cage.cells.length, s: cage.sum, digits: h.digits.join(', ') }), cells: [...cage.cells] })
+      return
+    }
+    const where = { r: rowOf(h.index) + 1, c: colOf(h.index) + 1, d: h.value, n: rules.cages[rules.cageOf[h.index]]?.cells.length ?? 0, s: rules.cages[rules.cageOf[h.index]]?.sum ?? 0 }
     const key: StringKey = h.kind === 'reveal' ? 'sudoku.hint.reveal' : HINT_KEYS[h.technique]
     setSelected(h.index)
     setHint({ text: t(key, where), cells: [h.index], fill: { index: h.index, value: h.value } })
@@ -120,7 +139,7 @@ function SudokuGame({ variant }: { variant: Variant }) {
   }
 
   const newPuzzle = () => {
-    setGame(generatePuzzle(level, Math.random, variant))
+    setGame(engine.generate(level))
     setEntries(Array(81).fill(0))
     setNotes(Array(81).fill(0))
     setHistory([])
@@ -164,7 +183,7 @@ function SudokuGame({ variant }: { variant: Variant }) {
           <span>{t('sudoku.hintsUsed', { n: hints })}</span>
         </p>
 
-        <div ref={boardRef} className="sd-board" role="grid" aria-label={t(words.board)} onKeyDown={onKeyDown}>
+        <div ref={boardRef} className={variant === 'killer' ? 'sd-board sd-board--killer' : 'sd-board'} role="grid" aria-label={t(words.board)} onKeyDown={onKeyDown}>
           {Array.from({ length: 9 }, (_, r) => (
             <div key={r} role="row" className="sd-row">
               {Array.from({ length: 9 }, (_, c) => {
@@ -178,18 +197,24 @@ function SudokuGame({ variant }: { variant: Variant }) {
                 if (edge.right) classes.push('sd-cell--edge-r')
                 if (edge.bottom) classes.push('sd-cell--edge-b')
                 if (rules.diagonal.has(i)) classes.push('sd-cell--diag')
+                const cage = rules.cages[rules.cageOf[i]]
+                const cageSides = cage ? (['t', 'r', 'b', 'l'] as const).filter((side) => {
+                  const n = side === 't' ? (r > 0 ? i - 9 : -1) : side === 'b' ? (r < 8 ? i + 9 : -1) : side === 'l' ? (c > 0 ? i - 1 : -1) : (c < 8 ? i + 1 : -1)
+                  return n < 0 || rules.cageOf[n] !== rules.cageOf[i]
+                }) : []
                 if (picked !== 0 && v === picked) classes.push('sd-cell--same')
                 if (i === selected) classes.push('sd-cell--selected')
                 if (repeated.has(i)) classes.push('sd-cell--repeat')
                 if (dead.has(i)) classes.push('sd-cell--dead')
                 if (hintCells.has(i)) classes.push('sd-cell--hint')
                 const marks = v === 0 ? DIGITS.filter((d) => notes[i] & bit(d)) : []
-                const parts = [t('sudoku.cell', { r: r + 1, c: c + 1 }), ...(variant === 'jigsaw' ? [t('sudoku.cellRegion', { n: rules.region[i] + 1 })] : []), ...(rules.diagonal.has(i) ? [t('sudoku.cellDiagonal')] : []), v === 0 ? t('sudoku.empty') : `${isGiven ? t('sudoku.given') : t('sudoku.entered')} ${v}`]
+                const parts = [t('sudoku.cell', { r: r + 1, c: c + 1 }), ...(variant === 'jigsaw' ? [t('sudoku.cellRegion', { n: rules.region[i] + 1 })] : []), ...(rules.diagonal.has(i) ? [t('sudoku.cellDiagonal')] : []), ...(cage ? [t('sudoku.cellCage', { n: cage.cells.length, s: cage.sum })] : []), v === 0 ? t('sudoku.empty') : `${isGiven ? t('sudoku.given') : t('sudoku.entered')} ${v}`]
                 if (marks.length) parts.push(`${t('sudoku.notes')} ${marks.join(' ')}`)
                 if (repeated.has(i)) parts.push(t(words.repeats))
                 if (dead.has(i)) parts.push(t('sudoku.deadCell'))
                 return (
                   <div key={c} role="gridcell" data-i={i} tabIndex={i === tabbable ? 0 : -1} aria-selected={i === selected} aria-label={parts.join(', ')} className={classes.join(' ')} onClick={() => setSelected(i)}>
+                    {cage && <span className={`sd-cage ${cageSides.map((s) => `sd-cage--${s}`).join(' ')}`} aria-hidden="true">{cage.cells[0] === i && <b>{cage.sum}</b>}</span>}
                     {v !== 0 ? <span aria-hidden="true">{v}</span> : marks.length > 0 && (
                       <span className="sd-notes" aria-hidden="true">{DIGITS.map((d) => <i key={d}>{notes[i] & bit(d) ? d : ''}</i>)}</span>
                     )}
