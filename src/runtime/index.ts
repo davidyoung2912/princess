@@ -152,6 +152,11 @@ export const stanleyShipGroup = {
   get: () => http.get<unknown>('/me/stanley/ship-group'),
 }
 
+/** The Manage and Prebook pack, first part (phase P9b). Read-only; no poll is started and nothing is booked. */
+export const stanleyPrebook = {
+  get: () => http.get<unknown>('/me/stanley/prebook'),
+}
+
 /** The trip checklist and smart defaults (phase P5). Read-only; a default is shown, never applied. */
 export const stanleyChecklist = {
   get: () => http.get<unknown>('/me/stanley/checklist'),

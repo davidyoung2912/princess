@@ -137,6 +137,8 @@ public static class StanleyEndpoints
 
         api.MapGet("/me/stanley/ship-group", async (ICurrentUser me, StanleyShipGroupService svc, CancellationToken ct) => Results.Ok(await svc.RunAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Stanley").WithSummary("The missed-ship guard (CHK-03) and group gaps (CHK-07): { hasTrip, findings[{ id, severity (critical, soon, ok), title, detail, route }], notChecked[], clear, asOf }. Read-only: it sends nothing, contacts nobody and answers no poll; the guard only speaks about a guest who said they are ashore or leaving.");
+        api.MapGet("/me/stanley/prebook", async (ICurrentUser me, StanleyPrebookService svc, CancellationToken ct) => Results.Ok(await svc.RunAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Stanley").WithSummary("The Manage and Prebook pack, first part: { hasTrip, findings[{ id, rule (SR-4.5, SR-5.4), title, detail, route }], notChecked[], asOf }. Read-only: it starts no poll, books nothing and sends nothing; each finding is a screen to open.");
         api.MapGet("/me/stanley/bundle", async (string? scope, string? pace, int? day, ICurrentUser me, StanleyBundleService svc, CancellationToken ct) => Results.Ok(await svc.PreviewAsync(await me.LoadAsync(ct), scope, pace, day, ct)))
             .WithTags("Stanley").WithSummary("A bundle (ACT-01) for ?scope=evening|day, ?pace=relaxed|balanced|packed and ?day (default today, or day 1 before sailing): { hasPlan, scope, pace, day, port, backBy, steps[{ id, start, minutes, kind, title, status (booked, suggested), why, route }] in time order, clashes[], notChecked[] }. " +
                 "Read-only: nothing is booked, held, paid or sent; each step is a screen to open. 400 invalid for an unknown scope, pace or day.");

@@ -207,3 +207,16 @@ Stored, in the guest's account state under the key `stanleyStanding` (so every d
 | the sentence, read once and not kept | plain-words control | one of six fixed controls shown back for confirmation |
 
 A rule only notices or lines something up for the guest to open. It never books, pays, cancels, holds a table or place, or messages anyone. Rules work only while their permission row is on (CL-05 and CL-07 need level 3, which stays off behind the operator's Authority switch; CL-02 for the notice rules), at most five prepared items are shown (the rest are counted), and a rule in practice lists what it would have offered and offers nothing until the guest graduates it with one tap. Rules are read when the guest opens the screen; there is no background run yet. The answer lists what is not checked. The pace answer moves only when a suggestion is made (less: no "more" suggestion; more: after two yeses) and never changes a level. Off for a supervised account and when the tools switch is off; nothing here is sent to a model.
+
+## Manage and Prebook pack, first part (phase P9b, SR-4.5 and SR-5.4)
+
+Nothing new is stored. `GET /me/stanley/prebook` works out its answer from the sailing dates, the count of adults on the booking, the booked tours and dinners, the payment due date, the check-in window and the open polls of the party, and returns it without keeping it.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| payment due date | the nearest date in the "what to expect" note | the date in words |
+| check-in window | the nearest date in the note | the opening date in words |
+| booked tours and dinners | how many are booked, and which next step to point to | two counts and a screen to open |
+| open polls and answer counts | whether a dinner poll already exists | nothing; only whether to suggest one |
+
+SR-5.4 is shown only for three or more adults with no open poll that mentions dinner, and starts nothing: it opens the poll screen. It is read-only, off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: table availability, and each person's dinner wishes.

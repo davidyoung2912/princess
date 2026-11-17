@@ -4,10 +4,10 @@ namespace Princess.Api.Domain;
 public sealed record ChecklistDefault(string Label, string Source);
 
 /// <summary>One thing still to do. <see cref="Traveller"/> is a position ("Traveller 2") or 0 for the whole booking; <see cref="Route"/> is the screen that does it.</summary>
-public sealed record ChecklistItem(string Id, int Traveller, string Kind, string Title, string Route, ChecklistDefault? Default);
+public sealed record StanleyChecklistItem(string Id, int Traveller, string Kind, string Title, string Route, ChecklistDefault? Default);
 
 /// <summary>What the guest is shown: what is outstanding in a sensible order, how much is done, and what the list cannot see.</summary>
-public sealed record ChecklistDto(bool HasTrip, IReadOnlyList<ChecklistItem> Items, int Done, int Total, bool Complete, IReadOnlyList<string> NotChecked, string? AsOf);
+public sealed record ChecklistDto(bool HasTrip, IReadOnlyList<StanleyChecklistItem> Items, int Done, int Total, bool Complete, IReadOnlyList<string> NotChecked, string? AsOf);
 
 /// <summary>A traveller by position only, with the check-in steps still open for them.</summary>
 public sealed record ChecklistPerson(int Position, bool Child, IReadOnlyList<string> Left);
@@ -37,9 +37,9 @@ public static class StanleyChecklistRules
     public static IReadOnlyList<string> NotChecked(ChecklistFacts f) =>
         ["Documents and passport validity (the trip check-up looks at those)", "Whether a step you marked done on paper is right", .. f.CheckinState == "notOpen" ? new[] { "Check-in steps (online check-in has not opened yet)" } : []];
 
-    public static IReadOnlyList<ChecklistItem> Items(ChecklistFacts f)
+    public static IReadOnlyList<StanleyChecklistItem> Items(ChecklistFacts f)
     {
-        var list = new List<ChecklistItem>();
+        var list = new List<StanleyChecklistItem>();
         if (f.CheckinState == "open")
         {
             foreach (var step in CheckinRules.StepOrder)

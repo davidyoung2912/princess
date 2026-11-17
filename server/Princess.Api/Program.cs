@@ -180,6 +180,7 @@ services.AddScoped<StanleyValueService>();
 services.AddScoped<StanleyBundleService>();
 services.AddScoped<StanleyChecklistService>();
 services.AddScoped<StanleyShipGroupService>();
+services.AddScoped<StanleyPrebookService>();
 services.AddScoped<StanleyTripSoFarService>();
 services.AddScoped<StanleyStandingService>();
 services.AddScoped<StanleyControlService>();
