@@ -41,6 +41,7 @@ public static class StanleyAutoRules
             list.Add(new($"{Marker}docs:{f.Departure:yyyy-MM-dd}", "Two weeks to sailing and a document is not ready. The documents screen shows which.", TripRules.ZonedToUtc(f.Departure.AddDays(-DocsLead), Morning)));
         if (!f.AgentBooking && f.Today <= f.Departure.AddDays(-DiningPlanRules.FreezeDays))
             list.Add(new($"{Marker}dining:{f.Departure:yyyy-MM-dd}", "Your dining plan freezes in 3 days. The dining screen is where to change it.", TripRules.ZonedToUtc(f.Departure.AddDays(-DiningFreezeLead), Morning)));
+        list.Add(new($"{Marker}pass:{f.Departure:yyyy-MM-dd}", "Tomorrow you sail. While you have signal, open your boarding pass so it is saved on this phone.", TripRules.ZonedToUtc(f.Departure.AddDays(-1), PortPackTime)));
         if (f.Nights >= 1)
         {
             var last = f.Departure.AddDays(f.Nights);
@@ -82,7 +83,7 @@ public static class StanleyAutoRules
     public static readonly string[] NotChecked =
     [
         "Reminders that follow (AUT-01) are done by the reminders themselves when a time moves.",
-        "Saved for me (AUT-07) so far only reminds you the evening before a port to open its page on ship Wi-Fi; nothing is saved to your phone for you, and the day after the ship gets in it reminds you to open the recap screen; nothing is built or saved for you, and the boarding pass, receipts and album are not built. Lists kept current (AUT-05) is a separate run that only covers the packing list.",
+        "Saved for me (AUT-07) only reminds you: the evening before sailing to open your boarding pass, the evening before a port to open its page on ship Wi-Fi, and the day after the ship gets in to open the recap screen. Nothing is saved to your phone or built for you, and receipts and an album are not built. Lists kept current (AUT-05) is a separate run that only covers the packing list.",
     ];
 
     public const string ListsKey = "stanley.auto.lists.packing";
@@ -170,4 +171,145 @@ public static class StanleyAutoRules
         "The packing list (which holds the documents to bring), the trip checklist and the sailing shortlist are kept current so far. The comparison of your shortlist (with your saved weights) is kept current so far: only a score that moved is said, and nothing is re-ranked for you. A sailing that is gone or closed to booking is only said, never removed from your shortlist.",
         "Your own items, ticks and hidden items are never changed.",
     ];
+
+    // ---- AUT-03, my plan topped up (phase P10b) ----
+
+    public const string PlanClassId = "AUT-03", PlanRow = "CL-09", PicksKey = "stanley.auto.picks", DraftClassId = "AUT-06", DraftRow = "CL-06", DraftsKey = "stanley.auto.drafts";
+    public const int MaxPicksPerDay = 4, LookAheadDays = 3, MaxDismissed = 200;
+    private const int EveningFromMinutes = 17 * 60;
+
+    /// <summary>One thing Stanley added to the guest's own plan. Words and ids the server wrote; nothing the guest typed.</summary>
+    public sealed record Pick(string Id, int Day, string Title, string Start, int Minutes, string Place);
+
+    /// <summary>Stanley's picks and the ones the guest removed (never added again).</summary>
+    public sealed record PicksDoc(List<Pick> Picks, List<string> Dismissed);
+
+    public sealed record AutoPlanDto(bool On, List<Pick> Picks, List<string> Added, List<string> Removed, List<string> NotChecked, string? AsOf);
+
+    public static readonly string[] PlanNotChecked =
+    [
+        "Only things that are included in your fare are added, on sea days or in the evening of a port day, and never on top of something you booked, a dinner or another pick. At most 4 a day, for the next 3 days.",
+        "Nothing is held or booked. A pick is a note in your own plan with the screen to open; walking times and whether a place has space are not checked.",
+        "What you added yourself is never changed. A pick you remove is not added again.",
+    ];
+
+    private static int Mins(string hhmm) => int.Parse(hhmm[..2], System.Globalization.CultureInfo.InvariantCulture) * 60 + int.Parse(hhmm[3..5], System.Globalization.CultureInfo.InvariantCulture);
+    private static bool Overlap(string a, int am, string b, int bm) { var x = Mins(a); var y = Mins(b); return x < y + bm && y < x + am; }
+
+    /// <summary>Everything the guest has on a day that a pick must not sit on: booked tours, booked or usual dinner, and other picks.</summary>
+    private static List<(string Start, int Minutes)> Busy(CheckupFacts f, int day)
+    {
+        var busy = new List<(string, int)>();
+        foreach (var t in f.Tours.Where(t => t.Day == day)) busy.Add((t.Start, (int)Math.Round(t.Hours * 60)));
+        foreach (var m in f.Meals.Where(m => m.Day == day && m.Time is not null)) busy.Add((m.Time!, DayPlanRules.DinnerMinutes));
+        busy.Add((DayPlanRules.DinnerStart, DayPlanRules.DinnerMinutes));
+        return busy;
+    }
+
+    /// <summary>
+    /// The picks for the next few days. A pick already held stays only while its event is still on at the same time and clear of the guest's own things; one that no longer fits is dropped and said. New picks are free, adult-or-all-ages
+    /// events on a sea day or after 5 pm on a port day, clear of everything booked, a dinner and each other, at most <see cref="MaxPicksPerDay"/> a day. A removed pick is never added again.
+    /// </summary>
+    public static (PicksDoc Doc, List<string> Added, List<string> Removed) Top(CheckupFacts f, IReadOnlyList<PlanChange> feed, string? shipId, PicksDoc? before)
+    {
+        var doc = before ?? new([], []);
+        var dismissed = doc.Dismissed.ToHashSet(StringComparer.Ordinal);
+        var firstDay = Math.Max(1, f.Today.DayNumber - f.Departure.DayNumber + 1);
+        var lastDay = Math.Min(f.Timeline.Days.Count, firstDay + LookAheadDays - 1);
+        var keep = new List<Pick>();
+        var added = new List<string>();
+        var removed = new List<string>();
+        for (var day = firstDay; day <= lastDay; day++)
+        {
+            var events = ProgramRules.On(f.Timeline, day, true, feed, shipId);
+            var busy = Busy(f, day);
+            var d = f.Timeline.Days[day - 1];
+            var mine = new List<Pick>();
+            foreach (var p in doc.Picks.Where(p => p.Day == day).OrderBy(p => Mins(p.Start)).ThenBy(p => p.Id, StringComparer.Ordinal))
+            {
+                var e = events.FirstOrDefault(x => x.Id == p.Id);
+                if (e is null || e.Status != "on" || e.Start != p.Start || e.Extra != 0 || busy.Any(b => Overlap(b.Start, b.Minutes, p.Start, p.Minutes)) || mine.Any(m => Overlap(m.Start, m.Minutes, p.Start, p.Minutes)))
+                { removed.Add($"{p.Title} on day {day}"); continue; }
+                mine.Add(p);
+            }
+            foreach (var e in events.Where(e => e.Status == "on" && e.Extra == 0 && e.Age is "all" or "adults" && !dismissed.Contains(PickKey(day, e.Id))).OrderBy(e => e.StartAt).ThenBy(e => e.Id, StringComparer.Ordinal))
+            {
+                if (mine.Count >= MaxPicksPerDay) break;
+                if (mine.Any(m => m.Id == e.Id)) continue;
+                if (d.Port != "sea" && Mins(e.Start) < EveningFromMinutes) continue;
+                if (busy.Any(b => Overlap(b.Start, b.Minutes, e.Start, e.Minutes)) || mine.Any(m => Overlap(m.Start, m.Minutes, e.Start, e.Minutes))) continue;
+                mine.Add(new(e.Id, day, e.Title, e.Start, e.Minutes, e.PlaceId));
+                added.Add($"{e.Title} on day {day} at {e.Start}");
+            }
+            keep.AddRange(mine.OrderBy(m => Mins(m.Start)).ThenBy(m => m.Id, StringComparer.Ordinal));
+        }
+        // Picks on days outside the window are neither judged nor dropped, unless the day has passed.
+        keep.AddRange(doc.Picks.Where(p => p.Day > lastDay));
+        return (new(keep, doc.Dismissed), added, removed);
+    }
+
+    public static string PickKey(int day, string eventId) => $"{day}:{eventId}";
+
+    public static PicksDoc Dismiss(PicksDoc doc, string pickKey)
+    {
+        var picks = doc.Picks.Where(p => PickKey(p.Day, p.Id) != pickKey).ToList();
+        if (picks.Count == doc.Picks.Count) return doc;
+        var dismissed = doc.Dismissed.Append(pickKey).Distinct(StringComparer.Ordinal).TakeLast(MaxDismissed).ToList();
+        return new(picks, dismissed);
+    }
+
+    public static string PicksToJson(PicksDoc d) => System.Text.Json.JsonSerializer.Serialize(d, DocJson);
+    private static readonly System.Text.Json.JsonSerializerOptions DocJson = new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    public static PicksDoc? ParsePicks(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            var d = System.Text.Json.JsonSerializer.Deserialize<PicksDoc>(json, DocJson);
+            return d is null ? null : new([.. (d.Picks ?? []).Where(p => !string.IsNullOrWhiteSpace(p.Id) && p.Start is { Length: 5 }).Take(80)], [.. (d.Dismissed ?? []).Take(MaxDismissed)]);
+        }
+        catch (System.Text.Json.JsonException) { return null; }
+    }
+
+    // ---- AUT-06, drafts saved (phase P10b) ----
+
+    /// <summary>A saved draft: one per form, replaced when the facts change. For the guest to read, change and send themselves.</summary>
+    public sealed record SavedDraft(string Kind, string Text, string SavedAt);
+
+    public sealed record AutoDraftsDto(bool On, List<SavedDraft> Drafts, List<string> Saved, List<string> NotChecked, string? AsOf);
+
+    public static readonly string[] DraftNotChecked =
+    [
+        "Only two drafts so far: a plan note for tonight and a note for if you may be late back to the ship. Check-in, customs and feedback drafts are not saved.",
+        "A draft is a note kept for you to read, change and send yourself. Nothing is sent or submitted, and a draft names times and places only.",
+    ];
+
+    /// <summary>The drafts worth keeping now: one per kind, built from tonight's bundle. A kind whose text has not changed is not saved again.</summary>
+    public static List<SavedDraft> Fresh(BundleDto tonight, DateTime now)
+    {
+        var list = new List<SavedDraft>();
+        foreach (var kind in StanleyBundleRules.Drafts)
+            if (StanleyBundleRules.Draft(kind, tonight) is { } d) list.Add(new(kind, d.Text, now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")));
+        return list;
+    }
+
+    /// <summary>What changed against the drafts already saved: the kinds that are new or have new words. Saved drafts that are no longer built stay until the guest sees a new one.</summary>
+    public static (List<SavedDraft> All, List<string> Saved) Merge(IReadOnlyList<SavedDraft> have, IReadOnlyList<SavedDraft> fresh)
+    {
+        var all = have.ToDictionary(d => d.Kind, StringComparer.Ordinal);
+        var saved = new List<string>();
+        foreach (var d in fresh)
+            if (!all.TryGetValue(d.Kind, out var old) || old.Text != d.Text) { all[d.Kind] = d; saved.Add(d.Kind == "late-note" ? "Note for if you are late back" : "Plan note for tonight"); }
+        return ([.. all.Values.OrderBy(d => d.Kind, StringComparer.Ordinal)], saved);
+    }
+
+    public static string DraftsToJson(IEnumerable<SavedDraft> d) => System.Text.Json.JsonSerializer.Serialize(d, DocJson);
+
+    public static List<SavedDraft> ParseDrafts(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try { return [.. (System.Text.Json.JsonSerializer.Deserialize<List<SavedDraft>>(json, DocJson) ?? []).Where(d => StanleyBundleRules.DraftOk(d.Kind) && !string.IsNullOrEmpty(d.Text)).Take(4)]; }
+        catch (System.Text.Json.JsonException) { return []; }
+    }
 }

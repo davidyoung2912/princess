@@ -60,10 +60,10 @@ public static class StanleyPermissionRules
         new("CL-03", "watching", "Watch my spending", "Your spending is running ahead of the budget you set.", "Never blocks a purchase and never pays for anything.", 2, true),
         new("CL-04", "watching", "Morning brief and evening look-ahead (you choose the times)", "Today at a glance, and tomorrow's early start.", "Only at the times you choose.", 2, true, true),
         new("CL-05", "preparing", "Line up a fix when a plan breaks, for my yes", "Your tour is cancelled. Here is the best replacement today.", "Never books it until you say yes.", 3, true),
-        new("CL-06", "preparing", "Fill in forms and drafts for me to check", "Check-in is open. I filled it in; please check and send.", "Never sends or signs anything for you.", 3, false),
+        new("CL-06", "preparing", "Fill in forms and drafts for me to check", "Check-in is open. I filled it in; please check and send.", "Never sends or signs anything for you.", 3, true),
         new("CL-07", "preparing", "Tell me when a table or space opens, with a ready booking", "A table for four opened on Thursday at 7:30.", "Never holds a table or books it without your yes.", 3, true),
         new("CL-08", "handling", "Set my reminders for me (deadlines, check-in, bag night, all aboard)", "I added 6 reminders for your trip. Change any of them.", "Only reminders tied to a date on your trip.", 4, true),
-        new("CL-09", "handling", "Plan my days and keep the plan up to date with free things", "I added a free show at 8:30 as Stanley's pick. Remove it if you like.", "Never removes what you added and never adds anything that costs money.", 4, false),
+        new("CL-09", "handling", "Plan my days and keep the plan up to date with free things", "I added a free show at 8:30 as Stanley's pick. Remove it if you like.", "Never removes what you added and never adds anything that costs money.", 4, true),
         new("CL-10", "handling", "Book the free things I always want (main dining, free shows)", "I booked your usual table for four at 6:00. Undo for 2 hours.", "Never books anything with a charge.", 4, false),
     ];
 

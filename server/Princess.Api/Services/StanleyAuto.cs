@@ -9,7 +9,7 @@ namespace Princess.Api.Services;
 /// a level below 4 or a guest who has not switched it on. Each reminder is a plain clock reminder on the guest's own list with a ledger line (so Did shows it and it can be removed there), is tagged with its key so it is set once, and
 /// never touches money, another person or a booking.
 /// </summary>
-public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPermissionService permissions, IStanleyReminderStore reminders, IStanleyActionStore ledger, IClock clock, PlanService plan, IStateStore state, StanleyDiscoverService discover, ICatalogueStore catalogue)
+public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPermissionService permissions, IStanleyReminderStore reminders, IStanleyActionStore ledger, IClock clock, PlanService plan, IStateStore state, StanleyDiscoverService discover, ICatalogueStore catalogue, IProgramChanges programChanges, StanleyBundleService bundles)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -101,5 +101,66 @@ public sealed class StanleyAutoService(StanleyCheckupService checkup, StanleyPer
         if (mbefore is null || mchange is not null)
             await state.SaveAsync(false, user.Id, StanleyAutoRules.ComparisonKey, StanleyAutoRules.ComparisonToJson(rows), mrow?.Version ?? 0, clock.UtcNow, ct);
         return new(true, before is null && cbefore is null && sbefore is null && mbefore is null, changes, StanleyAutoRules.ListsNotChecked.ToList(), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+    }
+
+    /// <summary>
+    /// AUT-03, my plan topped up (phase P10b). Needs permission row CL-09 (level 4). Adds free events to the guest's own plan as "Stanley's pick" and drops his own picks that no longer fit; what the guest added is never touched,
+    /// and a pick the guest removed is not added again. Nothing is held or booked. The picks are kept in the guest's own state store.
+    /// </summary>
+    public async Task<StanleyAutoRules.AutoPlanDto> PlanAsync(UserRecord user, CancellationToken ct)
+    {
+        var none = new StanleyAutoRules.AutoPlanDto(false, [], [], [], StanleyAutoRules.PlanNotChecked.ToList(), null);
+        if (!await permissions.MayAsync(user, StanleyAutoRules.PlanRow, ct)) return none;
+        var (facts, _) = await checkup.FactsAsync(user, ct);
+        if (facts is null) return none with { On = true };
+        var row = await state.GetAsync(false, user.Id, StanleyAutoRules.PicksKey, ct);
+        var before = StanleyAutoRules.ParsePicks(row?.Json);
+        var (doc, added, removed) = StanleyAutoRules.Top(facts, programChanges.Current(), null, before);
+        if (before is null || added.Count > 0 || removed.Count > 0)
+            await state.SaveAsync(false, user.Id, StanleyAutoRules.PicksKey, StanleyAutoRules.PicksToJson(doc), row?.Version ?? 0, clock.UtcNow, ct);
+        return new(true, doc.Picks, added, removed, StanleyAutoRules.PlanNotChecked.ToList(), facts.Now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+    }
+
+    /// <summary>The picks as they stand, whether or not the switch is on now (the guest can always see and remove what Stanley added).</summary>
+    public async Task<StanleyAutoRules.AutoPlanDto> PicksAsync(UserRecord user, CancellationToken ct)
+    {
+        var row = await state.GetAsync(false, user.Id, StanleyAutoRules.PicksKey, ct);
+        return new(await permissions.MayAsync(user, StanleyAutoRules.PlanRow, ct), StanleyAutoRules.ParsePicks(row?.Json)?.Picks ?? [], [], [], StanleyAutoRules.PlanNotChecked.ToList(), null);
+    }
+
+    /// <summary>The guest removes one of Stanley's picks. It is not added again. 404 when it is not one of his picks.</summary>
+    public async Task<StanleyAutoRules.AutoPlanDto> RemovePickAsync(UserRecord user, int day, string id, CancellationToken ct)
+    {
+        var row = await state.GetAsync(false, user.Id, StanleyAutoRules.PicksKey, ct);
+        var doc = StanleyAutoRules.ParsePicks(row?.Json) ?? throw ApiException.NotFound();
+        var next = StanleyAutoRules.Dismiss(doc, StanleyAutoRules.PickKey(day, id));
+        if (ReferenceEquals(next, doc)) throw ApiException.NotFound();
+        if (await state.SaveAsync(false, user.Id, StanleyAutoRules.PicksKey, StanleyAutoRules.PicksToJson(next), row!.Version, clock.UtcNow, ct) is null) throw ApiException.Conflict("changed");
+        return await PicksAsync(user, ct);
+    }
+
+    /// <summary>
+    /// AUT-06, drafts saved (phase P10b). Needs permission row CL-06 and level 4 (a draft the guest asks for in the app is a separate, always-available helper). Saves tonight's plan note and a "may be late" note, one of each, for the
+    /// guest to read, change and send themselves. Nothing is sent or submitted.
+    /// </summary>
+    public async Task<StanleyAutoRules.AutoDraftsDto> DraftsAsync(UserRecord user, CancellationToken ct)
+    {
+        var none = new StanleyAutoRules.AutoDraftsDto(false, [], [], StanleyAutoRules.DraftNotChecked.ToList(), null);
+        if (!await permissions.MayAsync(user, StanleyAutoRules.DraftRow, ct) || (await permissions.GetAsync(user, ct)).EffectiveLevel < 4) return none;
+        var row = await state.GetAsync(false, user.Id, StanleyAutoRules.DraftsKey, ct);
+        var have = StanleyAutoRules.ParseDrafts(row?.Json);
+        var tonight = await bundles.PreviewAsync(user, StanleyBundleRules.Evening, StanleyBundleRules.Balanced, null, ct);
+        var now = clock.UtcNow;
+        var (all, saved) = StanleyAutoRules.Merge(have, StanleyAutoRules.Fresh(tonight, now));
+        if (saved.Count > 0)
+            await state.SaveAsync(false, user.Id, StanleyAutoRules.DraftsKey, StanleyAutoRules.DraftsToJson(all), row?.Version ?? 0, now, ct);
+        return new(true, all, saved, StanleyAutoRules.DraftNotChecked.ToList(), now.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+    }
+
+    /// <summary>The saved drafts, for the guest to read.</summary>
+    public async Task<StanleyAutoRules.AutoDraftsDto> SavedDraftsAsync(UserRecord user, CancellationToken ct)
+    {
+        var row = await state.GetAsync(false, user.Id, StanleyAutoRules.DraftsKey, ct);
+        return new(true, StanleyAutoRules.ParseDrafts(row?.Json), [], StanleyAutoRules.DraftNotChecked.ToList(), null);
     }
 }

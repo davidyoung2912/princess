@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { normalizeAutoLists, normalizeAutoRun, type AutoLists, type AutoRun } from '../../ai/stanleyAuto'
+import { normalizeAutoDrafts, normalizeAutoLists, normalizeAutoPlan, normalizeAutoRun, type AutoDrafts, type AutoLists, type AutoPlan, type AutoRun } from '../../ai/stanleyAuto'
 import { t, th } from '../../i18n'
 import { stanleyAuto } from '../../runtime'
 import { Button } from '../Button'
@@ -9,11 +9,14 @@ import { Card } from '../Card'
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
 /**
- * Deadline reminders (phase P10a, AUT-02). Runs only when the guest taps the button, and the server sets something only if the guest has switched this on. Every word comes from the server.
+ * Rung 4 safe and plan classes (phases P10a and P10b): deadline reminders (AUT-02), lists kept current (AUT-05), my plan topped up (AUT-03) and drafts saved (AUT-06). Each runs only when the guest taps its button, and the server
+ * does something only if the guest has switched that class on. Every word comes from the server.
  */
 export function StanleyAutoCard() {
   const [result, setResult] = useState<AutoRun | null>(null)
   const [lists, setLists] = useState<AutoLists | null>(null)
+  const [plan, setPlan] = useState<AutoPlan | null>(null)
+  const [drafts, setDrafts] = useState<AutoDrafts | null>(null)
   const [failed, setFailed] = useState(false)
   const [busy, setBusy] = useState(false)
   const live = useRef(true)
@@ -36,11 +39,40 @@ export function StanleyAutoCard() {
     )
   }
 
+  const topUp = () => {
+    live.current = true
+    setBusy(true)
+    stanleyAuto.plan().then(
+      (raw) => { if (live.current) { const next = normalizeAutoPlan(raw); setPlan(next); setFailed(next === null); setBusy(false) } },
+      () => { if (live.current) { setFailed(true); setBusy(false) } },
+    )
+  }
+
+  const removePick = (day: number, id: string) => {
+    live.current = true
+    setBusy(true)
+    stanleyAuto.removePick(day, id).then(
+      (raw) => { if (live.current) { const next = normalizeAutoPlan(raw); if (next) setPlan((old) => (old ? { ...old, picks: next.picks } : next)); setFailed(next === null); setBusy(false) } },
+      () => { if (live.current) { setFailed(true); setBusy(false) } },
+    )
+  }
+
+  const saveNotes = () => {
+    live.current = true
+    setBusy(true)
+    stanleyAuto.drafts().then(
+      (raw) => { if (live.current) { const next = normalizeAutoDrafts(raw); setDrafts(next); setFailed(next === null); setBusy(false) } },
+      () => { if (live.current) { setFailed(true); setBusy(false) } },
+    )
+  }
+
+  const notChecked = (plan ?? drafts ?? lists ?? result)?.notChecked ?? []
+
   return (
     <Card labelledBy="auto-h">
       <h2 id="auto-h" className="card__title">{th('stanleyAuto.title')}</h2>
       <p>{t('stanleyAuto.intro')}</p>
-      <div className="button-row"><Button onClick={run} disabled={busy}>{t('stanleyAuto.run')}</Button> <Button onClick={checkLists} disabled={busy}>{t('stanleyAuto.lists')}</Button></div>
+      <div className="button-row"><Button onClick={run} disabled={busy}>{t('stanleyAuto.run')}</Button> <Button onClick={checkLists} disabled={busy}>{t('stanleyAuto.lists')}</Button> <Button onClick={topUp} disabled={busy}>{t('stanleyAuto.plan')}</Button> <Button onClick={saveNotes} disabled={busy}>{t('stanleyAuto.drafts')}</Button></div>
       <div aria-live="polite">
         {busy && <p role="status">{t('stanleyAuto.working')}</p>}
         {failed && <p role="alert" className="field__error">{t('stanleyAuto.error')}</p>}
@@ -69,10 +101,56 @@ export function StanleyAutoCard() {
           <ul>{result.waiting.map((w) => <li key={w}>{w}</li>)}</ul>
         </section>
       )}
-      {(lists ?? result) && (lists ?? result)!.notChecked.length > 0 && (
+      {plan && !plan.on && <p>{t('stanleyAuto.planOff')}</p>}
+      {plan?.on && plan.picks.length === 0 && plan.added.length === 0 && <p role="status">{t('stanleyAuto.planNone')}</p>}
+      {plan?.on && plan.added.length > 0 && (
+        <section aria-labelledby="auto-added">
+          <h3 id="auto-added">{th('stanleyAuto.planAdded')}</h3>
+          <ul>{plan.added.map((a) => <li key={a}>{a}</li>)}</ul>
+        </section>
+      )}
+      {plan?.on && plan.removed.length > 0 && (
+        <section aria-labelledby="auto-removed">
+          <h3 id="auto-removed">{th('stanleyAuto.planRemoved')}</h3>
+          <ul>{plan.removed.map((a) => <li key={a}>{a}</li>)}</ul>
+        </section>
+      )}
+      {plan?.on && plan.picks.length > 0 && (
+        <section aria-labelledby="auto-picks">
+          <h3 id="auto-picks">{th('stanleyAuto.planPicks')}</h3>
+          <ul>
+            {plan.picks.map((p) => (
+              <li key={`${p.day}:${p.id}`}>
+                {t('stanleyAuto.planDay', { day: p.day })}, {p.start}: {p.title}{' '}
+                <Button onClick={() => removePick(p.day, p.id)} disabled={busy} aria-label={t('stanleyAuto.planRemove', { title: p.title, day: p.day })}>{t('stanleyAuto.planRemoveLabel')}</Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {drafts && !drafts.on && <p>{t('stanleyAuto.draftsOff')}</p>}
+      {drafts?.on && drafts.saved.length === 0 && <p role="status">{t('stanleyAuto.draftsSame')}</p>}
+      {drafts?.on && drafts.saved.length > 0 && (
+        <section aria-labelledby="auto-saved">
+          <h3 id="auto-saved">{th('stanleyAuto.draftsSaved')}</h3>
+          <ul>{drafts.saved.map((a) => <li key={a}>{a}</li>)}</ul>
+        </section>
+      )}
+      {drafts?.on && drafts.drafts.length > 0 && (
+        <section aria-labelledby="auto-drafts">
+          <h3 id="auto-drafts">{th('stanleyAuto.draftsKept')}</h3>
+          {drafts.drafts.map((d) => (
+            <div key={d.kind}>
+              <h4>{t(`stanleyAuto.draft.${d.kind}`)}</h4>
+              <p style={{ whiteSpace: 'pre-line' }}>{d.text}</p>
+            </div>
+          ))}
+        </section>
+      )}
+      {notChecked.length > 0 && (
         <section aria-labelledby="auto-not">
           <h3 id="auto-not">{th('stanleyCheckup.notChecked')}</h3>
-          <ul>{(lists ?? result)!.notChecked.map((n) => <li key={n}>{n}</li>)}</ul>
+          <ul>{notChecked.map((n) => <li key={n}>{n}</li>)}</ul>
         </section>
       )}
     </Card>

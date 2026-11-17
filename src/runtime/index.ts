@@ -171,6 +171,11 @@ export const stanleyDisembark = {
 export const stanleyAuto = {
   deadlines: () => http.post<unknown>('/me/stanley/auto/deadlines'),
   lists: () => http.post<unknown>('/me/stanley/auto/lists'),
+  plan: () => http.post<unknown>('/me/stanley/auto/plan'),
+  picks: () => http.get<unknown>('/me/stanley/auto/plan'),
+  removePick: (day: number, id: string) => http.delete<unknown>(`/me/stanley/auto/plan/${day}/${encodeURIComponent(id)}`),
+  drafts: () => http.post<unknown>('/me/stanley/auto/drafts'),
+  savedDrafts: () => http.get<unknown>('/me/stanley/auto/drafts'),
 }
 
 /** The Family pack, first part (phase P9e). Read-only; nothing is registered, marked or sent. */

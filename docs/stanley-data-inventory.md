@@ -338,3 +338,17 @@ AUT-02's run also sets one reminder at 6 pm ship time the evening before each po
 ### Recap reminder (phase P10a, AUT-07 second part)
 
 AUT-02's run also sets one reminder at 9 am ship time the day after the ship gets in (key `aut02:recap:<date>`): "Your trip is over. The Remember the trip screen has the recap, your feedback and your chats to keep." It is a reminder only: no recap or album is built or saved, and nothing leaves the account. Same limits (30 per trip in all), receipt and two-hour undo as the others. The boarding pass to Wallet, receipts and album are still to do.
+
+### Boarding pass reminder (phase P10a, AUT-07 third part; P10a is now complete)
+
+AUT-02's run also sets one reminder at 6 pm ship time the evening before sailing (key `aut02:pass:<date>`): "Tomorrow you sail. While you have signal, open your boarding pass so it is saved on this phone." A reminder only: no pass is saved to a wallet or the phone for the guest and nothing leaves the account. Same limits (30 per trip in all), receipt and two-hour undo as the others. Receipts and the photo album are deliberately not built: they need data the guest has not given. P10a ends here.
+
+## Rung 4 plan classes (phase P10b)
+
+### My plan topped up (AUT-03)
+
+`POST /me/stanley/auto/plan`, `GET /me/stanley/auto/plan` and `DELETE /me/stanley/auto/plan/{day}/{id}`. Works only when permission row CL-09 is on (now a built row, level 4). It reads the ship's programme for the next three days, the guest's booked tours and dinners, and the ship's change list. It adds free events (no extra cost, all ages or adults) to the guest's own plan as "Stanley's pick", on sea days or after 5 pm on a port day, clear of anything booked, the 6:30 pm dinner and other picks, at most 4 a day, and drops his own picks that no longer fit (event moved, cancelled or now clashing). The only thing stored is one document in the guest's own state store (key `stanley.auto.picks`): the picks (event id, day, title, start, minutes, place) and the ids of picks the guest removed, so a removed pick is never added again. It never touches what the guest added, holds or books nothing, charges nothing and sends nothing. No ledger line is written: the guest sees and removes picks on the card itself.
+
+### Drafts saved (AUT-06)
+
+`POST /me/stanley/auto/drafts` and `GET /me/stanley/auto/drafts`. Works only when permission row CL-06 is on (now built) and the level in force is 4. It builds tonight's plan note and a "may be late back" note from the same bundle the Plan my evening helper uses (booked tours and dinner, ideas, the all aboard time) and keeps one of each in the guest's own state store (key `stanley.auto.drafts`), replaced only when its words change. A draft names times and places only, never a person. It sends, signs and submits nothing; the guest reads, changes and sends it themselves. Check-in, customs and feedback drafts are not saved.
