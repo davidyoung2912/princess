@@ -3852,3 +3852,56 @@ CREATE TABLE dbo.ChatRecapItems (
 );
 END
 GO
+
+-- ============================================================================
+-- Trip huddle (docs/chat-features-research.md, phase 15): a private chat around a shortlist, before anyone has booked.
+-- A huddle is a ChatGroups row of Kind 'huddle'. A link is stored only as a hash; a card holds public catalogue facts only.
+-- ============================================================================
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ChatGroups_Kind' AND parent_object_id = OBJECT_ID(N'dbo.ChatGroups') AND definition NOT LIKE N'%huddle%')
+  ALTER TABLE dbo.ChatGroups DROP CONSTRAINT CK_ChatGroups_Kind;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ChatGroups_Kind' AND parent_object_id = OBJECT_ID(N'dbo.ChatGroups'))
+  ALTER TABLE dbo.ChatGroups ADD CONSTRAINT CK_ChatGroups_Kind CHECK (Kind IN ('party','direct','group','stanley','channel','room','huddle'));
+GO
+
+-- The guest's own statement that they are an adult, for someone with no date of birth on a profile. One row a person; no document is kept.
+IF OBJECT_ID(N'dbo.ChatAgeConfirmations', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatAgeConfirmations (
+  UserId BIGINT NOT NULL CONSTRAINT PK_ChatAgeConfirmations PRIMARY KEY,
+  ConfirmedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_ChatAgeConfirmations_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO
+
+-- One row per link ever made. Only the hash of the token is kept; revoking or refreshing sets RevokedAt, so an old link fails like a wrong one.
+IF OBJECT_ID(N'dbo.ChatHuddleInvites', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatHuddleInvites (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatHuddleInvites PRIMARY KEY,
+  GroupId BIGINT NOT NULL, CreatedBy BIGINT NOT NULL,
+  TokenHash CHAR(64) NOT NULL CONSTRAINT UQ_ChatHuddleInvites_Hash UNIQUE,
+  CreatedAt DATETIME2(0) NOT NULL, ExpiresAt DATETIME2(0) NOT NULL, RevokedAt DATETIME2(0) NULL,
+  CONSTRAINT FK_ChatHuddleInvites_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatHuddleInvites_Users FOREIGN KEY (CreatedBy) REFERENCES dbo.Users (Id)
+);
+CREATE INDEX IX_ChatHuddleInvites_Creator ON dbo.ChatHuddleInvites (CreatedBy, CreatedAt);   -- ten a day
+END
+GO
+
+-- The shared shortlist: public cards (a sailing, a cabin type, a port, a cost breakdown), each with its "as of" time. Payload is public catalogue data; the API refuses personal money fields.
+IF OBJECT_ID(N'dbo.ChatHuddleShortlist', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatHuddleShortlist (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatHuddleShortlist PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT UQ_ChatHuddleShortlist_PublicId UNIQUE,
+  GroupId BIGINT NOT NULL, AddedBy BIGINT NOT NULL,
+  Kind VARCHAR(13) NOT NULL, Title NVARCHAR(120) NOT NULL, Payload NVARCHAR(2000) NOT NULL, AsOf DATETIME2(0) NOT NULL, CreatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_ChatHuddleShortlist_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatHuddleShortlist_Users FOREIGN KEY (AddedBy) REFERENCES dbo.Users (Id),
+  CONSTRAINT CK_ChatHuddleShortlist_Kind CHECK (Kind IN ('sailing','cabinType','port','costBreakdown'))
+);
+CREATE INDEX IX_ChatHuddleShortlist_Group ON dbo.ChatHuddleShortlist (GroupId, CreatedAt);
+END
+GO
