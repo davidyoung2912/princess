@@ -254,3 +254,13 @@ Nothing new is stored. `GET /me/stanley/family` works out its answer from the sa
 | ages on the booking | whether anyone is under 18, and how many are of kids club age (3 to 17) | a count in words |
 
 It says nothing unless a traveller is under 18. It never registers a child, messages a teen or marks muster done, and sets no reminder. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: kids club registration and muster state, and age limits, bedtimes and meet-up times.
+
+## Remember pack, first part (phase P9f, SR-11.1, SR-11.2 and SR-11.5)
+
+Nothing new is stored. `GET /me/stanley/remember` works out its answer from the sailing date and the number of nights, and returns it without keeping it.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| sailing date and number of nights | the day the ship gets in | three titles, each with a screen to open (memories, feedback, loyalty) |
+
+It never builds an album, drafts or sends feedback or a thank-you, reads a loyalty balance or tier, or sets a reminder. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: the loyalty balance, whether the survey is done or an album built, and the days after the guest gets home (the trip lookup drops a finished trip, so the plan's day-after timings are still to do).

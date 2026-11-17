@@ -184,6 +184,7 @@ services.AddScoped<StanleyPrebookService>();
 services.AddScoped<StanleyEmbarkService>();
 services.AddScoped<StanleyDisembarkService>();
 services.AddScoped<StanleyFamilyService>();
+services.AddScoped<StanleyRememberService>();
 services.AddScoped<StanleyTripSoFarService>();
 services.AddScoped<StanleyStandingService>();
 services.AddScoped<StanleyControlService>();

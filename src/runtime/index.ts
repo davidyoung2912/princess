@@ -172,6 +172,11 @@ export const stanleyFamily = {
   get: () => http.get<unknown>('/me/stanley/family'),
 }
 
+/** The Remember pack, first part (phase P9f). Read-only; nothing is built, drafted or sent. */
+export const stanleyRememberPack = {
+  get: () => http.get<unknown>('/me/stanley/remember'),
+}
+
 /** The trip checklist and smart defaults (phase P5). Read-only; a default is shown, never applied. */
 export const stanleyChecklist = {
   get: () => http.get<unknown>('/me/stanley/checklist'),
