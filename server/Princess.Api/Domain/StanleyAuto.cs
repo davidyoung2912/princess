@@ -45,6 +45,7 @@ public static class StanleyAutoRules
         {
             var last = f.Departure.AddDays(f.Nights);
             list.Add(new($"{Marker}bags:{last:yyyy-MM-dd}", "Bags go out tonight. The bags screen has the tags.", TripRules.ZonedToUtc(last.AddDays(-1), BagNight)));
+            list.Add(new($"{Marker}recap:{last:yyyy-MM-dd}", "Your trip is over. The Remember the trip screen has the recap, your feedback and your chats to keep.", TripRules.ZonedToUtc(last.AddDays(1), Morning)));
             if (f.Timeline is not null)
                 for (var day = 1; day <= f.Timeline.Days.Count; day++)
                     if (f.Timeline.AllAboardAt(day) is { } aboard)
@@ -53,7 +54,6 @@ public static class StanleyAutoRules
                         var place = Itinerary.PortOf(d.Port)?.Name ?? d.Port;
                         list.Add(new($"{Marker}aboard:{d.Date:yyyy-MM-dd}", $"All aboard in {place} is in an hour. Time to head back to the ship.", aboard.AddMinutes(-AboardLeadMinutes)));
                         list.Add(new($"{Marker}portpack:{d.Date:yyyy-MM-dd}", $"Tomorrow is {place}. While you are on ship Wi-Fi, open the port page so it is saved on this phone for ashore.", TripRules.ZonedToUtc(d.Date.AddDays(-1), PortPackTime)));
-                    }
                     }
             if (f.Timeline is not null && f.Timeline.Days.Count >= 2)
             {
@@ -82,7 +82,7 @@ public static class StanleyAutoRules
     public static readonly string[] NotChecked =
     [
         "Reminders that follow (AUT-01) are done by the reminders themselves when a time moves.",
-        "Saved for me (AUT-07) so far only reminds you the evening before a port to open its page on ship Wi-Fi; nothing is saved to your phone for you, and the boarding pass, receipts, recap and album are not built. Lists kept current (AUT-05) is a separate run that only covers the packing list.",
+        "Saved for me (AUT-07) so far only reminds you the evening before a port to open its page on ship Wi-Fi; nothing is saved to your phone for you, and the day after the ship gets in it reminds you to open the recap screen; nothing is built or saved for you, and the boarding pass, receipts and album are not built. Lists kept current (AUT-05) is a separate run that only covers the packing list.",
     ];
 
     public const string ListsKey = "stanley.auto.lists.packing";

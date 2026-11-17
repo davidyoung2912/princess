@@ -334,3 +334,7 @@ The same run also compares the guest's open shortlisted sailings (two to four) u
 ### Port pack reminder (phase P10a, AUT-07 first part)
 
 AUT-02's run also sets one reminder at 6 pm ship time the evening before each port day ("Tomorrow is <port>. While you are on ship Wi-Fi, open the port page so it is saved on this phone for ashore."), key `aut02:portpack:<date>`, from the published port schedule only. It is a reminder, not a save: nothing is stored on the phone for the guest, and no location, booking or data leaves the account. Same limits (30 per trip in all), receipt and two-hour undo as the others. The boarding pass to Wallet, receipts, recap and album are still to do.
+
+### Recap reminder (phase P10a, AUT-07 second part)
+
+AUT-02's run also sets one reminder at 9 am ship time the day after the ship gets in (key `aut02:recap:<date>`): "Your trip is over. The Remember the trip screen has the recap, your feedback and your chats to keep." It is a reminder only: no recap or album is built or saved, and nothing leaves the account. Same limits (30 per trip in all), receipt and two-hour undo as the others. The boarding pass to Wallet, receipts and album are still to do.
