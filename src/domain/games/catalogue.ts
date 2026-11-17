@@ -29,6 +29,7 @@ export const GAMES: readonly GameEntry[] = [
   { id: 'hitori', path: '/games-explorer/hitori', mode: 'single', titleKey: 'gx.game.hitori.title', bodyKey: 'gx.game.hitori.body', levels: 4, minutes: [3, 25], players: 1 },
   { id: 'word-search', path: '/games-explorer/word-search', mode: 'single', titleKey: 'gx.game.wordsearch.title', bodyKey: 'gx.game.wordsearch.body', levels: 4, minutes: [4, 20], players: 1 },
   { id: 'slitherlink', path: '/games-explorer/slitherlink', mode: 'single', titleKey: 'gx.game.slitherlink.title', bodyKey: 'gx.game.slitherlink.body', levels: 4, minutes: [5, 30], players: 1 },
+  { id: 'crossmath', path: '/games-explorer/crossmath', mode: 'single', titleKey: 'gx.game.crossmath.title', bodyKey: 'gx.game.crossmath.body', levels: 4, minutes: [3, 20], players: 1 },
 ]
 
 export const gamesOf = (mode: GameEntry['mode']): GameEntry[] => GAMES.filter((g) => g.mode === mode)

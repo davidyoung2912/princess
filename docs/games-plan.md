@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42) and **Slitherlink** (X43). All thirteen games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42) and **Slitherlink** (X43) and **Crossmath** (X44). All fourteen games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -117,7 +117,9 @@ Built as planned. `slitherlink.ts` grows a random region of squares (joined, no 
 - Generator: grow a random loop (random region of squares with a single boundary, no holes), write the numbers, remove clues while a logic solver (3s and 0s, adjacent 3s, corner rules, degree-two and degree-one dots, loop-closing) still finishes. Uniqueness comes from the logic solver, no guessing.
 - Tap an edge to cycle line, cross (known no line), empty; large invisible hit areas for phones; red for a dot with 3 lines, a number over-filled or a closed loop that is too short. Highest-risk generator: build and test it first.
 
-### G12: Crossmath (X44)
+### G12: Crossmath (X44) — built
+
+Built as planned, with equations of the form `a sign b = c` (signs and "=" always shown; only numbers are blank). `crossmath.ts` grows a tree of equations that cross at number squares and touch nothing else, fills them with random true equations, then blanks numbers one at a time while the allowed logic still fills the grid, so the answer is unique with no guessing. Logic, also used for hints: an equation with one blank (plain arithmetic), a blank where only one tray number keeps every equation through it completable, and a tray number that fits exactly as many squares as it has copies left. Levels: Easy add and subtract to 20 (arithmetic only), Medium adds times to 30, Hard all four signs to 50, Expert to 99 (all generate in under 100 ms). `CrossmathScreen.tsx`: tap a blank then a tray key (count of copies left), or type digits (two digits typed in turn); arrows jump to the nearest blank; red squares for a full equation that is not true; labels read both equations through a square.
 
 - A crossword-style grid of numbers and signs (+, -, x, /) where each row and column reads as a true equation; some squares are given, the player fills the rest from a number tray (each tray number used once).
 - Generator: build equations on a grid, cross them so shared squares agree, blank out squares while the answer stays unique and plain logic (the only fit for a square, the last tray number) finishes. Levels by grid size, number range and which signs appear (Easy add and subtract to 20, Expert all four signs to 99).

@@ -237,6 +237,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/games-explorer/codeword': screen(() => import('./ui/explorer/games/CodewordScreen'), 'CodewordScreen'),
   '/games-explorer/word-search': screen(() => import('./ui/explorer/games/WordSearchScreen'), 'WordSearchScreen'),
   '/games-explorer/slitherlink': screen(() => import('./ui/explorer/games/SlitherlinkScreen'), 'SlitherlinkScreen'),
+  '/games-explorer/crossmath': screen(() => import('./ui/explorer/games/CrossmathScreen'), 'CrossmathScreen'),
   '/games-explorer/hitori': screen(() => import('./ui/explorer/games/HitoriScreen'), 'HitoriScreen'),
   '/games-explorer/kakuro': screen(() => import('./ui/explorer/games/KakuroScreen'), 'KakuroScreen'),
   '/games-explorer/kenken': screen(() => import('./ui/explorer/games/KenKenScreen'), 'KenKenScreen'),

@@ -96,6 +96,7 @@ export {
   Contrast as HitoriGame,
   TextSearch as WordSearchGame,
   Spline as SlitherlinkGame,
+  Calculator as CrossmathGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,
