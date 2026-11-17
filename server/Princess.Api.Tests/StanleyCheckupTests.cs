@@ -101,7 +101,7 @@ public class StanleyCheckupTests
         var tight = StanleyCheckupRules.Findings(Clean(tours: [new(3, "Tour", "12:00", 4)])).Single();
         Assert.EndsWith("tight", tight.Id);
         Assert.Equal(ChangeConsequence.Conflict, tight.Consequence);
-        Assert.Equal("/plan/excursions", tight.Fix.Route);
+        Assert.Equal("/excursions-explorer", tight.Fix.Route);
     }
 
     [Fact]

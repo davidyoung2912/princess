@@ -168,7 +168,7 @@ public static class StanleyResolvers
     }
 
     private static readonly CitationDto Trips = new("My trips", "/me/trips"), Bill = new("Bill", "/me/bill"), Cases = new("Cases", "/me/cases"), Documents = new("Documents", "/me/documents"),
-        Pass = new("Boarding pass", "/home/boarding-pass"), Checklist = new("Checklist", "/plan/checklist"), Tours = new("Excursions", "/plan/excursions"), Dining = new("Dining", "/plan/dining"),
+        Pass = new("Boarding pass", "/home/boarding-pass"), Checklist = new("Checklist", "/plan/checklist"), Tours = new("Excursions", "/excursions-explorer"), Dining = new("Dining", "/dining-today"),
         Packages = new("Packages", "/me/packages");
 
     public static IReadOnlyList<IStanleyResolver> All { get; } =

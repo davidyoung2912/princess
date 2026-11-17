@@ -141,10 +141,10 @@ public static class ConciergeRules
                     && (!Flag(input, "wheelchair") || x.Wheelchair))
                     .OrderByDescending(x => x.Rating)
                     .Select(x => new { id = x.Id, name = x.Name, port = x.Port, hours = x.Hours, usd_per_adult = Usd(x.Price), activity = x.Activity, rating = x.Rating, starts = x.Start, wheelchair = x.Wheelchair, family = x.Family });
-                return Ok(new { excursions = found }, new CitationDto("Shore excursions", "/plan/excursions"));
+                return Ok(new { excursions = found }, new CitationDto("Shore excursions", "/excursions-explorer"));
             }
             case "list_restaurants":
-                return Ok(new { restaurants = ShipDining.VenuesOf(ctx.SailingId is null ? null : AboardPlans.ShipOfSailing(ctx.SailingId)).Select(v => new { id = v.Id, name = v.Name, kind = v.Kind, cover_usd_per_person = Usd(v.Cover), walk_in = v.WalkIn }) }, new CitationDto("Dining", "/plan/dining"));
+                return Ok(new { restaurants = ShipDining.VenuesOf(ctx.SailingId is null ? null : AboardPlans.ShipOfSailing(ctx.SailingId)).Select(v => new { id = v.Id, name = v.Name, kind = v.Kind, cover_usd_per_person = Usd(v.Cover), walk_in = v.WalkIn }) }, new CitationDto("Dining", "/dining-today"));
             case "build_day":
                 return BuildDay(input, ctx);
             case "my_trip":

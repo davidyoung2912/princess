@@ -16,13 +16,13 @@ public class StanleyPrebookTests
         var f = Assert.Single(StanleyPrebookRules.Findings(Facts()));
         Assert.Equal("SR-4.5", f.Rule);
         Assert.Contains("30 days", f.Detail);
-        Assert.Equal("/plan/dining", f.Route);
+        Assert.Equal("/dining-today", f.Route);
     }
 
     [Fact]
     public void TheNextStepMovesOnWhenDinnerAndToursAreBooked()
     {
-        Assert.Equal("/plan/excursions", StanleyPrebookRules.Findings(Facts(dinners: 1)).Single().Route);
+        Assert.Equal("/excursions-explorer", StanleyPrebookRules.Findings(Facts(dinners: 1)).Single().Route);
         Assert.Equal("/plan/autopilot", StanleyPrebookRules.Findings(Facts(dinners: 1, tours: 1)).Single().Route);
     }
 

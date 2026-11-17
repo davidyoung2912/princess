@@ -98,12 +98,12 @@ public static class DayPlanRules
         var items = new List<PlanEntryDto>();
         var tour = BestTour(timeline, day, w);
         if (tour is not null)
-            items.Add(new(tour.Id, tour.Name, tour.Start, (int)Pricing.JsRound(tour.Hours * 60), "tour", null, true, "/plan/excursions",
+            items.Add(new(tour.Id, tour.Name, tour.Start, (int)Pricing.JsRound(tour.Hours * 60), "tour", null, true, "/excursions-explorer",
                 tour.Interests.Any(w.Tours.Contains) ? "matches what you like" : "the best rated that fits the ship’s day"));
         foreach (var e in PickEvents(timeline, day, w, d.Port == "sea" ? 3 : 1, shipId))
             items.Add(FromEvent(e, e.Extra > 0 ? $"extra cost {Money(e.Extra)} each" : "included in your fare"));
         if (day <= 7)
-            items.Add(new(AboardPlans.Room(shipId, "eclipse") ?? "eclipse", $"Dinner in the {AboardPlans.MainDiningName(shipId)}", DinnerStart, DinnerMinutes, "dinner", null, false, "/plan/dining", w.Mobility == "any" ? "main dining room, included" : "main dining room, level access"));
+            items.Add(new(AboardPlans.Room(shipId, "eclipse") ?? "eclipse", $"Dinner in the {AboardPlans.MainDiningName(shipId)}", DinnerStart, DinnerMinutes, "dinner", null, false, "/dining-today", w.Mobility == "any" ? "main dining room, included" : "main dining room, level access"));
         return ([.. items.OrderBy(i => Minutes(i.Start)).ThenBy(i => i.Id, StringComparer.Ordinal)], tour is null ? null : ExcursionRules.BackBy(tour, d));
     }
 

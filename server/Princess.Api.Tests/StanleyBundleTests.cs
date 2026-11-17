@@ -58,9 +58,9 @@ public class StanleyBundleTests
         var day = new ItineraryDay(3, Departure.AddDays(2), "Cabo", new TimeOnly(8, 0), new TimeOnly(17, 0), new TimeOnly(17, 30));
         List<BundleStep> steps =
         [
-            new("a", "09:00", 120, "tour", "Whale watch", "booked", "", "/plan/excursions"),
+            new("a", "09:00", 120, "tour", "Whale watch", "booked", "", "/excursions-explorer"),
             new("b", "10:00", 60, "event", "Cooking demo", "suggested", "", "/plan"),
-            new("c", "14:00", 180, "tour", "Old town", "booked", "", "/plan/excursions"),
+            new("c", "14:00", 180, "tour", "Old town", "booked", "", "/excursions-explorer"),
         ];
         var clashes = StanleyBundleRules.Clashes(steps, day);
         Assert.Contains(clashes, c => c.Contains("overlap"));

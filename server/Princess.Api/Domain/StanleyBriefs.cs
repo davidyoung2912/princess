@@ -91,11 +91,11 @@ public static class StanleyBriefRules
             if (day.AllAboard is { } b) yield return new($"Be back on board by {Hm(b)}.", null);
         }
         var tours = f.Tours.Where(t => t.Day == day.Day).OrderBy(t => Minutes(t.Start)).ToList();
-        foreach (var t in tours) yield return new($"{t.Name} starts at {Hm(TimeOnly.ParseExact(t.Start, "HH:mm", CultureInfo.InvariantCulture))}.", "/plan/excursions");
+        foreach (var t in tours) yield return new($"{t.Name} starts at {Hm(TimeOnly.ParseExact(t.Start, "HH:mm", CultureInfo.InvariantCulture))}.", "/excursions-explorer");
         var meals = f.Meals.Where(m => m.Day == day.Day && m.Time is not null).OrderBy(m => Minutes(m.Time!)).ToList();
-        foreach (var m in meals) yield return new($"{m.Name} at {Hm(TimeOnly.ParseExact(m.Time!, "HH:mm", CultureInfo.InvariantCulture))}.", "/plan/dining");
-        if (meals.Count == 0) yield return new("No dinner is booked yet.", "/plan/dining");
-        if (!AtSea(day) && tours.Count == 0) yield return new("Nothing is booked for this port.", "/plan/excursions");
+        foreach (var m in meals) yield return new($"{m.Name} at {Hm(TimeOnly.ParseExact(m.Time!, "HH:mm", CultureInfo.InvariantCulture))}.", "/dining-today");
+        if (meals.Count == 0) yield return new("No dinner is booked yet.", "/dining-today");
+        if (!AtSea(day) && tours.Count == 0) yield return new("Nothing is booked for this port.", "/excursions-explorer");
     }
 
     /// <summary>

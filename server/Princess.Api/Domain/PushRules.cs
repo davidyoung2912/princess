@@ -303,7 +303,7 @@ public static class PushRules
         }
         foreach (var w in i.Waitlist ?? [])
             if (w.ExpiresAt > nowMs)
-                list.Add(new($"waitlistReady:{w.Id}", "reservation", "checkin", false, 80, "/plan/dining", "Stanley: a table is ready for you",
+                list.Add(new($"waitlistReady:{w.Id}", "reservation", "checkin", false, 80, "/dining-today", "Stanley: a table is ready for you",
                     $"A table at {w.Venue} has come up. The offer does not last long, so open the app to take it.", new() { ["waitlist"] = w.Id }));
         foreach (var o in i.Orders ?? [])
             if (o.Stage is "onTheWay" or "delivered")

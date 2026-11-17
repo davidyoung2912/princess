@@ -26,7 +26,7 @@ public class ChatCardRulesTests
     [Fact]
     public void ThePayloadRoundTripsAndOmitsWhatIsEmpty()
     {
-        var card = new ChatCard(ChatCardRules.Dining, "Crown Grill", "Steakhouse", 2, "19:00", "Deck 7 aft", "/plan/dining");
+        var card = new ChatCard(ChatCardRules.Dining, "Crown Grill", "Steakhouse", 2, "19:00", "Deck 7 aft", "/dining-today");
         Assert.Equal(card, ChatCardRules.Parse(ChatCardRules.Serialise(card)));
         Assert.DoesNotContain("expiresAt", ChatCardRules.Serialise(card));
         Assert.Null(ChatCardRules.Parse(null));

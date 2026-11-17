@@ -17,7 +17,7 @@ public sealed record PrebookDto(bool HasTrip, IReadOnlyList<PrebookFinding> Find
 public static class StanleyPrebookRules
 {
     public const int MinParty = 3, ExpectDays = 60;
-    private const string Dining = "/plan/dining", Excursions = "/plan/excursions", Poll = "/plan/group-poll", Check = "/plan/autopilot";
+    private const string Dining = "/dining-today", Excursions = "/excursions-explorer", Poll = "/plan/group-poll", Check = "/plan/autopilot";
 
     private static string Long(DateOnly d) => d.ToString("dddd d MMMM", CultureInfo.InvariantCulture);
     private static string Days(int n) => n == 1 ? "1 day" : $"{n} days";

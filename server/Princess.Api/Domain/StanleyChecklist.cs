@@ -23,7 +23,7 @@ public sealed record ChecklistFacts(
 /// </summary>
 public static class StanleyChecklistRules
 {
-    private const string Checkin = "/home/check-in", Dining = "/plan/dining", Excursions = "/plan/excursions";
+    private const string Checkin = "/home/check-in", Dining = "/dining-today", Excursions = "/excursions-explorer";
     public const int DinnerNights = 7;
 
     private static readonly Dictionary<string, string> Titles = new()

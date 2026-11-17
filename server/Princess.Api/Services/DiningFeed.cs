@@ -48,7 +48,7 @@ public sealed class DiningFeed(ScopeLoader scopes, IPlanStore plan, ISpaStore sp
             var start = StartOf(t.Day, t.Time);
             if (!t.GuestIds.Contains(actor.Id) || !Soon(start)) continue;
             var venue = DiningRules.VenueById(t.VenueId);
-            booked.Add(new($"dining:{t.PublicId}", "dining", "Your table", venue?.Name ?? "the restaurant", "/plan/dining", TripRules.ToMs(start)));
+            booked.Add(new($"dining:{t.PublicId}", "dining", "Your table", venue?.Name ?? "the restaurant", "/dining-today", TripRules.ToMs(start)));
         }
         foreach (var s in await spa.ListAsync(booking.BookingId, ct))
         {

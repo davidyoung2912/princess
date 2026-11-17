@@ -29,7 +29,7 @@ public class RecentStateRulesTests
     public void UpToThreeAppAddressesAreAccepted()
     {
         Assert.Null(StateRules.Problem(StateRules.UserKeys, "recent", Doc()));
-        Assert.Null(StateRules.Problem(StateRules.UserKeys, "recent", Doc("/book/resume/abc", "/plan/dining", "/home/sailings/sun-1?x=1#top")));
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "recent", Doc("/book/resume/abc", "/dining-today", "/home/sailings/sun-1?x=1#top")));
         Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "recent", Doc("/a", "/b", "/c", "/d")));
     }
 

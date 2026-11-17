@@ -155,7 +155,7 @@ public static class ChatProactiveRules
                     list.Add(new(ChatGroupMomentRules.GroupMeetKey, Onboard, ClassSuggestion, ChatGroupMomentRules.MeetOfferText, ChatGroupMomentRules.GroupPath(meet), f.Now.AddHours(4), Hash($"{meet:N}{f.Now:yyyyMMdd}"), meet.ToString()));
                 list.Add(new("sea.today", Onboard, ClassSuggestion, "Today at sea\nSee what is on today.", "/plan/day", f.Now.AddHours(12), Hash($"sea.today{f.Now:yyyyMMdd}")));
                 if (f.DinnerUnbooked)
-                    list.Add(new("sea.dining-gap", Onboard, ClassSuggestion, "No dinner plan tonight\nSee dining options and times.", "/plan/dining", f.Now.AddHours(5), Hash($"sea.dining-gap{f.Now:yyyyMMdd}")));
+                    list.Add(new("sea.dining-gap", Onboard, ClassSuggestion, "No dinner plan tonight\nSee dining options and times.", "/dining-today", f.Now.AddHours(5), Hash($"sea.dining-gap{f.Now:yyyyMMdd}")));
                 if (f.LastFullDay)
                     list.Add(new("sea.bag-night", Onboard, ClassDue, "Bags go out tonight\nOpen Leave to see when and where.", "/home/disembark/bags", f.Now.AddHours(12), Hash("sea.bag-night")));
                 break;
@@ -170,7 +170,7 @@ public static class ChatProactiveRules
                 if (f.AshoreNoBridge)
                     list.Add(new("port.ashore-bridge", Onboard, ClassSuggestion, "Be reachable ashore\nTurn on texts in Chat so your group can reach you while you are off the ship.", "/chat", f.Now.AddHours(8), Hash($"port.ashore-bridge{f.Now:yyyyMMdd}")));
                 if (f.DinnerUnbooked)
-                    list.Add(new("sea.dining-gap", Onboard, ClassSuggestion, "No dinner plan tonight\nSee dining options and times.", "/plan/dining", f.Now.AddHours(5), Hash($"sea.dining-gap{f.Now:yyyyMMdd}")));
+                    list.Add(new("sea.dining-gap", Onboard, ClassSuggestion, "No dinner plan tonight\nSee dining options and times.", "/dining-today", f.Now.AddHours(5), Hash($"sea.dining-gap{f.Now:yyyyMMdd}")));
                 break;
             case StageRules.Disembark:
                 list.Add(new("leave.exit-time", Onboard, ClassDue, "Your way off the ship\nOpen Leave to see your exit time.", "/home/disembark", f.Now.AddHours(12), Hash("leave.exit-time")));

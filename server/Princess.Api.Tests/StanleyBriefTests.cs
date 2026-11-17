@@ -69,8 +69,8 @@ public class StanleyBriefTests
     {
         var port = Line.Days.First(d => d.Arrive is not null && d.Day > 1);
         var brief = StanleyBriefRules.Compose(StanleyBriefRules.Morning, Facts(port.Day))!;
-        Assert.Contains(brief.Lines, l => l.Text.Contains("No dinner") && l.Route == "/plan/dining");
-        Assert.Contains(brief.Lines, l => l.Text.Contains("Nothing is booked") && l.Route == "/plan/excursions");
+        Assert.Contains(brief.Lines, l => l.Text.Contains("No dinner") && l.Route == "/dining-today");
+        Assert.Contains(brief.Lines, l => l.Text.Contains("Nothing is booked") && l.Route == "/excursions-explorer");
     }
 
     [Fact]

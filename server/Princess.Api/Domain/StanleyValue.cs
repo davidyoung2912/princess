@@ -21,7 +21,7 @@ public sealed record ValueDto(bool HasTrip, IReadOnlyList<ValueFinding> Findings
 public static class StanleyValueRules
 {
     public const int CreditDaysBeforeEnd = 2, PackingDays = 14;
-    private const string Bill = "/me/bill", Packages = "/me/packages", Excursions = "/plan/excursions", Dining = "/plan/dining", Packing = "/plan/packing";
+    private const string Bill = "/me/bill", Packages = "/me/packages", Excursions = "/excursions-explorer", Dining = "/dining-today", Packing = "/plan/packing";
 
     private static string Who(ValueFacts f, ValuePerson p) => f.People.Count == 1 ? "You have" : $"Traveller {p.Position} has";
     private static string Money(long cents) => StanleyMoneyRules.Money(cents);

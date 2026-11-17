@@ -319,7 +319,7 @@ public class StanleyNoticeRelayTests
     public async Task TheThreadKeepsTheCardAThisNoticeIsAbout()
     {
         var (store, relay, user) = Setup();
-        var n = new PushNotice("change:dinner-2:abc", "reservation", "reminders", false, 85, "/plan/dining", "Stanley: dinner lost", "Your table is gone.", new() { ["card"] = "dinner-2" });
+        var n = new PushNotice("change:dinner-2:abc", "reservation", "reminders", false, 85, "/dining-today", "Stanley: dinner lost", "Your table is gone.", new() { ["card"] = "dinner-2" });
         await relay.RelayAsync(user, [n], Now, default);
         Assert.Equal("dinner-2", (await Thread(store, user)).Single(m => m.NoticeKey == "change:dinner-2:abc").NoticeSubject);
     }

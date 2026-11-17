@@ -42,8 +42,8 @@ public static class ChatCardRules
     /// <summary>The screen a card opens. The app shows "no longer available" when the guest cannot open what it points at.</summary>
     public static string PathOf(string type, string? portId = null) => type switch
     {
-        Excursion => "/plan/excursions",
-        Dining => "/plan/dining",
+        Excursion => "/excursions-explorer",
+        Dining => "/dining-today",
         Booking => "/plan/reservations",
         PortDay => portId is { Length: > 0 } ? $"/home/ports/{portId}" : "/plan/ahead",
         _ => "/chat",

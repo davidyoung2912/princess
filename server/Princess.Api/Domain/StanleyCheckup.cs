@@ -39,7 +39,7 @@ public static class StanleyCheckupRules
     public const int ClosingSoonHours = 24;
     public const int MissingSoonDays = 14;
 
-    private const string Docs = "/me/documents", Pay = "/me/payments", Checkin = "/home/check-in", Plan = "/plan/autopilot", Excursions = "/plan/excursions", Dining = "/plan/dining";
+    private const string Docs = "/me/documents", Pay = "/me/payments", Checkin = "/home/check-in", Plan = "/plan/autopilot", Excursions = "/excursions-explorer", Dining = "/dining-today";
 
     private static int Minutes(string hhmm) => int.Parse(hhmm[..2], CultureInfo.InvariantCulture) * 60 + int.Parse(hhmm[3..5], CultureInfo.InvariantCulture);
     private static string Hm(int minutes) => $"{minutes / 60:00}:{minutes % 60:00}";

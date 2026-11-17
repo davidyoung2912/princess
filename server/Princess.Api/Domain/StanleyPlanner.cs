@@ -321,7 +321,7 @@ public static partial class StanleyPlannerRules
         var dPlace = dinner?.PlaceId ?? main;
         var dFrom = Itinerary.LocalToUtc(date, TimeOnly.ParseExact(dStart, "HH:mm"), zone);
         var dTo = dFrom.AddMinutes(dMinutes);
-        steps.Add(new("dinner", dinner?.Title ?? $"Dinner in the {AboardPlans.MainDiningName(shipId)}", dStart, Hm(dTo, zone), places.GetValueOrDefault(dPlace)?.Name, 0, "included", dinner is null ? "suggested" : "reserved", "/plan/dining"));
+        steps.Add(new("dinner", dinner?.Title ?? $"Dinner in the {AboardPlans.MainDiningName(shipId)}", dStart, Hm(dTo, zone), places.GetValueOrDefault(dPlace)?.Name, 0, "included", dinner is null ? "suggested" : "reserved", "/dining-today"));
         if (dinner is null) notes.Add("Dinner is not booked yet. Book it on the dining screen; nothing is booked from here.");
 
         var ages = Ages(kids);

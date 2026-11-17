@@ -51,10 +51,10 @@ public static class StanleyBundleRules
 
         // Booked things are kept exactly as booked.
         foreach (var t in f.Tours.Where(t => t.Day == f.Day && (scope == FullDay || Minutes(t.Start) + (int)Math.Round(t.Hours * 60) > EveningFrom)))
-            steps.Add(new($"tour:{t.Name}", t.Start, (int)Math.Round(t.Hours * 60), "tour", t.Name, "booked", "you booked this", "/plan/excursions"));
+            steps.Add(new($"tour:{t.Name}", t.Start, (int)Math.Round(t.Hours * 60), "tour", t.Name, "booked", "you booked this", "/excursions-explorer"));
         var bookedMeals = f.Meals.Where(m => m.Day == f.Day && m.Time is not null).ToList();
         foreach (var m in bookedMeals)
-            steps.Add(new($"dinner:{m.Name}", m.Time!, DayPlanRules.DinnerMinutes, "dinner", m.Name, "booked", "you booked this", "/plan/dining"));
+            steps.Add(new($"dinner:{m.Name}", m.Time!, DayPlanRules.DinnerMinutes, "dinner", m.Name, "booked", "you booked this", "/dining-today"));
 
         // Suggestions: dinner only when none is booked, then up to the pace's number of other things; a tour is suggested only when none is booked.
         var haveTour = steps.Any(s => s.Kind == "tour");

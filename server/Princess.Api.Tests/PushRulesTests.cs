@@ -228,8 +228,8 @@ public class PushRulesTests
         var port = new PushNotice("tender:nassau", "travel", "checkin", false, 50, "/home/ports/nassau", "t", "b", new() { ["port"] = "nassau", ["date"] = "2027-03-24" });
         Assert.Equal("/home/ports/nassau?trip=PC1&port=nassau&date=2027-03-24", PushRules.WithLink(port, "PC1").Path);
         Assert.Equal("/home/ports/nassau?trip=PC1&port=nassau", PushRules.WithLink(port with { Params = new() { ["port"] = "nassau", ["date"] = "soon" } }, "PC1").Path);
-        var res = new PushNotice("res:r-12", "reminder", "checkin", false, 40, "/plan/dining", "t", "b", new() { ["reservation"] = "r-12", ["case"] = "CS 7" });
-        Assert.Equal("/plan/dining?trip=PC1&reservation=r-12", PushRules.WithLink(res, "PC1").Path);
+        var res = new PushNotice("res:r-12", "reminder", "checkin", false, 40, "/dining-today", "t", "b", new() { ["reservation"] = "r-12", ["case"] = "CS 7" });
+        Assert.Equal("/dining-today?trip=PC1&reservation=r-12", PushRules.WithLink(res, "PC1").Path);
     }
 
     [Fact]
@@ -322,7 +322,7 @@ public class PushRulesTests
         PushRules.Build(Input() with { ExplorerLead = lead, Booked = booked, Waitlist = waitlist, Orders = orders })
             .Where(n => n.Key.StartsWith("booked:", StringComparison.Ordinal) || n.Key.StartsWith("waitlistReady:", StringComparison.Ordinal) || n.Key.StartsWith("order:", StringComparison.Ordinal)).ToList();
 
-    private static BookedSlot Table(int startInMinutes, string key = "dining:a") => new(key, "dining", "Your table", "Crown Grill", "/plan/dining", Ms(startInMinutes));
+    private static BookedSlot Table(int startInMinutes, string key = "dining:a") => new(key, "dining", "Your table", "Crown Grill", "/dining-today", Ms(startInMinutes));
 
     [Fact]
     public void ATableOrAppointmentRemindsInsideTheLeadTimeOnce()
@@ -332,7 +332,7 @@ public class PushRulesTests
         Assert.Empty(DiningNotices(15, [Table(-5)]));
         Assert.Empty(DiningNotices(0, [Table(5)]));
         Assert.NotEqual(DiningNotices(15, [Table(10)])[0].Key, DiningNotices(15, [Table(12)])[0].Key);
-        Assert.Equal("/plan/dining", DiningNotices(15, [Table(10)])[0].Path);
+        Assert.Equal("/dining-today", DiningNotices(15, [Table(10)])[0].Path);
     }
 
     [Fact]

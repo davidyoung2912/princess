@@ -153,7 +153,7 @@ public static class StanleyReadTools
         var rows = ShipDining.VenuesOf(ShipId(voyage))
             .Where(v => (kind is null || v.Kind == kind) && (walkIn is null || v.WalkIn == walkIn) && (max is null || v.Cover <= Math.Round(max.Value * 100)) && (text is null || v.Name.Contains(text, StringComparison.OrdinalIgnoreCase) || v.Cuisine.Contains(text, StringComparison.OrdinalIgnoreCase)))
             .Take(12).Select(v => new { id = v.Id, name = v.Name, kind = v.Kind, deck = v.Deck, cuisine = v.Cuisine, cover_usd_per_person = Usd(v.Cover), walk_in = v.WalkIn, dress = v.Dress });
-        return Ok(new { venues = rows }, new CitationDto("Dining", "/plan/dining"));
+        return Ok(new { venues = rows }, new CitationDto("Dining", "/dining-today"));
     }
 
     private static string Ranges(string[][] r) => r.Length == 0 ? "closed" : string.Join(", ", r.Select(x => $"{x[0]} to {x[1]}"));
@@ -173,7 +173,7 @@ public static class StanleyReadTools
             hours_today = queue is null || today is null ? null : Ranges(today.Port == "sea" ? queue.Sea : queue.Port),
             takes_reservations = queue is null, reservation_times = queue is null ? new[] { DiningRules.DinnerTimes[0], DiningRules.DinnerTimes[^1] } : null,
             note = "Ship time. The ship's daily programme has the last word.",
-        }, new CitationDto(venue.Name, "/plan/dining"));
+        }, new CitationDto(venue.Name, "/dining-today"));
     }
 
     private static ToolOutcome PackageValue(JsonObject input, StanleyReadData d, StanleyVoyage voyage)

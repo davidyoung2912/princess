@@ -178,7 +178,7 @@ public static class StanleyStandingRules
                 var detail = others.Count > 0
                     ? $"{a.Name} on day {a.Day} may be affected: {c.Title}. Same-day options with places left: {string.Join(", ", others)}. Nothing is booked until you choose."
                     : $"{a.Name} on day {a.Day} may be affected: {c.Title}. I found no other tour that day with places left. Nothing is booked.";
-                yield return Item(r, $"{c.Id}:{a.Name}", "prepared", $"Your tour on day {a.Day} may need a replacement", detail, Route("/plan/excursions"), c.Critical);
+                yield return Item(r, $"{c.Id}:{a.Name}", "prepared", $"Your tour on day {a.Day} may need a replacement", detail, Route("/excursions-explorer"), c.Critical);
             }
     }
 
@@ -188,8 +188,8 @@ public static class StanleyStandingRules
         {
             var kept = f.Meals.Any(m => m.Day == c.Day && m.Time == r.Time);
             yield return kept
-                ? Item(r, $"{c.Id}:kept", "notice", $"Your dinner on day {c.Day} is still at {r.Time}", $"The programme changed ({c.Title}). Your booked dinner is still at {r.Time}, as you asked. I have not moved it.", Route("/plan/dining"))
-                : Item(r, $"{c.Id}:cannot", "prepared", $"I cannot keep a dinner at {r.Time} on day {c.Day}", $"The programme changed ({c.Title}) and you have no dinner booked at {r.Time} that day. Open dining to choose one.", Route("/plan/dining"), c.Critical);
+                ? Item(r, $"{c.Id}:kept", "notice", $"Your dinner on day {c.Day} is still at {r.Time}", $"The programme changed ({c.Title}). Your booked dinner is still at {r.Time}, as you asked. I have not moved it.", Route("/dining-today"))
+                : Item(r, $"{c.Id}:cannot", "prepared", $"I cannot keep a dinner at {r.Time} on day {c.Day}", $"The programme changed ({c.Title}) and you have no dinner booked at {r.Time} that day. Open dining to choose one.", Route("/dining-today"), c.Critical);
         }
     }
 
@@ -219,7 +219,7 @@ public static class StanleyStandingRules
         seen = opened ? -2 : places;
         var name = r.Template == "VAL-03" ? ExcursionRules.ById(r.Target)?.Name ?? "That tour" : DiningRules.VenueById(r.Target)?.Name ?? "That restaurant";
         if (!opened) return [];
-        var route = r.Template == "VAL-03" ? "/plan/excursions" : "/plan/dining";
+        var route = r.Template == "VAL-03" ? "/excursions-explorer" : "/dining-today";
         var what = r.Template == "VAL-03" ? $"{name} has places left" : $"A table has opened at {name} on day {r.Day}{(r.Time.Length > 0 ? " at " + r.Time : "")}";
         return [Item(r, $"open:{places}", "prepared", what, "I am not holding it. Open it to book, before someone else does.", route)];
     }
