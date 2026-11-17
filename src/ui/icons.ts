@@ -85,6 +85,8 @@ export {
   Gamepad2 as Games,
   SpellCheck as WordGame,
   Grid3x3 as SudokuGame,
+  SquareSlash as DiagonalSudokuGame,
+  Shapes as JigsawSudokuGame,
   Undo2 as Undo,
   Pencil as Notes,
   Eraser as Erase,

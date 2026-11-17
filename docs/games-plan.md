@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31) and **Sudoku** (X32). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34). Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -20,7 +20,9 @@ lost when the page is left (thin-client rule). Do not start the next phase until
 
 ## Phases
 
-### G1: shared game kit, Diagonal Sudoku (X33), Jigsaw Sudoku (X34)
+### G1: shared game kit, Diagonal Sudoku (X33), Jigsaw Sudoku (X34) — built
+
+Built as planned. `sudoku.ts` takes a `Rules` object (`makeRules`, `CLASSIC`, `DIAGONAL`; `generatePuzzle(level, random, variant)` returns `rules` with the puzzle); `jigsawRegions` makes the layouts and `fullGrid` has a node budget. Shared UI is in `src/ui/explorer/games/parts.tsx` (`useGameClock`, `GameClock`, `GameHelp`, `LevelBar`, `HintBox`, `SolvedCard`) with `game-*` CSS. `SudokuScreen.tsx` exports `SudokuScreen`, `DiagonalSudokuScreen` and `JigsawSudokuScreen`.
 
 - Extract the shared pieces from Wordle and Sudoku into `src/ui/explorer/games/parts.tsx`: `GameHelp` (How to Play panel), clock hook and `GameClock`, `LevelBar`, `HintBox` (with dismiss), `SolvedCard`. Move the matching CSS to shared `game-*` classes. Wordle and Sudoku use them.
 - Generalise `src/domain/games/sudoku.ts` to take a `Rules` object (units with a kind: row, column, box, diagonal, region; peers; region id per cell; overlapping unit pairs) with the classic rules as the default so existing callers and tests still work. Make locked-candidate logic generic over overlapping units. Add a node budget to the full-grid search.

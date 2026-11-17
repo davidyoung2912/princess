@@ -44,8 +44,6 @@
 .wd-tile--flip[data-state='present']::after { animation: wd-late 520ms backwards; animation-delay: inherit; }
 .wd-row--shake { animation: wd-shake 400ms; }
 
-.wd-result { align-self: stretch; margin-top: var(--space-2); outline-offset: 4px; }
-.wd-result__title { margin-top: 0; }
 
 .wd-keys { display: grid; gap: 0.4rem; width: 100%; margin-top: var(--space-3); }
 .wd-keys__row { display: flex; justify-content: center; gap: 0.3rem; }
@@ -78,26 +76,28 @@
 :root[data-theme='dark'], :root[data-theme='night'] { --sd-dead: #5e2220; --sd-dead-edge: #ff8a80; --sd-error: #ff8a80; --sd-line: #b5b5c0; }
 
 .sd { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 100%; max-width: 32rem; margin-inline: auto; }
-.sd-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; }
-.sd-levels { display: flex; margin: 0; padding: 0; border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-button); overflow: hidden; }
-.sd-level { display: block; }
-.sd-level span { display: grid; place-items: center; min-height: var(--target-min); padding: 0 var(--space-3); font-weight: 700; cursor: pointer; }
-.sd-level:has(input:checked) span { background: var(--primary); color: var(--bg); }
-.sd-level:has(input:focus-visible) { outline: 3px solid var(--primary); outline-offset: -3px; }
+.game-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; }
+.game-levels { display: flex; margin: 0; padding: 0; border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-button); overflow: hidden; }
+.game-level { display: block; }
+.game-level span { display: grid; place-items: center; min-height: var(--target-min); padding: 0 var(--space-3); font-weight: 700; cursor: pointer; }
+.game-level:has(input:checked) span { background: var(--primary); color: var(--bg); }
+.game-level:has(input:focus-visible) { outline: 3px solid var(--primary); outline-offset: -3px; }
 .sd-meta { display: flex; justify-content: space-between; width: 100%; margin: 0; font-size: var(--fs-caption); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 .sd-board { width: min(100%, 30rem); border: 2px solid var(--sd-line); background: var(--bg); touch-action: manipulation; user-select: none; }
 .sd-row { display: grid; grid-template-columns: repeat(9, 1fr); }
-.sd-row:nth-child(3n):not(:last-child) .sd-cell { border-bottom: 2px solid var(--sd-line); }
 .sd-cell {
   position: relative; aspect-ratio: 1; display: grid; place-items: center; box-sizing: border-box; min-width: 0;
   border-right: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong); background: var(--bg); color: var(--primary);
   font-size: clamp(1.1rem, 6vw, 1.85rem); font-weight: 600; line-height: 1; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .sd-cell:nth-child(9) { border-right: 0; }
-.sd-cell:nth-child(3n):not(:nth-child(9)) { border-right: 2px solid var(--sd-line); }
+.sd-cell--edge-r { border-right: 2px solid var(--sd-line); }
+.sd-cell--edge-b { border-bottom: 2px solid var(--sd-line); }
 .sd-row:last-child .sd-cell { border-bottom: 0; }
 .sd-cell--given { color: var(--text); font-weight: 800; }
+.sd-cell--diag { background: var(--explorer-tint); }
+.sd-cell--diag::before { content: ''; position: absolute; top: 3px; left: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted); }
 .sd-cell--peer { background: color-mix(in srgb, var(--primary) 8%, var(--bg)); }
 .sd-cell--same { background: color-mix(in srgb, var(--primary) 20%, var(--bg)); }
 .sd-cell--hint { background: color-mix(in srgb, var(--warning) 28%, var(--bg)); }
@@ -113,16 +113,16 @@
 
 .sd-messages { width: 100%; }
 .sd-warn { margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-card); background: var(--sd-dead); border-left: 4px solid var(--sd-dead-edge); font-weight: 600; color: var(--text); }
-.sd-hint { margin-top: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-card); background: var(--warning-tint); border-left: 4px solid var(--warning); }
-.sd-hint { position: relative; padding-inline-end: 3.25rem; }
-.sd-hint p { margin: 0 0 var(--space-2); }
-.sd-hint__close { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: var(--target-min); height: var(--target-min); padding: 0; border: 0; border-radius: var(--radius-button); background: transparent; color: var(--text); cursor: pointer; }
-.sd-hint__close:hover { background: color-mix(in srgb, var(--warning) 25%, transparent); }
-.sd-hint__close:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; }
-.sd-hint__close svg { width: 1.25rem; height: 1.25rem; }
-.sd-hint .button-row { margin-bottom: 0; }
-.sd-result { align-self: stretch; outline-offset: 4px; }
-.sd-result__title { margin-top: 0; }
+.game-hint { margin-top: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-card); background: var(--warning-tint); border-left: 4px solid var(--warning); }
+.game-hint { position: relative; padding-inline-end: 3.25rem; }
+.game-hint p { margin: 0 0 var(--space-2); }
+.game-hint__close { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: var(--target-min); height: var(--target-min); padding: 0; border: 0; border-radius: var(--radius-button); background: transparent; color: var(--text); cursor: pointer; }
+.game-hint__close:hover { background: color-mix(in srgb, var(--warning) 25%, transparent); }
+.game-hint__close:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; }
+.game-hint__close svg { width: 1.25rem; height: 1.25rem; }
+.game-hint .button-row { margin-bottom: 0; }
+.game-result { align-self: stretch; margin-top: var(--space-2); outline-offset: 4px; }
+.game-result__title { margin-top: 0; }
 
 .sd-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; width: 100%; }
 .sd-tool {

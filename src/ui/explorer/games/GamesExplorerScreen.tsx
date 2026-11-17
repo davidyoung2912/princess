@@ -1,10 +1,10 @@
 import { Link } from 'react-router'
 import { gamesOf } from '../../../domain/games/catalogue'
 import { t, headingCase } from '../../../i18n'
-import { SudokuGame, WordGame } from '../../icons'
+import { DiagonalSudokuGame, JigsawSudokuGame, SudokuGame, WordGame } from '../../icons'
 import { MoreLinks } from '../Parts'
 
-const ICONS: Record<string, typeof WordGame> = { 'cruise-wordle': WordGame, sudoku: SudokuGame }
+const ICONS: Record<string, typeof WordGame> = { 'cruise-wordle': WordGame, sudoku: SudokuGame, 'diagonal-sudoku': DiagonalSudokuGame, 'jigsaw-sudoku': JigsawSudokuGame }
 
 /** The Games Explorer: every game has a page of its own, listed here under games for one player and games for a group. */
 export function GamesExplorerScreen() {

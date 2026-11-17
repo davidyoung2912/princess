@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { clock } from '../../../domain/games/sudoku'
 import { MAX_GUESSES, WORD_LENGTH, backspace, keyStates, newGame, pickTarget, scoreGuess, shareText, submitGuess, typeLetter, type LetterState, type WordleGame } from '../../../domain/games/wordle'
-import { startVisibleInterval } from '../../../hooks/visibleInterval'
 import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
-import { Card } from '../../Card'
-import { Ask, Clock } from '../../icons'
 import { MoreLinks } from '../Parts'
+import { GameClock, GameHelp, SolvedCard, useGameClock } from './parts'
 
 const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
 const STATE_WORD: Record<LetterState, StringKey> = { correct: 'wordle.state.correct', present: 'wordle.state.present', absent: 'wordle.state.absent' }
@@ -23,11 +20,9 @@ export function WordleScreen() {
   const [message, setMessage] = useState('')
   const [announce, setAnnounce] = useState('')
   const [shake, setShake] = useState(false)
-  const [seconds, setSeconds] = useState(0)
   const gameRef = useRef(game)
   const settledRef = useRef(0)
   const timers = useRef<number[]>([])
-  const resultRef = useRef<HTMLDivElement>(null)
 
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)) }
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
@@ -80,15 +75,14 @@ export function WordleScreen() {
 
   const over = game.status !== 'playing' && settled === game.guesses.length
   // The clock runs while the page is showing, and stops when the game is over.
-  useEffect(() => (game.status === 'playing' ? startVisibleInterval(() => setSeconds((s) => s + 1), 1000) : undefined), [game.status])
-  useEffect(() => { if (over) resultRef.current?.focus() }, [over])
+  const { seconds, reset: resetClock } = useGameClock(game.status === 'playing')
 
   const playAgain = () => {
     timers.current.forEach(clearTimeout)
     timers.current = []
     settledRef.current = 0
     setSettled(0)
-    setSeconds(0)
+    resetClock()
     setMessage('')
     apply(newGame(pickTarget(Math.random, gameRef.current.target)))
   }
@@ -111,7 +105,7 @@ export function WordleScreen() {
 
         <p className="wd-meta">
           <span aria-hidden="true">{t('wordle.count', { n: Math.min(row + 1, MAX_GUESSES), max: MAX_GUESSES })}</span>
-          <span className="game-clock" role="timer" aria-label={t('wordle.time')}><Clock aria-hidden="true" focusable="false" />{clock(seconds)}</span>
+          <GameClock seconds={seconds} label={t('wordle.time')} />
         </p>
         <p className="wd-message" role="status">{message}</p>
         <p className="visually-hidden" role="status">{announce}</p>
@@ -147,16 +141,13 @@ export function WordleScreen() {
         </div>
 
         {over && (
-          <div ref={resultRef} tabIndex={-1} className="wd-result">
-            <Card info>
-              <h2 className="wd-result__title">{game.status === 'won' ? t('wordle.result.won') : t('wordle.result.lost')}</h2>
-              <p>{game.status === 'won' ? t('wordle.result.wonBody', { n: game.guesses.length }) : t('wordle.lost', { word: game.target })}</p>
-              <div className="button-row">
-                <Button onClick={playAgain}>{t('wordle.playAgain')}</Button>
-                <Button variant="secondary" onClick={share}>{t('wordle.share')}</Button>
-              </div>
-            </Card>
-          </div>
+          <SolvedCard title={game.status === 'won' ? t('wordle.result.won') : t('wordle.result.lost')}>
+            <p>{game.status === 'won' ? t('wordle.result.wonBody', { n: game.guesses.length }) : t('wordle.lost', { word: game.target })}</p>
+            <div className="button-row">
+              <Button onClick={playAgain}>{t('wordle.playAgain')}</Button>
+              <Button variant="secondary" onClick={share}>{t('wordle.share')}</Button>
+            </div>
+          </SolvedCard>
         )}
 
         <div className="wd-keys" role="group" aria-label={t('wordle.keyboard')}>
@@ -170,8 +161,7 @@ export function WordleScreen() {
             </div>
           ))}
         </div>
-        <details className="game-help">
-          <summary><Ask aria-hidden="true" focusable="false" />{t('wordle.help.title')}</summary>
+        <GameHelp title={t('wordle.help.title')}>
           <p>{t('wordle.help.1')}</p>
           <ul className="wd-help__list">
             <li><span className="wd-swatch" data-state="correct" aria-hidden="true" /> {t('wordle.help.correct')}</li>
@@ -179,7 +169,7 @@ export function WordleScreen() {
             <li><span className="wd-swatch" data-state="absent" aria-hidden="true" /> {t('wordle.help.absent')}</li>
           </ul>
           <p>{t('wordle.help.2')}</p>
-        </details>
+        </GameHelp>
       </div>
       <MoreLinks links={[{ to: '/games-explorer', label: t('route.gamesExplorer') }]} />
     </div>

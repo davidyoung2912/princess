@@ -244,6 +244,8 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/games-explorer', titleKey: 'route.gamesExplorer', tab: null, phase: 0 },
   { path: '/games-explorer/cruise-wordle', titleKey: 'route.wordle', tab: null, phase: 0 },
   { path: '/games-explorer/sudoku', titleKey: 'route.sudoku', tab: null, phase: 0 },
+  { path: '/games-explorer/diagonal-sudoku', titleKey: 'route.diagonalSudoku', tab: null, phase: 0 },
+  { path: '/games-explorer/jigsaw-sudoku', titleKey: 'route.jigsawSudoku', tab: null, phase: 0 },
   { path: '/exercise-explorer', titleKey: 'route.exerciseExplorer', tab: null, phase: 0 },
   { path: '/exercise-explorer/:venueId', titleKey: 'route.exerciseVenue', tab: null, phase: 0 },
   { path: '/spa-explorer', titleKey: 'route.spaExplorer', tab: null, phase: 0 },

@@ -244,6 +244,8 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/games-explorer': 'offline',
   '/games-explorer/cruise-wordle': 'offline',
   '/games-explorer/sudoku': 'offline',
+  '/games-explorer/diagonal-sudoku': 'offline',
+  '/games-explorer/jigsaw-sudoku': 'offline',
   '/activities-explorer': 'view-only',
   '/activities-explorer/:venueId': 'view-only',
   '/ship-explorer': 'needs-connection',

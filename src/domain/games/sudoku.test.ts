@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DIFFICULTIES, deadCells, LEVELS, UNITS, candidateDigits, clock, conflicts, countSolutions, fullGrid, generatePuzzle, isSolved, nextHint, solvableByLogic, solve } from './sudoku'
+import { DIAGONAL, DIFFICULTIES, deadCells, jigsawRegions, makeRules, regionEdges, type Variant, LEVELS, UNITS, candidateDigits, clock, conflicts, countSolutions, fullGrid, generatePuzzle, isSolved, nextHint, solvableByLogic, solve } from './sudoku'
 
 /** A small repeatable random number generator, so a failing puzzle can be reproduced. */
 const seeded = (seed: number) => () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296 }
@@ -7,7 +7,7 @@ const valid = (g: readonly number[]) => UNITS.every((u) => new Set(u.map((c) => 
 
 describe('full grid', () => {
   it('is a valid complete grid and differs between runs', () => {
-    const a = fullGrid(seeded(1))
+    const a = fullGrid(seeded(1))!
     expect(valid(a)).toBe(true)
     expect(fullGrid(seeded(2))).not.toEqual(a)
   })
@@ -128,3 +128,67 @@ describe('hints', () => {
 })
 
 it('formats the clock', () => { expect(clock(7)).toBe('0:07'); expect(clock(754)).toBe('12:34') })
+
+describe('variants', () => {
+  const variants: Variant[] = ['diagonal', 'jigsaw']
+  for (const variant of variants) {
+    for (const difficulty of DIFFICULTIES) {
+      it(`makes a unique, logic-solvable ${variant} ${difficulty} puzzle`, () => {
+        const p = generatePuzzle(difficulty, seeded(41), variant)
+        const clues = p.puzzle.filter((v) => v !== 0).length
+        expect(p.rules.variant).toBe(variant)
+        expect(p.rules.units.every((u) => new Set(u.map((c) => p.solution[c])).size === 9)).toBe(true)
+        expect(p.puzzle.every((v, i) => v === 0 || v === p.solution[i])).toBe(true)
+        expect(countSolutions(p.puzzle, 2, p.rules)).toBe(1)
+        expect(solvableByLogic(p.puzzle, LEVELS[difficulty].logic, p.rules)).toBe(true)
+        expect(clues).toBeGreaterThanOrEqual(17)
+        expect(conflicts(p.puzzle, p.rules).size).toBe(0)
+        expect(deadCells(p.puzzle, p.rules).size).toBe(0)
+      })
+    }
+  }
+  it('diagonal: both main diagonals hold 1 to 9, and a repeat on one is a conflict', () => {
+    const p = generatePuzzle('easy', seeded(5), 'diagonal')
+    for (const diag of [[0, 10, 20, 30, 40, 50, 60, 70, 80], [8, 16, 24, 32, 40, 48, 56, 64, 72]]) expect(new Set(diag.map((c) => p.solution[c])).size).toBe(9)
+    expect(DIAGONAL.diagonal.size).toBe(17)
+    const g = Array(81).fill(0)
+    g[0] = 6; g[80] = 6
+    expect([...conflicts(g, DIAGONAL)].sort((a, b) => a - b)).toEqual([0, 80])
+    expect(conflicts(g).size).toBe(0)
+  })
+  it('jigsaw: nine connected regions of nine cells, different from the boxes', () => {
+    for (const seed of [1, 2, 3]) {
+      const region = jigsawRegions(seeded(seed))
+      for (let id = 0; id < 9; id++) {
+        const cells = region.flatMap((v, i) => (v === id ? [i] : []))
+        expect(cells).toHaveLength(9)
+        const seen = new Set([cells[0]])
+        const queue = [cells[0]]
+        while (queue.length) {
+          const c = queue.pop()!
+          for (const n of [c - 9, c + 9, c % 9 > 0 ? c - 1 : -1, c % 9 < 8 ? c + 1 : -1]) if (cells.includes(n) && !seen.has(n)) { seen.add(n); queue.push(n) }
+        }
+        expect(seen.size).toBe(9)
+      }
+      expect(region).not.toEqual(makeRules('classic').region)
+    }
+  })
+  it('jigsaw: hints use the region and the regions are the units', () => {
+    const p = generatePuzzle('easy', seeded(8), 'jigsaw')
+    expect(p.rules.kinds.filter((k) => k === 'region')).toHaveLength(9)
+    const g = [...p.puzzle]
+    for (let n = 0; n < 81; n++) {
+      const h = nextHint(g, p.solution, p.rules)
+      if (h === null) break
+      expect(h.kind).not.toBe('mistake')
+      if (h.kind !== 'mistake') g[h.index] = h.value
+    }
+    expect(isSolved(g, p.solution)).toBe(true)
+  })
+  it('draws region borders from the region map', () => {
+    const classic = makeRules('classic')
+    expect(regionEdges(classic, 2)).toEqual({ right: true, bottom: false })
+    expect(regionEdges(classic, 20)).toEqual({ right: true, bottom: true })
+    expect(regionEdges(classic, 8)).toEqual({ right: false, bottom: false })
+  })
+})
