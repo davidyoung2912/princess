@@ -38,7 +38,7 @@ public sealed class MemoryStanleyChangeStore : IStanleyChangeStore
 /// </summary>
 public sealed class StanleyChangeService(
     IStanleyTrips trips, ITripStore tripStore, IStanleyChangeStore store, IProgramChanges program, IPushStore pushStore, ScopeLoader scopes, ITenderOutlook tender, IWeatherService weather,
-    IShipNavigation nav, StanleyTravelService travel, StanleyMoneyService money, CaseService cases, OrderService orders, IInboxStore inbox, IUserClock clock, IClock serverClock, IOptions<StanleyOptions> options, ILogger<StanleyChangeService> log)
+    IShipNavigation nav, StanleyTravelService travel, StanleyMoneyService money, CaseService cases, OrderService orders, IInboxStore inbox, IUserClock clock, IClock serverClock, IOptions<StanleyOptions> options, ILogger<StanleyChangeService> log, StanleyPermissionService? permissions = null)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -178,7 +178,11 @@ public sealed class StanleyChangeService(
         var (read, cards, memory) = await NoticedAsync(user, body.SailingId, body.Saved, ct);
         if (read.Trip is null) return new([], null, []);
         var quiet = await QuietAsync(user, read.Trip, read.Now, ct);
-        return StanleyChangeRules.Deliver(cards, memory, body.Screen, body.Level, body.Shown ?? [], quiet, StanleyChangeRules.Missed(cards, memory));
+        var delivery = StanleyChangeRules.Deliver(cards, memory, body.Screen, body.Level, body.Shown ?? [], quiet, StanleyChangeRules.Missed(cards, memory));
+        // Stanley's own unprompted suggestion needs the guest's yes: "tell me what changed" (CL-02), or "watch my spending" (CL-03) for the spend card. Safety and deadline alerts are the critical list and are never held back here.
+        if (permissions is not null && delivery.Suggestion is { } suggestion && !await permissions.MayAsync(user, suggestion.Kind == "spend" ? "CL-03" : "CL-02", ct))
+            return delivery with { Suggestion = null };
+        return delivery;
     }
 
     /// <summary>The guest dismissed a card. It stays dismissed until its facts change (the fingerprint it carries no longer matches).</summary>

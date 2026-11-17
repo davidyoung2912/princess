@@ -17,6 +17,16 @@ Written for phase 4 of `docs/stanley-gap-analysis-and-plan.md`. It lists every f
 | Remembered preferences | kind and value from a fixed list (pace, wake, interest, dining, mobility, diet), scope (this trip with its sailing id, or future trips), source (told, quiz, plan, carried), whether a sensitive item may be used in answers, the time | Show the guest what Stanley keeps and why, and tailor suggestions | Server database (`dbo.StanleyMemory`, `dbo.StanleyMemorySettings`), owned by the guest alone; deleted with the account | Kept until the guest forgets it (one item or everything) or deletes the account; not aged out. Forgetting deletes the row. Only the guest's own items ever enter the guest's packet. Mobility and diet reach a model only when the guest switched that item on; memory off means none is sent. A child account keeps none. The audit trail keeps the action and the kind, never the value |
 | Tool log | tool name, refused or ok, opaque guest reference | Prove every tool call happened and was checked | Server application log | Follows the application log retention; never the input or the answer |
 
+## What Stanley may do (phase P0a)
+
+| Data | Fields | Purpose | Provider | Retention |
+|---|---|---|---|---|
+| Permissions | level (1 to 4), the rows the guest changed by hand (CL-01 to CL-10, on or off), paused until | Decide which unprompted Stanley steps are allowed; the one check is `StanleyPermissionService.MayAsync` | Server (person state document `stanleyPermissions`) | Account life; no free text |
+| Consent history | ability, state, wording version, source (welcome, settings, stage), time | Show what the guest agreed to and which wording | Server (person state document `stanleyConsent`, last 200 lines) | Account life; never any text the guest typed |
+| Step-up | code hash and expiry (HMAC under a key from the signing key), token hash and expiry | Confirm it is the guest before Stanley is given more to do | Server (person state document `stanleyStepUp`); the code is emailed to the address on the account | Code 10 minutes, token 10 minutes and single use |
+
+Decision: the plan's tables (`StanleyPermissions`, `StanleyConsentLog`) are held as person state documents for now, which the server already keeps with versioned saves; move them to tables when the ledger (P1) needs queries across guests.
+
 ## Rules the tools keep
 
 - A tool that reads a traveller checks the guest's access to that traveller on every call (`StanleyPacket.Resolve`), from facts the server read, never from the request. A traveller who may not be read and one who does not exist get the same answer.

@@ -5,6 +5,7 @@ import { Card } from './Card'
 import { DataSettings } from './DataSettings'
 import { DiagnosticsSettings } from './DiagnosticsSettings'
 import { DisplaySettings } from './DisplaySettings'
+import { StanleyAuthority } from './StanleyAuthority'
 import { StanleySettings } from './StanleySettings'
 import { TipsSettings } from './TipsSettings'
 
@@ -18,6 +19,7 @@ export function SettingsScreen() {
         <AvatarPicker />
       </Card>
       <StanleySettings />
+      <StanleyAuthority source="settings" full />
       <TipsSettings />
       <DataSettings />
       <DiagnosticsSettings />

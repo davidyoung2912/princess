@@ -84,6 +84,18 @@ export const fetchRates = async (): Promise<RateTable> => normalizeRates(await h
 /** What Stanley can do, for this guest, from the server's catalogue. */
 export const fetchStanleyCapabilities = (): Promise<unknown> => http.get<unknown>('/me/stanley/capabilities')
 
+/** What the guest lets Stanley do on his own (levels, the checklist, pause, the emailed code for more). The server decides; nothing here is kept on the device. */
+export const stanleyPermissions = {
+  get: () => http.get<unknown>('/me/stanley/permissions'),
+  setLevel: (level: number, source: string, stepUp?: string) => http.put<unknown>('/me/stanley/permissions/level', { level, source, stepUp }),
+  setRow: (id: string, on: boolean, source: string, stepUp?: string) => http.put<unknown>(`/me/stanley/permissions/rows/${encodeURIComponent(id)}`, { on, source, stepUp }),
+  pause: (until: 'today' | 'forever') => http.post<unknown>('/me/stanley/permissions/pause', { until }),
+  resume: () => http.delete<unknown>('/me/stanley/permissions/pause'),
+  history: () => http.get<unknown>('/me/stanley/permissions/history'),
+  sendCode: () => http.post<unknown>('/me/stanley/permissions/stepup'),
+  verifyCode: (code: string) => http.post<unknown>('/me/stanley/permissions/stepup/verify', { code }),
+}
+
 /** Stanley, the one chat helper, is answered by the server's gateway (word filter, safety screen, routing, model, tools, budget and log all stay there). */
 export const sendStanley: StanleySender = (body) => http.post<unknown>('/me/stanley', body)
 

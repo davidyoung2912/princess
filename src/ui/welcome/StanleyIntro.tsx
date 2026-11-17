@@ -10,6 +10,7 @@ import { Card } from '../Card'
 import { Button, LinkButton } from '../Button'
 import { StanleyPose } from '../StanleyPose'
 import { AvatarPicker } from '../AvatarPicker'
+import { StanleyAuthority } from '../StanleyAuthority'
 
 /** What Stanley can do, in the order shown: answers, does, watches, helps. The words are `stanleyIntro.card.<n>` and `stanleyIntro.can.<n>`; the Try-it sentence for each comes from the server's catalogue group of the same position. */
 const CAN = [{ n: 1, group: 'answer' }, { n: 2, group: 'do' }, { n: 3, group: 'watch' }, { n: 4, group: 'value' }] as const
@@ -63,6 +64,7 @@ export function StanleyIntro() {
         <AvatarPicker />
         <p className="muted">{t('avatar.skip')}</p>
       </Card>
+      <StanleyAuthority source="welcome" />
       <Card hero labelledBy="stanley-intro-level-h">
         <h2 id="stanley-intro-level-h">{th('stanleyIntro.h.level')}</h2>
         <p>{t('stanleyIntro.level.intro')}</p>

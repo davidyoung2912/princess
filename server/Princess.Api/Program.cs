@@ -161,6 +161,7 @@ services.AddScoped<IStanleyEffects, StanleyEffects>();
 services.AddScoped<StanleyActionService>();
 services.AddScoped<StanleyHandoffService>();
 services.AddScoped<StanleyMemoryService>();
+services.AddScoped<StanleyPermissionService>();
 services.AddScoped<StanleyPollService>();
 services.AddScoped<StanleyReminderService>();
 services.AddScoped<StanleyHandoffPhotoService>();

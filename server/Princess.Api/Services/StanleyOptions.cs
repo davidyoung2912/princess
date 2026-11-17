@@ -24,6 +24,8 @@ public sealed class StanleySwitches
     public bool Handoff { get; set; } = true;
     /// <summary>The change engine (phase 11): change cards, "explain this change", "what did I miss?" and the rough-seas tip. Off, Stanley says nothing unprompted about changes and the chat falls back to Notices.</summary>
     public bool Changes { get; set; } = true;
+    /// <summary>Levels 3 and 4 of what Stanley may do (docs/stanley-actions-and-proactive-plan.md, 11.2). Off until the rung 3 and rung 4 abilities exist and gate G1 has passed (<c>Stanley:Switches:Authority=true</c>); with it off a guest can choose levels 1 and 2 only. Not in <see cref="Off"/>, because off is its normal state.</summary>
+    public bool Authority { get; set; } = false;
     /// <summary>Entitlement, spend and loyalty coach (phase 12): the money answers in chat, the spend pace and the endpoints under <c>/me/stanley/money</c>.</summary>
     public bool Money { get; set; } = true;
     /// <summary>Stanley's friendly chat help (docs/chat-stanley-plan.md, phases 1 and 2): his wording on requests, reword and polish, and icebreakers. Off, chat works exactly as before and the app hides his buttons.</summary>

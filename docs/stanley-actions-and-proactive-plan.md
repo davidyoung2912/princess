@@ -1,6 +1,6 @@
 # Stanley beyond answers: actions, watching and proactive help
 
-Status: **one reconciled specification (2026-11-10). Phase P0 (explain what exists) is written (2026-11-16); nothing else here is built.** It replaces three layers of drafting (the first draft and two rounds of owner feedback) with a single document that has one phase plan, one decision list, one measures table and no superseded text. Section 17 records what was reconciled and where the old text went.
+Status: **one reconciled specification (2026-11-10). Phases P0 (explain what exists) and P0a (levels, permissions and checklist, with the server enforcement point, step-up and Pause everything; levels 3 and 4 stay off behind `Stanley:Switches:Authority`) are written (2026-11-16); nothing else here is built.** It replaces three layers of drafting (the first draft and two rounds of owner feedback) with a single document that has one phase plan, one decision list, one measures table and no superseded text. Section 17 records what was reconciled and where the old text went.
 
 It answers: *what can Stanley do for the guest other than answer questions, can he take actions, and what proactive or suggestive help could save time, catch problems and get more out of the app?* It ends with the delivery plan, gates and risks.
 
