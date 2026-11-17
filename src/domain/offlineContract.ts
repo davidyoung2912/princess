@@ -241,6 +241,8 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/spa-explorer/:venueId': 'view-only',
   '/exercise-explorer': 'view-only',
   '/exercise-explorer/:venueId': 'view-only',
+  '/games-explorer': 'offline',
+  '/games-explorer/cruise-wordle': 'offline',
   '/activities-explorer': 'view-only',
   '/activities-explorer/:venueId': 'view-only',
   '/ship-explorer': 'needs-connection',

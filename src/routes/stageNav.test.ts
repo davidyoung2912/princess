@@ -185,8 +185,8 @@ describe('search at a stage', () => {
 })
 
 describe('the Explorer colour', () => {
-  it('belongs to the seven Explorer pages only, and every one is a real route', () => {
-    expect(EXPLORER_PATHS).toHaveLength(7)
+  it('belongs to the eight Explorer pages only, and every one is a real route', () => {
+    expect(EXPLORER_PATHS).toHaveLength(8)
     for (const p of EXPLORER_PATHS) {
       expect(ROUTES.some((r) => r.path === p)).toBe(true)
       expect(shellArea(p, 'blue')).toBe('explorer')
