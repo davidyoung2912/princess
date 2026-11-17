@@ -243,3 +243,14 @@ Nothing new is stored. `GET /me/stanley/disembark` works out its answer from the
 The last evening also points to the final bill (SR-10.2) and the tips (SR-10.4); neither reads an amount.
 
 It never tags a bag, fills in or submits customs, picks an exit time or sends anything, and sets no reminder. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: whether bags are tagged or the customs form is done, the exit time and onward travel, and the final bill.
+
+## Family pack, first part (phase P9e, SR-F.1 and SR-F.4)
+
+Nothing new is stored. `GET /me/stanley/family` works out its answer from the sailing date and the ages of the travellers on the booking (by position, never a name), and returns it without keeping it.
+
+| Input | Used for | In the answer |
+|---|---|---|
+| sailing date | the kids club in the fortnight before sailing; muster on sailing day | a title and a screen to open |
+| ages on the booking | whether anyone is under 18, and how many are of kids club age (3 to 17) | a count in words |
+
+It says nothing unless a traveller is under 18. It never registers a child, messages a teen or marks muster done, and sets no reminder. It is off for a supervised account and when the tools switch is off, and is not sent to a model. It lists what it cannot see: kids club registration and muster state, and age limits, bedtimes and meet-up times.

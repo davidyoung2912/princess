@@ -167,6 +167,11 @@ export const stanleyDisembark = {
   get: () => http.get<unknown>('/me/stanley/disembark'),
 }
 
+/** The Family pack, first part (phase P9e). Read-only; nothing is registered, marked or sent. */
+export const stanleyFamily = {
+  get: () => http.get<unknown>('/me/stanley/family'),
+}
+
 /** The trip checklist and smart defaults (phase P5). Read-only; a default is shown, never applied. */
 export const stanleyChecklist = {
   get: () => http.get<unknown>('/me/stanley/checklist'),

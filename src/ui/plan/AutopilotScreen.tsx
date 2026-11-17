@@ -31,6 +31,7 @@ import { StanleyShipGroupCard } from './StanleyShipGroupCard'
 import { StanleyPrebookCard } from './StanleyPrebookCard'
 import { StanleyEmbarkCard } from './StanleyEmbarkCard'
 import { StanleyDisembarkCard } from './StanleyDisembarkCard'
+import { StanleyFamilyCard } from './StanleyFamilyCard'
 import { StanleyTripSoFarCard } from './StanleyTripSoFarCard'
 import { StanleyStandingCard } from './StanleyStandingCard'
 import { StanleyControlCard } from './StanleyControlCard'
@@ -132,6 +133,7 @@ export function AutopilotScreen() {
       <StanleyPrebookCard />
       <StanleyEmbarkCard />
       <StanleyDisembarkCard />
+      <StanleyFamilyCard />
       <StanleyTripSoFarCard />
       <StanleyStandingCard />
       <StanleyControlCard />
