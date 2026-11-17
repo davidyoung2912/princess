@@ -330,3 +330,7 @@ The same run also reads the shortlist in the guest's saved decision brief and sa
 ### Lists kept current, comparison (phase P10a, AUT-05 fourth part)
 
 The same run also compares the guest's open shortlisted sailings (two to four) using the weights and filters in their saved decision brief, exactly as the Compare screen does, and says which scores moved since the last run and which sailing now scores highest. The only thing stored is the ranked list of "sailing id=score" in the guest's own state store (key `stanley.auto.lists.comparison`). A sailing joining or leaving the shortlist is the shortlist's line, not repeated. It never changes the brief, weights or shortlist, re-ranks nothing for the guest and sends nothing. AUT-05 is now complete; AUT-07 is still to do.
+
+### Port pack reminder (phase P10a, AUT-07 first part)
+
+AUT-02's run also sets one reminder at 6 pm ship time the evening before each port day ("Tomorrow is <port>. While you are on ship Wi-Fi, open the port page so it is saved on this phone for ashore."), key `aut02:portpack:<date>`, from the published port schedule only. It is a reminder, not a save: nothing is stored on the phone for the guest, and no location, booking or data leaves the account. Same limits (30 per trip in all), receipt and two-hour undo as the others. The boarding pass to Wallet, receipts, recap and album are still to do.

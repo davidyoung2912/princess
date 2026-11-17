@@ -24,7 +24,7 @@ public static class StanleyAutoRules
 {
     public const string ClassId = "AUT-02", Row = "CL-08", Marker = "aut02:";
     public const int MaxPerTrip = 30, PaymentLeadFar = 7, PaymentLeadNear = 2, UndoMinutes = 120, ExitLeadMinutes = 60, DocsLead = 14, DiningFreezeLead = 5, AboardLeadMinutes = 60;
-    private static readonly TimeOnly Morning = new(9, 0), BagNight = new(15, 0);
+    private static readonly TimeOnly Morning = new(9, 0), BagNight = new(15, 0), PortPackTime = new(18, 0);
 
     /// <summary>The dates on the trip that can cost something and are still ahead. A paid balance and a check-in that has opened give none.</summary>
     public static List<AutoCandidate> Candidates(CheckupFacts f)
@@ -52,6 +52,8 @@ public static class StanleyAutoRules
                         var d = f.Timeline.Days[day - 1];
                         var place = Itinerary.PortOf(d.Port)?.Name ?? d.Port;
                         list.Add(new($"{Marker}aboard:{d.Date:yyyy-MM-dd}", $"All aboard in {place} is in an hour. Time to head back to the ship.", aboard.AddMinutes(-AboardLeadMinutes)));
+                        list.Add(new($"{Marker}portpack:{d.Date:yyyy-MM-dd}", $"Tomorrow is {place}. While you are on ship Wi-Fi, open the port page so it is saved on this phone for ashore.", TripRules.ZonedToUtc(d.Date.AddDays(-1), PortPackTime)));
+                    }
                     }
             if (f.Timeline is not null && f.Timeline.Days.Count >= 2)
             {
@@ -80,7 +82,7 @@ public static class StanleyAutoRules
     public static readonly string[] NotChecked =
     [
         "Reminders that follow (AUT-01) are done by the reminders themselves when a time moves.",
-        "Saved for me (AUT-07) is not built yet. Lists kept current (AUT-05) is a separate run that only covers the packing list.",
+        "Saved for me (AUT-07) so far only reminds you the evening before a port to open its page on ship Wi-Fi; nothing is saved to your phone for you, and the boarding pass, receipts, recap and album are not built. Lists kept current (AUT-05) is a separate run that only covers the packing list.",
     ];
 
     public const string ListsKey = "stanley.auto.lists.packing";
