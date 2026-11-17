@@ -277,6 +277,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatRoomRules.IsRoomKind(member.Kind)) throw ApiException.Forbidden("room");   // a channel or room is never bridged to text
+        if (member.Kind == ChatHuddleRules.Kind && !ChatHuddleRules.AllowsSms) throw ApiException.Forbidden("huddle");   // nor a huddle
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         if (!ChatPlanningRules.MayPost(member.Kind, member.AnnouncementOnly, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("announcementOnly");
         var text = ChatConversationRules.CleanText(body) ?? throw ApiException.Invalid("text");
@@ -289,6 +290,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatRoomRules.IsRoomKind(member.Kind)) throw ApiException.Forbidden("room");   // photos in rooms wait for the media phase
+        if (member.Kind == ChatHuddleRules.Kind && !ChatHuddleRules.AllowsPhotos) throw ApiException.Forbidden("huddle");   // a huddle has no photos in version one
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         if (!ChatPlanningRules.MayPost(member.Kind, member.AnnouncementOnly, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("announcementOnly");
         var now = await userClock.NowAsync(actor, ct);

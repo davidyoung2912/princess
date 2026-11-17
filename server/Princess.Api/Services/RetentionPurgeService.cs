@@ -158,6 +158,16 @@ public sealed class RetentionPurgeService(IServiceScopeFactory scopes, IOptions<
                 {
                     log.LogWarning(e, "The room retention purge failed; the other purges carry on");
                 }
+                // A huddle nobody has spoken in for 60 days (chat phase 15). Its own try, like the rooms above.
+                try
+                {
+                    var huddlesGone = await ChatHuddleRetention.DeleteQuietAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow, stoppingToken);
+                    if (huddlesGone > 0) log.LogInformation("Deleted {Huddles} quiet huddle(s)", huddlesGone);
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    log.LogWarning(e, "The huddle retention purge failed; the other purges carry on");
+                }
                 if (options.Value.NetworkDataDays > 0)
                 {
                     var (a, r) = await NetworkDataRetention.BlankOlderThanAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow.AddDays(-options.Value.NetworkDataDays), stoppingToken);

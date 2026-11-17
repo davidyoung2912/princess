@@ -495,3 +495,38 @@ describe('Chat gates (chat phase 14): Stanley in a thread', () => {
     for (const line of ['0.60, 0.80', '0.10, 0.20', '0.05, 0.10', '1, 3', '1, 2', '0.08, 0.03']) expect(rules).toContain(line)
   })
 })
+
+describe('Huddle gates (chat phase 15): a chat before anyone has booked', () => {
+  const read2 = (f: string): string => read(`server/Princess.Api/${f}`)
+
+  it('a link is kept only as a hash, and every bad link gives the one answer', () => {
+    const svc = read2('Services/ChatHuddleService.cs')
+    const store = read2('Data/ChatHuddleStores.cs')
+    expect(svc).toContain('ChatHuddleRules.HashOf(token)')
+    expect(store).not.toMatch(/INSERT INTO dbo\.ChatHuddleInvites \([^)]*\bToken\b[^H]/)
+    expect(svc.match(/ApiException\.NotFound\(no\)/g)?.length).toBe(1) // one place turns a bad link into an answer
+    expect(svc).not.toMatch(/ApiException\.\w+\("(expired|revoked|wrongLink)"\)/)
+  })
+
+  it('a huddle has no photos and no text bridge', () => {
+    const chat = read2('Services/ChatService.cs')
+    expect(chat).toContain('ChatHuddleRules.AllowsPhotos')
+    expect(chat).toContain('ChatHuddleRules.AllowsSms')
+  })
+
+  it('joining needs a signed-in caller who says they are an adult, and the preview reads no message or card', () => {
+    const svc = read2('Services/ChatHuddleService.cs')
+    expect(svc).toContain('AdultConfirmed == true')
+    const preview = svc.slice(svc.indexOf('PreviewAsync'), svc.indexOf('JoinAsync'))
+    expect(preview).not.toMatch(/ListCardsAsync|ListMessages|LastActivity/)
+  })
+
+  it('no huddle service logs or audits a name, a message or a card', () => {
+    expect(read2('Services/ChatHuddleService.cs')).not.toMatch(/\blog\.|ILogger|audit\./i)
+  })
+
+  it('a huddle role never reaches money, booking or action code', () => {
+    expect(read2('Services/ChatHuddleService.cs')).not.toMatch(/StanleyActionService|IPaymentProvider|IBookingStore|StanleyMoneyService|ConfirmAsync/)
+  })
+})
+
