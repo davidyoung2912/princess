@@ -168,3 +168,13 @@ describe('links signed by the server', () => {
     expect(recapProblem(Array.from({ length: 12 }, () => 'x'.repeat(60)).join('\n'))).toBeNull()
   })
 })
+
+describe('suggestedContactName', () => {
+  it('offers the emergency contact name only when it is not already a contact', async () => {
+    const { suggestedContactName } = await import('./homeLink')
+    expect(suggestedContactName({ name: '  Pat Doe ' }, [])).toBe('Pat Doe')
+    expect(suggestedContactName({ name: 'Pat Doe' }, [{ name: 'pat doe' }])).toBeNull()
+    expect(suggestedContactName({ name: '   ' }, [])).toBeNull()
+    expect(suggestedContactName(null, [])).toBeNull()
+  })
+})

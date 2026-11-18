@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { guide, task } from './fixture'
-import { doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs } from './stanley'
+import { doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs, tourChoices } from './stanley'
 
 describe('nowTask', () => {
   it('is the guide primary, so Stanley and Home agree', () => {
@@ -74,3 +74,12 @@ describe('doItFor', () => {
     expect(doItFor(customs, 'off', 'asked')).toBeNull()
   })
 })
+
+describe('tourChoices', () => {
+  it('reads the other tours the server named and drops anything odd', () => {
+    expect(tourChoices({ alt1: 'coz-beach|Beach day', alt2: 'coz-ruins|Ruins | and more' })).toEqual([{ id: 'coz-beach', name: 'Beach day' }, { id: 'coz-ruins', name: 'Ruins | and more' }])
+    expect(tourChoices({ alt1: 'bad id|Name', alt2: 'coz-ruins|' })).toEqual([])
+    expect(tourChoices({ alt3: 'coz-beach|Beach day' })).toEqual([])
+  })
+})
+

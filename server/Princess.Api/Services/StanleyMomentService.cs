@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// <see cref="ChatProactiveRules"/>. It runs when the guest's notices are checked (the app asks, or the scheduled pass does) and is best effort: a failure is logged without text and never
 /// reaches the notice path. It sends no phone alert: a card is a quiet badge (the unread count) and is read in the app.
 /// </summary>
-public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore memory, ILogger<StanleyMomentService> log, Microsoft.Extensions.Options.IOptions<StanleyOptions> options)
+public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore memory, ILogger<StanleyMomentService> log, Microsoft.Extensions.Options.IOptions<StanleyOptions> options, IStateStore state)
 {
     /// <summary>
     /// Decides and, if one is due, posts a card. <paramref name="held"/> is true in quiet hours or do-not-disturb: nothing is posted, and the card waits for the next check. Returns the moment key posted, or null.
@@ -27,7 +27,7 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             if (!off.Contains(ChatProactiveRules.Planning) && ChatProactiveRules.ModeAllows(mode, ChatProactiveRules.ClassSuggestion) && await GroupOfferAsync(actor, ct) is { } group) facts = facts with { ShareGroup = group };
             if (!off.Contains(ChatProactiveRules.Planning) && facts.Stage is StageRules.Book or StageRules.Manage or StageRules.Prebook or StageRules.GetToShip) facts = await BookingChatsAsync(actor, facts, ct);
             if (!off.Contains(ChatProactiveRules.Onboard) && ChatProactiveRules.ModeAllows(mode, ChatProactiveRules.ClassSuggestion) && facts.CruiseDay > 0) facts = await GroupsTodayAsync(actor, facts, ct);
-            var pick = ChatProactiveRules.Choose(ChatProactiveRules.Candidates(facts), history, new(mode, off, held, actor.IsSupervised), facts.Now);
+            var pick = ChatProactiveRules.Choose(ChatProactiveRules.Candidates(facts), history, new(mode, off, held, actor.IsSupervised), facts.Now, await PutAsideAsync(actor.Id, facts.Now, ct));
             if (pick is null) return null;
             await store.EnsureStanleyAsync(actor.Id, StanleyPersonaRules.Welcome(actor.FirstName), facts.Now, ct);
             var (voice, subtitle) = await store.LastStanleyPersonaAsync(actor.Id, ct) ?? (StanleyPersonaRules.Company, StanleyPersonaRules.CompanyName);
@@ -41,6 +41,15 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             log.LogWarning(e, "A Stanley suggestion could not be posted for user {UserId}", actor.Id);
             return null;
         }
+    }
+
+    /// <summary>The guide tasks the guest put aside on Home (not for me, or later until a day not yet come), so a card about one is not posted. An unreadable document counts as none.</summary>
+    private async Task<IReadOnlySet<string>> PutAsideAsync(long userId, DateTime now, CancellationToken ct)
+    {
+        var row = await state.GetAsync(false, userId, "guideChoices", ct);
+        if (row is null) return new HashSet<string>();
+        try { return GuideRules.PutAside(GuideRules.ReadChoices(System.Text.Json.Nodes.JsonNode.Parse(row.Json) as System.Text.Json.Nodes.JsonObject), DateOnly.FromDateTime(now)); }
+        catch (System.Text.Json.JsonException) { return new HashSet<string>(); }
     }
 
     /// <summary>

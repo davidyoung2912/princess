@@ -50,6 +50,16 @@ export const EMPTY_HOME: HomeState = { secret: '', contacts: [], links: [], post
 export type ContactProblem = 'name' | 'email' | 'duplicate' | 'tooMany'
 export type Change<P> = { state: HomeState; problem: null } | { state: HomeState; problem: P }
 
+/**
+ * The name to offer when the guest adds someone to follow the trip: the emergency contact already on their profile, when there is one and nobody is added yet. Only the name: the profile holds no
+ * email for them, so the guest still types that, and nothing is added until they press Add.
+ */
+export function suggestedContactName(emergency: { name: string } | null | undefined, existing: readonly { name: string }[]): string | null {
+  const n = (emergency?.name ?? '').trim().slice(0, 60)
+  if (!n || existing.some((c) => c.name.trim().toLowerCase() === n.toLowerCase())) return null
+  return n
+}
+
 export function addContact(state: HomeState, name: string, email: string, id: string): Change<ContactProblem> {
   const n = name.trim().slice(0, 60)
   const e = email.trim().toLowerCase()

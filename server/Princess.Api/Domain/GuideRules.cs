@@ -76,6 +76,10 @@ public static class GuideRules
     }
 
     /// <summary>Reads the <c>guideChoices</c> document (<c>{ skipped: { id: atMs }, later: { id: "yyyy-MM-dd" } }</c>); anything unreadable is left out.</summary>
+    /// <summary>The task ids the guest has put aside as of this day: skipped ones, and ones put off to a later day.</summary>
+    public static IReadOnlySet<string> PutAside(GuideChoices c, DateOnly today) =>
+        new HashSet<string>(c.Skipped.Concat(c.Later.Where(kv => kv.Value > today).Select(kv => kv.Key)));
+
     public static GuideChoices ReadChoices(System.Text.Json.Nodes.JsonObject? data)
     {
         var skipped = new HashSet<string>();

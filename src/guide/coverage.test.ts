@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { OPTIONAL_FIRST_STEP, OPTIONAL_VISITS } from './optionalVisits'
+import { VISIT_STEP } from './view'
+import { MAX_PROGRESS_STEP } from '../routes/stageProgress'
 import { en } from '../i18n/locales/en'
 import { ROUTES } from '../routes/routes'
 import { JOURNEY_STAGES, type JourneyStage } from '../routes/hubs'
@@ -87,3 +90,46 @@ describe('the guide catalogue, read from the server', () => {
     expect(hard.length).toBeLessThan(12)
   })
 })
+
+describe('optional tasks done by visiting (G9b)', () => {
+  const listed = Object.values(OPTIONAL_VISITS).flatMap((l) => l ?? [])
+  const lines = CODE.split('\n')
+  // Optional tasks the catalogue marks as known only by a visit, with the address in the same line (the ones a welcome step already counts, dream.invite and port.safe, are left out).
+  const catalogue = lines.flatMap((l) => {
+    const m = /new\("([A-Za-z]+\.[A-Za-z]+)", "(\/[^"]*)",[^\n]*ByVisit, Optional: true\)/.exec(l)
+    return m && (VISIT_STEP[m[1]] ?? OPTIONAL_FIRST_STEP) >= OPTIONAL_FIRST_STEP ? [{ id: m[1], to: m[2] }] : []
+  })
+
+  it('lists exactly the optional visit tasks of the catalogue, with the same screen', () => {
+    expect(catalogue.length).toBeGreaterThan(15)
+    expect([...listed].sort((a, b) => a.id.localeCompare(b.id))).toEqual([...catalogue].sort((a, b) => a.id.localeCompare(b.id)))
+  })
+
+  it('keeps each task under its own stage and steps within the stored limit', () => {
+    for (const [stage, list] of Object.entries(OPTIONAL_VISITS)) {
+      for (const x of list ?? []) expect(x.id.startsWith(`${stage}.`), x.id).toBe(true)
+      expect(OPTIONAL_FIRST_STEP + (list?.length ?? 0) - 1).toBeLessThanOrEqual(MAX_PROGRESS_STEP)
+    }
+  })
+})
+
+describe('cards keyed to guide tasks (G9c)', () => {
+  const RULES = readFileSync(new URL('../../server/Princess.Api/Domain/ChatProactiveRules.cs', import.meta.url), 'utf8')
+  const mapped = [...RULES.matchAll(/\["([\w.-]+)"\] = "([A-Za-z]+\.[A-Za-z]+)",/g)].map((m) => ({ key: m[1], task: m[2] }))
+
+  it('points every card at a task the catalogue has', () => {
+    expect(mapped.length).toBeGreaterThan(10)
+    expect(mapped.filter((m) => !taskIds.includes(m.task))).toEqual([])
+  })
+
+  it('has every mapped card key in the rules', () => {
+    for (const m of mapped) expect(RULES.includes(`"${m.key}"`), m.key).toBe(true)
+  })
+
+  it('reads the guest put-aside tasks before posting a card', () => {
+    const svc = readFileSync(new URL('../../server/Princess.Api/Services/StanleyMomentService.cs', import.meta.url), 'utf8')
+    expect(svc).toContain('"guideChoices"')
+    expect(svc).toContain('GuideRules.PutAside')
+  })
+})
+

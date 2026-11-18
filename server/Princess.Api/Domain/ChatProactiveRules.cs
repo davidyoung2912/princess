@@ -202,6 +202,31 @@ public static class ChatProactiveRules
         return list;
     }
 
+    /// <summary>
+    /// The guide task each card is about (docs/next-steps-guidance-plan.md, G9c), so a card and Home never disagree: a card for a task the guest put aside (not for me, or later) is not posted. A due card (a real
+    /// deadline) is never held back by this, as with a hard task on Home. A card not listed here is about something the guide does not hold (a chat, a group poll, a tender), and is unaffected.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> TaskIds = new Dictionary<string, string>
+    {
+        ["finalPayment"] = "manage.pay",
+        ["book.pay-deposit"] = "book.deposit",
+        ["manage.documents"] = "manage.documents",
+        ["getship.checkin-open"] = "getToShip.checkin",
+        ["planAhead"] = "prebook.tours",
+        ["packing"] = "prebook.packing",
+        ["dream.compare"] = "discover.compare",
+        ["discover.true-cost"] = "discover.cost",
+        ["embark.muster"] = "embark.muster",
+        ["sea.today"] = "sea.today",
+        ["sea.bag-night"] = "sea.bags",
+        ["port.all-aboard"] = "port.leaveby",
+        ["leave.exit-time"] = "disembark.exit",
+        ["remember.feedback"] = "remember.feedback",
+        ["remember.next-trip"] = "remember.next",
+    };
+
+    public static string? TaskOf(string momentKey) => TaskIds.TryGetValue(momentKey, out var id) ? id : null;
+
     /// <summary>The order cards are chosen in: due first, then a guide step, then a suggestion; a stable tie-break on the key.</summary>
     private static int Rank(Moment m) => m.Class switch { ClassDue => 0, ClassGuide => 1, _ => 2 };
 
@@ -212,7 +237,7 @@ public static class ChatProactiveRules
     /// The one card to post, or null. Filters by mode, topics, supervised, quiet hours and do-not-disturb; stops while a card is open; counts the day's suggestions; and skips a moment already put
     /// away for the same facts, one still snoozed or one already on screen. A snooze that has ended lets the same moment return.
     /// </summary>
-    public static Moment? Choose(IReadOnlyList<Moment> candidates, IReadOnlyList<MomentHistory> history, MomentContext ctx, DateTime now)
+    public static Moment? Choose(IReadOnlyList<Moment> candidates, IReadOnlyList<MomentHistory> history, MomentContext ctx, DateTime now, IReadOnlySet<string>? putAside = null)
     {
         if (ctx.Supervised || ctx.Held || ctx.Mode == ModeOff) return null;
         if (history.Any(h => OnScreen(h, now))) return null;
@@ -221,6 +246,7 @@ public static class ChatProactiveRules
         {
             if (!ModeAllows(ctx.Mode, m.Class) || ctx.TopicsOff.Contains(m.Topic)) continue;
             if (m.Class != ClassDue && postedToday >= DailyCap) continue;
+            if (m.Class != ClassDue && putAside is not null && TaskOf(m.Key) is { } task && putAside.Contains(task)) continue;   // the guest put the task aside on Home, so Stanley does not nudge about it
             if (m.ExpiresAt is { } e && e <= now) continue;
             var before = history.FirstOrDefault(h => h.Key == m.Key);
             if (before is null) return m;

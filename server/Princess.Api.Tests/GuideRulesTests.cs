@@ -290,4 +290,22 @@ public class GuideRulesTests
         Assert.Null(DoIt(Trip(today, paid: true, docs: true, checkin: "open", agent: true) with { CanPrefill = true }));
         Assert.Null(DoIt(Trip(today, paid: true, docs: true, checkin: "done") with { CanPrefill = true }));
     }
+
+    [Fact]
+    public void EveryStageHasAPrimaryTaskOnEveryDayForAGuestWhoHasDoneNothing()
+    {
+        foreach (var stage in StageRules.All)
+        foreach (var offset in new[] { -200, -120, -75, -45, -14, -7, -3, -2, -1, 0, 1, 3, 7, 10 })
+        foreach (var lastFull in new[] { false, true })
+        {
+            var today = Departure.AddDays(offset);
+            var trip = stage is StageRules.Dream or StageRules.Discover ? null : Trip(today);
+            var g = At(stage, today, trip, draft: new("d1", false), lastFull: lastFull);
+            var label = $"{stage} at {offset} days, last full day {lastFull}";
+            Assert.True(g.PrimaryId is not null, label);
+            var primary = g.Tasks.Single(t => t.Id == g.PrimaryId);
+            Assert.Equal("todo", primary.State);
+            Assert.StartsWith("/", primary.To);
+        }
+    }
 }

@@ -319,3 +319,35 @@ Smaller candidates for later: adding a calendar entry for a dated task (a downlo
 - **Guide:** the server adds `doIt: "excursion_plan"` to `port.excursion` when there is a pick (`GuideTrip.CanPlanExcursion`, from `GuideService.CanPlanExcursionAsync`, port stage, not an agent booking). Client: `GuideDoIt` now has three kinds; the level rules in `doItFor` are unchanged; receipt link goes to the excursions screen.
 - Tests: `doit.test.ts` (source gates), `stanley.test.ts` (levels), release gate's kind list (twelve); C# `ExcursionPlanTests.cs` written, not run or compiled (no `dotnet`).
 - **Not done:** the interests and budget the design mentioned (the guide holds no interests yet, and nothing is charged at this step, so the preview shows the price instead), and offering several options to choose from. G8 is otherwise complete.
+
+## 12. G9: the loose ends (2026-11-18)
+
+**G9a, time-of-day test and Help/Remind on Coming up (built).**
+- C# `GuideRulesTests.EveryStageHasAPrimaryTaskOnEveryDayForAGuestWhoHasDoneNothing`: every stage, 14 days from 200 days out to 10 days after departure, with and without the last full day, has a primary task that is open and has a destination. The rules take a date and not an hour, so the day is the unit tested. Written, not run or compiled (no `dotnet`).
+- "Help me with this" and "Remind me" now sit on every Coming up row, not only Do this now (same components; each draws nothing when it has nothing to offer).
+- **Next:** G9b, G9c, G9d and G9e (all built, below, in one phase at the guest's request).
+
+**G9b, optional tasks done by visiting, and the section 8 audit (built).**
+- `src/guide/optionalVisits.ts`: the 22 optional visit tasks by stage with the screen each opens. A visit is remembered in the same `stageProgress` document under the steps after the welcome page's three (4, 5, 6), so there is no server change and no new limit (the step limit is 9; the most in one stage is three). `stepsAt` records them, `VISIT_STEP` reads them, and `applyVisits` turns the task done, so an offer the guest has looked at moves to Done on every device. Not-for-me and later still work first.
+- Tests: `coverage.test.ts` reads the C# catalogue and fails if an optional visit task is missing from the table or points at another screen; `stageProgress.test.ts` and `view.test.ts` cover the steps.
+- **Section 8 audit (what still applies):**
+  - Dead ends (insurance, phone, bags): closed in G4 by pointing at existing screens; the checklist has no `to: null` left.
+  - Facts for excursions, dining, packing, travel, packages, assistance: used from the checklist's own data since G1. Per-traveller counts: documents only (G3). Check-in and muster counts are not shown.
+  - Profile fields: children, first cruise, solo, quiet are read. Access needs are not (encrypted or client-side), the assistance task carries that.
+  - Done-signals still by visit and not by data: quiz seen, poll created, quote opened, reminder set for all-aboard. They work as visits; a data signal needs a new server fact for each and is not worth it yet.
+  - "Claim what's owed": no refund or onboard credit data exists, so only the receipts task (`remember.history`) is there. Left out on purpose until the server has something to show.
+
+**G9c, cards keyed to guide tasks (built).**
+- The scheduled push pass has no signed-in guest, so it cannot build the whole guide. Instead `ChatProactiveRules.TaskIds` names the guide task each Stanley card is about (15 cards, for example `finalPayment` to `manage.pay`, `packing` to `prebook.packing`), and `StanleyMomentService` reads the guest's `guideChoices` document and skips a card whose task they put aside (not for me, or later until a day not yet come: `GuideRules.PutAside`). A due card (a real deadline) is never held back, as a hard task is never hidden on Home. A card done by the facts (paid, documents in order) already stops by itself. Cards about chats, group polls and tenders are not in the guide and are unaffected. Push alerts are unchanged (a card sends none).
+- Tests: `ChatProactiveRulesTests` (C#, not run); `coverage.test.ts` checks every mapped task is in the catalogue and the service reads the choices.
+
+**G9d, excursion plan with interests, a budget and options (built).**
+- `ExcursionRules.RankForToday` replaces the single pick (`PickForToday` stays as its first result): tours that match the guest's interests come first, then rating, reviews and id; a budget (whole dollars a person) leaves out dearer tours; up to three are returned. Interests are the guest's taste profile, already kept on the server among their saved items (`taste:like.<theme>`), read in `StanleyEffects`. The budget is only what the guest says to Stanley (a new optional `budget` on `excursion_plan`); the guide itself still holds no budget.
+- The preview names the chosen tour, says why it matches and that it is within budget when so, and lists the other tours that fit. On Home, "Choose X instead" buttons ask for a new preview of that tour (`excursionId`). Confirming adds only a tour that still fits today, otherwise nothing ("nothing", as before). Still the guest alone, still never charged.
+- Tests: `ExcursionPlanTests` (C#, not run), `stanley.test.ts` (`tourChoices`), `doit.test.ts` source gates updated.
+
+**G9e, calendar and family link (built).**
+- "Add to calendar" on a dated task (Do this now and each Coming up row): an all-day `.ics` for the day it opens (waiting) or is due, made on the phone with a stable id so a second add replaces the first (`src/guide/calendar.ts`, tested).
+- Family link: when no one is added yet, the screen offers "Use {name}, your emergency contact" to fill the name field. Only the name: the profile holds no email for that person, so the guest types it and presses Add (`suggestedContactName`, tested). It was not made a Stanley action, because nothing there needs a server step.
+- C#: none of G9 has been compiled (no `dotnet` here).
+

@@ -1,3 +1,4 @@
+import { OPTIONAL_FIRST_STEP, OPTIONAL_VISITS } from '../guide/optionalVisits'
 import { JOURNEY_STAGES, type JourneyStage } from './hubs'
 import { MAX_WELCOME_SAILING_ID, welcomeContent, welcomeKey } from './stageWelcome'
 
@@ -79,6 +80,7 @@ export function stepsAt(stage: JourneyStage, pathname: string): number[] {
   const listed = STEP_ADDRESSES[stage]
   const out: number[] = []
   welcomeContent(stage).steps.forEach((s, i) => { if ((listed?.[i] ?? [s.to]).some((p) => matches(path, p))) out.push(i + 1) })
+  OPTIONAL_VISITS[stage]?.forEach((x, i) => { if (matches(path, x.to)) out.push(OPTIONAL_FIRST_STEP + i) })
   return out.filter((n) => n <= MAX_PROGRESS_STEP)
 }
 

@@ -540,4 +540,26 @@ public class GroupMeetAndLunchTests
         Assert.Null(ChatProactiveRules.Choose(all, [], new(ChatProactiveRules.ModeGuide, ["remember"], false, false), Now));
         Assert.Equal("remember.retention-warning", ChatProactiveRules.Choose(all, [], new(ChatProactiveRules.ModeTrip, [], false, false), Now)?.Key);
     }
+
+    [Fact]
+    public void ACardForATaskTheGuestPutAsideIsNotPostedButADueCardIs()
+    {
+        var packing = M("packing", ChatProactiveRules.Packing);
+        var payment = M("finalPayment", ChatProactiveRules.Payment, ChatProactiveRules.ClassDue);
+        var aside = new HashSet<string> { "prebook.packing", "manage.pay" };
+        Assert.Null(ChatProactiveRules.Choose([packing], [], Ctx(), Now, aside));
+        Assert.NotNull(ChatProactiveRules.Choose([packing], [], Ctx(), Now, new HashSet<string>()));
+        Assert.NotNull(ChatProactiveRules.Choose([packing], [], Ctx(), Now));
+        Assert.NotNull(ChatProactiveRules.Choose([payment], [], Ctx(), Now, aside));
+        Assert.NotNull(ChatProactiveRules.Choose([M("not-in-the-guide", ChatProactiveRules.Planning)], [], Ctx(), Now, aside));
+    }
+
+    [Fact]
+    public void PutAsideCountsSkippedTasksAndTasksPutOffToALaterDay()
+    {
+        var today = new DateOnly(2026, 11, 10);
+        var choices = new GuideChoices(new HashSet<string> { "a" }, new Dictionary<string, DateOnly> { ["b"] = today.AddDays(1), ["c"] = today });
+        Assert.Equal(new HashSet<string> { "a", "b" }, GuideRules.PutAside(choices, today));
+    }
 }
+

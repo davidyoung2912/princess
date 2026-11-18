@@ -1,3 +1,4 @@
+import { OPTIONAL_STEP } from './optionalVisits'
 import type { GuideReason, GuideState, GuideTask, GuideView } from '../api/guideTypes'
 
 /** The most open tasks Home lists at once: the first is "Do this now", the rest are "Coming up" (docs/next-steps-guidance-plan.md, decision 2). */
@@ -18,6 +19,7 @@ export const VISIT_STEP: Readonly<Record<string, number>> = {
   'port.leaveby': 1, 'port.excursion': 2, 'port.safe': 3,
   'disembark.exit': 1, 'disembark.bags': 2, 'disembark.bill': 3,
   'remember.recap': 1,
+  ...OPTIONAL_STEP,
 }
 
 /** The welcome step of each task the app sees done for itself, so the welcome page's checks follow the same guide as Home. */

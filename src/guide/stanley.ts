@@ -52,3 +52,20 @@ export function doItFor(task: Pick<GuideTask, 'state' | 'doIt'>, level: StanleyL
   if (where === 'home' && level === 'asked') return null
   return task.doIt
 }
+
+/** A tour Stanley offers instead of the one he previewed: its id and name. */
+export interface TourChoice { id: string; name: string }
+
+/**
+ * The other tours that fit today, from a prepared "plan today in port" preview (the server writes them as `alt1`, `alt2` with `id|name`). Anything else is dropped, at most two, so a
+ * preview can only offer tours the server named.
+ */
+export function tourChoices(params: Readonly<Record<string, string>>): TourChoice[] {
+  const out: TourChoice[] = []
+  for (const key of ['alt1', 'alt2']) {
+    const [id, ...rest] = (params[key] ?? '').split('|')
+    const name = rest.join('|').trim()
+    if (id && /^[A-Za-z0-9._-]{1,40}$/.test(id) && name) out.push({ id, name: name.slice(0, 120) })
+  }
+  return out
+}

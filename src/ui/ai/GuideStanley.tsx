@@ -6,7 +6,9 @@ import { chipsFor, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary
 import type { GuideTask, GuideView } from '../../api/guideTypes'
 import { demoNow } from '../../demo/store'
 import { isoDay } from '../../domain/rates'
-import { doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs } from '../../guide/stanley'
+import { taskCalendarFile } from '../../guide/calendar'
+import { CalendarButton } from '../delights/Cards'
+import { doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs, tourChoices } from '../../guide/stanley'
 import { useSettings } from '../../hooks/useSettings'
 import { stanleyLevelFor } from '../../settings/settings'
 import { taskMeta, taskWords } from '../../guide/words'
@@ -77,6 +79,13 @@ export function TaskHelp({ task, view, onAsk }: { task: GuideTask; view: GuideVi
   )
 }
 
+/** "Add to calendar" on a task with a date: a calendar file made on the phone for the day it opens or is due. Nothing is sent anywhere, and a task with no date draws nothing. */
+export function TaskCalendar({ task }: { task: GuideTask }) {
+  const w = taskWords(task)
+  if (taskCalendarFile(task, w.title, w.why, 0) === null) return null
+  return <CalendarButton variant="tertiary" name={`${task.id}.ics`} label={t('guide.calendar.for', { task: w.title })} make={() => taskCalendarFile(task, w.title, w.why, Date.now()) ?? ''} />
+}
+
 /** "Remind me" on a task with a date: asks the server for a preview of a 09:00 reminder the day before (or the day a waiting task opens). Nothing is set until the card is confirmed. */
 export function TaskRemind({ task }: { task: GuideTask }) {
   const [prepared, setPrepared] = useState<StanleyAction | null>(null)
@@ -115,10 +124,10 @@ export function TaskDoIt({ task, where }: { task: GuideTask; where: 'home' | 'as
   const kind = doItFor(task, stanleyLevelFor(settings), where)
   if (!kind) return null
   const title = taskWords(task).title
-  const ask = async () => {
+  const ask = async (args: Record<string, string> = {}) => {
     setBusy(true); setFailed(false)
     try {
-      const a = normalizeAction(await stanleyActions.prepare({ kind, args: {} }))
+      const a = normalizeAction(await stanleyActions.prepare({ kind, args }))
       setPrepared(a)
       setFailed(a === null)
     } catch { setFailed(true) }
@@ -129,6 +138,9 @@ export function TaskDoIt({ task, where }: { task: GuideTask; where: 'home' | 'as
       {prepared === null && <Button variant="secondary" disabled={busy} aria-label={t('guide.doIt.aria', { task: title })} onClick={() => { void ask() }}>{t('guide.doIt')}</Button>}
       {failed && <span role="alert" className="field__error"> {t('guide.doIt.failed')}</span>}
       {prepared && <span role="status" className="remind-me__card"><StanleyActionCard action={prepared} onChange={setPrepared} /></span>}
+      {prepared?.status === 'prepared' && prepared.kind === 'excursion_plan' && tourChoices(prepared.params).map((c) => (
+        <Button key={c.id} variant="tertiary" disabled={busy} onClick={() => { void ask({ excursionId: c.id }) }}>{t('guide.doIt.tourInstead', { name: c.name })}</Button>
+      ))}
     </span>
   )
 }

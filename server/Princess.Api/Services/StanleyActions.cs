@@ -308,8 +308,17 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
 /// The real effects: each action goes through the service the screens use (stateroom requests, the excursion cart, dining, cases), as the guest, so those services' own checks, limits and
 /// permission rules apply at execution time. A day-plan change and a reminder are checked here and applied by the device.
 /// </summary>
-public sealed class StanleyEffects(CheckinService checkin, DisembarkService disembark, ITripStore trips, IPlanStore plan, PlanService planService, ServiceRequestService requests, CaseService cases, ScopeLoader scopes, IUserClock clock, StanleyPollService polls, StanleyDiningPlanService dining, StanleyReminderService reminders) : IStanleyEffects
+public sealed class StanleyEffects(CheckinService checkin, DisembarkService disembark, ITripStore trips, IPlanStore plan, PlanService planService, ServiceRequestService requests, CaseService cases, ScopeLoader scopes, IUserClock clock, StanleyPollService polls, StanleyDiningPlanService dining, StanleyReminderService reminders, IInboxStore inbox) : IStanleyEffects
 {
+    /// <summary>What the guest likes (their taste profile, kept among their saved items) and the most they said they would pay for one person (whole dollars, from what they asked Stanley).</summary>
+    private async Task<ExcursionRules.PlanWishes> WishesAsync(UserRecord user, StanleyIntent intent, CancellationToken ct)
+    {
+        const string like = "taste:like.";
+        var likes = (await inbox.ListFavouritesAsync(user.Id, ct)).Where(k => k.StartsWith(like, StringComparison.Ordinal)).Select(k => k[like.Length..]).ToList();
+        long? budget = long.TryParse(intent.Arg("budget"), out var dollars) && dollars is > 0 and <= 100_000 ? dollars * 100 : null;
+        return new(likes, budget);
+    }
+
     private async Task<BookingRow> BookingAsync(UserRecord user, string? sailingId, CancellationToken ct)
     {
         var today = DateOnly.FromDateTime(await clock.NowAsync(user, ct));
@@ -476,7 +485,12 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
             }
             case StanleyActionKinds.ExcursionPlan:
             {
-                var offer = await planService.ExcursionPlanAsync(user, booking.Number, ct) ?? throw ApiException.Conflict("nothing");
+                var wishes = await WishesAsync(user, intent, ct);
+                var options = await planService.ExcursionOptionsAsync(user, booking.Number, wishes, ExcursionRules.PlanOptions, ct);
+                if (options.Count == 0) throw ApiException.Conflict("nothing");
+                var asked = intent.Arg("excursionId");
+                var offer = options.FirstOrDefault(o => o.Item.Id == asked) ?? options[0];
+                var others = options.Where(o => o.Item.Id != offer.Item.Id).ToList();
                 var x = offer.Item;
                 var me = WhoFor(user, booking, scope, "me");
                 var total = me.Sum(p => ExcursionRules.GuestPrice(x, p.Age));
@@ -486,10 +500,16 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                     $"Fits today: be back at the landing by {offer.BackBy}, before all aboard.",
                     $"{offer.Spots} place{(offer.Spots == 1 ? "" : "s")} left. Rated {x.Rating:0.0} by {x.Reviews} guests.",
                 };
+                if (wishes.Interests.Count > 0 && x.Interests.Any(i => wishes.Interests.Contains(i, StringComparer.OrdinalIgnoreCase)))
+                    lines.Add($"Chosen to match what you like: {string.Join(", ", x.Interests.Where(i => wishes.Interests.Contains(i, StringComparer.OrdinalIgnoreCase)))}.");
+                if (wishes.BudgetCents is { } budget) lines.Add($"Within your budget of {Money(budget)} a person.");
                 lines.AddRange(me.Select(p => $"{p.First}: {Money(ExcursionRules.GuestPrice(x, p.Age))}"));
+                if (others.Count > 0) lines.Add($"Other tours that fit today: {string.Join("; ", others.Select(o => $"{o.Item.Name} ({Money(o.Item.Price)})"))}. You can choose one of them instead before you confirm.");
                 lines.Add("This puts it in your cart for you only. Nothing is charged until you check out on the Excursions screen, and nobody else is added.");
+                var resolved = new Dictionary<string, string> { ["excursionId"] = x.Id };
+                for (var i = 0; i < others.Count; i++) resolved[$"alt{i + 1}"] = $"{others[i].Item.Id}|{others[i].Item.Name}";
                 return new StanleyPreviewFacts($"Plan today in port: add {x.Name} to your cart", lines, [.. me.Select(p => p.First)], total,
-                    $"Free to cancel until {ExcursionRules.FreeCancelDays} days before the port day, then no refund.", $"plan|{x.Id}|{string.Join(",", me.Select(p => p.Id))}|{total}");
+                    $"Free to cancel until {ExcursionRules.FreeCancelDays} days before the port day, then no refund.", $"plan|{x.Id}|{string.Join(",", me.Select(p => p.Id))}|{total}", resolved);
             }
             case StanleyActionKinds.DraftCase:
             {
@@ -612,7 +632,9 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
             case StanleyActionKinds.ExcursionPlan:
             {
                 var scope = await scopes.LoadAsync(user, booking.Number, write: true, ct);
-                var offer = await planService.ExcursionPlanAsync(user, booking.Number, ct) ?? throw ApiException.Conflict("nothing");
+                // The tour the guest saw must still fit today (any tour that fits counts, not only the best for their wishes), or nothing is added.
+                var fits = await planService.ExcursionOptionsAsync(user, booking.Number, null, int.MaxValue, ct);
+                var offer = fits.FirstOrDefault(o => o.Item.Id == intent.Arg("excursionId")) ?? throw ApiException.Conflict("nothing");
                 await planService.AddToCartAsync(user, booking.Number, offer.Item.Id, new CartRequest([.. WhoFor(user, booking, scope, "me").Select(p => p.Id)]), ct);
                 return new StanleyEffectResult(offer.Item.Id);
             }

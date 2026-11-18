@@ -116,19 +116,33 @@ public static class ExcursionRules
     /// <summary>A tour on offer as far as choosing one for today is concerned: the tour, how many days away its port day is, places left, and whether the timing is a problem.</summary>
     public sealed record TodayOffer(Excursion Item, int DaysToTour, int Spots, string? Timing);
 
-    /// <summary>
-    /// The one tour Stanley would put in the cart for today's port: it must run today, fit between arrival and all aboard (<c>Timing</c> is none, which already allows the landing buffer),
-    /// and have a place left. Best rated first, then most reviewed, then by id so the choice is the same every time. There is nothing to plan when the guest already holds a tour today
-    /// (booked or in the cart), so Stanley never stacks a second tour on a day the guest has planned.
-    /// </summary>
-    public static Excursion? PickForToday(IEnumerable<TodayOffer> offers, IReadOnlyCollection<string> heldIds)
+    /// <summary>What the guest wants from the day: the themes they like (their taste profile or what they said) and the most they would pay for one person, in cents. Both are optional.</summary>
+    public sealed record PlanWishes(IReadOnlyCollection<string> Interests, long? BudgetCents)
     {
-        var today = offers.Where(o => o.DaysToTour == 0).ToList();
-        if (today.Any(o => heldIds.Contains(o.Item.Id))) return null;
-        return today.Where(o => o.Timing is null && o.Spots >= 1)
-            .OrderByDescending(o => o.Item.Rating).ThenByDescending(o => o.Item.Reviews).ThenBy(o => o.Item.Id, StringComparer.Ordinal)
-            .Select(o => o.Item).FirstOrDefault();
+        public static readonly PlanWishes None = new([], null);
     }
+
+    /// <summary>How many tours Stanley lays out to choose from.</summary>
+    public const int PlanOptions = 3;
+
+    /// <summary>
+    /// The tours Stanley would put in the cart for today's port, best first, up to <paramref name="take"/>: each must run today, fit between arrival and all aboard (<c>Timing</c> is none, which already
+    /// allows the landing buffer), have a place left and cost no more per adult than the budget when there is one. Tours that match more of the guest's interests come first, then best rated, then most
+    /// reviewed, then by id so the order is the same every time. There is nothing to plan when the guest already holds a tour today (booked or in the cart), so Stanley never stacks a second tour on a planned day.
+    /// </summary>
+    public static List<Excursion> RankForToday(IEnumerable<TodayOffer> offers, IReadOnlyCollection<string> heldIds, PlanWishes? wishes = null, int take = PlanOptions)
+    {
+        wishes ??= PlanWishes.None;
+        var today = offers.Where(o => o.DaysToTour == 0).ToList();
+        if (today.Any(o => heldIds.Contains(o.Item.Id))) return [];
+        int Match(Excursion x) => x.Interests.Count(i => wishes.Interests.Contains(i, StringComparer.OrdinalIgnoreCase));
+        return [.. today.Where(o => o.Timing is null && o.Spots >= 1 && (wishes.BudgetCents is not { } b || o.Item.Price <= b))
+            .OrderByDescending(o => Match(o.Item)).ThenByDescending(o => o.Item.Rating).ThenByDescending(o => o.Item.Reviews).ThenBy(o => o.Item.Id, StringComparer.Ordinal)
+            .Select(o => o.Item).Take(take)];
+    }
+
+    /// <summary>The one tour Stanley would choose with no wishes given.</summary>
+    public static Excursion? PickForToday(IEnumerable<TodayOffer> offers, IReadOnlyCollection<string> heldIds) => RankForToday(offers, heldIds, null, 1).FirstOrDefault();
 
     public static TourRefund Refund(long paid, int daysToTour) => daysToTour >= FreeCancelDays ? new(0, paid, true) : new(paid, 0, false);
 

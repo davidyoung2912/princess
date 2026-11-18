@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { en } from '../i18n/locales/en'
 import { guide, task } from './fixture'
+import { OPTIONAL_STEP } from './optionalVisits'
 import { HOME_TASKS, VISIT_STEP, applyVisits, doneTasks, moreCount, openTasks, primaryOf, stepDoneInGuide, urgentReason, urgentTask } from './view'
 import { taskMeta } from './words'
 import { welcomeContent } from '../routes/stageWelcome'
@@ -55,7 +56,7 @@ describe('the guide on the phone', () => {
     for (const [id, step] of Object.entries(VISIT_STEP)) {
       const stage = id.split('.')[0] as Parameters<typeof welcomeContent>[0]
       expect(step, id).toBeGreaterThanOrEqual(1)
-      expect(step, id).toBeLessThanOrEqual(welcomeContent(stage).steps.length)
+      if (OPTIONAL_STEP[id] === undefined) expect(step, id).toBeLessThanOrEqual(welcomeContent(stage).steps.length)
     }
   })
 

@@ -78,7 +78,7 @@ describe('Do it for me: customs draft', () => {
 
 describe('Do it for me: excursion plan', () => {
   const rules = server('Domain/ExcursionRules.cs')
-  const pick = rules.slice(rules.indexOf('PickForToday('), rules.indexOf('public static TourRefund Refund('))
+  const pick = rules.slice(rules.indexOf('RankForToday('), rules.indexOf('public static TourRefund Refund('))
   const plan = server('Services/PlanService.cs')
   const effects = server('Services/StanleyActions.cs')
 
@@ -86,7 +86,8 @@ describe('Do it for me: excursion plan', () => {
     expect(pick).toContain('o.DaysToTour == 0')
     expect(pick).toContain('o.Timing is null')
     expect(pick).toContain('o.Spots >= 1')
-    expect(pick).toContain('heldIds.Contains(o.Item.Id))) return null')
+    expect(pick).toContain('heldIds.Contains(o.Item.Id))) return []')
+    expect(pick).toContain('BudgetCents')
   })
 
   it('offers the plan only to an adult guest who can book, and never books or charges', () => {
@@ -97,10 +98,11 @@ describe('Do it for me: excursion plan', () => {
 
   it('puts the tour in the cart for the guest alone, through the cart service, and undoes it by removing it', () => {
     const apply = effects.slice(effects.indexOf('case StanleyActionKinds.ExcursionPlan:\n            {\n                var scope'))
-    expect(apply.slice(0, 600)).toContain('AddToCartAsync(')
-    expect(apply.slice(0, 600)).toContain('WhoFor(user, booking, scope, "me")')
+    expect(apply.slice(0, 1000)).toContain('AddToCartAsync(')
+    expect(apply.slice(0, 1000)).toContain('WhoFor(user, booking, scope, "me")')
+    expect(apply.slice(0, 1000)).toContain('Conflict("nothing")')
     expect(effects).toMatch(/case StanleyActionKinds\.AddExcursion:\s*case StanleyActionKinds\.ExcursionPlan:\s*await planService\.RemoveFromCartAsync/)
-    expect(effects).not.toMatch(/ExcursionPlan:[^]{0,700}CheckoutAsync/)
+    expect(effects).not.toMatch(/ExcursionPlan:[^]{0,2500}CheckoutAsync/)
   })
 
   it('is a confirmed server action offered on the port excursion task only when there is something to plan', () => {

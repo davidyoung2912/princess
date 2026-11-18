@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { recapProblem, RECAP_MAX_CHARS, addContact, addPostcard, adoptServerLink, daysLeft, DEFAULT_LINK_DAYS, flushPostcards, issueLink, isLive, LINK_DAY_CHOICES, linkToken, liveLinkFor, liveLinkIds, normalizeServerLink, MAX_POSTCARD_NOTE, POSTCARD_KINDS, POSTCARD_TEXT, queuedPostcards, removeContact, revokeAll, revokeLink, type ContactProblem, type PostcardKind } from '../../domain/homeLink'
-import { familyHome } from '../../runtime'
+import { suggestedContactName, recapProblem, RECAP_MAX_CHARS, addContact, addPostcard, adoptServerLink, daysLeft, DEFAULT_LINK_DAYS, flushPostcards, issueLink, isLive, LINK_DAY_CHOICES, linkToken, liveLinkFor, liveLinkIds, normalizeServerLink, MAX_POSTCARD_NOTE, POSTCARD_KINDS, POSTCARD_TEXT, queuedPostcards, removeContact, revokeAll, revokeLink, type ContactProblem, type PostcardKind } from '../../domain/homeLink'
+import { api, familyHome } from '../../runtime'
 import { useRecapData } from '../../hooks/useRecapData'
 import { recapText } from '../../domain/recap'
-import { useDemo, useNow } from '../../hooks/useDemo'
+import { useDemo, useNow, usePersona } from '../../hooks/useDemo'
+import { useMine } from '../../hooks/useMine'
 import { newHubId, useHub } from '../../hooks/useHub'
 import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
@@ -30,6 +31,9 @@ export function FamilyLinkScreen() {
   const [failed, setFailed] = useState(false)
   const [photo, setPhoto] = useState<Media | null>(null)
   const home = state.home
+  const persona = usePersona()
+  const profile = useMine(() => (persona ? api.account.profile(persona.id) : Promise.reject(new Error('unknown'))), [persona?.id])
+  const suggested = suggestedContactName(profile.data?.profile.emergency, home.contacts)
   const child = me?.child ?? false
   const offline = demo.network.offline
   const owner = me?.id ?? ''
@@ -137,6 +141,7 @@ export function FamilyLinkScreen() {
         {liveCount > 1 && <Button variant="secondary" onClick={() => void stopAll()}>{t('home.link.stopAll')}</Button>}
         {!child && (
           <form onSubmit={add} noValidate>
+            {suggested && name === '' && <p><Button type="button" variant="tertiary" onClick={() => setName(suggested)}>{t('home.person.useEmergency', { name: suggested })}</Button></p>}
             <Field label={t('home.person.name')} value={name} onChange={(e) => setName(e.target.value)} error={problem === 'name' ? t('home.error.name') : undefined} />
             <Field label={t('home.person.email')} type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={problem && problem !== 'name' ? t(`home.error.${problem}` as StringKey) : undefined} />
             <Button type="submit" variant="secondary">{t('home.person.add')}</Button>

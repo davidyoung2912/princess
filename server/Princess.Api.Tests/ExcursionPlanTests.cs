@@ -34,4 +34,36 @@ public class ExcursionPlanTests
         Assert.Null(ExcursionRules.PickForToday([Offer("coz-snorkel", timing: "tooEarly")], []));
         Assert.Null(ExcursionRules.PickForToday([], []));
     }
+
+    [Fact]
+    public void OffersUpToThreeToursBestFirst()
+    {
+        var ranked = ExcursionRules.RankForToday([Offer("coz-snorkel"), Offer("coz-beach"), Offer("coz-ruins"), Offer("coz-glass")], []);
+        Assert.Equal(ExcursionRules.PlanOptions, ranked.Count);
+        Assert.Equal("coz-snorkel", ranked[0].Id);
+        Assert.Equal(ranked.Select(x => x.Id).Distinct().Count(), ranked.Count);
+        Assert.Equal("coz-snorkel", ExcursionRules.PickForToday([Offer("coz-snorkel"), Offer("coz-beach")], [])!.Id);
+    }
+
+    [Fact]
+    public void WhatTheGuestLikesComesBeforeRating()
+    {
+        var offers = new[] { Offer("coz-snorkel"), Offer("coz-beach"), Offer("coz-ruins"), Offer("coz-glass") };
+        var theme = offers.Select(o => o.Item).Where(x => x.Id != offers[0].Item.Id).SelectMany(x => x.Interests).Except(offers[0].Item.Interests).FirstOrDefault();
+        if (theme is null) return;
+        var ranked = ExcursionRules.RankForToday(offers, [], new ExcursionRules.PlanWishes([theme], null));
+        Assert.Contains(theme, ranked[0].Interests);
+    }
+
+    [Fact]
+    public void ABudgetLeavesOutToursThatCostMoreAPerson()
+    {
+        var offers = new[] { Offer("coz-snorkel"), Offer("coz-beach"), Offer("coz-ruins"), Offer("coz-glass") };
+        var cheapest = offers.Min(o => o.Item.Price);
+        var ranked = ExcursionRules.RankForToday(offers, [], new ExcursionRules.PlanWishes([], cheapest));
+        Assert.NotEmpty(ranked);
+        Assert.All(ranked, x => Assert.True(x.Price <= cheapest));
+        Assert.Empty(ExcursionRules.RankForToday(offers, [], new ExcursionRules.PlanWishes([], cheapest - 1)));
+    }
 }
+

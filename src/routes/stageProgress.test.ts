@@ -41,6 +41,9 @@ describe('which steps a screen is the way to', () => {
   it('matches a step\'s address and the screens under it, not a lookalike', () => {
     expect(stepsAt('dream', '/home/quiz')).toEqual([1])
     expect(stepsAt('dream', '/home/quiz/')).toEqual([1])
+    expect(stepsAt('dream', '/trial-day')).toEqual([4])
+    expect(stepsAt('manage', '/plan/family-link')).toEqual([6])
+    expect(stepsAt('sea', '/me/bill')).toEqual([4])
     expect(stepsAt('dream', '/home/quiz/results')).toEqual([1])
     expect(stepsAt('dream', '/home/quizzes')).toEqual([])
     expect(stepsAt('dream', '/')).toEqual([])

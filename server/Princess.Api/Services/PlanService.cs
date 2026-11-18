@@ -197,13 +197,17 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     /// The tour Stanley would put in the cart for today's port, or none: not an adult guest who can book, no tour that fits today, or a tour already booked or in the cart for today. Used to
     /// preview, to offer the button and to check an unsure outcome.
     /// </summary>
-    public async Task<ExcursionOfferDto?> ExcursionPlanAsync(UserRecord actor, string? number, CancellationToken ct)
+    public async Task<ExcursionOfferDto?> ExcursionPlanAsync(UserRecord actor, string? number, CancellationToken ct) =>
+        (await ExcursionOptionsAsync(actor, number, null, ExcursionRules.PlanOptions, ct)).FirstOrDefault();
+
+    /// <summary>The tours that fit today's port, best first for the guest's wishes (interests and a budget), up to <paramref name="take"/>. Empty when there is nothing to plan.</summary>
+    public async Task<List<ExcursionOfferDto>> ExcursionOptionsAsync(UserRecord actor, string? number, ExcursionRules.PlanWishes? wishes, int take, CancellationToken ct)
     {
         var view = await ExcursionsViewAsync(await LoadAsync(actor, number, false, ct), ct);
-        if (!view.CanBook) return null;
+        if (!view.CanBook) return [];
         var held = view.Booked.Where(b => b.Status == "booked").Select(b => b.ExcursionId).Concat(view.Cart.Select(l => l.ExcursionId)).ToList();
-        var pick = ExcursionRules.PickForToday(view.Offers.Select(o => new ExcursionRules.TodayOffer(o.Item, o.DaysToTour, o.Spots, o.Timing)), held);
-        return pick is null ? null : view.Offers.First(o => o.Item.Id == pick.Id);
+        var picks = ExcursionRules.RankForToday(view.Offers.Select(o => new ExcursionRules.TodayOffer(o.Item, o.DaysToTour, o.Spots, o.Timing)), held, wishes, take);
+        return [.. picks.Select(x => view.Offers.First(o => o.Item.Id == x.Id))];
     }
 
     /// <summary>Checks one tour for a set of guests against what is booked or in the cart. Throws a conflict that names the problem.</summary>

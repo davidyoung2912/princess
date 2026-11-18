@@ -20,7 +20,7 @@ import { refreshGuide } from '../../guide/refresh'
 import { FitPrompt } from './FitPrompt'
 import { formatDate } from '../../domain/cruise'
 import { Card } from '../Card'
-import { TaskDoIt, TaskHelp, TaskRemind } from '../ai/GuideStanley'
+import { TaskCalendar, TaskDoIt, TaskHelp, TaskRemind } from '../ai/GuideStanley'
 
 const Meta = ({ task }: { task: GuideTask }) => <p className="guide__meta muted">{taskMeta(task).join(' · ')}</p>
 
@@ -75,12 +75,12 @@ function DoNow({ task, aside, view }: { task: GuideTask; aside: Aside; view: Gui
       <p>{w.why}</p>
       {task.urgency === 'now' && <p className="guide__urgent"><Clock size={16} aria-hidden="true" /> {t('guide.urgent')}</p>}
       <Meta task={task} />
-      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><TaskDoIt task={task} where="home" /><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} /><TaskRemind task={task} /></div>
+      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><TaskDoIt task={task} where="home" /><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} /><TaskRemind task={task} /><TaskCalendar task={task} /></div>
     </Card>
   )
 }
 
-function Row({ task, aside }: { task: GuideTask; aside: Aside }) {
+function Row({ task, aside, view }: { task: GuideTask; aside: Aside; view: GuideView }) {
   const w = taskWords(task)
   return (
     <li className="stage-step">
@@ -89,6 +89,9 @@ function Row({ task, aside }: { task: GuideTask; aside: Aside }) {
         <Meta task={task} />
       </span>
       <PutAside task={task} aside={aside} />
+      <TaskHelp task={task} view={view} />
+      <TaskRemind task={task} />
+      <TaskCalendar task={task} />
     </li>
   )
 }
@@ -126,7 +129,7 @@ export function StageGuide() {
       {rest.length > 0 && (
         <section aria-labelledby="guide-soon-h" className="stage-next">
           <h2 id="guide-soon-h">{th('guide.soon')}</h2>
-          <ol className="stage-steps">{rest.map((x) => <Row key={x.id} task={x} aside={aside} />)}</ol>
+          <ol className="stage-steps">{rest.map((x) => <Row key={x.id} task={x} aside={aside} view={view} />)}</ol>
           {more > 0 && <p className="muted">{t('guide.more', { count: more })} <Link to="/plan">{t('guide.moreLink')}</Link></p>}
         </section>
       )}
