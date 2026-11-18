@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { clearLog, logToText, readLog } from '../diagnostics/log'
 import { clearAsked, clearTiers, freeShare, modelShare, readAsked, readTiers, repeated, tierMix } from '../diagnostics/stanleyTiers'
+import { clearUnanswered, exportUnanswered, isUnansweredOn, readUnanswered, setUnansweredOn } from '../diagnostics/stanleyUnanswered'
 import { LIBRARY, questionOf } from '../ai/stanleyLibrary'
 import { SHIP_FACTS } from '../domain/finishMore'
 import { t, th, type StringKey, headingCase } from '../i18n'
@@ -27,11 +28,22 @@ export function DiagnosticsSettings() {
   const paid = modelShare(tiers)
   const [asked, setAsked] = useState(() => readAsked(store()))
   const again = repeated(asked)
+  const [keep, setKeep] = useState(() => isUnansweredOn(store()))
+  const [kept, setKept] = useState(() => readUnanswered(store()))
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(logToText(entries))
       setNote(t('diag.copied'))
+    } catch {
+      setNote(t('diag.copyFailed'))
+    }
+  }
+
+  async function copyKept() {
+    try {
+      await navigator.clipboard.writeText(exportUnanswered(kept))
+      setNote(t('diag.stanley.unanswered.copied'))
     } catch {
       setNote(t('diag.copyFailed'))
     }
@@ -69,6 +81,24 @@ export function DiagnosticsSettings() {
           <Button variant="secondary" onClick={() => { clearTiers(store()); clearAsked(store()); setTiers(readTiers(store())); setAsked(readAsked(store())) }}>{t('diag.stanley.clear')}</Button>
         </>
       ) : <p>{t('diag.stanley.none')}</p>}
+      <h4>{headingCase(t('diag.stanley.unanswered.title'))}</h4>
+      <p id="diag-keep-help">{t('diag.stanley.unanswered.intro')}</p>
+      <label>
+        <input type="checkbox" checked={keep} aria-describedby="diag-keep-help" onChange={(e) => { setUnansweredOn(store(), e.target.checked); setKeep(e.target.checked); setKept(readUnanswered(store())) }} />
+        {' '}{t('diag.stanley.unanswered.on')}
+      </label>
+      {keep && (kept.length === 0 ? <p>{t('diag.stanley.unanswered.none')}</p> : (
+        <>
+          <details>
+            <summary>{headingCase(t('diag.stanley.unanswered.count', { count: kept.length }))}</summary>
+            <ul>{kept.map((q, i) => <li key={i}><small>{q.text}</small></li>)}</ul>
+          </details>
+          <div className="button-row">
+            <Button variant="secondary" onClick={() => void copyKept()}>{t('diag.stanley.unanswered.copy')}</Button>
+            <Button variant="secondary" onClick={() => { clearUnanswered(store()); setKept([]); setNote(t('diag.cleared')) }}>{t('diag.stanley.unanswered.clear')}</Button>
+          </div>
+        </>
+      ))}
       <details>
         <summary>{headingCase(t('ops.open'))}</summary>
         <StanleyOpsConsole />

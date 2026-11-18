@@ -347,6 +347,8 @@ Remove the hard-coded Caribbean text from `StanleyRules.Scripted`; make "not ans
 ### Phase 7: the learning loop
 Optional opt-in export of unanswered questions; a script (run as a test helper) that reads an export and prints top misses and near-collisions; a short authoring guide for adding a noun, a verb or a topic.
 
+> **Built 2026-11-17.** **Opt-in export:** `diagnostics/stanleyUnanswered.ts` keeps the words of a missed or ambiguous question only after the guest turns on *Keep questions Stanley could not place* in Diagnostics settings (off by default, device only, nothing sent). Turning it off forgets the list. Emails, links and any number are blanked, each question is cut at 140 characters, the list holds the last 100, and nothing is kept for a question that went to a person or tripped the safety screen. *Copy unanswered questions* puts a small JSON document on the clipboard for the guest to share or not. **Analysis:** `understand/misses.ts` (pure) reads an export and reports still-missed questions, near-collisions, the concepts in the misses and the words the lexicon does not know; `STANLEY_EXPORT=<file> npm run stanley:misses` prints it (a skipped-unless-set test helper, `missesReport.test.ts`). **Guide:** `docs/stanley-authoring.md`. The counts of section 10 are unchanged and still hold no text.
+
 ---
 
 ## 12. Risks and open decisions

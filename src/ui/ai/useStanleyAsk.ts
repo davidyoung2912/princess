@@ -12,6 +12,7 @@ import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
 import { countUnderstood } from '../../diagnostics/stanleyUnderstood'
+import { keepUnanswered } from '../../diagnostics/stanleyUnanswered'
 import { answerFromData, choiceOf, composeReply, EMPTY_THREAD, hintOf, liveShip, previousOf, readQuestion, remember } from '../../ai/understand'
 import { cardText } from '../../ai/stanleyCard'
 import { portDays } from '../../ai/understand/portDays'
@@ -153,6 +154,8 @@ export function useStanleyAsk() {
     const actions = composed.actions
     const shown: StanleyTurn = composed.replaced ? { kind: 'answer', text: composed.text ?? '', handoff: null, fallback: null } : turn
     countUnderstood([`outcome:${composed.replaced ? 'replaced' : composed.outcome}`, ...(composed.topic ? [`topic:${composed.topic}`] : [])])
+    // Only when the guest opted in (Diagnostics settings), and never a question that went to a person.
+    if (turn.kind !== 'handoff' && !screen(asked.text) && (composed.outcome === 'miss' || composed.outcome === 'ambiguous') && !(turn.kind === 'answer' && answered && !composed.replaced)) keepUnanswered(asked.text, composed.outcome)
     const answered2 = composed.replaced ? composed.outcome === 'confident' : answered
     const tier: Tier = turn.kind === 'handoff' ? 'handoff' : shown.kind === 'answer' && answered2 ? (composed.replaced ? 'library' : source) : 'unanswered'
     countTier(tier, known ? `library:${known.id}` : route?.kind === 'ship' ? `ship:${route.fact.id}` : undefined)
