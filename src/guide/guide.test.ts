@@ -43,7 +43,12 @@ describe('asGuideView', () => {
   const view = { stage: 'dream', primaryId: 'dream.quiz', tasks: [task], moveOn: { stage: 'dream', date: null }, counts: { done: 0, total: 1, open: 1 } }
 
   it('accepts a guide as the server sends it', () => {
-    expect(asGuideView(view)).toBe(view)
+    const sent = { ...view, hidden: ['prebook.tours'], deferred: [{ id: 'prebook.dining', until: '2026-12-02' }] }
+    expect(asGuideView(sent)).toEqual(sent)
+  })
+
+  it('reads a copy kept before skip and later existed as having nothing put aside', () => {
+    expect(asGuideView(view)).toEqual({ ...view, hidden: [], deferred: [] })
   })
 
   it('refuses a copy with the wrong shape, an unknown state or a destination that is not an app address', () => {

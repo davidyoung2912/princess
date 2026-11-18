@@ -28,7 +28,7 @@ public sealed record CheckinStatusDto(string State, long OpensAt, long ClosesAt)
 
 public sealed record PlanDto(long Total, long Deposit, long Balance, string FinalDue, string Booked);
 
-public sealed record TripDocumentsDto(int Guests, int Missing, int PassportProblems);
+public sealed record TripDocumentsDto(int Guests, int Missing, int PassportProblems, int Ready = 0, int Children = 0);
 
 public sealed record TripViewDto(
     string Number, string Kind, string SailingId, string Departure, string CategoryName, int Guests, int DaysToDeparture,

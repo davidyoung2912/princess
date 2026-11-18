@@ -7,6 +7,10 @@ import { t, type StringKey } from '../../i18n'
 import { Banner, type BannerKind } from '../Banner'
 import { countdown, NEXT_LINK } from './format'
 import { LinkButton } from '../Button'
+import { primaryOf } from '../../guide/view'
+import { taskWords } from '../../guide/words'
+import { useGuideView } from '../../hooks/useGuideView'
+import { openedFrom } from '../../routes/screens'
 import { StatusBadge, type BadgeKind } from '../StatusBadge'
 
 const PAYMENT_BADGE: Record<PaymentState, BadgeKind> = { paid: 'booked', upcoming: 'ready', dueSoon: 'waitlist', overdue: 'changed' }
@@ -25,6 +29,22 @@ export function NextStep({ trip }: { trip: TripView }) {
   return (
     <Banner kind={NEXT_KIND[trip.next]} title={t(`trip.next.${trip.next}` as StringKey, params)} action={to && trip.kind !== 'linked' ? <LinkButton to={to} variant="secondary">{t(`trip.next.${trip.next}.go` as StringKey)}</LinkButton> : undefined}>
       {trip.next === 'checkin' && <p>{t('trip.next.checkin.body')}</p>}
+    </Banner>
+  )
+}
+
+/**
+ * The trip card's next step on Me. For the trip the guide is about (the current one) it is the guide's first task, the same one Home shows, so the two cannot disagree;
+ * for any other booking, or while the guide is not there, it is the trip's own next step.
+ */
+export function GuideStep({ trip }: { trip: TripView }) {
+  const { data: view } = useGuideView()
+  const task = trip.kind === 'current' && view ? primaryOf(view) : null
+  if (!task) return <NextStep trip={trip} />
+  const w = taskWords(task)
+  return (
+    <Banner kind={task.urgency === 'now' ? 'warning' : 'info'} title={w.title} action={<LinkButton to={task.to} state={openedFrom('blue')} variant="secondary" aria-label={t('guide.startTask', { task: w.title })}>{t('guide.me.go')}</LinkButton>}>
+      <p>{w.why}</p>
     </Banner>
   )
 }

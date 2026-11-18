@@ -10,10 +10,19 @@ public sealed record GuideDraft(string Id, bool CategoryChosen);
 /// The confirmed trip. <c>Checklist</c> is the checklist by item id (the same facts the checklist screen shows); it is empty for a trip the guest cannot plan on (a linked agent booking).
 /// <c>CheckinState</c> is <c>notOpen</c>, <c>open</c>, <c>closed</c> or <c>done</c>.
 /// </summary>
-public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist);
+public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0);
+
+/// <summary>What the guest has put aside: tasks they said are not for them (<c>Skipped</c>) and tasks they will do later (<c>Later</c>, by the day each returns). A task with a real deadline is never put aside.</summary>
+public sealed record GuideChoices(IReadOnlySet<string> Skipped, IReadOnlyDictionary<string, DateOnly> Later)
+{
+    public static readonly GuideChoices None = new(new HashSet<string>(), new Dictionary<string, DateOnly>());
+}
 
 /// <summary>Everything the guide is worked out from.</summary>
-public sealed record GuideFacts(string Stage, DateOnly Today, int SavedSailings, GuideDraft? Draft, GuideTrip? Trip, bool LastFullDay, bool FeedbackSent);
+public sealed record GuideFacts(string Stage, DateOnly Today, int SavedSailings, GuideDraft? Draft, GuideTrip? Trip, bool LastFullDay, bool FeedbackSent, GuideChoices? Choices = null);
+
+/// <summary>How many of the travellers a task is done for ("2 of 4 ready").</summary>
+public sealed record GuideWho(int Done, int Total);
 
 /// <summary>
 /// One thing the guest could do now. <c>State</c> is todo, blocked (needs <c>BlockedBy</c> first), waiting (not open until <c>OpensAt</c>) or done.
@@ -23,7 +32,7 @@ public sealed record GuideFacts(string Stage, DateOnly Today, int SavedSailings,
 /// </summary>
 public sealed record GuideTask(
     string Id, string Stage, string To, string State, string Urgency, string? UrgencyReason, string? Due, string? DueSource, string? OpensAt,
-    int Minutes, bool Hard, bool Optional, string DoneBy, string? BlockedBy, string? CarriedFrom);
+    int Minutes, bool Hard, bool Optional, string DoneBy, string? BlockedBy, string? CarriedFrom, GuideWho? Who = null);
 
 /// <summary>What really moves the guest to the next stage (the words are the client's, by stage), and the date when there is one.</summary>
 public sealed record GuideMoveOn(string Stage, string? Date);
@@ -31,7 +40,10 @@ public sealed record GuideMoveOn(string Stage, string? Date);
 public sealed record GuideCounts(int Done, int Total, int Open);
 
 /// <summary>The guest's plan right now: every task in order (open first, by urgency, then waiting, then done), the one to do first, and how the stage ends.</summary>
-public sealed record GuideView(string Stage, string? PrimaryId, List<GuideTask> Tasks, GuideMoveOn MoveOn, GuideCounts Counts);
+public sealed record GuideView(string Stage, string? PrimaryId, List<GuideTask> Tasks, GuideMoveOn MoveOn, GuideCounts Counts, List<string> Hidden, List<GuideDeferred> Deferred);
+
+/// <summary>A task the guest put off, and the day it comes back.</summary>
+public sealed record GuideDeferred(string Id, string Until);
 
 /// <summary>
 /// The Journey Guide (docs/next-steps-guidance-plan.md section 3). One catalogue of tasks per stage, each marked done from data wherever the data can say so, ordered so the first open one
@@ -48,7 +60,19 @@ public static class GuideRules
 
     private sealed record Raw(
         string Id, string To, int Minutes, bool Done, string DoneBy, bool Hard = false, bool Optional = false, string? Check = null,
-        string? BlockedBy = null, DateOnly? OpensAt = null, DateOnly? Due = null, string? DueSource = null, string? Reason = null, string? From = null);
+        string? BlockedBy = null, DateOnly? OpensAt = null, DateOnly? Due = null, string? DueSource = null, string? Reason = null, string? From = null, GuideWho? Who = null);
+
+    /// <summary>Reads the <c>guideChoices</c> document (<c>{ skipped: { id: atMs }, later: { id: "yyyy-MM-dd" } }</c>); anything unreadable is left out.</summary>
+    public static GuideChoices ReadChoices(System.Text.Json.Nodes.JsonObject? data)
+    {
+        var skipped = new HashSet<string>();
+        var later = new Dictionary<string, DateOnly>();
+        if (data?["skipped"] is System.Text.Json.Nodes.JsonObject sk) foreach (var (id, _) in sk) skipped.Add(id);
+        if (data?["later"] is System.Text.Json.Nodes.JsonObject lt)
+            foreach (var (id, node) in lt)
+                if (node is System.Text.Json.Nodes.JsonValue v && v.TryGetValue<string>(out var day) && DateOnly.TryParseExact(day, "yyyy-MM-dd", out var d)) later[id] = d;
+        return new GuideChoices(skipped, later);
+    }
 
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");
 
@@ -57,11 +81,21 @@ public static class GuideRules
         var raws = Catalogue(f);
         var order = raws.Select((r, i) => (r, i)).ToDictionary(x => x.r.Id, x => x.i);
         var tasks = raws.Select(r => ToTask(f, r)).ToList();
+        var choices = f.Choices ?? GuideChoices.None;
+        var hidden = new List<string>();
+        var deferred = new List<GuideDeferred>();
+        tasks = [.. tasks.Where(t =>
+        {
+            if (t.Hard || t.State == Done) return true;
+            if (choices.Skipped.Contains(t.Id)) { hidden.Add(t.Id); return false; }
+            if (choices.Later.TryGetValue(t.Id, out var until) && until > f.Today) { deferred.Add(new GuideDeferred(t.Id, Iso(until))); return false; }
+            return true;
+        })];
         tasks = [.. tasks.OrderBy(t => StateRank(t.State)).ThenBy(t => t.State == Todo ? UrgencyRank(t.Urgency) : 0).ThenBy(t => t.State == Todo && t.Optional ? 1 : 0)
             .ThenBy(t => t.State == Waiting ? t.OpensAt : null, StringComparer.Ordinal).ThenBy(t => order[t.Id])];
         var own = tasks.Where(t => t.CarriedFrom is null).ToList();
         var counts = new GuideCounts(own.Count(t => t.State == Done), own.Count, tasks.Count(t => t.State != Done));
-        return new GuideView(f.Stage, tasks.FirstOrDefault(t => t.State == Todo)?.Id, tasks, MoveOn(f), counts);
+        return new GuideView(f.Stage, tasks.FirstOrDefault(t => t.State == Todo)?.Id, tasks, MoveOn(f), counts, hidden, deferred);
     }
 
     private static int StateRank(string s) => s switch { Todo => 0, Blocked => 1, Waiting => 2, _ => 3 };
@@ -78,7 +112,7 @@ public static class GuideRules
             else if (r.Due is { } due) urgency = due.DayNumber - f.Today.DayNumber <= SoonDays ? Soon : Later;
         }
         return new GuideTask(r.Id, r.Id[..r.Id.IndexOf('.')], r.To, state, urgency, reason, r.Due is { } d ? Iso(d) : null, r.DueSource, state == Waiting && r.OpensAt is { } opens ? Iso(opens) : null,
-            r.Minutes, r.Hard, r.Optional, r.DoneBy, state == Blocked ? r.BlockedBy : null, r.From);
+            r.Minutes, r.Hard, r.Optional, r.DoneBy, state == Blocked ? r.BlockedBy : null, r.From, state == Done ? null : r.Who);
     }
 
     /// <summary>The checklist item's own date and state when the guest has a checklist, else the fallback.</summary>
@@ -108,7 +142,8 @@ public static class GuideRules
         var days = t is null ? int.MaxValue : t.Departure.DayNumber - f.Today.DayNumber;
         var (_, due, source) = FromCheck(t, "documents", false);
         return new(id, "/me/documents", 10, t?.DocumentsOk ?? false, ByData, Hard: true, Check: "documents", Due: due, DueSource: source,
-            Reason: t is not null && !t.Agent && !t.DocumentsOk && days <= 30 ? "documents" : null, From: from);
+            Reason: t is not null && !t.Agent && !t.DocumentsOk && days <= 30 ? "documents" : null, From: from,
+            Who: t is { Agent: false, Guests: > 1 } ? new GuideWho(Math.Min(t.Ready, t.Guests), t.Guests) : null);
     }
 
     private static List<Raw> Catalogue(GuideFacts f)
@@ -156,6 +191,7 @@ public static class GuideRules
                 raws.Add(Item(t, "prebook.packing", "/plan/packing", 10, "packing", ByTick));
                 raws.Add(Item(t, "prebook.travel", "/plan/travel", 5, "travel", ByData));
                 raws.Add(Item(t, "prebook.packages", "/me/packages", 5, "packages", ByTick, optional: true));
+                if (t is { Children: > 0 }) raws.Add(new("prebook.clubs", "/plan/clubs", 5, false, ByVisit, Optional: true));
                 return raws;
             }
             case StageRules.GetToShip:

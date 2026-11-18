@@ -8,7 +8,7 @@ namespace Princess.Api.Services;
 /// The Journey Guide for the signed-in guest (docs/next-steps-guidance-plan.md): gathers the facts the stage, the trip, the checklist and the booking draft already hold and hands them to
 /// <see cref="GuideRules"/>. It holds no rules of its own and stores nothing.
 /// </summary>
-public sealed class GuideService(ContextService context, ICurrentUser me, TripService trips, PlanService plan, ITripStore tripStore, IOnboardStore onboard, IInboxStore inbox, IBookingStore bookings, IUserClock clock)
+public sealed class GuideService(ContextService context, ICurrentUser me, TripService trips, PlanService plan, ITripStore tripStore, IOnboardStore onboard, IInboxStore inbox, IBookingStore bookings, IUserClock clock, IStateStore state)
 {
     public async Task<GuideView> GetAsync(CancellationToken ct)
     {
@@ -26,8 +26,17 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
         if (ctx.Booking is not null || ctx.Stage is not (StageRules.Dream or StageRules.Discover or StageRules.Book))
             (trip, lastFullDay) = await TripFactsAsync(user, ctx, now, today, ct);
 
-        var facts = new GuideFacts(ctx.Stage, today, saved, draft is null ? null : new GuideDraft(draft.Id, !string.IsNullOrEmpty(draft.CategoryId)), trip, lastFullDay, feedback);
+        var facts = new GuideFacts(ctx.Stage, today, saved, draft is null ? null : new GuideDraft(draft.Id, !string.IsNullOrEmpty(draft.CategoryId)), trip, lastFullDay, feedback, await ChoicesAsync(user.Id, ct));
         return GuideRules.Build(facts);
+    }
+
+    /// <summary>The guest's own put-aside choices (the <c>guideChoices</c> document); an unreadable one counts as none.</summary>
+    private async Task<GuideChoices> ChoicesAsync(long userId, CancellationToken ct)
+    {
+        var row = await state.GetAsync(false, userId, "guideChoices", ct);
+        if (row is null) return GuideChoices.None;
+        try { return GuideRules.ReadChoices(System.Text.Json.Nodes.JsonNode.Parse(row.Json) as System.Text.Json.Nodes.JsonObject); }
+        catch (System.Text.Json.JsonException) { return GuideChoices.None; }
     }
 
     private async Task<(GuideTrip?, bool)> TripFactsAsync(UserRecord user, ContextDto ctx, DateTime now, DateOnly today, CancellationToken ct)
@@ -63,6 +72,6 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
         var departure = DateOnly.ParseExact(view.Departure[..10], "yyyy-MM-dd");
         var docsOk = view.Documents is null || (view.Documents.Missing == 0 && view.Documents.PassportProblems == 0);
         var opens = departure.AddDays(-TripRules.CheckinOpenDaysBefore);
-        return (new GuideTrip(view.Number, departure, view.Kind == "linked", view.Payment == "paid", DateOnly.ParseExact(view.Plan.FinalDue, "yyyy-MM-dd"), docsOk, view.Checkin.State, opens, musterDone, checklist), lastFull);
+        return (new GuideTrip(view.Number, departure, view.Kind == "linked", view.Payment == "paid", DateOnly.ParseExact(view.Plan.FinalDue, "yyyy-MM-dd"), docsOk, view.Checkin.State, opens, musterDone, checklist, view.Documents?.Guests ?? 0, view.Documents?.Ready ?? 0, view.Documents?.Children ?? 0), lastFull);
     }
 }

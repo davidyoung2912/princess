@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Link } from 'react-router'
 import { Check, Clock } from 'lucide-react'
 import type { GuideTask, GuideView } from '../../api/guideTypes'
@@ -10,7 +10,14 @@ import { useSettings } from '../../hooks/useSettings'
 import { t, th, type StringKey } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
 import { stanleyLevelFor } from '../../settings/settings'
-import { LinkButton } from '../Button'
+import { Button, LinkButton } from '../Button'
+import { getContext, subscribeContext } from '../../account/context'
+import { demoNow } from '../../demo/store'
+import { isoDay } from '../../domain/rates'
+import { putOffGuideTask, restoreGuideTask, skipGuideTask } from '../../guide/choicesStore'
+import { forgetSharedLoads } from '../../hooks/useSharedMine'
+import { sync } from '../../sync'
+import { formatDate } from '../../domain/cruise'
 import { Card } from '../Card'
 
 const Meta = ({ task }: { task: GuideTask }) => <p className="guide__meta muted">{taskMeta(task).join(' · ')}</p>
@@ -25,7 +32,41 @@ function StageLine({ view }: { view: GuideView }) {
   )
 }
 
-function DoNow({ task }: { task: GuideTask }) {
+const DAY_MS = 86_400_000
+
+/** What the guest can do to put a task aside, and the polite message that says it was. A task with a real deadline cannot be put aside, so it gets no buttons. */
+function useAside() {
+  const personId = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.id ?? null
+  const [said, setSaid] = useState('')
+  return {
+    said,
+    skip: (task: GuideTask) => { skipGuideTask(personId, task, demoNow()); setSaid(t('guide.aside.live', { task: taskWords(task).title })) },
+    later: (task: GuideTask) => { putOffGuideTask(personId, task, isoDay(demoNow() + DAY_MS)); setSaid(t('guide.aside.live', { task: taskWords(task).title })) },
+    restore: async (id: string) => {
+      restoreGuideTask(personId, id)
+      setSaid(t('guide.restored.live', { task: taskWords({ id }).title }))
+      // The server drops a put-aside task from the plan, so read it again once the change is saved.
+      await sync.flush()
+      forgetSharedLoads()
+      window.dispatchEvent(new Event('guide:refresh'))
+    },
+  }
+}
+
+type Aside = ReturnType<typeof useAside>
+
+function PutAside({ task, aside }: { task: GuideTask; aside: Aside }) {
+  if (task.hard || task.state === 'done') return null
+  const title = taskWords(task).title
+  return (
+    <span className="guide__aside">
+      <Button variant="tertiary" onClick={() => aside.later(task)} aria-label={t('guide.laterFor', { task: title })}>{t('guide.later')}</Button>
+      <Button variant="tertiary" onClick={() => aside.skip(task)} aria-label={t('guide.skipFor', { task: title })}>{t('guide.skip')}</Button>
+    </span>
+  )
+}
+
+function DoNow({ task, aside }: { task: GuideTask; aside: Aside }) {
   const w = taskWords(task)
   return (
     <Card hero labelledBy="guide-now-h">
@@ -34,12 +75,12 @@ function DoNow({ task }: { task: GuideTask }) {
       <p>{w.why}</p>
       {task.urgency === 'now' && <p className="guide__urgent"><Clock size={16} aria-hidden="true" /> {t('guide.urgent')}</p>}
       <Meta task={task} />
-      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue')} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton></div>
+      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue')} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><PutAside task={task} aside={aside} /></div>
     </Card>
   )
 }
 
-function Row({ task }: { task: GuideTask }) {
+function Row({ task, aside }: { task: GuideTask; aside: Aside }) {
   const w = taskWords(task)
   return (
     <li className="stage-step">
@@ -47,6 +88,7 @@ function Row({ task }: { task: GuideTask }) {
         <Link to={task.to} state={openedFrom('blue')}>{w.title}</Link>
         <Meta task={task} />
       </span>
+      <PutAside task={task} aside={aside} />
     </li>
   )
 }
@@ -58,6 +100,7 @@ function Row({ task }: { task: GuideTask }) {
  */
 export function StageGuide() {
   const { data: view, stale } = useGuideView()
+  const aside = useAside()
   const [settings] = useSettings()
   const reason = dotReason(view, stanleyLevelFor(settings))
   useEffect(() => { publishDot(reason); return () => publishDot(null) }, [reason])
@@ -71,16 +114,17 @@ export function StageGuide() {
     <section aria-label={t('guide.title')} className="guide">
       <StageLine view={view} />
       {stale && <p className="muted">{t('guide.stale')}</p>}
-      {primary ? <DoNow task={primary} /> : (
+      {primary ? <DoNow task={primary} aside={aside} /> : (
         <Card info>
-          <p>{t('guide.allDone')}</p>
+          <p>{t('guide.ahead')}</p>
+          <p className="muted">{t('guide.aheadNext', { moveOn: moveOnWords(view.moveOn) })}</p>
           {rest[0] && <p><Link to={rest[0].to} state={openedFrom('blue')}>{t('guide.lookAhead')}: {taskWords(rest[0]).title}</Link></p>}
         </Card>
       )}
       {rest.length > 0 && (
         <section aria-labelledby="guide-soon-h" className="stage-next">
           <h2 id="guide-soon-h">{th('guide.soon')}</h2>
-          <ol className="stage-steps">{rest.map((x) => <Row key={x.id} task={x} />)}</ol>
+          <ol className="stage-steps">{rest.map((x) => <Row key={x.id} task={x} aside={aside} />)}</ol>
           {more > 0 && <p className="muted">{t('guide.more', { count: more })} <Link to="/plan">{t('guide.moreLink')}</Link></p>}
         </section>
       )}
@@ -92,6 +136,25 @@ export function StageGuide() {
           </ul>
         </details>
       )}
+      {(view.hidden.length > 0 || view.deferred.length > 0) && (
+        <details className="guide__done">
+          <summary>{th('guide.asideCount', { count: view.hidden.length + view.deferred.length })}</summary>
+          <ul className="stage-steps">
+            {view.hidden.map((id) => <AsideRow key={id} id={id} text={t('guide.asideHidden', { task: taskWords({ id }).title })} aside={aside} />)}
+            {view.deferred.map((d) => <AsideRow key={d.id} id={d.id} text={t('guide.asideLater', { date: formatDate(d.until), task: taskWords({ id: d.id }).title })} aside={aside} />)}
+          </ul>
+        </details>
+      )}
+      <p className="visually-hidden" role="status" aria-live="polite">{aside.said}</p>
     </section>
+  )
+}
+
+function AsideRow({ id, text, aside }: { id: string; text: string; aside: Aside }) {
+  return (
+    <li className="stage-step">
+      <span className="stage-step__body">{text}</span>
+      <Button variant="tertiary" onClick={() => { void aside.restore(id) }} aria-label={t('guide.restoreFor', { task: taskWords({ id }).title })}>{t('guide.restore')}</Button>
+    </li>
   )
 }

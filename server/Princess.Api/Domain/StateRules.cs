@@ -30,6 +30,7 @@ public static class StateRules
         ["recent"] = 2_000,
         ["stageWelcome"] = 8_000,
         ["stageProgress"] = 12_000,
+        ["guideChoices"] = 8_000,
     };
 
     /// <summary>The most stage welcomes <c>stageWelcome</c> remembers, and the longest sailing id in an entry's key.</summary>
@@ -81,6 +82,28 @@ public static class StateRules
             var step = key[(hash + 1)..];
             if (step.Length != 1 || step[0] < '1' || step[0] > '0' + StageProgressMaxStep) return "badData";
             if (node is not JsonValue at || !at.TryGetValue<double>(out _)) return "badData";
+        }
+        return null;
+    }
+
+    /// <summary>The most tasks <c>guideChoices</c> keeps in each of its two lists, and the longest task id.</summary>
+    public const int GuideChoicesMaxEntries = 60, GuideChoicesMaxId = 40;
+
+    /// <summary>
+    /// The problem for a <c>guideChoices</c> document: <c>{ skipped: { "&lt;task id&gt;": atMs }, later: { "&lt;task id&gt;": "yyyy-MM-dd" } }</c>, the tasks the guest said are not for them or will do later.
+    /// A task id is letters, digits and dots, like <c>prebook.tours</c>; both lists are optional.
+    /// </summary>
+    private static string? GuideChoicesProblem(JsonObject data)
+    {
+        foreach (var (list, node) in data)
+        {
+            if (list is not ("skipped" or "later") || node is not JsonObject entries || entries.Count > GuideChoicesMaxEntries) return "badData";
+            foreach (var (id, value) in entries)
+            {
+                if (id.Length is 0 or > GuideChoicesMaxId || !id.All(c => char.IsAsciiLetterOrDigit(c) || c == '.')) return "badData";
+                if (list == "skipped" ? value is not JsonValue at || !at.TryGetValue<double>(out _)
+                    : value is not JsonValue day || !day.TryGetValue<string>(out var text) || !DateOnly.TryParseExact(text, "yyyy-MM-dd", out _)) return "badData";
+            }
         }
         return null;
     }
@@ -138,6 +161,7 @@ public static class StateRules
             "recent" => RecentProblem(obj),
             "stageWelcome" => StageWelcomeProblem(obj),
             "stageProgress" => StageProgressProblem(obj),
+            "guideChoices" => GuideChoicesProblem(obj),
             _ => null,
         };
     }

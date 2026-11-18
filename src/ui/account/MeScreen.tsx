@@ -11,7 +11,7 @@ import { Card } from '../Card'
 import { TabScreens } from '../TabScreens'
 import { countdown, formatMoment } from './format'
 import { Load } from './parts'
-import { NextStep, PaymentBadge } from './tripParts'
+import { GuideStep, PaymentBadge } from './tripParts'
 
 /** Me: who you are, your trip at a glance, and everything about the account in one place. */
 export function MeScreen() {
@@ -42,7 +42,7 @@ export function MeScreen() {
             <Card>
               <h3 className="card__title"><Link to={`/me/trips/${trip.number}`}>{sailingRange(sailingById(trip.sailingId)!)}</Link></h3>
               <p><strong>{countdown(trip.daysToDeparture)}</strong> <PaymentBadge trip={trip} /></p>
-              <NextStep trip={trip} />
+              <GuideStep trip={trip} />
             </Card>
           ) : <Card info><p>{t('trips.noneUpcoming')}</p></Card>}
         </Load>

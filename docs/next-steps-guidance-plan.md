@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine) and G2 (Home rebuilt on the guide) are built; G3 (real done and carry-over) is next.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) are built; G4 (in-flow guidance) is next.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -204,3 +204,13 @@ Found while reading the code. None are built; each is small.
 - Retired: `nextSteps`, `urgentStep`, `STAGE_ACTION`, `HomeFacts.trip` and `.aboard`, the `stage.next.*`, `land.go.*` and `journey.go.*` text (English and the matching Spanish keys, removed, not edited). The welcome page keeps its own list of step links (`STEP_LINKS` in `stageWelcome.ts`). The "browse from where you are" pill after a miss now opens Home, which shows the stage's guide and tiles.
 - Tests: `src/guide/view.test.ts` (new), and the Stanley next, Stanley dot, stage Home and hubs tests rewritten on guide fixtures (`src/guide/fixture.ts`). No server change in this phase.
 - **Left for G3:** the facts for excursions, dining, packing and so on, per-traveller counts, skip and later, personal fit, and the trip banner on Me reading the guide.
+
+**G3, skip and later, per-traveller counts, personal fit, all done (built).**
+- **Skip and later.** A new `guideChoices` document in `/me/state` (`{ skipped: { id: atMs }, later: { id: "yyyy-MM-dd" } }`, limits and checks in `StateRules.cs`). `GuideRules` leaves a skipped or put-off task out (a put-off one returns on its day) and lists them in `hidden` and `deferred`; a task marked `hard` is never left out. The client (`src/guide/choices.ts`, `choicesStore.ts`, a sync binding) lays the same choices over a guide it already has, so a tap takes effect at once. Home's guide shows "Later" (tomorrow) and "Not for me" on every task that can be put aside, a "Put aside (n)" list with "Bring back" (it saves, then reads the plan again), and a polite live-region message.
+- **Per-traveller counts.** The trip's documents now carry how many travellers are ready and how many are children; the documents task says "2 of 4 travellers ready" while any are not.
+- **Personal fit.** Children in the party add an optional "Look at the kids and teens clubs" task in Prebook. Access needs, first cruise and quiet offers are not read yet (they live in encrypted or client-side documents), so they are left for G6.
+- **All done.** With nothing open Home says "You are ahead", then "Next:" with the stage's real move-on line and date.
+- **Me.** The trip card's next step (and the trip page's) is the guide's first task for the current trip, falling back to the trip's own next step for other bookings.
+- **Already there from G1:** the facts for excursions, dining, packing, travel, packages and assistance come from the checklist's own data, so no new fact builders were needed. Carry-over of payment and documents was built in G1.
+- **Not done (moved on):** the three-tap "Make this plan fit me" prompt, and an insurance task (no screen yet, section 8). Both belong with G6's content passes.
+- Tests: `choices.test.ts`, the guard test; C# `GuideRulesTests` and `StateTests` written, not run (no `dotnet test`, and `dotnet` is not installed in this shell, so the C# has not been compiled either).

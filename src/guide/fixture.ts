@@ -13,5 +13,6 @@ export function guide(stage: JourneyStage, tasks: GuideTask[]): GuideView {
   return {
     stage, primaryId: tasks.find((x) => x.state === 'todo')?.id ?? null, tasks, moveOn: { stage, date: null },
     counts: { done: own.filter((x) => x.state === 'done').length, total: own.length, open: tasks.filter((x) => x.state !== 'done').length },
+    hidden: [], deferred: [],
   }
 }

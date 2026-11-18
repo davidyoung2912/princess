@@ -10,8 +10,10 @@ public class GuideRulesTests
     private static GuideTrip Trip(DateOnly today, bool paid = false, bool docs = false, string checkin = "notOpen", bool muster = false, bool agent = false, Dictionary<string, GuideCheck>? list = null) =>
         new("PR123", Departure, agent, paid, Departure.AddDays(-75), docs, checkin, Departure.AddDays(-3), muster, list ?? []);
 
-    private static GuideView At(string stage, DateOnly today, GuideTrip? trip = null, int saved = 0, GuideDraft? draft = null, bool lastFull = false, bool feedback = false) =>
-        GuideRules.Build(new GuideFacts(stage, today, saved, draft, trip, lastFull, feedback));
+    private static GuideView At(string stage, DateOnly today, GuideTrip? trip = null, int saved = 0, GuideDraft? draft = null, bool lastFull = false, bool feedback = false, GuideChoices? choices = null) =>
+        GuideRules.Build(new GuideFacts(stage, today, saved, draft, trip, lastFull, feedback, choices));
+
+    private static GuideChoices Skip(params string[] ids) => new(new HashSet<string>(ids), new Dictionary<string, DateOnly>());
 
     [Fact]
     public void EveryStageHasTasksAndEveryTaskHasADestination()
@@ -139,5 +141,67 @@ public class GuideRulesTests
         var d = At(StageRules.Discover, Departure.AddDays(-200), draft: new("d1", true));
         Assert.Equal(1, d.Counts.Done);
         Assert.Equal(2, d.Counts.Open);
+    }
+
+    [Fact]
+    public void ATaskTheGuestSkippedIsHiddenAndCounted()
+    {
+        var today = Departure.AddDays(-40);
+        var g = At(StageRules.Prebook, today, Trip(today), choices: Skip("prebook.packages"));
+        Assert.DoesNotContain(g.Tasks, t => t.Id == "prebook.packages");
+        Assert.Equal(new[] { "prebook.packages" }, g.Hidden);
+    }
+
+    [Fact]
+    public void ATaskWithARealDeadlineCannotBeHidden()
+    {
+        var today = Departure.AddDays(-40);
+        var g = At(StageRules.Prebook, today, Trip(today), choices: Skip("manage.pay", "manage.documents"));
+        Assert.Contains(g.Tasks, t => t.Id == "manage.pay");
+        Assert.Contains(g.Tasks, t => t.Id == "manage.documents");
+        Assert.Empty(g.Hidden);
+    }
+
+    [Fact]
+    public void ATaskPutOffReturnsOnItsDay()
+    {
+        var today = Departure.AddDays(-40);
+        var later = new GuideChoices(new HashSet<string>(), new Dictionary<string, DateOnly> { ["prebook.dining"] = today.AddDays(1) });
+        var before = At(StageRules.Prebook, today, Trip(today), choices: later);
+        Assert.DoesNotContain(before.Tasks, t => t.Id == "prebook.dining");
+        Assert.Equal(new[] { new GuideDeferred("prebook.dining", today.AddDays(1).ToString("yyyy-MM-dd")) }, before.Deferred);
+        var back = At(StageRules.Prebook, today.AddDays(1), Trip(today), choices: later);
+        Assert.Contains(back.Tasks, t => t.Id == "prebook.dining");
+        Assert.Empty(back.Deferred);
+    }
+
+    [Fact]
+    public void DocumentsCountTheTravellersWhoAreReady()
+    {
+        var today = Departure.AddDays(-40);
+        var trip = Trip(today) with { Guests = 4, Ready = 2 };
+        var docs = At(StageRules.Manage, today, trip).Tasks.Single(t => t.Id == "manage.documents");
+        Assert.Equal(new GuideWho(2, 4), docs.Who);
+        Assert.Null(At(StageRules.Manage, today, Trip(today) with { Guests = 1, Ready = 0 }).Tasks.Single(t => t.Id == "manage.documents").Who);
+    }
+
+    [Fact]
+    public void ChildrenInThePartyAddTheClubsTask()
+    {
+        var today = Departure.AddDays(-40);
+        Assert.DoesNotContain(At(StageRules.Prebook, today, Trip(today)).Tasks, t => t.Id == "prebook.clubs");
+        var clubs = At(StageRules.Prebook, today, Trip(today) with { Guests = 3, Children = 1 }).Tasks.Single(t => t.Id == "prebook.clubs");
+        Assert.True(clubs.Optional);
+        Assert.Equal("/plan/clubs", clubs.To);
+    }
+
+    [Fact]
+    public void ReadChoicesKeepsOnlyReadableEntries()
+    {
+        var json = "{\"skipped\":{\"a.b\":1},\"later\":{\"c.d\":\"2027-01-02\",\"e.f\":\"soon\"}}";
+        var c = GuideRules.ReadChoices(System.Text.Json.Nodes.JsonNode.Parse(json) as System.Text.Json.Nodes.JsonObject);
+        Assert.Contains("a.b", c.Skipped);
+        Assert.Equal(new DateOnly(2027, 1, 2), c.Later["c.d"]);
+        Assert.False(c.Later.ContainsKey("e.f"));
     }
 }

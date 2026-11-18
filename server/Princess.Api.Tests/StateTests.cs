@@ -235,4 +235,14 @@ public class StateApiTests : JourneyWorld
         Assert.Null(StateRules.Problem(StateRules.UserKeys, "reminder", new JsonObject { ["at"] = 1 }));
         Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "reminder", new JsonArray()));
     }
+
+    [Fact]
+    public void GuideChoicesAcceptSkippedAndLaterAndRefuseTheRest()
+    {
+        var good = JsonNode.Parse("{\"skipped\":{\"prebook.tours\":1700000000000},\"later\":{\"prebook.dining\":\"2027-01-02\"}}")!;
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "guideChoices", good));
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "guideChoices", new JsonObject()));
+        foreach (var bad in new[] { "{\"other\":{}}", "{\"skipped\":{\"bad id\":1}}", "{\"skipped\":{\"a.b\":\"x\"}}", "{\"later\":{\"a.b\":\"soon\"}}", "{\"later\":[]}" })
+            Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "guideChoices", JsonNode.Parse(bad)));
+    }
 }

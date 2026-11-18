@@ -172,5 +172,9 @@ export function asGuideView(raw: unknown): GuideView | null {
     const t = obj(x)
     return !!t && typeof t.id === 'string' && typeof t.to === 'string' && t.to.startsWith('/') && typeof t.state === 'string' && GUIDE_STATES.includes(t.state) && typeof t.minutes === 'number'
   })
-  return ok ? (raw as GuideView) : null
+  if (!ok) return null
+  // A copy kept before skip and later existed has neither list.
+  const hidden = Array.isArray(o.hidden) ? o.hidden.filter((x): x is string => typeof x === 'string') : []
+  const deferred = Array.isArray(o.deferred) ? (o.deferred as unknown[]).filter((x): x is { id: string; until: string } => !!obj(x) && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { until?: unknown }).until === 'string') : []
+  return { ...(raw as GuideView), hidden, deferred }
 }

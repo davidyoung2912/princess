@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { asGuideView } from '../api/guards'
 import { api } from '../runtime'
 import { usePersona } from './useDemo'
@@ -12,5 +13,10 @@ export function useGuide() {
   const me = usePersona()
   const id = me?.id ?? 'none'
   const copy = useSavedCopy('guide', id, () => sharedCall(id, 'guide', () => api.guide.get()), asGuideView, [me?.id])
+  const retry = copy.retry
+  useEffect(() => {
+    window.addEventListener('guide:refresh', retry)
+    return () => window.removeEventListener('guide:refresh', retry)
+  }, [retry])
   return { ...copy, stale: copy.fromCopy }
 }

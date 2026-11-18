@@ -33,6 +33,8 @@ export interface GuideTask {
   /** For a blocked task: the id of the task to finish first. */
   blockedBy: string | null
   carriedFrom: JourneyStage | null
+  /** For a task done per traveller: how many are done of how many ("2 of 4 ready"). */
+  who?: { done: number; total: number } | null
 }
 
 export interface GuideView {
@@ -44,6 +46,9 @@ export interface GuideView {
   /** What really moves the guest to the next stage; `date` is set when there is one. The words are `guide.moveOn.<stage>`. */
   moveOn: { stage: JourneyStage; date: string | null }
   counts: { done: number; total: number; open: number }
+  /** Tasks the guest said are not for them, and tasks they put off until a day ("yyyy-MM-dd"). A task with a real deadline is never in either. */
+  hidden: string[]
+  deferred: { id: string; until: string }[]
 }
 
 export interface GuideApi {

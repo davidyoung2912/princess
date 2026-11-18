@@ -14,7 +14,7 @@ import { Card } from '../Card'
 import { ManageBooking } from '../book/ManageBooking'
 import { ActionError, Load } from './parts'
 import { countdown } from './format'
-import { NextStep, PaymentBadge } from './tripParts'
+import { GuideStep, PaymentBadge } from './tripParts'
 
 /** One booking's dashboard (MNG-02): countdown, payment, documents, check-in, and the next best action. */
 export function TripScreen() {
@@ -35,7 +35,7 @@ export function TripScreen() {
           <>
             <p className="muted">{t('trip.booking', { number: x.number })} · {x.categoryName} · {t('trip.guests', { count: x.guests })}</p>
             <p className="trip-count calm-hide" aria-live="polite">{countdown(x.daysToDeparture)}</p>
-            <NextStep trip={x} />
+            <GuideStep trip={x} />
 
             <section aria-labelledby="status-h">
               <h2 id="status-h">{th('trip.status')}</h2>
