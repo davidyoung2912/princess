@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router'
 import type { DishFlag, ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
 import { formatMoney } from '../../domain/money'
-import { usedDishFlags } from '../../domain/explorer/diningDiscovery'
 import { clashesWith, type Span } from '../../domain/explorer/presentation'
 import type { ExplorerKind } from '../../domain/explorer/types'
 import { useMine } from '../../hooks/useMine'
@@ -18,7 +17,7 @@ import { BackLink, Saved } from '../onboard/common'
 import { PickDateButton } from './DateControls'
 import { DishSaveButton } from './DishSave'
 import { venueIcon } from './venueIcon'
-import { DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
+import { DietMarks, DishFlags } from './DietMarks'
 import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
 import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
@@ -136,8 +135,6 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
           {(v.kidsMenu?.length ?? 0) > 0 && (
             <>
               <h3>{headingCase(t('exp.family.menu'))}</h3>
-              {(v.kidsMenu ?? []).some((d) => (d.marks?.length ?? 0) > 0) && <DietLegend />}
-              <FlagLegend used={usedDishFlags(v.kidsMenu ?? [])} />
               <ul className="plain-bullets">{v.kidsMenu?.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} /><DishSaveButton shipId={v.shipId} venueId={v.id} name={d.name} />{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}</ul>
             </>
           )}

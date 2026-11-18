@@ -32,7 +32,7 @@ export function DietLegend() {
 
 const FLAG_ICON = { alcohol: FlagAlcohol, raw: FlagRaw, spicy: FlagSpicy } as const
 const FLAG_LABEL: Record<DishFlag, StringKey> = { alcohol: 'exp.flag.alcohol', raw: 'exp.flag.raw', spicy: 'exp.flag.spicy' }
-const FLAG_WHAT: Record<DishFlag, StringKey> = { alcohol: 'exp.flag.alcohol.what', raw: 'exp.flag.raw.what', spicy: 'exp.flag.spicy.what' }
+const FLAG_WHAT: Record<DishFlag, StringKey | null> = { alcohol: 'exp.flag.alcohol.what', raw: null, spicy: 'exp.flag.spicy.what' }
 const FLAG_ORDER: readonly DishFlag[] = ['alcohol', 'raw', 'spicy']
 
 /** One heads-up beside a dish (alcohol, raw or undercooked, spicy): an icon with a name for a screen reader, in a different shape from the diet marks so it is never read as one. */
@@ -60,7 +60,7 @@ export function FlagLegend({ used }: { used: readonly DishFlag[] }) {
   if (shown.length === 0) return null
   return (
     <ul className="diet-legend" aria-label={t('exp.flag.legend')}>
-      {shown.map((f) => <li key={f}><DishFlagIcon flag={f} /> <span>{t(FLAG_LABEL[f])}</span> <small className="muted">{t(FLAG_WHAT[f])}</small></li>)}
+      {shown.map((f) => <li key={f}><DishFlagIcon flag={f} /> <span>{t(FLAG_LABEL[f])}</span>{FLAG_WHAT[f] && <> <small className="muted">{t(FLAG_WHAT[f])}</small></>}</li>)}
     </ul>
   )
 }

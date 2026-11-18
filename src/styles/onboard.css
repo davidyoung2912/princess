@@ -414,8 +414,11 @@ button.chat-quote { cursor: pointer; }
   .exp-split__icon { flex: none; width: 1.25rem; height: 1.25rem; color: var(--explorer); }
   .exp-split__list a[aria-current='page'] .exp-split__icon { stroke-width: 3; }
   @media (prefers-reduced-motion: no-preference) { .exp-split__list a[aria-current='page'] .exp-split__icon { animation: icon-shake 0.5s var(--ease); } }
-  @media (hover: hover) and (prefers-reduced-motion: no-preference) { .exp-split__list a:hover .exp-split__icon { animation: icon-shake 0.5s var(--ease); } }
-  :root[data-motion='reduced'] .exp-split__list a .exp-split__icon { animation: none; }
+  /* Hover or focus: the same small tilt and grow as the left nav's icons. Choosing a place: the icon wiggles once (above). */
+  .exp-split__icon { transition: transform var(--t-mid) var(--ease); }
+  @media (hover: hover) { .exp-split__list a:is(:hover, :focus-visible) .exp-split__icon { transform: scale(1.15) rotate(-8deg); } }
+  @media (prefers-reduced-motion: reduce) { .exp-split__icon { transition: none; } .exp-split__list a:is(:hover, :focus-visible) .exp-split__icon { transform: none; } }
+  :root[data-motion='reduced'] .exp-split__list a .exp-split__icon { animation: none; transform: none; }
   .exp-split__list a:hover { background: var(--explorer-tint); }
   .exp-split__list a[aria-current='page'] { border-color: var(--explorer); background: var(--explorer-tint); font-weight: 600; }
   .exp-split__detail { display: grid; gap: var(--space-4); min-width: 0; }
@@ -740,9 +743,9 @@ button.chat-quote { cursor: pointer; }
 .venue-hours svg { flex: none; width: 1.125rem; height: 1.125rem; color: var(--primary); }
 
 /* The save-for-later toggle beside a dish: a round white button with the bookmark in the brand colour; it grows and glows under the pointer, and when the dish is saved it fills with the brand colour and the bookmark turns white. */
-.dish-save { display: inline-grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; min-inline-size: var(--target-min); min-block-size: var(--target-min); margin-block: calc(var(--space-2) * -1); margin-inline-start: var(--space-2); padding: 0; background: transparent; border: 0; border-radius: 50%; color: var(--primary); cursor: pointer; vertical-align: middle; position: relative; }
-.dish-save::before { content: ''; position: absolute; inset: 50% auto auto 50%; inline-size: 2rem; block-size: 2rem; transform: translate(-50%, -50%); border-radius: 50%; background: var(--bg, #fff); border: 2px solid var(--primary); box-shadow: 0 1px 3px color-mix(in srgb, var(--primary) 25%, transparent); transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease; }
-.dish-save svg { position: relative; inline-size: 1.375rem; block-size: 1.375rem; stroke-width: 2.5; fill: var(--bg, #fff); transition: transform 0.18s ease; }
+.dish-save { display: inline-grid; place-items: center; inline-size: 2rem; block-size: 2rem; min-inline-size: var(--target-min); min-block-size: var(--target-min); margin-block: calc(var(--space-2) * -1); margin-inline-start: var(--space-2); padding: 0; background: transparent; border: 0; border-radius: 50%; color: var(--primary); cursor: pointer; vertical-align: middle; position: relative; }
+.dish-save::before { content: ''; position: absolute; inset: 50% auto auto 50%; inline-size: 1.625rem; block-size: 1.625rem; transform: translate(-50%, -50%); border-radius: 50%; background: var(--bg, #fff); border: 2px solid var(--primary); box-shadow: 0 1px 3px color-mix(in srgb, var(--primary) 25%, transparent); transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease; }
+.dish-save svg { position: relative; inline-size: 1rem; block-size: 1rem; stroke-width: 2.5; fill: var(--bg, #fff); transition: transform 0.18s ease; }
 .dish-save:hover:not(:disabled)::before { transform: translate(-50%, -50%) scale(1.18); background: var(--brand-tint, var(--sky-tint)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-bright, var(--primary)) 22%, transparent), 0 0 16px 4px color-mix(in srgb, var(--primary-bright, var(--primary)) 55%, transparent); }
 .dish-save:hover:not(:disabled) svg { transform: scale(1.12); }
 .dish-save:active:not(:disabled)::before { transform: translate(-50%, -50%) scale(1.05); }
