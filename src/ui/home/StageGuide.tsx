@@ -17,6 +17,9 @@ import { isoDay } from '../../domain/rates'
 import { putOffGuideTask, restoreGuideTask, skipGuideTask } from '../../guide/choicesStore'
 import { markTaskHere, noteGuideHere } from '../../diagnostics/guideFunnel'
 import { refreshGuide } from '../../guide/refresh'
+import { handoffFor, handoffKey } from '../../guide/handoff'
+import { getProgress, recordVisit, subscribeProgress } from '../../stageProgress/store'
+import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { FitPrompt } from './FitPrompt'
 import { formatDate } from '../../domain/cruise'
 import { Card } from '../Card'
@@ -63,6 +66,26 @@ function PutAside({ task, aside }: { task: GuideTask; aside: Aside }) {
       <Button variant="tertiary" onClick={() => aside.later(task)} aria-label={t('guide.laterFor', { task: title })}>{t('guide.later')}</Button>
       <Button variant="tertiary" onClick={() => aside.skip(task)} aria-label={t('guide.skipFor', { task: title })}>{t('guide.skip')}</Button>
     </span>
+  )
+}
+
+/** One short message when a stage opens: where the guest is, what comes first. Dismissed once, it is remembered on the server so no device asks again. */
+function Handoff({ view }: { view: GuideView }) {
+  const { focusSailingId } = useJourneyPosition()
+  const personId = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.id ?? null
+  const progress = useSyncExternalStore(subscribeProgress, () => getProgress(personId), () => getProgress(personId))
+  const hand = handoffFor(view, progress, focusSailingId)
+  if (!hand) return null
+  const tasks = hand.first.map((id) => taskWords({ id }).title.toLowerCase()).join(', ')
+  return (
+    <Card info labelledBy="guide-handoff-h">
+      <div className="guide__handoff" role="status">
+        <h2 id="guide-handoff-h" className="card__title">{th('guide.handoff.title', { stage: t(`journey.stage.${hand.stage}` as StringKey) })}</h2>
+        <p>{t(hand.first.length === 1 ? 'guide.handoff.first1' : 'guide.handoff.first', { tasks })} {hand.more > 0 && t('guide.handoff.more', { count: hand.more })}</p>
+        <p className="muted">{moveOnWords(view.moveOn)}</p>
+      </div>
+      <Button variant="tertiary" onClick={() => recordVisit(personId, handoffKey(hand.stage, focusSailingId), demoNow())}>{t('guide.handoff.dismiss')}</Button>
+    </Card>
   )
 }
 
@@ -120,6 +143,7 @@ export function StageGuide() {
       <StageLine view={view} />
       {(view.stage === 'dream' || view.stage === 'discover') && <FitPrompt />}
       {stale && <p className="muted">{t('guide.stale')}</p>}
+      <Handoff view={view} />
       {primary ? <DoNow task={primary} aside={aside} view={view} /> : (
         <Card info>
           <p>{t('guide.ahead')}</p>

@@ -388,7 +388,12 @@ Five ideas: more "Do it for me", say what changed, hand off at stage changes, gr
 - `GuideRules.TaskFor(kind, stage)` names the task a kind of change is about (port call and tender to `port.leaveby`, weather to `port.excursion` or `sea.today`, venue to `sea.today`, itinerary to the stage's first task, flight to `disembark.onward`). That task, when still open, gets `changed { what, why }` (the card's own words) and goes to the front of the open tasks, so it becomes "Do this now". Done, waiting, blocked and put-aside tasks are left alone, and nothing is added or made urgent beyond the order.
 - Home shows "This moved:" with the card's words above the task's own why (`role="status"`).
 - Tests: `GuideRulesTests` (C#, not run), `doit.test.ts` source gates.
-- **Next:** G10f to G10h.
+- **Next:** G10f (built, below), then G10g and G10h.
+
+**G10f, hand off at a stage change (built).**
+- When a stage opens, Home shows one short card above the plan: "You are in {stage}. Two things first: {task}, {task}. Then N more." with what moves the guest on, and "Got it". The tasks are the first open ones of the stage that are not optional, carried over, waiting or blocked (`handoffFor`, `src/guide/handoff.ts`); nothing open means no card.
+- Remembered once dismissed in the existing `stageProgress` document under step 9 (`HANDOFF_STEP`, past the welcome's three and the optional visits 4 to 6, so no visit can set it), keyed by stage and sailing, so no device asks again. No server change, no new limit. Client only.
+- Tests: `handoff.test.ts`.
 
 **G10 backlog (the full list, so nothing is lost between phases).**
 - Do it for me, best candidates (most effort saved, safe undo): dinner on sea days (G10a, done); excursion booking in Prebook, not just port day (G10b); packing list started from the sailing, the weather and the party (G10c); arrival-time and getting-there plan from flight or drive time (G10d).

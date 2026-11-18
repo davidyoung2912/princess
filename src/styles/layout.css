@@ -360,6 +360,7 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .guide__meta { margin: var(--space-1) 0 0; font-size: 0.875rem; }
 .guide__urgent { display: inline-flex; align-items: center; gap: var(--space-1); font-weight: 600; margin: 0; }
 .guide__changed { margin: 0; }
+.guide__handoff p { margin: 0 0 var(--space-1); }
 .guide__done summary { min-height: var(--target-min); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
 .guide__aside { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
 
