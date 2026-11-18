@@ -63,8 +63,8 @@ function PutAside({ task, aside }: { task: GuideTask; aside: Aside }) {
   const title = taskWords(task).title
   return (
     <span className="guide__aside">
-      <Button variant="tertiary" onClick={() => aside.later(task)} aria-label={t('guide.laterFor', { task: title })}>{t('guide.later')}</Button>
-      <Button variant="tertiary" onClick={() => aside.skip(task)} aria-label={t('guide.skipFor', { task: title })}>{t('guide.skip')}</Button>
+      <Button variant="secondary" onClick={() => aside.later(task)} aria-label={t('guide.laterFor', { task: title })}>{t('guide.later')}</Button>
+      <Button variant="secondary" onClick={() => aside.skip(task)} aria-label={t('guide.skipFor', { task: title })}>{t('guide.skip')}</Button>
     </span>
   )
 }

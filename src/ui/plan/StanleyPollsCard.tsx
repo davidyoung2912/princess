@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isApiError } from '../../api/errors'
 import { normalizePoll, normalizePolls, pollResultText, POLL_ANSWERS, POLL_DAYS, splitChoices, takesAnswers, type ServerPoll } from '../../ai/stanleyPolls'
 import { stanleyPolls } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -22,12 +23,15 @@ export function StanleyPollsCard({ initialQuestion = '' }: { initialQuestion?: s
   const added = Object.values(changed).filter((p): p is ServerPoll => p !== null && !(list.data ?? []).some((x) => x.id === p.id))
   const all = [...added, ...rows]
   const put = (p: ServerPoll | null, id: string) => setChanged((c) => ({ ...c, [id]: p }))
+  // A guest with no booking has no group to ask: say so, rather than showing a connection error.
+  const noTrip = list.status === 'error' && isApiError(list.error) && list.error.code === 'notFound'
   return (
     <Card labelledBy="srv-polls-h">
       <h2 id="srv-polls-h" className="card__title">{th('spoll.title')}</h2>
       <p>{t('spoll.intro')}</p>
-      <NewPoll initialQuestion={initialQuestion} onMade={(p) => put(p, p.id)} />
-      {list.status === 'error' && <LoadError retry={list.retry} />}
+      {noTrip && <p className="muted">{t('spoll.noTrip')}</p>}
+      {!noTrip && <NewPoll initialQuestion={initialQuestion} onMade={(p) => put(p, p.id)} />}
+      {list.status === 'error' && !noTrip && <LoadError retry={list.retry} />}
       {list.status === 'ready' && all.length === 0 && <p className="muted">{t('spoll.none')}</p>}
       <ul className="plain-list">{all.map((p) => <li key={p.id}><PollRow poll={p} onChange={(n) => put(n, p.id)} /></li>)}</ul>
     </Card>
@@ -49,7 +53,7 @@ function NewPoll({ initialQuestion, onMade }: { initialQuestion: string; onMade:
       <legend>{t('spoll.new')}</legend>
       <Field prose label={t('spoll.question')} value={question} maxLength={120} onChange={(e) => setQuestion(e.target.value)} />
       <Field label={t('spoll.options')} hint={t('poll.optionsHint')} value={options} maxLength={300} onChange={(e) => setOptions(e.target.value)} error={bad ? t('poll.problem') : undefined} />
-      <label>{t('spoll.days')}{' '}
+      <label className="spoll-days">{t('spoll.days')}
         <select value={days} onChange={(e) => setDays(Number(e.target.value))}>{POLL_DAYS.map((d) => <option key={d} value={d}>{t('poll9.closes.days', { count: d })}</option>)}</select>
       </label>
       {make.error?.code === 'conflict' && <p role="alert" className="field__error">{t('spoll.tooMany')}</p>}

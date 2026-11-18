@@ -63,7 +63,7 @@ export function TaskHelp({ task, view, onAsk }: { task: GuideTask; view: GuideVi
   const close = () => { setOpen(false); setEntry(null) }
   return (
     <>
-      <Button variant="tertiary" onClick={() => setOpen(true)} aria-label={t('guide.help.for', { task: title })}>{t('guide.help')}</Button>
+      <Button variant="secondary" onClick={() => setOpen(true)} aria-label={t('guide.help.for', { task: title })}>{t('guide.help')}</Button>
       {open && !entry && (
         <Dialog title={t('stanley.sheet.title')} onClose={close} header={(titleId) => <Header titleId={titleId} onClose={close} />}>
           <div className="stanley-answer">

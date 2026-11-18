@@ -8455,6 +8455,7 @@ export const enCore = {
   'spoll.new': 'Start a poll',
   'spoll.days': 'Stop taking answers',
   'spoll.none': 'No polls yet.',
+  'spoll.noTrip': 'Group polls appear here once you have a booking.',
   'spoll.by': 'Started by {name}',
   'spoll.tally': '{yes} yes, {maybe} maybe, {no} not for me',
   'spoll.tooMany': 'You already have five open polls. Close one first.',
