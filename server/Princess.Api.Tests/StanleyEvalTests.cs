@@ -15,7 +15,8 @@ public class StanleyEvalTests
 {
     public sealed record EvalServer(string Route, bool? Planning);
     public sealed record EvalCard(string Id, bool Abstain, List<string> Chips, string? Stale);
-    public sealed record EvalCase(string Id, string Stage, bool Booked, string Text, string Client, string Tier, EvalServer? Server, List<string>? Tags, EvalCard? Card = null);
+    public sealed record EvalHint(bool Pointer);
+    public sealed record EvalCase(string Id, string Stage, bool Booked, string Text, string Client, string Tier, EvalServer? Server, List<string>? Tags, EvalCard? Card = null, EvalHint? Hint = null);
 
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
 
@@ -57,6 +58,18 @@ public class StanleyEvalTests
             if (got.Route != want || got.Planning != (c.Server.Planning ?? false)) wrong.Add($"{c.Id}: expected {route} (planning {c.Server.Planning}), got {got.Route} (planning {got.Planning})");
         }
         Assert.Empty(wrong);
+    }
+
+    [Fact]
+    public void AHintSkipsTheModelExactlyWhereTheSetSaysItIsAPointerAndNeverForPlanning()
+    {
+        var marked = Cases().Where(c => c.Hint is not null).ToList();
+        Assert.True(marked.Count >= 10);
+        foreach (var c in marked)
+        {
+            var planning = StanleyRouter.Route(c.Text, c.Stage, c.Booked).Planning;
+            Assert.Equal(c.Hint!.Pointer && !planning, StanleyRules.SkipsModel(new StanleyHintDto("topic.x", true, c.Hint.Pointer), planning));
+        }
     }
 
     [Fact]

@@ -122,7 +122,8 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
             var ctx = await tools.ContextAsync(user, request.Mobility, request.Likes, packet?.Choice.Chosen?.SailingId, ct);
             if (packet?.Data is null && memory is not null) ctx = ctx with { Preferences = await memory.ForAnswersAsync(user, null, ct) };
             string? fallback = null;
-            if (o.Switches.Tools && modelUsable)
+            // A confident pointer question needs no model here either: the tools' own scripted answer (facts from the guest's booking or the pre-booking facts) is used, and no call is spent.
+            if (o.Switches.Tools && modelUsable && !StanleyRules.SkipsModel(request.Hint, routing.Planning))
             {
                 try
                 {

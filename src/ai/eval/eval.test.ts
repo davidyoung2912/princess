@@ -3,6 +3,7 @@ import { en } from '../../i18n/locales/en'
 import { SHIP_FACTS } from '../../domain/finishMore'
 import { hasCardData, redactCardData } from '../cardData'
 import { screen } from '../guard'
+import { readQuestion, hintOf } from '../understand'
 import { askStanley, historyToSend, type StanleyMessage } from '../stanley'
 import { decideStanley, MUSTER_ENTRY } from '../stanleyDecide'
 import { CHIPS } from '../stanleyCard'
@@ -20,7 +21,7 @@ import injection from './injection.json'
  */
 /** `card` is what the server's resolver must answer with for a guest who has a booking: the resolver id, whether it abstains, the chips it must carry and whether stale data must make it abstain. */
 interface EvalCard { id: string; abstain: boolean; chips: string[]; stale?: 'abstain' }
-interface EvalCase { id: string; stage: string; booked: boolean; text: string; client: string; tier: string; server?: { route: string; planning?: boolean }; tags?: string[]; card?: EvalCard }
+interface EvalCase { id: string; stage: string; booked: boolean; text: string; client: string; tier: string; server?: { route: string; planning?: boolean }; tags?: string[]; card?: EvalCard; hint?: { pointer: boolean } }
 const all = cases as EvalCase[]
 const NOW = Date.parse('2026-11-10')
 const STAGES = ['dream', 'discover', 'book', 'manage', 'prebook', 'getToShip', 'embark', 'sea', 'port', 'disembark', 'remember']
@@ -31,6 +32,18 @@ const decide = (c: EvalCase) => {
   const d = decideStanley(c.text, { stage: c.stage as never, now: NOW })
   return d.kind === 'handoff' ? `handoff:${d.handoff}` : d.kind === 'library' ? `library:${d.entry.id}` : d.kind === 'ship' ? `ship:${d.fact.id}` : d.kind
 }
+
+describe('evaluation set: the hint the device sends', () => {
+  it('is a pointer exactly where the set says, and a planning question never is', () => {
+    const marked = all.filter((c) => c.hint)
+    expect(marked.length).toBeGreaterThanOrEqual(10)
+    expect(marked.some((c) => c.hint?.pointer)).toBe(true)
+    expect(marked.some((c) => !c.hint?.pointer)).toBe(true)
+    const wrong = marked.filter((c) => (hintOf(readQuestion(c.text, { stage: c.stage as never, hasBooking: c.booked }))?.pointer ?? false) !== c.hint!.pointer)
+    expect(wrong.map((c) => c.id)).toEqual([])
+    expect(marked.filter((c) => c.server?.planning && c.hint!.pointer)).toEqual([])
+  })
+})
 
 describe('evaluation set: shape', () => {
   it('has at least 200 cases with unique ids, across all eleven stages', () => {
