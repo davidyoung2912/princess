@@ -20,7 +20,7 @@ const VENUE_BASE = '/dining-today'
 interface Props {
   venues: ExplorerDay['venues']
   day: number
-  /** On a venue's own page: only the note about why a table cannot be reserved (the page has its own button). */
+  /** On a venue's own page: only the note about why a table cannot be reserved (the page has its own button), whatever the reason. */
   venueId?: string
   view: DiningView
   /** This day (the default) or every night of the trip. */
@@ -40,7 +40,7 @@ export function DiningReservations({ venues, day, venueId, view, scope = 'day' }
   const openEditor = (on = day) => { void navigate(`${venueId ? `${VENUE_BASE}/${venueId}` : VENUE_BASE}?day=${on}&reserve=new`) }
   const title = (id: string) => venues.find((v) => v.venue.id === id)?.venue.title ?? id
   const line = (r: Reservation) => `${title(r.venueId)}, ${formatTime(r.time)}`
-  const reason = !card.canReserve && (view.canBook || stage === 'after') ? <p className="muted">{lineWords(card.detail ?? card.headline)}</p> : null
+  const reason = !card.canReserve && (venueId || view.canBook || stage === 'after') ? <p className="muted">{lineWords(card.detail ?? card.headline)}</p> : null
   const all = [...view.reservations].sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
   const seeAll = <LinkButton to="/plan/reservations" variant="secondary" icon={CalendarDays}>{t('exp.res.seeAll')}</LinkButton>
 

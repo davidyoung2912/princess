@@ -18,6 +18,13 @@
 .day-card__gap { margin: 0 0 var(--space-2); color: var(--text-muted); }
 
 .slot-grid { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
+/* The group of times is itself a card: tinted background, a coloured top edge, a shadow, and its legend as the card's title. */
+.slot-card { min-inline-size: 0; margin: 0 0 var(--space-5); padding: var(--space-5); background: var(--sec-tint, var(--sky-tint)); border: var(--border-width) solid var(--border); border-top: 4px solid var(--sec, var(--primary)); border-radius: var(--radius-card); box-shadow: var(--elev-1, 0 2px 6px rgba(0, 0, 0, 0.12)); }
+.slot-card > legend { float: left; inline-size: 100%; padding: 0; margin-block-end: var(--space-3); font-size: var(--fs-h3, 1.25rem); font-weight: 700; color: var(--sec, var(--primary)); }
+.slot-card > legend + * { clear: both; }
+.slot-card .slot-grid { margin-bottom: 0; }
+.slot-card .slot-grid .choice:not(.choice--full) { background: var(--bg, #fff); }
+.slot-card .slot-grid .choice:has(input:checked) { background: var(--brand-tint, var(--sky-tint)); }
 /* Each time is a card: the time large, how many tables are left under it, a lift and glow on hover, and a clear chosen state. The radio is still the control (hidden, but focusable and read out). */
 .slot-grid { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: var(--space-3); }
 .slot-grid .choice { position: relative; display: block; min-height: 4.5rem; margin: 0; padding: var(--space-3) var(--space-4); cursor: pointer; background: var(--sky-tint, var(--bg)); border: 2px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--elev-1, 0 2px 6px rgba(0, 0, 0, 0.12)); transition: transform var(--t-fast, 0.15s) ease, box-shadow var(--t-mid, 0.2s) ease, border-color var(--t-fast, 0.15s) ease, background-color var(--t-fast, 0.15s) ease; }

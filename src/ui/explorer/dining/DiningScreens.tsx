@@ -78,7 +78,9 @@ export function DiningVenueScreen() {
         return reservationSpans(view.data, state.day, date, (id) => explorerDay.venues.find((v) => v.venue.id === id)?.venue.title ?? id, (d, time) => zonedToEpoch(d, time, zone))
       }}
       above={({ venue, explorerDay, state }) => {
-        if (venue.venue.bookable !== 'dining' || !view.data) return null
+        // A place that takes no reservations says so, so a guest is never left wondering how to book it.
+        if (venue.venue.bookable !== 'dining') return <p className="muted exp-reserve-note">{t('exp.res.walkIn')}</p>
+        if (!view.data) return null
         const canReserve = diningBookingCard(view.data, stage).canReserve
         return (
           <>

@@ -114,7 +114,7 @@ function Detail({ r, canEdit, reload }: { r: Reservation; canEdit: boolean; relo
                   {dinnerDays(days.length).map((n) => <option key={n} value={n}>{t('plan.day', { n })} · {formatDate(days[n - 1].date)} · {placeName(days[n - 1].port)}</option>)}
                 </select>
               </div>
-              <fieldset>
+              <fieldset className="slot-card">
                 <legend>{t('dine.time')}</legend>
                 {slots.data ? (
                   <ul className="slot-grid">

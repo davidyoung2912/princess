@@ -21,8 +21,8 @@ import { ChatToast } from './ChatToast'
 import { chatBadge } from '../domain/chatConnections'
 import { accessAt, activeTabKey, areaAt, isChatPath, earlierAt, navTabs, shellArea, tabAtPath } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
-import { Help, MessagesSquare, Search } from './icons'
-import { actionTitleKey } from '../routes/pageTitle'
+import { CalendarCheck, Help, MessagesSquare, Search } from './icons'
+import { actionWords } from '../routes/pageTitle'
 import { SCREEN_ICONS } from './screenIcons'
 import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
@@ -107,8 +107,8 @@ export function Shell() {
   const area = areaAt(pathname, route?.path ?? null, stage, (state as { area?: unknown } | null)?.area, previous, fallbackArea)
   if (seen?.path !== pathname || seen.area !== area) setSeen({ path: pathname, area, previous })
   const landingWords = landing ? tabText(landing, stage) : null
-  const action = actionTitleKey(pathname, search)
-  const title = action ? t(action) : landingWords ? landingWords.label : screen ? t(screen.titleKey) : route ? t(route.titleKey) : t('shell.notFound.title')
+  const action = actionWords(pathname, search)
+  const title = action ? th(action.title) : landingWords ? landingWords.label : screen ? th(screen.titleKey) : route ? th(route.titleKey) : th('shell.notFound.title')
 
   useEffect(() => { recordVisit(pathname + search, navigationType) }, [pathname, search, navigationType])
   // The header sticks to the top, so tell the page how tall it is: scrolling to an anchor or a focused section then stops below it (see scroll-padding-top in base.css).
@@ -244,7 +244,7 @@ export function Shell() {
       <UpdateBanner />
       <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        {action ? <PageHeader title={t(action)} icon={headerIcon} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
+        {action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}
         {route && !route.public && <LocalReminders />}
