@@ -35,7 +35,7 @@ const AT_LINKS = [
 const isExplorerButton = (to: string): boolean => isExplorerPath(to) || to === '/ship-explorer'
 
 /** What the tour calls a ship button: Chat, Today's plan, Weather and Navigation each stand alone, and the Explorers are one topic. */
-const tourMark = (to: string): string | undefined => ({ '/chat': 'chat', '/today': 'today', '/weather': 'weather', '/nautical': 'navigation' } as Record<string, string>)[to] ?? (isExplorerButton(to) ? 'explorers' : undefined)
+const tourMark = (to: string): string | undefined => ({ '/chat': 'chat', '/today': 'today', '/weather': 'weather', '/nautical': 'navigation', '/itinerary': 'itinerary' } as Record<string, string>)[to] ?? (isExplorerButton(to) ? 'explorers' : undefined)
 
 /**
  * The ship date with the guest's stage under it (the stage opens the stage welcome page). For demo accounts only, the date and a time block (whose clock it is under it) open a

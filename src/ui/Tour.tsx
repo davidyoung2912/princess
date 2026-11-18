@@ -7,12 +7,12 @@ import { useDialog } from '../hooks/useDialog'
 import { loadTourSeen, markTourStep, skipTour, subscribeTour } from '../settings/tour'
 import { nextStep, TOUR_STEPS, type TourStep } from '../tour/steps'
 import { placeCard, spotlight, type Box, type Side } from '../tour/placement'
-import { CalendarClock, CloudSun, Compass, Help, Home, Info, Lightbulb, MapPin, Menu, MessagesSquare, Plan, Search, Sparkles } from './icons'
+import { CalendarClock, CloudSun, Compass, Help, Home, Info, Lightbulb, MapPin, Menu, MessagesSquare, Plan, RouteMap, Search, Sparkles } from './icons'
 import { Button } from './Button'
 
 const ICONS: Record<TourStep['icon'], ComponentType<{ 'aria-hidden'?: boolean | 'true' | 'false'; className?: string }>> = {
   nav: Home, search: Search, stanley: Sparkles, help: Help, menu: Menu, date: CalendarClock, header: Info, tip: Lightbulb,
-  chat: MessagesSquare, today: Plan, explorers: MapPin, weather: CloudSun, navigation: Compass,
+  chat: MessagesSquare, today: Plan, explorers: MapPin, weather: CloudSun, navigation: Compass, itinerary: RouteMap,
 }
 
 /** Every part of the screen marked `data-tour="<name>"` that is showing. */

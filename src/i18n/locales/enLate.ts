@@ -267,6 +267,8 @@ export const enLate = {
   'tour.weather.body': 'Check the forecast at sea and in each port before you choose what to wear or whether to book an outdoor tour.',
   'tour.navigation.title': 'Navigation',
   'tour.navigation.body': 'See where the ship is right now: her position, course and speed, and when she reaches the next port.',
+  'tour.itinerary.title': 'Trip Itinerary',
+  'tour.itinerary.body': 'See your whole voyage on one page: each day at sea or in port, with arrival and departure times, so you can plan around the stops.',
   'tour.header.title': 'Page Header',
   'tour.header.body': 'Every page begins with a header card that says where you are and what the page is for. Use its Back button to return to the page you came from.',
   'tour.tip.title': 'Traveller Tips',
