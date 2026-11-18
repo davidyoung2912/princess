@@ -140,7 +140,17 @@ public class GuideRulesTests
         Assert.NotNull(g.PrimaryId);
         var d = At(StageRules.Discover, Departure.AddDays(-200), draft: new("d1", true));
         Assert.Equal(1, d.Counts.Done);
-        Assert.Equal(2, d.Counts.Open);
+        Assert.Equal(3, d.Counts.Open);
+    }
+
+    [Fact]
+    public void ComparingSailingsIsOfferedOnlyWithTwoSavedAndBookingNamesComeBeforeThePayment()
+    {
+        Assert.DoesNotContain(At(StageRules.Discover, Departure.AddDays(-200), saved: 1).Tasks, t => t.Id == "discover.compare");
+        Assert.Contains(At(StageRules.Discover, Departure.AddDays(-200), saved: 2).Tasks, t => t.Id == "discover.compare" && t.Optional);
+        var ids = At(StageRules.Book, Departure.AddDays(-200), draft: new("d1", true)).Tasks.Select(t => t.Id).ToList();
+        Assert.True(ids.IndexOf("book.names") < ids.IndexOf("book.deposit"));
+        Assert.True(ids.IndexOf("book.policy") < ids.IndexOf("book.deposit"));
     }
 
     [Fact]

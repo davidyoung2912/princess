@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, with G4b) and G5 (Stanley) are built; G6 is next.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, with G4b) and G5 (Stanley) and G6a (Dream to Book content) are built; G6b is next.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -243,3 +243,12 @@ Found while reading the code. None are built; each is small.
 - **"Help me with this"** and **"Remind me"** sit beside Do this now on Home. Help lists Stanley's library questions for the screen the task opens (hidden when there are none). Remind me uses the existing `remind_me` action: a preview card, nothing set until confirmed.
 - **Moments** (booked, checked in, docs ready and the rest) now send "what next" to the guide's first open task ("Next: ..."), falling back to their own destination when the guide has nothing open, so a celebration never points somewhere Home does not.
 - **Not done:** "Do it for me" (no guide task maps to an existing Stanley action other than reminders yet; belongs with G6's content passes), Help and Remind me on the "Coming up" rows, and keying server push to guide task ids (the server pushes are unchanged; no new push was added, so nothing can duplicate a guide task).
+
+**G6a, content pass for Dream, Discover and Book (built).**
+- Read against `customer-journey-priorities.md` sections 3 to 5. All screens needed already exist, so no new screens.
+- **Dream:** optional `dream.trial` (the five-minute "Trial day", `/trial-day`).
+- **Discover:** optional `discover.fare` (is the fare fair, `/plan/fare-check`) and `discover.compare` (only once two sailings are saved, `/home/saved/compare`), both before "Compare, hold or book".
+- **Book:** new optional `book.policy` (the plain trip contract, `/plan/contract`: what a change or cancellation costs). Names now come before the policy and the deposit, because a name that does not match is the costliest mistake. The names and deposit why-lines say so.
+- Optional visit tasks never turn done by visiting (as with G4b), so they stay as offers.
+- Tests: C# `GuideRulesTests` written, not run (no `dotnet test`); the guide-words test covers the new keys.
+- **Left for 6b and 6c:** Manage to Get to the ship, then Embark to Remember with the time-aware rules. Still open from earlier: access needs in the fit, "Do it for me".

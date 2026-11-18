@@ -171,20 +171,27 @@ public static class GuideRules
                     new("dream.quiz", "/home/quiz", 3, false, ByVisit),
                     new("dream.save", "/home/sailings", 5, f.SavedSailings > 0, ByData),
                     new("dream.invite", "/plan/group-poll", 2, false, ByVisit, Optional: true),
+                    new("dream.trial", "/trial-day", 5, false, ByVisit, Optional: true),
                 ];
             case StageRules.Discover:
-                return
-                [
+            {
+                var raws = new List<Raw>
+                {
                     new("discover.room", "/home/cabins", 5, f.Draft?.CategoryChosen ?? false, ByData),
                     new("discover.cost", "/home/cruise/cost", 3, false, ByVisit),
-                    new("discover.book", "/book", 2, false, ByVisit),
-                ];
+                    new("discover.fare", "/plan/fare-check", 3, false, ByVisit, Optional: true),
+                };
+                if (f.SavedSailings >= 2) raws.Add(new("discover.compare", "/home/saved/compare", 5, false, ByVisit, Optional: true));
+                raws.Add(new("discover.book", "/book", 2, false, ByVisit));
+                return raws;
+            }
             case StageRules.Book:
                 return
                 [
                     new("book.finish", resume, 10, false, ByVisit),
-                    new("book.deposit", f.Draft is null ? "/book" : $"/book/pay/{f.Draft.Id}", 5, false, ByVisit),
                     new("book.names", "/plan/party", 5, false, ByVisit),
+                    new("book.policy", "/plan/contract", 5, false, ByVisit, Optional: true),
+                    new("book.deposit", f.Draft is null ? "/book" : $"/book/pay/{f.Draft.Id}", 5, false, ByVisit),
                 ];
             case StageRules.Manage:
                 return
