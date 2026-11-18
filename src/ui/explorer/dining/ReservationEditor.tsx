@@ -63,7 +63,6 @@ export function ReservationEditor({ view, venues, venueId: fixedVenue, day: star
   }
   return (
     <div className="page">
-      <h2>{moving ? t('exp.res.moveTitle') : t('exp.res.newTitle')}</h2>
       <form onSubmit={(e) => { e.preventDefault(); void go() }}>
         {!moving && !fixedVenue && (
           <div className="field">
@@ -112,7 +111,6 @@ export function ReservationEditor({ view, venues, venueId: fixedVenue, day: star
         {done && <p role="status" className="muted">{done}</p>}
         <div className="exp-actions">
           <Button type="submit" disabled={save.busy || !!blocked}>{save.busy ? t('account.saving') : moving ? t('exp.res.moveSave') : t('dine.reserve')}</Button>
-          <Button variant="tertiary" onClick={onClose}>{t('common.close')}</Button>
         </div>
         {blocked && <p className="muted">{blocked}</p>}
       </form>

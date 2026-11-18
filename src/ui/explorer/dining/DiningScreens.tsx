@@ -11,6 +11,8 @@ import { Saved } from '../../onboard/common'
 import { diningBookingCard } from '../../../domain/explorer/bookingState'
 import { useExplorerStage } from '../../../hooks/useExplorerStage'
 import { BookingCard } from '../BookingCard'
+import { LinkButton } from '../../Button'
+import { CalendarCheck } from '../../icons'
 import { ReservationScope } from '../ReservationScope'
 import { useReservationScope } from '../../../hooks/useReservationScope'
 import { ExplorerPage } from '../ExplorerPage'
@@ -61,6 +63,7 @@ export function DiningVenueScreen() {
   const view = useDiningView()
   const sailing = useSailing()
   const [params] = useSearchParams()
+  const { stage } = useExplorerStage()
   if (params.get('reserve')) return <ReservePage venueId={venueId} />
   return (
     <VenueDetailPage
@@ -73,7 +76,13 @@ export function DiningVenueScreen() {
       }}
       above={({ venue, explorerDay, state }) => {
         if (venue.venue.bookable !== 'dining' || !view.data) return null
-        return <DiningReservations venues={explorerDay?.venues ?? [venue]} day={state.day} venueId={venueId} view={view.data} reload={view.retry} />
+        const canReserve = diningBookingCard(view.data, stage).canReserve
+        return (
+          <>
+            <DiningReservations venues={explorerDay?.venues ?? [venue]} day={state.day} venueId={venueId} view={view.data} reload={view.retry} />
+            {canReserve && <p className="exp-reserve-cta"><LinkButton to={`${BASE}/${venueId}?day=${state.day}&reserve=new`} icon={CalendarCheck}>{t('exp.res.make')}<span className="visually-hidden"> {venue.venue.title}</span></LinkButton></p>}
+          </>
+        )
       }}
     />
   )

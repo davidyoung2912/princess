@@ -22,7 +22,8 @@ import { t, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
-import { Bookmark, Clock, MapPin } from '../icons'
+import { Bookmark, MapPin } from '../icons'
+import { TimeOfDayIcon } from '../TimeOfDay'
 import { Plus } from 'lucide-react'
 import { InviteDialog } from './InviteDialog'
 import { Card } from '../Card'
@@ -127,7 +128,7 @@ function PlanRow({ item, day, clash, hint, clockAt, dishes, alternatives, onAdd,
       {item.tentative && <p className="event__tags"><StatusBadge kind="waitlist" label={t('plan.today.notBooked')} /></p>}
       {(cancelled || item.status === 'moved') && <p className="event__tags">{cancelled ? <StatusBadge kind="cancelled" label={t('exp.event.cancelled')} /> : <StatusBadge kind="changed" label={t('exp.event.moved', { was: formatTime(item.was ?? item.start) })} />}</p>}
       <ul className="event__times">
-        <li><Clock aria-hidden="true" focusable="false" /><time>{formatTime(item.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(item.endAt) })}</li>
+        <li><TimeOfDayIcon time={item.start} /><time>{formatTime(item.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(item.endAt) })}</li>
       </ul>
       {item.detail && <p className="event__detail">{item.detail}</p>}
       {item.venueTitle && item.venueTitle !== item.title && <p className="event__where"><Link className="event__inner-link" to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></p>}

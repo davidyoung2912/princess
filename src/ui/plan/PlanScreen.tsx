@@ -20,6 +20,7 @@ import { GroupBoard } from './GroupBoard'
 import { SpendForecastCard } from './SpendForecastCard'
 import { KeepsakeSheet } from '../KeepsakeSheet'
 import { StanleyChanges } from '../ai/StanleyChanges'
+import { TimeOfDayIcon } from '../TimeOfDay'
 
 /** Everything booked and not yet booked, day by day (PRE-15). */
 export function PlanScreen() {
@@ -83,7 +84,7 @@ function DayCard({ day, days }: { day: PlanDay; days: readonly PlanDay[] }) {
           <>
             <h4 className="day-card__sub">{headingCase(t('plan.planned.title'))}</h4>
             <ul className="day-card__entries" aria-label={t('plan.planned.title')}>
-              {planned.map((p) => <li key={p.id}><span className="day-card__time">{formatTime(p.time)}</span><span>{p.title} <StatusBadge kind="ready" label={t('plan.planned.badge')} /></span></li>)}
+              {planned.map((p) => <li key={p.id}><span className="day-card__time"><TimeOfDayIcon time={p.time} />{formatTime(p.time)}</span><span>{p.title} <StatusBadge kind="ready" label={t('plan.planned.badge')} /></span></li>)}
             </ul>
             <p className="muted">{t('plan.planned.note')}</p>
           </>
@@ -101,7 +102,7 @@ function Entry({ entry, colour }: { entry: PlanEntry; colour: (id: string) => { 
   const label = entry.kind === 'sail' ? t('plan.entry.sail') : entry.kind === 'allAboard' ? t('plan.entry.allAboard') : entry.kind === 'tour' ? t('plan.entry.tour', { name: entry.name }) : t('plan.entry.dinner', { name: entry.name })
   return (
     <li>
-      <span className="day-card__time">{formatTime(entry.time)}</span>
+      <span className="day-card__time"><TimeOfDayIcon time={entry.time} />{formatTime(entry.time)}</span>
       <span>{label}<Guests guests={entry.guests} colour={colour} /><EntryNote entry={entry} /></span>
     </li>
   )

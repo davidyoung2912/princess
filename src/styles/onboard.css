@@ -409,6 +409,8 @@ button.chat-quote { cursor: pointer; }
   .exp-split__list { display: block; position: sticky; top: var(--space-4); max-height: calc(100vh - var(--space-6)); overflow-y: auto; }
   .exp-split__list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
   .exp-split__list a { display: flex; align-items: center; min-height: var(--target-min); padding: var(--space-2) var(--space-3); border-radius: var(--radius-card); color: var(--text); text-decoration: none; border: 2px solid transparent; }
+  .exp-split__list a { gap: var(--space-3); }
+  .exp-split__icon { flex: none; width: 1.25rem; height: 1.25rem; color: var(--explorer); }
   .exp-split__list a:hover { background: var(--explorer-tint); }
   .exp-split__list a[aria-current='page'] { border-color: var(--explorer); background: var(--explorer-tint); font-weight: 600; }
   .exp-split__detail { display: grid; gap: var(--space-4); min-width: 0; }
@@ -743,3 +745,9 @@ button.chat-quote { cursor: pointer; }
 /* Saved dishes under a dining line of the day plan. */
 .event__dishes { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-1) 0; }
 .event__dishes svg { flex: none; width: 1.125rem; height: 1.125rem; color: var(--primary); }
+
+/* The part-of-day icon beside a start time: one muted tone so it never competes with the meal accents or the diet marks. */
+.time-of-day { display: inline-block; flex: none; width: 1.125rem; height: 1.125rem; margin-inline-end: var(--space-2); vertical-align: -0.2em; color: var(--text-muted); }
+
+/* The reserve button on a restaurant's page, directly above its menu. */
+.exp-reserve-cta { margin: var(--space-4) 0; }

@@ -42,7 +42,6 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
     <>
       <StanleyModeCard />
       <StanleyNext stage={stage} facts={facts} />
-      {!urgent && <RecentCard />}
       <section aria-labelledby="stage-next-h" className="stage-next">
         <h2 id="stage-next-h">{th('stage.next.title')}</h2>
         <p className="stage-next__progress muted">{t('stage.next.progress', { done: steps.filter((s) => s.done).length, total: steps.length })}</p>
@@ -62,7 +61,6 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
           })}
         </ol>
       </section>
-      {urgent && <RecentCard />}
       <hr className="brass-rule" aria-hidden="true" />
       <nav aria-labelledby="stage-tiles-h">
         <h2 id="stage-tiles-h">{th('stage.tiles.title')}</h2>
@@ -84,6 +82,7 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
           })}
         </ul>
       </nav>
+      <RecentCard />
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
     </>
   )

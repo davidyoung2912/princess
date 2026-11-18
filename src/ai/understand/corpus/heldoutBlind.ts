@@ -43,6 +43,7 @@ export const HELDOUT_BLIND: Readonly<Record<string, string>> = {
   cabinhold: 'can I reserve a stateroom for a few days without paying|put a temporary hold on a room|keep this cabin for me while I decide',
   whatif: 'what would happen to my costs if I added a day|try out different options for me|how would my plan look if we changed ports',
   prepay: 'can I pay the tips in advance|pay gratuities before sailing|settle the service charge ahead of time',
+  saveddishes: 'which meals did I mark to try later|show me the food items I starred on the menus|remind me what I wanted to eat tonight',
   cart: 'what have I put in my basket|show me the things I am about to buy|open my shopping cart',
   upgrades: 'can I get a better stateroom for a fee|how much to move to a suite|is it possible to upgrade my room',
   bookahead: 'can I reserve restaurants and shows before I board|how soon can I book things for the cruise|reserve activities in advance',

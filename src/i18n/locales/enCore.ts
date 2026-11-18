@@ -464,6 +464,7 @@ export const enCore = {
   'exp.res.none': 'You have no reservation on this day.',
   'exp.res.noneHere': 'You have no reservation here on this day.',
   'exp.res.new': 'New reservation',
+  'exp.res.make': 'Make a reservation',
   'exp.res.newTitle': 'Reserve a table',
   'exp.res.moveTitle': 'Change your reservation',
   'exp.res.moveSave': 'Move my table',

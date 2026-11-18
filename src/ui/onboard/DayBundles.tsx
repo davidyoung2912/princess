@@ -6,7 +6,7 @@ import type { RecommendWhy } from '../../domain/explorer/recommend'
 import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
-import { Clock } from '../icons'
+import { TimeOfDayIcon } from '../TimeOfDay'
 
 const WHY: Record<RecommendWhy, StringKey> = { liked: 'exp.foryou.why.liked', similarSaved: 'exp.foryou.why.saved', pinnedVenue: 'exp.foryou.why.pinned', sameKind: 'exp.foryou.why.kind' }
 const TITLE: Record<Bundle['kind'], StringKey> = { morning: 'plan.bundle.morning', afternoon: 'plan.bundle.afternoon', evening: 'plan.bundle.evening', return: 'plan.bundle.return' }
@@ -36,7 +36,7 @@ export function DayBundles({ bundles, day, clockAt, busy, onAdd }: {
               <li key={s.event.id} className="event">
                 <h3 className="event__title event__title--icon"><ExplorerIcon kind={s.explorer} /><Link to={`${EXPLORER_PATHS[s.explorer]}/${s.venueId}?day=${day}`}>{s.event.title}</Link></h3>
                 <ul className="event__times">
-                  <li><Clock aria-hidden="true" focusable="false" /><time>{formatTime(s.event.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(s.event.endAt) })}</li>
+                  <li><TimeOfDayIcon time={s.event.start} /><time>{formatTime(s.event.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(s.event.endAt) })}</li>
                 </ul>
                 {s.event.detail && <p className="event__detail">{s.event.detail}</p>}
                 <p className="event__where">{s.venueTitle}</p>

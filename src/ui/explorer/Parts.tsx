@@ -17,6 +17,8 @@ import { ACCESS_FEATURES, type AccessFeature } from '../../domain/eventAccess'
 import { EXPLORER_LEADS, REMINDER_DEFAULT } from '../../domain/notifications'
 import { StatusBadge } from '../StatusBadge'
 import { SendToChat } from '../onboard/SendToChat'
+import { TimeOfDayIcon } from '../TimeOfDay'
+import { CalendarClock, X } from '../icons'
 import { DishSaveButton } from './DishSave'
 import { AvoidNote, DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
 
@@ -70,7 +72,7 @@ export function EventRow({ event, now, plan, clash, compact, share }: { event: E
   return (
     <li className={`exp-event${cancelled ? ' exp-event--cancelled' : ''}`}>
       <p className="exp-event__time">
-        <time dateTime={event.start}>{formatTime(event.start)}</time> {t('exp.event.for', { minutes: event.minutes })}
+        <TimeOfDayIcon time={event.start} /><time dateTime={event.start}>{formatTime(event.start)}</time> {t('exp.event.for', { minutes: event.minutes })}
         {phase === 'now' && !cancelled && <> <StatusBadge kind="booked" label={t('exp.event.now')} /></>}
       </p>
       <p className="exp-event__title"><strong>{cancelled ? <s>{event.title}</s> : event.title}</strong></p>
@@ -171,6 +173,8 @@ export interface ReservationItem {
   title: string
   /** "Tue 12 Nov, 7:30 PM". */
   when: string
+  /** The start time "HH:MM", for the part-of-day icon. */
+  time?: string
   facts: readonly string[]
   /** Where the venue page is, so the row links to it. */
   to?: string
@@ -184,19 +188,19 @@ export function ReservationList({ heading, items, empty, onChange, onCancel, act
   const Title = level === 2 ? 'h3' : 'h4'
   return (
     <section aria-labelledby={id}>
-      <Heading id={id}>{heading}</Heading>
+      <Heading id={id}>{level === 2 ? headingCase(heading) : heading}</Heading>
       {items.length === 0 ? <p className="muted">{empty}</p> : (
         <ul className="card-grid">
           {items.map((r) => (
             <li key={r.id} className="card">
               <Title className="card__title">{r.to ? <Link to={r.to}>{r.title}</Link> : r.title}</Title>
               <StatusBadge kind="booked" label={t('exp.res.confirmed')} />
-              <p><strong>{r.when}</strong></p>
+              <p>{r.time && <TimeOfDayIcon time={r.time} />}<strong>{r.when}</strong></p>
               {r.facts.length > 0 && <ul className="tour__facts">{r.facts.map((f) => <li key={f}>{f}</li>)}</ul>}
               {!readOnly && (
                 <div className="exp-actions">
-                  <Button variant="secondary" onClick={() => onChange(r.id)}>{t('exp.res.change')}<span className="visually-hidden"> {r.name}</span></Button>
-                  <Button variant="tertiary" onClick={() => onCancel(r.id)}>{t('exp.res.cancel')}<span className="visually-hidden"> {r.name}</span></Button>
+                  <Button variant="secondary" icon={CalendarClock} onClick={() => onChange(r.id)}>{t('exp.res.change')}<span className="visually-hidden"> {r.name}</span></Button>
+                  <Button variant="secondary" icon={X} onClick={() => onCancel(r.id)}>{t('exp.res.cancel')}<span className="visually-hidden"> {r.name}</span></Button>
                 </div>
               )}
             </li>

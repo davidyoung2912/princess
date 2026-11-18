@@ -72,13 +72,14 @@ public static class ConciergeRules
       {"name":"get_itinerary","description":"The day-by-day itinerary of a departure: port, arrival, all-aboard time.","input_schema":{"type":"object","properties":{"sailing_id":{"type":"string","description":"A sailing id from list_sailings; defaults to the guest's own cruise."}}}},
       {"name":"get_port","description":"A port: whether guests tender ashore, the ship's arrival and all-aboard times, and the shore excursions on offer.","input_schema":{"type":"object","properties":{"port":{"type":"string","enum":["fll","cozumel","belize","roatan"]}},"required":["port"]}},
       {"name":"search_excursions","description":"Shore excursions, filtered. Prices are per adult in US dollars.","input_schema":{"type":"object","properties":{"port":{"type":"string","enum":["cozumel","belize","roatan"]},"interests":{"type":"array","items":{"type":"string","enum":["water","nature","culture","relax","adventure"]}},"max_activity":{"type":"string","enum":["easy","moderate","strenuous"]},"max_price_usd":{"type":"number"},"family":{"type":"boolean","description":"Only tours suitable for children."},"wheelchair":{"type":"boolean","description":"Only tours a wheelchair user can join."}}}},
-      {"name":"list_restaurants","description":"Dining venues on the ship with cuisine, cover charge and dress code.","input_schema":{"type":"object","properties":{}}},
+      {"name":"list_restaurants","description":"The ship's restaurants with cover charge and dress code. It does not list bars or pubs and has no menus: for a pub, bar, cafe or buffet, or for what a venue serves, use venue_menus.","input_schema":{"type":"object","properties":{}}},
+      {"name":"venue_menus","description":"The dining venues of the guest's ship, bars and pubs included, with their hours and what they serve on a day: each meal's courses and dishes with diet marks (vegan, vegetarian, nas) and heads-up flags (alcohol, raw, spicy), plus the children's menu. Marks and flags are a guide, never a promise that a dish is free of anything.","input_schema":{"type":"object","properties":{"venue":{"type":"string","description":"A word from the venue's name or kind, for example pub, steakhouse, buffet, bar, cafe. Leave out to list every venue."},"day":{"type":"integer","minimum":1,"maximum":41,"description":"A day of the cruise (1 to the last day); defaults to today, or day 1 before the cruise."}}}},
       {"name":"build_day","description":"A suggested plan for one day of the cruise (1 to the last day): a tour that fits the ship's day, and dinner.","input_schema":{"type":"object","properties":{"day":{"type":"integer","minimum":1,"maximum":41},"tour_interests":{"type":"array","items":{"type":"string","enum":["water","nature","culture","relax","adventure"]}},"mobility":{"type":"string","enum":["any","easy","wheelchair"]},"with_children":{"type":"boolean"}},"required":["day"]}},
       {"name":"my_trip","description":"The signed-in guest's own cruise: who is in the party, the departure and stateroom type.","input_schema":{"type":"object","properties":{}}}
     ]
     """;
 
-    public static readonly IReadOnlyList<string> ToolNames = ["list_sailings", "get_itinerary", "get_port", "search_excursions", "list_restaurants", "build_day", "my_trip"];
+    public static readonly IReadOnlyList<string> ToolNames = ["list_sailings", "get_itinerary", "get_port", "search_excursions", "list_restaurants", "venue_menus", "build_day", "my_trip"];
 
     private static long Usd(long cents) => (long)Math.Round(cents / 100.0, MidpointRounding.AwayFromZero);
     private static string Date(DateTime d) => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -145,6 +146,8 @@ public static class ConciergeRules
             }
             case "list_restaurants":
                 return Ok(new { restaurants = ShipDining.VenuesOf(ctx.SailingId is null ? null : AboardPlans.ShipOfSailing(ctx.SailingId)).Select(v => new { id = v.Id, name = v.Name, kind = v.Kind, cover_usd_per_person = Usd(v.Cover), walk_in = v.WalkIn }) }, new CitationDto("Dining", "/dining-today"));
+            case "venue_menus":
+                return VenueMenus(input, ctx);
             case "build_day":
                 return BuildDay(input, ctx);
             case "my_trip":
@@ -153,6 +156,48 @@ public static class ConciergeRules
             default:
                 return Fail($"Unknown tool {name}.");
         }
+    }
+
+    /// <summary>
+    /// What the dining venues of the guest's ship (restaurants, bars and pubs) serve on a day, from the same catalogue the Dining Explorer shows. A word that matches no venue says so and lists the venues there are,
+    /// so the model never has to guess that the ship lacks one. Diet marks and heads-ups are passed on as the guide they are.
+    /// </summary>
+    private static ToolOutcome VenueMenus(JsonObject input, ConciergeContext ctx)
+    {
+        var shipId = ctx.SailingId is null ? ShipDining.SunId : AboardPlans.ShipOfSailing(ctx.SailingId);
+        var ship = ExplorerCatalogue.Of(shipId);
+        var dep = ctx.Departure ?? DateOnly.FromDateTime(ctx.Now);
+        var timeline = TimelineBook.For(ctx.SailingId, dep);
+        var today = ctx.Departure is { } d ? DateOnly.FromDateTime(ctx.Now).DayNumber - d.DayNumber + 1 : 1;
+        var day = input["day"] is JsonValue dv && dv.TryGetValue<int>(out var n) ? n : today;
+        if (day < 1 || day > timeline.Days.Count) day = day == today ? 1 : Math.Clamp(day, 1, timeline.Days.Count);
+
+        var dining = ship.Venues.Where(v => v.Explorer == "dining").ToList();
+        var words = (Text(input, "venue") ?? "").ToLowerInvariant().Split([' ', '-', '\u2019', '\''], StringSplitOptions.RemoveEmptyEntries).Where(w => w.Length > 1).ToList();
+        var found = words.Count == 0 ? dining : dining.Where(v => words.All(w => $"{v.Title} {v.Kind} {v.Short}".ToLowerInvariant().Contains(w))).ToList();
+        if (found.Count == 0) found = [.. dining.Where(v => words.Any(w => $"{v.Title} {v.Kind} {v.Short}".ToLowerInvariant().Contains(w)))];
+        if (found.Count == 0)
+            return Ok(new { day, matched = false, note = "No venue matched; these are all the dining venues on this ship.", venues = dining.Select(v => new { id = v.Id, name = v.Title, kind = v.Kind }) }, new CitationDto("Dining", "/dining-today"));
+
+        var shown = found.Take(5).ToList();
+        var venues = shown.Select(v =>
+        {
+            var hours = ExplorerRules.Hours(v.Hours, timeline, day);
+            var menus = ExplorerRules.MenusOn(ship, v.Id, timeline, day);
+            return new
+            {
+                id = v.Id, name = v.Title, kind = v.Kind, deck = v.DeckLabel,
+                hours = hours.Windows.Select(w => $"{w[0]}-{w[1]}"), closed = hours.ClosedBecause,
+                meals = menus.Select(m => new
+                {
+                    meal = m.Meal, from = m.From, to = m.To, title = m.Title, theme = m.Theme,
+                    courses = m.Courses.Select(c => new { name = c.Name, dishes = c.Dishes.Select(x => new { name = x.Name, marks = x.Marks ?? [], flags = x.Flags ?? [] }) }),
+                }),
+                childrens_menu = (v.KidsMenu ?? []).Select(x => x.Name),
+            };
+        });
+        var cites = shown.Select(v => new CitationDto(v.Title, ExplorerCatalogue.VenuePath(v))).ToArray();
+        return Ok(new { day, matched = true, more = found.Count - shown.Count, venues }, cites);
     }
 
     /// <summary>One day: on a port day the best-rated tour that fits the ship's day and the guest's wishes, then dinner (none on the last morning).</summary>

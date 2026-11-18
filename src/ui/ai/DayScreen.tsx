@@ -10,6 +10,7 @@ import { formatDayMonth, formatTime } from '../../domain/cruise'
 import { EVENT_INTERESTS, type EventInterest } from '../../domain/program'
 import { itinerary } from '../../domain/sailings'
 import { usePersona, useSailing } from '../../hooks/useDemo'
+import { TimeOfDayIcon } from '../TimeOfDay'
 
 import { t, th, type StringKey } from '../../i18n'
 import { LinkButton } from '../Button'
@@ -68,7 +69,7 @@ export function DayScreen() {
         <ol className="build-list">
           {plan?.items.map((i) => (
             <li key={`${i.kind}-${i.id}`}>
-              <p className="build-list__time">{formatTime(i.start)}</p>
+              <p className="build-list__time"><TimeOfDayIcon time={i.start} />{formatTime(i.start)}</p>
               <div>
                 <p><strong>{i.title}</strong> <span className="muted">· {t(`day.kind.${i.kind}` as StringKey)}</span></p>
                 <p className="muted">{i.why} · <Link to={i.path}>{t(`day.see.${i.kind}` as StringKey)}</Link></p>

@@ -17,6 +17,7 @@ import { Card } from '../Card'
 import { BackLink, Saved } from '../onboard/common'
 import { PickDateButton } from './DateControls'
 import { DishSaveButton } from './DishSave'
+import { venueIcon } from './venueIcon'
 import { DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
 import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
 import { staffedText, windowsText } from './text'
@@ -44,6 +45,12 @@ interface VenueDetailProps {
   busy?: (c: VenueContext) => readonly Span[]
 }
 
+/** The icon of a venue in the list of other places: decorative, the name beside it says the same. */
+function VenueGlyph({ kind, venueKind, title }: { kind: ExplorerKind; venueKind: string; title: string }) {
+  const Icon = venueIcon(kind, venueKind, title)
+  return <Icon className="exp-split__icon" aria-hidden="true" focusable="false" />
+}
+
 /** The diets and the dish heads-ups to call out for the signed-in guest, so the menus can show first what suits them. */
 function useMyDiets(): { diets: DietaryId[]; avoid: DishFlag[] } {
   const me = usePersona()
@@ -67,7 +74,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
           <ul>
             {siblings.map((s) => (
               <li key={s.venue.id}>
-                <Link to={`${basePath}/${s.venue.id}?day=${state.day}`} aria-current={s.venue.id === venueId ? 'page' : undefined}>{s.venue.title}</Link>
+                <Link to={`${basePath}/${s.venue.id}?day=${state.day}`} aria-current={s.venue.id === venueId ? 'page' : undefined}><VenueGlyph kind={kind} venueKind={s.venue.kind} title={s.venue.title} />{s.venue.title}</Link>
               </li>
             ))}
           </ul>

@@ -65,7 +65,6 @@ export function SpaEditor({ view, venues, venueId: fixedVenue, treatmentId: star
   }
   return (
     <div className="page">
-      <h2>{changing ? t('spa.changeTitle') : t('spa.newTitle')}</h2>
       <form onSubmit={(e) => { e.preventDefault(); void go() }}>
         {!changing && (
           <div className="field">

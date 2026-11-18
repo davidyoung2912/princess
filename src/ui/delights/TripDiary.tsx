@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router'
 import { addAuto, addNote, syncAuto, dayFor, editEntry, entriesFor, groupByDay, MOODS, removeEntry, searchEntries, ENTRY_MAX, type Mood, type TripEntry } from '../../domain/tripDiary'
 import { formatDate } from '../../domain/cruise'
 import { sourceLines } from '../../domain/diarySources'
@@ -9,7 +8,7 @@ import { useMine } from '../../hooks/useMine'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { t, th, type StringKey } from '../../i18n'
-import { Button } from '../Button'
+import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
 import { StanleyEmpty } from '../ai/StanleyEmpty'
@@ -71,11 +70,13 @@ function Composer({ sailingId, today, now, id }: { sailingId: string; today: num
   }
   return (
     <div className="diary-composer">
-      <TextArea label={t('diary.add')} hint={t('diary.addHint', { day: today > 0 ? today : 0 })} value={text} maxLength={ENTRY_MAX} onChange={(e) => setText(e.target.value)} />
-      <div className="stanley-ask__options" role="group" aria-label={t('diary.mood')}>
-        {MOODS.map((m) => <button key={m} type="button" className="chip-q stanley-ask__opt" aria-pressed={mood === m} onClick={() => setMood(mood === m ? null : m)}>{t(`diary.mood.${m}` as StringKey)}</button>)}
+      <TextArea label={t('diary.add')} hint={t('diary.addHint', { day: today > 0 ? today : 0 })} rows={2} value={text} maxLength={ENTRY_MAX} onChange={(e) => setText(e.target.value)} />
+      <div className="diary-composer__row">
+        <div className="stanley-ask__options" role="group" aria-label={t('diary.mood')}>
+          {MOODS.map((m) => <button key={m} type="button" className="chip-q stanley-ask__opt" aria-pressed={mood === m} onClick={() => setMood(mood === m ? null : m)}>{t(`diary.mood.${m}` as StringKey)}</button>)}
+        </div>
+        <div className="actions"><Button id={id} onClick={add} disabled={text.trim() === ''}>{t('diary.save')}</Button></div>
       </div>
-      <div className="actions"><Button id={id} onClick={add} disabled={text.trim() === ''}>{t('diary.save')}</Button></div>
     </div>
   )
 }
@@ -90,7 +91,7 @@ export function QuickDiary() {
       <h2 id="quick-diary-title" className="card__title">{th('diary.quick.title')}</h2>
       <p>{t('diary.quick.body')}</p>
       <Composer sailingId={sailing.id} today={today} now={now} id="quick-diary-save" />
-      <p><Link to="/me/diary">{t('diary.quick.all', { count })}</Link></p>
+      <p className="diary-quick__all"><LinkButton to="/me/diary" variant="secondary">{t('diary.quick.all', { count })}</LinkButton></p>
     </Card>
   )
 }

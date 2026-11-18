@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { usePins } from '../../hooks/usePins'
 import { t } from '../../i18n'
 import { Button } from '../Button'
+import { Bookmark, BookmarkCheck } from '../icons'
 
 /** Saves a treatment or tour to the shortlist (or takes it off). Saving books nothing. The result is spoken in a polite live region, and a full list says so rather than dropping one. */
 export function SaveButton({ itemKey, title }: { itemKey: string; title: string }) {
@@ -14,7 +15,7 @@ export function SaveButton({ itemKey, title }: { itemKey: string; title: string 
   }
   return (
     <>
-      <Button variant="secondary" disabled={!pins.ready} aria-pressed={saved} onClick={() => void tap()}>
+      <Button variant="secondary" icon={saved ? BookmarkCheck : Bookmark} disabled={!pins.ready} aria-pressed={saved} onClick={() => void tap()}>
         {t('short.save', { title: '' }).trim()}<span className="visually-hidden"> {title}</span>
       </Button>
       <span className="visually-hidden" role="status">{message}</span>

@@ -162,22 +162,22 @@ textarea { max-width: min(100%, 32rem); }
 main.signin { margin-inline: auto; }
 
 /* Button rollovers: a soft glow and a small lift; pressing settles back down. Off for reduced motion. */
-.btn, .topbar__help, .topbar__search, .chip, .page-header__back {
+.btn, .topbar__help, .topbar__search, .tabs__search, .chip, .page-header__back {
   transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
-.btn:not(:disabled, [aria-disabled='true'], .btn--tertiary):hover, .topbar__help:hover, .topbar__search:hover, .chip:hover, .page-header__back:hover {
+.btn:not(:disabled, [aria-disabled='true'], .btn--tertiary):hover, .topbar__help:hover, .topbar__search:hover, .tabs__search:hover, .chip:hover, .page-header__back:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
 }
 .btn--danger:not(:disabled):hover { box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--danger) 50%, transparent), 0 0 14px color-mix(in srgb, var(--danger) 30%, transparent); }
-.btn:not(:disabled, [aria-disabled='true']):active, .topbar__help:active, .chip:active, .page-header__back:active { transform: translateY(0) scale(0.98); box-shadow: none; }
+.btn:not(:disabled, [aria-disabled='true']):active, .topbar__help:active, .tabs__search:active, .chip:active, .page-header__back:active { transform: translateY(0) scale(0.98); box-shadow: none; }
 .icon-btn { transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
 .icon-btn:hover { transform: scale(1.08); }
 @media (prefers-reduced-motion: reduce) {
-  .btn, .topbar__help, .topbar__search, .chip, .icon-btn, .page-header__back { transition: none; }
-  .btn:hover, .topbar__help:hover, .topbar__search:hover, .chip:hover, .icon-btn:hover, .btn:active, .chip:active, .page-header__back:hover, .page-header__back:active { transform: none; }
+  .btn, .topbar__help, .topbar__search, .tabs__search, .chip, .icon-btn, .page-header__back { transition: none; }
+  .btn:hover, .topbar__help:hover, .topbar__search:hover, .tabs__search:hover, .chip:hover, .icon-btn:hover, .btn:active, .chip:active, .page-header__back:hover, .page-header__back:active { transform: none; }
 }
-:root[data-motion='reduced'] :is(.btn, .topbar__help, .topbar__search, .chip, .icon-btn, .page-header__back):is(:hover, :active) { transform: none; }
+:root[data-motion='reduced'] :is(.btn, .topbar__help, .topbar__search, .tabs__search, .chip, .icon-btn, .page-header__back):is(:hover, :active) { transform: none; }
 
 /* The logo in the nav: one soft glow and a small grow and tilt on hover or focus. Reduced motion keeps the glow and drops the movement. */
 .tabs__logo img, .topbar__logo img { filter: drop-shadow(0 3px 4px rgba(10, 20, 60, 0.35)) drop-shadow(0 0 0 transparent); transition: transform var(--t-mid) var(--ease), filter var(--t-mid) var(--ease); }

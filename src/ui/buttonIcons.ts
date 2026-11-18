@@ -147,7 +147,7 @@ const RULES: readonly (readonly [RegExp, LucideIcon])[] = [
   [/\bcalendar\b/i, CalendarPlus],
   [/this week|day-by-day|my day\b|the day plan|sailings|sailing dates|\bsailing\b/i, CalendarDays],
   [/add to my plan|add this day|put .* in my plan/i, CalendarPlus],
-  [/book this date|\bbook\b|\bschedule\b|\bappointment\b|reschedule/i, CalendarCheck],
+  [/book this date|\bbook\b|\bschedule\b|\bappointment\b|reschedule|\breserve\b|(make|new) (a )?reservation/i, CalendarCheck],
   [/restaurants?|\bdining\b|a table|\bvenues?\b|\bmenu\b|\bfood\b/i, Utensils],
   [/\bcruise\b|\bships?\b/i, Ship],
   [/pay (the )?balance|\bpay\b|\bwallet\b|add to my card/i, Wallet],

@@ -54,6 +54,8 @@
 .me-name { margin: 0; font-family: var(--font-display); font-size: var(--fs-lead); font-weight: 600; }
 .trip-count { margin: 0 0 var(--space-4); font-family: var(--font-display); font-size: var(--fs-headline); }
 .plain-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+/* A heading for a borderless group: flush with the text under it (the default legend is inset) and a heading's size. */
+.plain-fieldset > legend { padding: 0; margin-block-end: var(--space-1); font-size: var(--fs-lead, 1.125rem); font-weight: 700; }
 .held-row { padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); }
 .held-row__date { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); padding-left: calc(1.5rem + var(--space-3)); }
 .held-row__date .field__input { width: auto; }

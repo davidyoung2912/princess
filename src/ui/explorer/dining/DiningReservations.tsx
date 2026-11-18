@@ -14,6 +14,7 @@ import { dishesAt } from '../../../domain/explorer/shortlist'
 import { t } from '../../../i18n'
 import { api } from '../../../runtime'
 import { Button } from '../../Button'
+import { CalendarCheck } from '../../icons'
 import { Dialog } from '../../Dialog'
 import { PlanError } from '../../plan/common'
 import { useAction } from '../../../hooks/useAction'
@@ -57,7 +58,7 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
   const { shown: mine, earlier } = whole ? { shown: all, earlier: 0 } : aheadOnly(all, ahead)
   const item = (r: Reservation): ReservationItem => ({
     id: r.id, title: title(r.venueId), name: `${title(r.venueId)}, ${formatTime(r.time)}`, to: basePath && !venueId ? `${basePath}/${r.venueId}?day=${r.day}` : undefined,
-    when: `${shortDate(days[r.day - 1]?.date ?? days[0].date)}, ${formatTime(r.time)}`,
+    when: `${shortDate(days[r.day - 1]?.date ?? days[0].date)}, ${formatTime(r.time)}`, time: r.time,
     facts: [
       names(r.guests), r.charge > 0 ? t('dine.charge', { amount: formatMoney(r.charge) }) : t('dine.included'), ...(r.note ? [r.note] : []),
       ...(r.reminderOn ? [t('dine.reminder', { date: formatDate(r.reminderOn) })] : []),
@@ -87,7 +88,7 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
               ) : (
                 <>
                   <h3 id={`exp-trip-${n}`}>{heading}</h3>
-                  <p className="exp-trip__none"><span className="muted">{t('exp.trip.none')}</span>{card.canReserve && <Button variant="secondary" onClick={() => openEditor('new', n)}>{t('exp.trip.book')}<span className="visually-hidden"> {heading}</span></Button>}</p>
+                  <p className="exp-trip__none"><span className="muted">{t('exp.trip.none')}</span>{card.canReserve && <Button variant="secondary" icon={CalendarCheck} onClick={() => openEditor('new', n)}>{t('exp.trip.book')}<span className="visually-hidden"> {heading}</span></Button>}</p>
                 </>
               )}
             </div>
@@ -104,7 +105,7 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
         heading={venueId ? t('exp.res.hereTitle') : t('exp.res.title')} items={items} empty={venueId ? t('exp.res.noneHere') : t('exp.res.none')} readOnly={readOnly}
         onChange={change}
         onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
-        action={card.canReserve ? <Button onClick={() => openEditor('new')}>{t('exp.res.new')}</Button> : view.canBook || stage === 'after' ? <p className="muted">{lineWords(card.detail ?? card.headline)}</p> : null}
+        action={card.canReserve && !venueId ? <Button icon={CalendarCheck} onClick={() => openEditor('new')}>{t('exp.res.new')}</Button> : card.canReserve ? null : view.canBook || stage === 'after' ? <p className="muted">{lineWords(card.detail ?? card.headline)}</p> : null}
       />
       {earlier > 0 && <p className="muted">{t('exp.earlier', { count: earlier })}</p>}
       {dialog}

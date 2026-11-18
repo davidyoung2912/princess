@@ -18,6 +18,7 @@ import { useSailing } from '../../../hooks/useDemo'
 import { t, headingCase } from '../../../i18n'
 import { api } from '../../../runtime'
 import { Button } from '../../Button'
+import { CalendarCheck } from '../../icons'
 import { Dialog } from '../../Dialog'
 import { PlanError } from '../../plan/common'
 import { names } from '../../plan/people'
@@ -56,7 +57,7 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
   const { shown: mine, earlier } = whole ? { shown: all, earlier: 0 } : aheadOnly(all, ahead)
   const item = (a: SpaAppointment): ReservationItem => ({
     id: a.id, title: a.title, name: `${a.title}, ${formatTime(a.time)}`, to: basePath && !venueId ? `${basePath}/${a.venueId}?day=${a.day}` : undefined,
-    when: `${shortDate(days[a.day - 1]?.date ?? days[0].date)}, ${formatTime(a.time)}`,
+    when: `${shortDate(days[a.day - 1]?.date ?? days[0].date)}, ${formatTime(a.time)}`, time: a.time,
     facts: [title(a.venueId), t('spa.minutes', { n: a.minutes }), names(a.guests), t('spa.total', { amount: formatMoney(a.price) }), ...(a.note ? [a.note] : [])],
   })
   const items: ReservationItem[] = mine.map(item)
@@ -81,7 +82,7 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
               ) : (
                 <>
                   <h3 id={`exp-trip-${n}`}>{heading}</h3>
-                  <p className="exp-trip__none"><span className="muted">{t('exp.trip.none')}</span>{card.canReserve && <Button variant="secondary" onClick={() => openEditor('new', undefined, n)}>{t('exp.trip.bookSpa')}<span className="visually-hidden"> {heading}</span></Button>}</p>
+                  <p className="exp-trip__none"><span className="muted">{t('exp.trip.none')}</span>{card.canReserve && <Button variant="secondary" icon={CalendarCheck} onClick={() => openEditor('new', undefined, n)}>{t('exp.trip.bookSpa')}<span className="visually-hidden"> {heading}</span></Button>}</p>
                 </>
               )}
             </div>
@@ -99,7 +100,7 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
         heading={venueId ? t('spa.mineHere') : t('spa.mine')} items={items} empty={venueId ? t('spa.noneHere') : t('spa.none')} readOnly={readOnly}
         onChange={change}
         onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
-        action={card.canReserve ? <Button onClick={() => openEditor('new')}>{t('spa.new')}</Button> : reason}
+        action={card.canReserve ? <Button icon={CalendarCheck} onClick={() => openEditor('new')}>{t('spa.new')}</Button> : reason}
       />
       {earlier > 0 && <p className="muted">{t('exp.earlier', { count: earlier })}</p>}
       {here.length > 0 && (
@@ -112,7 +113,7 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
                 <p>{x.detail}</p>
                 <p className="muted">{t('spa.minutes', { n: x.minutes })} · {formatMoney(x.price)}{x.minAge ? ` · ${t('exp.venue.minAge', { age: x.minAge })}` : ''}</p>
                 <div className="button-row">
-                  {card.canReserve && <Button variant="secondary" onClick={() => openEditor('new', x.id)}>{t('spa.bookThis')}<span className="visually-hidden"> {x.title}</span></Button>}
+                  {card.canReserve && <Button variant="secondary" icon={CalendarCheck} onClick={() => openEditor('new', x.id)}>{t('spa.bookThis')}<span className="visually-hidden"> {x.title}</span></Button>}
                   <SaveButton itemKey={treatmentKey(venues[0]?.venue.shipId ?? '', x.id)} title={x.title} />
                 </div>
               </li>
