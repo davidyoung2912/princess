@@ -39,7 +39,7 @@ public sealed record StanleyStepUpDto(bool Sent, string? Token = null);
 public static class StanleyPermissionRules
 {
     /// <summary>The version of the consent wording below. Change it whenever a row's wording or the level lines change, so the history shows what the guest agreed to.</summary>
-    public const int WordingVersion = 3;
+    public const int WordingVersion = 5;
     public const int DefaultLevel = 4;
     public const string StateKey = "stanleyPermissions", ConsentKey = "stanleyConsent", StepUpKey = "stanleyStepUp";
     public static readonly string[] Sources = ["welcome", "settings", "stage"];
@@ -55,18 +55,18 @@ public static class StanleyPermissionRules
 
     public static readonly IReadOnlyList<StanleyPermissionRow> Rows =
     [
-        new("CL-01", "watching", "Check my trip for problems", "Your passport expires within 6 months of the return date.", "Never blocks anything or says a document is official.", 2, true),
-        new("CL-02", "watching", "Tell me when something changes and what it means", "Your tour moved to 9:30. You now have 20 minutes less in port.", "Never changes your plans by itself. Safety alerts always reach you.", 2, true),
-        new("CL-03", "watching", "Tell me how my spending is going", "Your spending is running ahead of the budget you set.", "Never blocks a purchase and never pays for anything.", 2, true),
+        new("CL-01", "watching", "Check your trip for problems", "Your passport expires within 6 months of the return date.", "Never blocks anything or says a document is official.", 2, true),
+        new("CL-02", "watching", "Tell you when something changes and what it means", "Your tour moved to 9:30. You now have 20 minutes less in port.", "Never changes your plans by itself. Safety alerts always reach you.", 2, true),
+        new("CL-03", "watching", "Tell you how your spending is going", "Your spending is running ahead of the budget you set.", "Never blocks a purchase and never pays for anything.", 2, true),
         new("CL-04", "watching", "Morning brief and evening look-ahead (you choose the times)", "Today at a glance, and tomorrow's early start.", "Only at the times you choose.", 2, true),
-        new("CL-05", "preparing", "Line up a fix when a plan breaks, for my yes", "Your tour is cancelled. Here is the best replacement today.", "Never books it until you say yes.", 3, true),
-        new("CL-06", "preparing", "Fill in forms and drafts for me to check", "Check-in is open. I filled it in; please check and send.", "Never sends or signs anything for you.", 3, true),
-        new("CL-07", "preparing", "Tell me when a table or space opens, with a ready booking", "A table for four opened on Thursday at 7:30.", "Never holds a table or books it without your yes.", 3, true),
-        new("CL-08", "handling", "Set my reminders for me (deadlines, check-in, bag night, all aboard)", "I added 6 reminders for your trip. Change any of them.", "Only reminders tied to a date on your trip.", 4, true),
-        new("CL-09", "handling", "Plan my days and keep the plan up to date with free things", "I added a free show at 8:30 as Stanley's pick. Remove it if you like.", "Never removes what you added and never adds anything that costs money.", 4, true),
-        new("CL-10", "handling", "Book the free things I always want (main dining, free shows)", "I booked your usual table for four at 6:00. Undo for 2 hours.", "Never books anything with a charge.", 4, true),
-        new("CL-11", "handling", "Keep my dinner time when a show moves", "The show moved, so I moved your dinner back to 8:00. Undo for 2 hours.", "Never moves a paid booking or one for another person.", 4, true),
-        new("CL-12", "handling", "Repeat a free stateroom request I always make", "I sent the ice you ask for every evening. Cancel it if you like.", "Never orders anything with a charge.", 4, true),
+        new("CL-05", "preparing", "Line up a fix when a plan breaks", "Your tour is cancelled. Here is the best replacement today.", "Never books it until you say yes.", 3, true),
+        new("CL-06", "preparing", "Fill in forms and drafts for you to check", "Check-in is open. I filled it in; please check and send.", "Never sends or signs anything for you.", 3, true),
+        new("CL-07", "preparing", "Tell you when a table or space opens, with a ready booking", "A table for four opened on Thursday at 7:30.", "Never holds a table or books it without your yes.", 3, true),
+        new("CL-08", "handling", "Set reminders for you (deadlines, check-in, bag night, all aboard)", "I added 6 reminders for your trip. Change any of them.", "Only reminders tied to a date on your trip.", 4, true),
+        new("CL-09", "handling", "Plan your days and keep the plan up to date with free things", "I added a free show at 8:30 as Stanley's pick. Remove it if you like.", "Never removes what you added and never adds anything that costs money.", 4, true),
+        new("CL-10", "handling", "Book the free things you always want (main dining, free shows)", "I booked your usual table for four at 6:00. Undo for 2 hours.", "Never books anything with a charge.", 4, true),
+        new("CL-11", "handling", "Keep your dinner time when a show moves", "The show moved, so I moved your dinner back to 8:00. Undo for 2 hours.", "Never moves a paid booking or one for another person.", 4, true),
+        new("CL-12", "handling", "Repeat a free stateroom request you always make", "I sent the ice you ask for every evening. Cancel it if you like.", "Never orders anything with a charge.", 4, true),
     ];
 
     public static StanleyPermissionRow? Row(string? id) => Rows.FirstOrDefault(r => r.Id == id);

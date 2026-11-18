@@ -241,9 +241,11 @@ describe('gate 6: accessibility', () => {
     const viewer = read('src/ui/onboard/DeckPlanViewer.tsx')
     expect(viewer).toMatch(/onClick=\{\(\) => zoomBy/)
     expect(viewer).toMatch(/onKeyDown=/)
-    // Hover handlers: a decorative wiggle on a page title (hides nothing), and the tile preview card (L7), which opens on keyboard focus too, closes on Escape and only repeats words the tile already shows.
-    expect(src.filter((s) => /onMouseEnter|onMouseOver/.test(s.text)).map((s) => s.f).sort()).toEqual(['src/ui/PageHeader.tsx', 'src/ui/ScreenList.tsx'])
+    // Hover handlers: a decorative wiggle on a page title (hides nothing), the tile preview card (L7), which opens on keyboard focus too, closes on Escape and only repeats words the tile already shows,
+    // and the faces on Stanley's introduction, which are buttons that show their caption on focus and on a tap or click as well.
+    expect(src.filter((s) => /onMouseEnter|onMouseOver/.test(s.text)).map((s) => s.f).sort()).toEqual(['src/ui/PageHeader.tsx', 'src/ui/ScreenList.tsx', 'src/ui/welcome/StanleyIntro.tsx'])
     expect(read('src/ui/ScreenList.tsx')).toMatch(/onFocus=/)
+    expect(read('src/ui/welcome/StanleyIntro.tsx')).toMatch(/onFocus=[\s\S]*onClick=/)
   })
 
   it('every screen is checked structurally (one h1, one main, labelled buttons) and for colour contrast', () => {
