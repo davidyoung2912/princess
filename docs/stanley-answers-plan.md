@@ -298,6 +298,8 @@ A **golden file** of about 150 "question to topic and pills" lines is committed;
 
 Each phase ends with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` passing, one commit, and a stop so the owner can `/clear`.
 
+**Three surfaces, one engine.** (1) The Ask Stanley dialog and (2) the Stanley chat share `useStanleyAsk`. (3) `@Stanley` in a normal group chat is answered by the server (`ChatAskStanleyService`) as one plain message everyone sees, built from the same scripted fallback or the model, with no pills. Because every member's booking and stage differ, pills for it are made **on each viewer's device**: when a group thread shows a Stanley answer, the client reads the asker's `@Stanley` message just before it, runs the engine, and shows pills for that viewer. The group's shared text is not replaced on the device; Phase 6 changes what the server posts when it cannot answer (no hard-coded Caribbean text, a neutral line that points at the pills). Never in a conversation with a supervised child, where Stanley is off.
+
 ### Phase 1: one reply renderer, the engine core and pills for the explorers and top journey topics
 1. **Shared renderer.** Extract the dialog's reply drawing into `StanleyReply`; use it in `StanleyDialog` and in the chat's `StanleyItems`; extend the chat's `DeviceTurn` so it carries cards, pills, actions, follow-up chips and handoff; stop `threadItems` dropping answers that have a card but no text. Tests for `threadItems`.
 2. **Engine core**: `normalise`, `spell`, `stem`, `phrases`, `frame`, `score`, `applies`, `pills`, `understand` (the entry point). Lexicon v1 (about 250 concepts, 40 acts) and topic table v1 (about 45 topics) as above.
@@ -308,11 +310,16 @@ Each phase ends with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run b
 
 Exit: asking in either surface "where can I book a massage", "wheres the spa", "any tours in cozumel", "i lost my boarding pass", "wifi" gives a sensible reply and one to three working pills; a misspelt or slangy version gives the same; gibberish gives the honest miss; the chat shows cards and pills like the dialog.
 
-### Phase 2: entities and deep links
+### Phase 2: entities and deep links, and pills for group `@Stanley` answers
+Group `@Stanley` answers get the same pills, made on the viewer's device from the asker's message (see the three surfaces in section 11).
+
 Entity recognition over the catalogue (venues, shows, excursions, ports, countries, spa items, ship places, ships) with aliases and fuzzy matching, built from `src/domain` at first use. Explorers accept a uniform `?q=` plus their own filters (`port`, `type`, `diet`, `day`, `age`), so "tours in Cozumel", "vegetarian places" and "the Crown Grill" arrive filtered or on the venue page. Pill labels name the entity ("See the Crown Grill", "Tours in Cozumel"). Tests that every entity alias resolves to a real route.
 
 ### Phase 3: direct answers (section 6)
 Attribute questions answered from data as cards with provenance; the answer-or-pill rule; ship-clock times; tests per attribute and per missing-data case.
+
+### Phase 3b: short live ship answers, long ones by pill
+The engine names a live topic (next port, all-aboard time, today's weather at the next port, what is on in the next hour, sea state). A server resolver, in the style of `StanleyResolvers`, reads the live facts the backend already holds (ship telemetry, weather and the day's program are mocked behind interfaces, so a real provider needs no front-end change) and returns a card with its source and the time it was read. **Short** (about three lines, all facts fresh) is shown in the reply; **long**, stale or missing becomes one plain sentence plus the pill to the full screen (Today, Weather, Port, Itinerary). The front end does not know whether a source is simulated. A stale or unreadable source abstains, as the existing cards do. No model is involved.
 
 ### Phase 4: context and clarification (section 7)
 Carry-over, "Did you mean", the honest miss reply, follow-up resolution; tests of multi-turn scripts.
@@ -321,6 +328,8 @@ Carry-over, "Did you mean", the honest miss reply, follow-up resolution; tests o
 Grow the lexicon to about 800 nouns and 120 acts and the topic table to about 150 topics until **every screen is reachable**; fold `matchQuestion` and `awayTopic` into the engine so there is one vocabulary (the authored library entries become topic answers); stage-specific depth (what a guest asks in each of the eleven stages).
 
 ### Phase 6: server alignment
+When to use a model: the order is safety, authored library, resolvers over the guest's account, then the engine, and a model last, only for open-ended or reasoning questions the engine is not confident about (planning, judging between options, advice that combines facts). Pointer and lookup questions (where, when, how much, how do I, what does X mean) never need one. The device sends the engine's outcome and topic as a hint so the server can skip the model for a confident pointer topic; the server still enforces the daily ceiling, per-turn call limits and switches, and a hint can never raise a cap or turn on a model that is switched off.
+
 Remove the hard-coded Caribbean text from `StanleyRules.Scripted`; make "not answered" an explicit server reply the device fills in; keep every existing server test passing (written, not run here; the owner runs targeted tests). Update the shared eval cases so the server and browser agree.
 
 ### Phase 7: the learning loop

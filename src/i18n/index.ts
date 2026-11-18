@@ -23,7 +23,8 @@ export function registerEnglishLate(text: Catalog) {
 /** Brings in the Stanley and tip text (a separate download) before the first screen is drawn. */
 export async function loadEnglishLate(): Promise<void> {
   if (Object.keys(late).length > 0) return
-  registerEnglishLate((await import('./locales/enLate')).enLate)
+  const [{ enLate }, { enAnswers }] = await Promise.all([import('./locales/enLate'), import('./locales/enAnswers')])
+  registerEnglishLate({ ...enLate, ...enAnswers })
 }
 
 /** Every English key, the Stanley and tip ones included once they are loaded. */

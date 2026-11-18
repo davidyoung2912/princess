@@ -3,6 +3,7 @@ import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useSta
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
 import { useStanleyAsk, useStanleyBusy } from '../ai/useStanleyAsk'
+import { StanleyReply } from '../ai/StanleyReply'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, GroupStanley, ChatThread, ChatUrgency } from '../../api/chatTypes'
@@ -909,7 +910,7 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
     return (
       <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg chat-msg--answer'}>
         <p className="chat-msg__meta">{!asked && <img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} />}<strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.reply')}</strong> <span className="muted">{shipTime(item.at)}</span></p>
-        <p>{item.text}</p>
+        {asked ? <p>{item.text}</p> : <StanleyReply m={item.turn} />}
       </li>
     )
     })()

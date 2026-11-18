@@ -34,7 +34,7 @@ export const groupable = (question: string): boolean => GROUP_WORDS.test(questio
 /** The path that carries a question to the group poll, filled in but not created. */
 export const groupPath = (question: string): string => `/plan/group-poll?q=${encodeURIComponent(question.trim().slice(0, 80))}`
 
-export interface AnswerAction { label: string; path: string }
+export interface AnswerAction { label: string; path: string; /** The destination the engine offered, so a tap can be counted. */ id?: string }
 
 /** Buttons under an answer (an "answer card"): the screens it came from, a way on, and the group when the question is for the group or could not be answered. At most three. */
 export function answerActions(a: { source?: StanleySource; link?: string; citations?: readonly { label: string; path: string }[]; answered: boolean; question: string }, labels: { open: (name: string) => string; show: string; group: string }): AnswerAction[] {

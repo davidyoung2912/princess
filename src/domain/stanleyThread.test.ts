@@ -38,6 +38,10 @@ describe('the thread', () => {
 
   it('leaves out an answer with no text', () => {
     expect(threadItems([], [{ id: 'q', role: 'user', text: 'Hi', at: 1 }, { id: 'a', role: 'assistant', text: '  ', at: 2 }]).map((i) => i.kind)).toEqual(['question'])
+    // An answer that is a card or a prepared change has no text of its own but is still shown, with the whole turn so the chat can draw its pills and card.
+    const card = threadItems([], [{ id: 'q', role: 'user', text: 'Hi', at: 1 }, { id: 'a', role: 'assistant', text: '', at: 2, card: { id: 'c' } }])
+    expect(card.map((i) => i.kind)).toEqual(['question', 'answer'])
+    expect(card[1] && 'turn' in card[1] ? card[1].turn.id : '').toBe('a')
   })
 
   it('puts a server message first when the times are equal', () => {

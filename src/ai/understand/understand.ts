@@ -1,0 +1,229 @@
+/**
+ * Understanding a question with no model (docs/stanley-answers-plan.md, section 5). Pure and deterministic: the same words and the same situation always give the same result.
+ * Steps: normalise, stem, correct typos, match phrases to concepts, read the frame (what they want to do, about what), score the topics, check each pill makes sense for this guest, and decide how sure to be.
+ */
+import type { JourneyStage } from '../../routes/hubs'
+import { COMMON_WORDS, CONCEPTS, DROP_WORDS, NEVER_WORDS, STOP_WORDS, ACTS, type Act } from './lexicon'
+import { DESTINATIONS, type Need } from './destinations'
+import { normalise, wordsOf } from './normalise'
+import { makeSpeller, type Speller } from './spell'
+import { stem } from './stem'
+import { TOPICS, type TopicDef } from './topics'
+
+/** Where the guest is and what they have, as far as the device knows. Hints, never facts about anyone else. */
+export interface UnderstandContext {
+  stage?: JourneyStage
+  hasBooking?: boolean
+  /** The screen id the guest is on, for a small lean towards that screen's topic. */
+  screenId?: string
+}
+
+export interface Pill { id: string; label: string; path: string }
+
+export type Outcome = 'confident' | 'ambiguous' | 'miss' | 'empty'
+
+export interface Understood {
+  outcome: Outcome
+  /** Ranked topics that scored, best first (at most three). */
+  topics: { id: string; score: number }[]
+  /** What they want to do, the most specific act first. */
+  acts: Act[]
+  /** The pills to offer, already checked against the guest's situation (at most three). */
+  pills: Pill[]
+  /** Whether the words say it is about the guest's own trip ("my", "our"). */
+  personal: boolean
+}
+
+/** At most this many pills are ever offered under one reply. */
+export const MAX_PILLS = 3
+/** Scores (the sum of evidence, act and stage lean) that make a topic a confident, a possible or no match, and the lead the best must have over the next. */
+export const T_HIGH = 4
+export const T_LOW = 2.6
+export const MARGIN = 1
+/** A topic needs at least this much from the words themselves; a request word alone ("how much") never makes a topic. */
+export const MIN_EVIDENCE = 2
+
+const ABOARD: readonly JourneyStage[] = ['embark', 'sea', 'port', 'disembark']
+const NEGATORS = new Set(['not', 'no', 'never', 'without'])
+const QUESTION_WORDS = new Set(['what', 'where', 'when', 'who', 'why', 'how', 'which'])
+const AUX_WORDS = new Set(['can', 'could', 'do', 'does', 'did', 'is', 'are', 'will', 'would', 'should', 'may', 'am', 'was'])
+
+interface Engine {
+  phrases: Map<string, string[]>
+  longest: number
+  /** Typo repair on the word as typed, and on its stem. */
+  surface: Speller
+  speller: Speller
+  mult: Map<string, number>
+  topics: readonly TopicDef[]
+}
+
+let engine: Engine | null = null
+
+const keyOf = (text: string): string => wordsOf(text).filter((w) => !DROP_WORDS.has(w)).map(stem).join(' ')
+
+function build(): Engine {
+  const phrases = new Map<string, string[]>()
+  const vocabulary = new Set<string>()
+  const surfaceWords = new Set<string>()
+  let longest = 1
+  for (const concept of CONCEPTS) {
+    for (const word of concept.words) {
+      const key = keyOf(word)
+      if (!key) continue
+      const list = phrases.get(key)
+      if (!list) phrases.set(key, [concept.id])
+      else if (!list.includes(concept.id)) list.push(concept.id)
+      const parts = key.split(' ')
+      longest = Math.max(longest, parts.length)
+      for (const p of parts) vocabulary.add(p)
+      for (const w of wordsOf(word)) if (!DROP_WORDS.has(w)) surfaceWords.add(w)
+    }
+  }
+  const known = new Set<string>([...STOP_WORDS, ...COMMON_WORDS].map((w) => stem(normalise(w))))
+  const never = new Set([...NEVER_WORDS].map((w) => stem(w)))
+  // How many topics lean on each concept: a concept only one topic uses says more than one every topic uses.
+  const df = new Map<string, number>()
+  for (const t of TOPICS) for (const c of Object.keys(t.evidence)) df.set(c, (df.get(c) ?? 0) + 1)
+  const n = TOPICS.length
+  const mult = new Map<string, number>()
+  for (const [c, d] of df) mult.set(c, 0.8 + 0.4 * (1 - (d - 1) / Math.max(1, n - 1)))
+  return { phrases, longest, surface: makeSpeller(surfaceWords, new Set([...STOP_WORDS, ...COMMON_WORDS]), NEVER_WORDS), speller: makeSpeller(vocabulary, known, never), mult, topics: TOPICS }
+}
+
+const get = (): Engine => (engine ??= build())
+
+interface Hit { concept: string; start: number; negated: boolean }
+
+/** The stem of a typed word, with a typo put right: as typed first (so "decied" is read as "decide"), then in stem form. */
+function fix(word: string, e: Engine): string {
+  const s = stem(word)
+  if (e.speller.has(s)) return s
+  const typed = e.surface.correct(word)
+  return typed !== word ? stem(typed) : e.speller.correct(s)
+}
+
+/**
+ * Words to concepts: stems, typo fixes, then every phrase the lexicon knows. A phrase is dropped only when a longer one covers it completely, so "my room key" is read as both "my room" and "room key" and neither
+ * swallows the other. A "not", "no", "never" or "without" marks the next word or two as negated, unless it is itself part of a phrase ("do not want").
+ */
+function hitsOf(tokens: readonly string[], e: Engine): Hit[] {
+  const stems = tokens.filter((w) => !DROP_WORDS.has(w)).map((w) => fix(w, e))
+  type Found = { i: number; len: number; concepts: string[]; act: boolean }
+  const found: Found[] = []
+  for (let i = 0; i < stems.length; i++) {
+    for (let len = Math.min(e.longest, stems.length - i); len >= 1; len--) {
+      const concepts = e.phrases.get(stems.slice(i, i + len).join(' '))
+      if (!concepts) continue
+      // What a phrase means as a thing and what it means as a request are kept apart, so "book a tour" is both a tour and a booking.
+      const acts = concepts.filter((c) => c.startsWith('a.'))
+      const things = concepts.filter((c) => !c.startsWith('a.'))
+      if (acts.length) found.push({ i, len, concepts: acts, act: true })
+      if (things.length) found.push({ i, len, concepts: things, act: false })
+    }
+  }
+  const covered = (a: Found, b: Found) => b.act === a.act && b.len > a.len && b.i <= a.i && b.i + b.len >= a.i + a.len
+  const kept = found.filter((a) => !found.some((b) => b !== a && covered(a, b)))
+  const negators = stems.flatMap((w, i) => (NEGATORS.has(w) && !kept.some((k) => k.len > 1 && i >= k.i && i < k.i + k.len) ? [i] : []))
+  return kept.flatMap((k) => k.concepts.map((concept) => ({ concept, start: k.i, negated: negators.some((n) => k.i - n === 1) })))
+}
+
+const actOf = (id: string): Act | null => (id.startsWith('a.') ? (id.slice(2) as Act) : null)
+
+/** Whether a destination makes sense for this guest now. */
+function allowed(need: Need | undefined, ctx: UnderstandContext): boolean {
+  switch (need) {
+    case undefined: return true
+    case 'booking': return ctx.hasBooking === true
+    case 'aboard': return ctx.stage !== undefined && ABOARD.includes(ctx.stage)
+    case 'ashore': return ctx.stage === 'port'
+    case 'beforeSailing': return ctx.stage === undefined || !ABOARD.includes(ctx.stage)
+  }
+}
+
+/** The screen offered for a destination, or the one that stands in for it, or nothing. */
+function resolve(id: string, ctx: UnderstandContext, depth = 0): string | null {
+  const d = DESTINATIONS[id]
+  if (!d) return null
+  if (allowed(d.needs, ctx)) return id
+  return d.instead && depth < 3 ? resolve(d.instead, ctx, depth + 1) : null
+}
+
+/** The pills for one topic: the ones that match what was asked first, then the general ones. */
+function pillsFor(topic: TopicDef, acts: readonly Act[], ctx: UnderstandContext): string[] {
+  const out: string[] = []
+  const push = (dest: string) => { const r = resolve(dest, ctx); if (r && !out.some((o) => DESTINATIONS[o]!.path === DESTINATIONS[r]!.path) && !out.includes(r)) out.push(r) }
+  for (const r of topic.pills) if (r.when?.some((a) => acts.includes(a))) push(r.dest)
+  for (const r of topic.pills) if (!r.when) push(r.dest)
+  return out
+}
+
+/** Turns a destination id into the words on its pill. The UI passes the locale file; tests pass the English table. */
+export type Labeller = (destination: string) => string
+
+/** Reads a question. `label` turns a destination id into the words on its pill (the locale file). */
+export function understand(text: string, ctx: UnderstandContext, label: Labeller): Understood {
+  const empty: Understood = { outcome: 'empty', topics: [], acts: [], pills: [], personal: false }
+  const raw = wordsOf(text)
+  if (raw.length === 0) return empty
+  const e = get()
+  const personal = raw.some((w) => w === 'my' || w === 'mine' || w === 'our' || w === 'ours')
+  const hits = hitsOf(raw, e)
+
+  const present = new Set<string>()
+  const actSet = new Set<Act>()
+  for (const h of hits) {
+    const act = actOf(h.concept)
+    if (act) {
+      // "I do not want to book": a refused booking or order is a cancel; any other act stays as it was.
+      if (h.negated && (act === 'BOOK' || act === 'ORDER')) actSet.add('CANCEL')
+      else actSet.add(act)
+      present.add(h.concept)
+    } else if (!h.negated) present.add(h.concept)
+  }
+  const acts = ACTS.filter((a) => actSet.has(a))
+  const first = raw[0]!
+  const fragment = raw.length <= 3 && acts.length === 0 && !QUESTION_WORDS.has(first) && !AUX_WORDS.has(first)
+
+  const scored: { id: string; score: number; topic: TopicDef }[] = []
+  for (const topic of e.topics) {
+    let evidence = 0
+    for (const c of present) { const w = topic.evidence[c]; if (w) evidence += w * (e.mult.get(c) ?? 1) }
+    if (evidence < MIN_EVIDENCE) continue
+    const bonuses = acts.map((a) => topic.acts[a]).filter((v): v is number => v !== undefined)
+    let act = 0
+    if (bonuses.length > 0) act = Math.max(...bonuses) > 0 ? Math.max(...bonuses) : Math.min(...bonuses)
+    else if (fragment) act = topic.acts.LIST ?? 0
+    const lean = ctx.stage ? topic.stages[ctx.stage] ?? 0 : 0
+    scored.push({ id: topic.id, score: Math.round((evidence + act + lean) * 100) / 100, topic })
+  }
+  scored.sort((a, b) => b.score - a.score || (a.topic.risk === b.topic.risk ? 0 : a.topic.risk === 'low' ? -1 : 1) || (a.id < b.id ? -1 : 1))
+  const top = scored[0]
+  if (!top) return { outcome: 'miss', topics: [], acts, pills: [], personal }
+  const second = scored[1]
+  // A long ramble needs a stronger match than a short, direct question.
+  const stretch = raw.length > 14 ? 1.25 : 1
+  const confident = top.score >= T_HIGH * stretch && (!second || top.score - second.score >= MARGIN)
+  const ranked = scored.slice(0, 3).map(({ id, score }) => ({ id, score }))
+  if (!confident && top.score < T_LOW * stretch) return { outcome: 'miss', topics: ranked, acts, pills: [], personal }
+
+  const pills: Pill[] = []
+  const add = (dest: string) => { const d = DESTINATIONS[dest]!; if (pills.length < MAX_PILLS && !pills.some((p) => p.path === d.path)) pills.push({ id: dest, label: label(dest), path: d.path }) }
+  if (confident) for (const dest of pillsFor(top.topic, acts, ctx)) add(dest)
+  else {
+    // Not sure: one screen from each of the likeliest topics, so the guest can pick.
+    const close = scored.filter((s) => s.score >= T_LOW * stretch && s.score >= top.score - MARGIN * 2).slice(0, MAX_PILLS)
+    for (const s of close) { const [first] = pillsFor(s.topic, acts, ctx); if (first) add(first) }
+    for (const s of close) for (const dest of pillsFor(s.topic, acts, ctx)) add(dest)
+  }
+  return { outcome: confident ? 'confident' : 'ambiguous', topics: ranked, acts, pills, personal }
+}
+
+/** For tests and tools: the concepts a question was read as. */
+export function conceptsOf(text: string): string[] {
+  const e = get()
+  return [...new Set(hitsOf(wordsOf(text), e).map((h) => h.concept))]
+}
+
+/** For tests: the word a typo is read as. */
+export const correctWord = (word: string): string => fix(word, get())

@@ -5,23 +5,23 @@
 import type { ChatConversation, ChatMessage, NoticeLane, NoticeReply } from '../api/chatTypes'
 
 /** The question and answer history Stanley keeps on the device (the shape the Ask dialog holds, narrowed to what the thread shows). */
-export interface DeviceTurn { id: string; role: 'user' | 'assistant'; text: string; at: number; shipAt?: number }
+export interface DeviceTurn { id: string; role: 'user' | 'assistant'; text: string; at: number; shipAt?: number; /** A structured answer or a prepared change: an answer with one of these is shown even when its text is empty. */ card?: unknown; action?: unknown }
 
 export const isStanleyChat = (c: Pick<ChatConversation, 'kind' | 'permanent'>): boolean => c.permanent === true || c.kind === 'stanley'
 
 /** One thing in the thread: a message the server holds (a notice, a card, a line marking a change of voice), or a question or answer held on this device. */
-export type ThreadItem =
+export type ThreadItem<D extends DeviceTurn = DeviceTurn> =
   | { key: string; at: number; kind: 'server'; message: ChatMessage }
-  | { key: string; at: number; kind: 'question' | 'answer'; text: string }
+  | { key: string; at: number; kind: 'question' | 'answer'; text: string; turn: D }
 
 /**
- * The server's messages and the device's questions in time order. An answer with no text (a refusal, a handed-off turn, an unreachable server) is left out: the Ask dialog explains those
+ * The server's messages and the device's questions in time order. An answer with no text and no card or prepared change (a refusal, a handed-off turn, an unreachable server) is left out: the Ask dialog explains those
  * where the guest asked. On equal times the server's message comes first, so a notice never lands between a question and its answer by accident.
  */
-export function threadItems(server: readonly ChatMessage[], device: readonly DeviceTurn[]): ThreadItem[] {
-  const items: ThreadItem[] = [
-    ...server.map((message): ThreadItem => ({ key: `s:${message.id}`, at: message.at, kind: 'server', message })),
-    ...device.filter((d) => d.text.trim() !== '').map((d): ThreadItem => ({ key: `d:${d.id}`, at: d.shipAt ?? d.at, kind: d.role === 'user' ? 'question' : 'answer', text: d.text })),
+export function threadItems<D extends DeviceTurn>(server: readonly ChatMessage[], device: readonly D[]): ThreadItem<D>[] {
+  const items: ThreadItem<D>[] = [
+    ...server.map((message): ThreadItem<D> => ({ key: `s:${message.id}`, at: message.at, kind: 'server', message })),
+    ...device.filter((d) => d.text.trim() !== '' || d.card || d.action).map((d): ThreadItem<D> => ({ key: `d:${d.id}`, at: d.shipAt ?? d.at, kind: d.role === 'user' ? 'question' : 'answer', text: d.text, turn: d })),
   ]
   return items.map((x, i) => ({ x, i })).sort((a, b) => a.x.at - b.x.at || (a.x.kind === 'server' ? 0 : 1) - (b.x.kind === 'server' ? 0 : 1) || a.i - b.i).map((e) => e.x)
 }

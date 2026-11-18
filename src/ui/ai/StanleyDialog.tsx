@@ -3,28 +3,24 @@ import { Link } from 'react-router'
 import stanley from '../../assets/stanley-small.png'
 import { MAX_MESSAGE } from '../../ai/guard'
 import { AWAY_CHIPS } from '../../ai/stanleyAway'
-import { type StanleyAction } from '../../ai/stanleyAction'
 import { LIBRARY, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import { followUps } from '../../ai/stanleyFollow'
-import { StanleyActionCard } from './StanleyActionCard'
+import { StanleyReply } from './StanleyReply'
 import { HandoffCard } from './HandoffCard'
 import { HandoffCases } from './HandoffCases'
 import { CrewCards } from './CrewCards'
-import { StanleyAnswerCard } from './StanleyAnswerCard'
 import { WhyThis } from './WhyThis'
 import { cardText, explainScreenCard } from '../../ai/stanleyCard'
-import { asSaved } from '../../feeds/stanleyFacts'
 import { countTier } from '../../diagnostics/stanleyTiers'
 import { getStanleyThread, setStanleyThread, type StanleyMessage } from '../../ai/stanley'
 import { t, type StringKey } from '../../i18n'
-import { Button, LinkButton } from '../Button'
+import { Button } from '../Button'
 import { useStanleyAsk } from './useStanleyAsk'
 import { Dialog } from '../Dialog'
 import { ClearDraft } from '../ClearDraft'
 import { DialogHeader } from '../DialogHeader'
 import { TextArea } from '../Field'
-import { PocketPanel, ReadAloud } from './StanleyVoice'
-import { cardSpeech } from '../../ai/stanleyVoice'
+import { PocketPanel } from './StanleyVoice'
 
 function FollowChips({ items, onPick }: { items: readonly LibraryEntry[]; onPick: (question: string) => void }) {
   return (
@@ -54,8 +50,6 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     return ask(text, () => setDraft(''))
   }
 
-
-  const updateAction = (id: string, next: StanleyAction) => setStanleyThread(getStanleyThread().map((m) => (m.id === id ? { ...m, action: next } : m)))
 
   const pick = (question: string) => { void submit(null, question) }
 
@@ -89,12 +83,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
             {messages.map((m) => (
               <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
                 <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
-                {m.card ? <StanleyAnswerCard card={m.card} onNavigate={onClose} /> : <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>}
-                {m.role === 'assistant' && (m.card || m.text) && <p className="stanley__actions"><ReadAloud text={m.card ? cardSpeech(m.card, { abstained: t('stanley.read.abstained'), cached: t('stanley.read.cached') }) : m.text} /></p>}
-                {m.saved?.map((c) => <StanleyAnswerCard key={c.id} card={asSaved(c, t('stanley.offline.note'))} onNavigate={onClose} />)}
-                {m.source && !m.card && <p className="ai-msg__cites muted">{t(`stanley.source.${m.source}` as StringKey, { time: new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })}</p>}
-                {m.actions && m.actions.length > 0 && <p className="stanley__actions">{m.actions.map((a) => <LinkButton key={a.path} variant="secondary" to={a.path} onClick={onClose}>{a.label}</LinkButton>)}</p>}
-                {m.action && <StanleyActionCard action={m.action} onChange={(next) => updateAction(m.id, next)} onNavigate={onClose} />}
+                {m.role === 'user' ? <p className="ai-msg__text">{m.text}</p> : <StanleyReply m={m} text={reveal?.id === m.id ? reveal.steps[reveal.i] : undefined} onNavigate={onClose} />}
                 {m.id === lastAnswer?.id && !busy && follow.length > 0 && (
                   <FollowChips items={follow} onPick={pick} />
                 )}

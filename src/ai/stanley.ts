@@ -46,6 +46,8 @@ export interface StanleyTurn {
   fallback: StanleyFallback | null
   /** The route the server used, when it said. */
   tier?: StanleyTier | null
+  /** What wrote the answer, when the server said: `scripted` is its canned no-model reply. */
+  source?: string | null
   /** The screens an answer used, as the server names them. */
   citations?: Citation[]
   /** The structured answer with its provenance, when the server made one. */
@@ -97,7 +99,7 @@ export function normalizeStanley(raw: unknown): StanleyTurn | null {
         return x && typeof x.label === 'string' && typeof x.path === 'string' && x.path.startsWith('/') ? [{ label: x.label.slice(0, 120), path: x.path.slice(0, 200) }] : []
       }).slice(0, 5)
     : []
-  return { kind, text: kind === 'answer' ? text : '', handoff: kind === 'handoff' ? handoff : null, fallback: FALLBACKS.find((f) => f === o.fallback) ?? null, tier: TIERS.find((x) => x === o.tier) ?? null, citations, card: kind === 'answer' ? normalizeCard(o.card) : null, action: kind === 'answer' ? normalizeAction(o.action) : null }
+  return { kind, text: kind === 'answer' ? text : '', handoff: kind === 'handoff' ? handoff : null, fallback: FALLBACKS.find((f) => f === o.fallback) ?? null, tier: TIERS.find((x) => x === o.tier) ?? null, source: typeof o.source === 'string' ? o.source.slice(0, 20) : null, citations, card: kind === 'answer' ? normalizeCard(o.card) : null, action: kind === 'answer' ? normalizeAction(o.action) : null }
 }
 
 /**

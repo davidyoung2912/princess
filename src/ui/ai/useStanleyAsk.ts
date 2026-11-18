@@ -11,6 +11,8 @@ import { answerActions, type StanleySource } from '../../ai/stanleyRoute'
 import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
+import { countUnderstood } from '../../diagnostics/stanleyUnderstood'
+import { composeReply, readQuestion } from '../../ai/understand'
 import { getContext, subscribeContext } from '../../account/context'
 import { useSailing } from '../../hooks/useDemo'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
@@ -88,7 +90,9 @@ export function useStanleyAsk() {
     // Away from the ship: the safety screen still comes first (an emergency goes to the handoff below); anything else is answered here, from what the app holds.
     if (awayFacts && !screen(asked.text)) {
       const topic = awayTopic(asked.text)
-      setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: awayAnswer(topic, awayFacts, t as (k: string, p?: Record<string, string | number>) => string), at: Date.now(), kind: 'answer' }])
+      const away = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId }), { kind: 'answer', source: 'library', existing: [] })
+      setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: awayAnswer(topic, awayFacts, t as (k: string, p?: Record<string, string | number>) => string), at: Date.now(), kind: 'answer', actions: away.actions }])
+      countUnderstood([`outcome:${away.outcome}`])
       countTier('library', `away:${topic ?? 'none'}`)
       setNow(Date.now())
       return
@@ -116,16 +120,22 @@ export function useStanleyAsk() {
     }
     const citations = turn.citations ?? []
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
-    const actions = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
-    const tier: Tier = turn.kind === 'handoff' ? 'handoff' : turn.kind === 'answer' && answered ? source : 'unanswered'
+    const own = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
+    // Understand the question with no model: pills for the likeliest screens under the answer, and where there was no answer at all, words and pills of its own.
+    const composed = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId }), { kind: turn.kind, source, scripted: turn.tier === 'model' && turn.source === 'scripted', existing: own })
+    const actions = composed.actions
+    const shown: StanleyTurn = composed.replaced ? { kind: 'answer', text: composed.text ?? '', handoff: null, fallback: null } : turn
+    countUnderstood([`outcome:${composed.replaced ? 'replaced' : composed.outcome}`, ...(composed.topic ? [`topic:${composed.topic}`] : [])])
+    const answered2 = composed.replaced ? composed.outcome === 'confident' : answered
+    const tier: Tier = turn.kind === 'handoff' ? 'handoff' : shown.kind === 'answer' && answered2 ? (composed.replaced ? 'library' : source) : 'unanswered'
     countTier(tier, known ? `library:${known.id}` : route?.kind === 'ship' ? `ship:${route.fact.id}` : undefined)
     const saved = turn.kind === 'unreachable' && turn.fallback === 'network' && hasBooking ? savedFacts.now() ?? [] : []
-    const reply: StanleyMessage = { id, role: 'assistant', text: saved.length > 0 ? t('stanley.offline.saved') : wording(turn), saved: saved.length > 0 ? saved : undefined, at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback, source: turn.kind === 'answer' ? source : undefined, citations, card: turn.card ?? undefined, action: turn.action ?? undefined, actions, entryId }
+    const reply: StanleyMessage = { id, role: 'assistant', text: saved.length > 0 ? t('stanley.offline.saved') : wording(shown), saved: saved.length > 0 ? saved : undefined, at: Date.now(), kind: shown.kind, handoff: shown.handoff, fallback: shown.fallback, source: shown.kind === 'answer' && !composed.replaced ? source : undefined, citations, card: composed.replaced ? undefined : turn.card ?? undefined, action: composed.replaced ? undefined : turn.action ?? undefined, actions, entryId }
     setStanleyThread([...getStanleyThread(), reply])
     setNow(Date.now())
     setBusy(false)
     // An answer appears a few words at a time, as if it were arriving; with reduced motion it simply appears.
-    if (turn.kind !== 'answer' || turn.card || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    if (shown.kind !== 'answer' || reply.card || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
     setReveal({ id: reply.id, steps: revealSteps(reply.text), i: 0 })
   }
 
