@@ -140,7 +140,11 @@ export function Shell() {
   // If the guest has already gone somewhere before the server's copy arrived (after a reset it can be slow), the welcome must not pull them back: it waits for the next time they are at the start.
   const firstPath = useRef(pathname)
   const [wentOn, setWentOn] = useState(false)
-  useEffect(() => { if (!welcomeReady && pathname !== firstPath.current && pathname !== '/welcome') setWentOn(true) }, [pathname, welcomeReady])
+  // Signed out, or on a public screen (the sign-in page redirects to Home the moment an account is created), nothing counts as the guest going somewhere: the start is re-taken until they are in.
+  useEffect(() => {
+    if (!known || route?.public) { firstPath.current = pathname; return }
+    if (!welcomeReady && pathname !== firstPath.current && pathname !== '/welcome') setWentOn(true)
+  }, [pathname, welcomeReady, known, route?.public])
   const canWelcome = known && !wentOn && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings'
   const introDue = canWelcome && shouldShowStanleyIntro(welcomed, welcomeReady)
   const welcomeDue = canWelcome && !introDue && !stale && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
