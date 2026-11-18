@@ -399,7 +399,12 @@ Five ideas: more "Do it for me", say what changed, hand off at stage changes, gr
 - The trip's documents summary (`TripDocumentsDto.NotReady`) now lists the first names of the travellers whose documents are not ready (at most eight), carried through `GuideTrip.NotReady` to `GuideWho.Missing`. The documents task shows "Still to do: Ana, Leo" under "2 of 4 travellers ready", and only while some are not ready.
 - Check-in and muster have no per-traveller state on the server, so they are left as they were; naming them would need new stores.
 - Tests: `view.test.ts`; C# `GuideRulesTests` (not run or compiled, no `dotnet`).
-- **Next:** G10h.
+- **Next:** G10h (built, below).
+
+**G10h, ask, don't assume (built).**
+- The three-question "make this plan fit me" card is no longer shown up front in Dream and Discover. Stanley asks one question at the stage where its answer first matters (`ASK_AT`: first cruise in Manage, travelling alone in Prebook, fewer offers at Sea), with Yes and No, one at a time (`FitQuestion`, `nextQuestion`). Either answer counts as answered, so it is asked once, and it is saved into the existing `guideFit` document with the other answers kept (`answerOne`, `saveOneFit`), then the plan is read again. "Change how this plan fits me" stays in Dream and Discover for those who want all three.
+- Children are not asked: the booking already says who is travelling. No server change.
+- Tests: `fit.test.ts`.
 
 **G10 backlog (the full list, so nothing is lost between phases).**
 - Do it for me, best candidates (most effort saved, safe undo): dinner on sea days (G10a, done); excursion booking in Prebook, not just port day (G10b); packing list started from the sailing, the weather and the party (G10c); arrival-time and getting-there plan from flight or drive time (G10d).

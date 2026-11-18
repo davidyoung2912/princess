@@ -20,7 +20,7 @@ import { refreshGuide } from '../../guide/refresh'
 import { handoffFor, handoffKey } from '../../guide/handoff'
 import { getProgress, recordVisit, subscribeProgress } from '../../stageProgress/store'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
-import { FitPrompt } from './FitPrompt'
+import { FitPrompt, FitQuestion } from './FitPrompt'
 import { formatDate } from '../../domain/cruise'
 import { Card } from '../Card'
 import { TaskCalendar, TaskDoIt, TaskHelp, TaskRemind } from '../ai/GuideStanley'
@@ -142,6 +142,7 @@ export function StageGuide() {
     <section aria-label={t('guide.title')} className="guide">
       <StageLine view={view} />
       {(view.stage === 'dream' || view.stage === 'discover') && <FitPrompt />}
+      <FitQuestion stage={view.stage} />
       {stale && <p className="muted">{t('guide.stale')}</p>}
       <Handoff view={view} />
       {primary ? <DoNow task={primary} aside={aside} view={view} /> : (

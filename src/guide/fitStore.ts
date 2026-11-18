@@ -1,5 +1,5 @@
 import { sync } from '../sync'
-import { answerFit, EMPTY_FIT, normalizeFit, type GuideFit } from './fit'
+import { answerFit, answerOne, EMPTY_FIT, normalizeFit, type FitKey, type GuideFit } from './fit'
 
 /** The guest's "make this plan fit me" answers, in memory only: the server's copy is the real one and the sync module pulls it at sign-in. */
 const keyFor = (personaId: string | null): string => personaId ?? ''
@@ -18,6 +18,13 @@ export function subscribeFit(listener: () => void): () => void {
 /** Saves the three answers and tells the sync module. */
 export function saveFit(personaId: string | null, answers: { firstCruise: boolean; solo: boolean; quiet: boolean }, now: number): void {
   cache.set(keyFor(personaId), answerFit(answers, now))
+  tell()
+  sync.changed('guideFit', personaId)
+}
+
+/** Saves one answer, keeping the rest, and tells the sync module. */
+export function saveOneFit(personaId: string | null, key: FitKey, value: boolean, now: number): void {
+  cache.set(keyFor(personaId), answerOne(getFit(personaId), key, value, now))
   tell()
   sync.changed('guideFit', personaId)
 }
