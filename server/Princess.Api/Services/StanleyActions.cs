@@ -308,7 +308,7 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
 /// The real effects: each action goes through the service the screens use (stateroom requests, the excursion cart, dining, cases), as the guest, so those services' own checks, limits and
 /// permission rules apply at execution time. A day-plan change and a reminder are checked here and applied by the device.
 /// </summary>
-public sealed class StanleyEffects(CheckinService checkin, DisembarkService disembark, ITripStore trips, IPlanStore plan, PlanService planService, ServiceRequestService requests, CaseService cases, ScopeLoader scopes, IUserClock clock, StanleyPollService polls, StanleyDiningPlanService dining, StanleyReminderService reminders, IInboxStore inbox) : IStanleyEffects
+public sealed class StanleyEffects(CheckinService checkin, DisembarkService disembark, ITripStore trips, IPlanStore plan, PlanService planService, ServiceRequestService requests, CaseService cases, ScopeLoader scopes, IUserClock clock, StanleyPollService polls, StanleyDiningPlanService dining, StanleyReminderService reminders, IInboxStore inbox, IStateStore state) : IStanleyEffects
 {
     /// <summary>What the guest likes (their taste profile, kept among their saved items) and the most they said they would pay for one person (whole dollars, from what they asked Stanley).</summary>
     private async Task<ExcursionRules.PlanWishes> WishesAsync(UserRecord user, StanleyIntent intent, CancellationToken ct)
@@ -429,6 +429,14 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 if (booking.Dining != "anytime") throw ApiException.Conflict("fixedSeating");
                 var day = int.TryParse(intent.Arg("day"), out var dd) ? dd : 0;
                 var time = intent.Arg("time");
+                string? why = null;
+                if (intent.Arg("tonight") == "1")
+                {
+                    var tonight = await TonightAsync(user, booking, scope, intent.Arg("who"), ct) ?? throw ApiException.Conflict("nothing");
+                    (day, time) = (tonight.Day, tonight.Time);
+                    var usual = await UsualDinnerAsync(user, ct);
+                    why = usual.Length > 0 ? $"Chosen for you: the free time nearest your usual dinner time, {usual}." : $"Chosen for you: the free time nearest {DiningRules.DefaultDinner}. Set your usual dinner time in Stanley's standing choices and I will use that.";
+                }
                 if (!DiningRules.IsDinnerDay(scope.Timeline, day) || !DiningRules.DinnerTimes.Contains(time)) throw ApiException.Invalid("slot");
                 if (DiningRules.DinnerPast(scope.Timeline, day, time, scope.Now)) throw ApiException.Conflict("closed");
                 var people = WhoForDinner(user, booking, scope, intent.Arg("who"));
@@ -441,9 +449,9 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 var ids = people.Select(p => p.Id).ToList();
                 if (DiningRules.TableClash(held, day, time, ids).Count > 0) throw ApiException.Conflict("clash");
                 return new StanleyPreviewFacts($"Reserve a table in the {venue.Name}, night {day}, {time}",
-                    [$"{venue.Name}: night {day}, {time}", $"{people.Count} {(people.Count == 1 ? "guest" : "guests")}: {string.Join(", ", people.Select(p => p.First))}", $"{left} {(left == 1 ? "table is" : "tables are")} left at that time.", "Main dining is included in your fare."],
+                    [$"{venue.Name}: night {day}, {time}", $"{people.Count} {(people.Count == 1 ? "guest" : "guests")}: {string.Join(", ", people.Select(p => p.First))}", $"{left} {(left == 1 ? "table is" : "tables are")} left at that time.", "Main dining is included in your fare.", .. (why is null ? Array.Empty<string>() : [why])],
                     [.. people.Select(p => p.First)], null, "No charge. You can move or cancel the table on the dining screen.", $"dinner-new|{venue.Id}|{day}|{time}|{left}",
-                    new Dictionary<string, string> { ["venueId"] = venue.Id, ["day"] = day.ToString(), ["guests"] = string.Join(",", ids) });
+                    new Dictionary<string, string> { ["venueId"] = venue.Id, ["day"] = day.ToString(), ["time"] = time, ["guests"] = string.Join(",", ids) });
             }
             case StanleyActionKinds.CreatePoll:
             {
@@ -550,6 +558,14 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
     }
 
     /// <summary>Who a table is for: "all" is everyone the guest may act for, otherwise as for an excursion.</summary>
+    /// <summary>The guest's usual dinner time from their standing choices, or empty.</summary>
+    private async Task<string> UsualDinnerAsync(UserRecord user, CancellationToken ct) =>
+        StanleyAutoRules.ParseStanding((await state.GetAsync(false, user.Id, StanleyAutoRules.StandingKey, ct))?.Json).UsualDinner;
+
+    /// <summary>Tonight's main dining table for the people <paramref name="who"/> names, or none.</summary>
+    private async Task<PlanService.DinnerTonight?> TonightAsync(UserRecord user, BookingRow booking, Scope scope, string who, CancellationToken ct) =>
+        await planService.DinnerTonightAsync(user, booking.Number, await UsualDinnerAsync(user, ct), [.. WhoForDinner(user, booking, scope, who.Length == 0 ? "all" : who).Select(p => p.Id)], ct);
+
     private static List<ScopePerson> WhoForDinner(UserRecord user, BookingRow booking, Scope scope, string who)
     {
         if (!who.Trim().Equals("all", StringComparison.OrdinalIgnoreCase)) return WhoFor(user, booking, scope, who);

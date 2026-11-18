@@ -85,6 +85,21 @@ public static class DiningRules
         return [.. clash];
     }
 
+    /// <summary>The time Stanley uses for a table tonight when the guest has not said a usual dinner time.</summary>
+    public const string DefaultDinner = "19:00";
+
+    /// <summary>
+    /// The dinner time to book out of those that are still possible (not gone by, a table left, no clash): the one nearest the guest's usual time (earlier on a tie), so the choice is the same every
+    /// time. Null when none is possible. A usual time that is not a dinner time is ignored for <see cref="DefaultDinner"/>.
+    /// </summary>
+    public static string? PickNearest(string? usual, IEnumerable<string> possible)
+    {
+        var want = Minutes(DinnerTimes.Contains(usual ?? "") ? usual! : DefaultDinner);
+        return possible.Where(DinnerTimes.Contains).OrderBy(t => Math.Abs(Minutes(t) - want)).ThenBy(t => t, StringComparer.Ordinal).FirstOrDefault();
+    }
+
+    private static int Minutes(string hhmm) => int.Parse(hhmm[..2]) * 60 + int.Parse(hhmm[3..]);
+
     /// <summary>Whether a dinner's start has already gone by. The time is on the ship's clock for that night.</summary>
     public static bool DinnerPast(Timeline timeline, int day, string time, DateTime nowUtc)
     {

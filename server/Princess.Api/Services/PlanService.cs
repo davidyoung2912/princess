@@ -382,6 +382,39 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     public async Task<DiningViewDto> ReserveFromWaitlistAsync(UserRecord actor, string? number, ReserveRequest body, CancellationToken ct) =>
         await ReserveCoreAsync(actor, number, body, allowFull: true, ct);
 
+    /// <summary>A main dining table Stanley would book tonight: the room, the night, the time and how many tables are left at it.</summary>
+    public sealed record DinnerTonight(string VenueId, string VenueName, int Day, string Time, int Left);
+
+    /// <summary>
+    /// The table Stanley would book tonight, or none: dining not open, a fixed seating, tonight has no dinner, a table of the guests' own already that night, or no time left that is free and clash-free.
+    /// The time is the one nearest the guest's usual dinner time (<see cref="DiningRules.PickNearest"/>). <paramref name="guests"/> are the people the table is for; none means the actor alone.
+    /// Used to preview, to offer the button and to check an unsure outcome.
+    /// </summary>
+    public async Task<DinnerTonight?> DinnerTonightAsync(UserRecord actor, string? number, string? usual, IReadOnlyCollection<Guid>? guests, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        RequireDiningOpen(c);
+        var venue = ShipDining.VenuesOf(AboardPlans.ShipOfSailing(c.Booking.SailingId)).FirstOrDefault(v => v.Kind == "main" && !v.WalkIn);
+        var day = c.Today.DayNumber - c.Departure.DayNumber + 1;
+        if (venue is null || !DiningRules.IsDinnerDay(c.Timeline, day)) return null;
+        var view = await DiningViewAsync(c, ct);
+        if (!view.Window.Open || view.Plan != "anytime") return null;
+        var who = guests is { Count: > 0 } ? GuestsIn(c, guests) : [c.PersonByUser(actor.Id) ?? throw ApiException.Invalid("guests")];
+        if (who.Count > DiningRules.MaxParty || !who.Any(g => g.Age >= ExcursionRules.AdultAge)) return null;
+        var existing = await plan.ListTablesAsync(c.Booking.BookingId, ct);
+        var ids = who.Select(g => g.Id).ToList();
+        var held = Reserved(c, existing);
+        if (held.Any(t => t.Day == day && t.Guests.Any(ids.Contains))) return null;
+        var possible = new Dictionary<string, int>();
+        foreach (var slot in DiningRules.SlotsFor(venue.Id, c.Booking.SailingId, day))
+        {
+            if (DiningRules.DinnerPast(c.Timeline, day, slot.Time, c.Now) || DiningRules.TableClash(held, day, slot.Time, ids).Count > 0) continue;
+            var left = slot.Tables - await plan.CountTablesAsync(c.Booking.SailingId, venue.Id, day, slot.Time, null, ct);
+            if (left > 0) possible[slot.Time] = left;
+        }
+        return DiningRules.PickNearest(usual, possible.Keys) is { } time ? new(venue.Id, venue.Name, day, time, possible[time]) : null;
+    }
+
     private async Task<DiningViewDto> ReserveCoreAsync(UserRecord actor, string? number, ReserveRequest? body, bool allowFull, CancellationToken ct)
     {
         var c = await LoadAsync(actor, number, true, ct);

@@ -82,7 +82,7 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
         var departure = DateOnly.ParseExact(view.Departure[..10], "yyyy-MM-dd");
         var docsOk = view.Documents is null || (view.Documents.Missing == 0 && view.Documents.PassportProblems == 0);
         var opens = departure.AddDays(-TripRules.CheckinOpenDaysBefore);
-        return (new GuideTrip(view.Number, departure, view.Kind == "linked", view.Payment == "paid", DateOnly.ParseExact(view.Plan.FinalDue, "yyyy-MM-dd"), docsOk, view.Checkin.State, opens, musterDone, checklist, view.Documents?.Guests ?? 0, view.Documents?.Ready ?? 0, view.Documents?.Children ?? 0, await CanPrefillAsync(user, view, ct), await CanDraftCustomsAsync(user, view, ctx.Stage, ct), await CanPlanExcursionAsync(user, view, ctx.Stage, ct)), lastFull);
+        return (new GuideTrip(view.Number, departure, view.Kind == "linked", view.Payment == "paid", DateOnly.ParseExact(view.Plan.FinalDue, "yyyy-MM-dd"), docsOk, view.Checkin.State, opens, musterDone, checklist, view.Documents?.Guests ?? 0, view.Documents?.Ready ?? 0, view.Documents?.Children ?? 0, await CanPrefillAsync(user, view, ct), await CanDraftCustomsAsync(user, view, ctx.Stage, ct), await CanPlanExcursionAsync(user, view, ctx.Stage, ct), await CanBookDinnerAsync(user, view, ctx.Stage, ct)), lastFull);
     }
 
     /// <summary>True when check-in is open and there is something Stanley could fill in. Any refusal (not open, not an adult guest, an agent booking) is simply no.</summary>
@@ -106,6 +106,18 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
     {
         if (view.Kind == "linked" || stage != StageRules.Port) return false;
         try { return await plan.ExcursionPlanAsync(user, view.Number, ct) is not null; }
+        catch (ApiException) { return false; }
+    }
+
+    /// <summary>True on a sea day when Stanley could book tonight's main dining table. Any refusal is simply no.</summary>
+    private async Task<bool> CanBookDinnerAsync(UserRecord user, TripViewDto view, string stage, CancellationToken ct)
+    {
+        if (view.Kind == "linked" || stage != StageRules.Sea) return false;
+        try
+        {
+            var usual = StanleyAutoRules.ParseStanding((await state.GetAsync(false, user.Id, StanleyAutoRules.StandingKey, ct))?.Json).UsualDinner;
+            return await plan.DinnerTonightAsync(user, view.Number, usual, null, ct) is not null;
+        }
         catch (ApiException) { return false; }
     }
 }

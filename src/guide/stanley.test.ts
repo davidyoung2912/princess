@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { guide, task } from './fixture'
-import { doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs, tourChoices } from './stanley'
+import { doItArgs, doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs, tourChoices } from './stanley'
 
 describe('nowTask', () => {
   it('is the guide primary, so Stanley and Home agree', () => {
@@ -65,6 +65,15 @@ describe('doItFor', () => {
     expect(doItFor(tour, 'asked', 'home')).toBeNull()
     expect(doItFor(tour, 'asked', 'asked')).toBe('excursion_plan')
     expect(doItFor(tour, 'off', 'asked')).toBeNull()
+  })
+  it('offers tonight\'s dinner by the same level rules, asking for tonight and no other detail', () => {
+    const dinner = task('sea.dinner', { doIt: 'reserve_dinner' })
+    expect(doItFor(dinner, 'chatty', 'home')).toBe('reserve_dinner')
+    expect(doItFor(dinner, 'asked', 'home')).toBeNull()
+    expect(doItFor(dinner, 'asked', 'asked')).toBe('reserve_dinner')
+    expect(doItFor(dinner, 'off', 'asked')).toBeNull()
+    expect(doItArgs('reserve_dinner')).toEqual({ tonight: '1' })
+    expect(doItArgs('checkin_prefill')).toEqual({})
   })
   it('offers the customs draft by the same level rules', () => {
     const customs = task('disembark.customs', { doIt: 'customs_draft' })

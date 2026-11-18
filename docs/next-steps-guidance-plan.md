@@ -351,3 +351,22 @@ Smaller candidates for later: adding a calendar entry for a dated task (a downlo
 - Family link: when no one is added yet, the screen offers "Use {name}, your emergency contact" to fill the name field. Only the name: the profile holds no email for that person, so the guest types it and presses Add (`suggestedContactName`, tested). It was not made a Stanley action, because nothing there needs a server step.
 - C#: none of G9 has been compiled (no `dotnet` here).
 
+## 13. G10: more ways Stanley can help (2026-11-18)
+
+Five ideas: more "Do it for me", say what changed, hand off at stage changes, group awareness, ask don't assume. Built one phase at a time.
+
+**G10a, tonight's dinner (built).**
+- `sea.dinner` now offers "Do it for me" with the existing `reserve_dinner` action (no new kind, so the action lists, the model's tool list and the release gate are unchanged except for one optional `tonight` argument). The client asks with `tonight: "1"` (`doItArgs`); the server picks the night and time, so the guest is never asked for them.
+- **Rules:** `PlanService.DinnerTonightAsync` returns tonight's main dining table or none: dining open, the plan is anytime (a fixed seating is not a table for one night), tonight has a dinner, none of the guests already has a table tonight, and a time that has not gone by, has a table left and does not clash. `DiningRules.PickNearest` takes the one nearest the guest's usual dinner time (the Stanley standing choice), earlier on a tie, 19:00 when none is set. The booker books for the whole party, anyone else for themselves, as the typed request does.
+- **Preview:** the room, night, time, who, tables left, "Main dining is included in your fare", and a line saying why that time. The server writes the chosen day and time into the stored preview, so Confirm and the two-hour undo (cancel the table) work as for a typed booking. No charge.
+- **Guide:** `GuideTrip.CanBookDinner` (sea stage, not an agent booking, a table found), `doIt: "reserve_dinner"` on `sea.dinner`. Level rules unchanged.
+- Tests: `stanley.test.ts` (levels and args), `doit.test.ts` (source gates), C# `DinnerTonightTests` (PickNearest). Not run or compiled (no `dotnet`); `StanleyEffects` gained an `IStateStore` parameter (DI only).
+- **Next:** G10b excursion booking in Prebook, G10c packing list, G10d getting-there plan, then the four other ideas.
+
+**G10 backlog (the full list, so nothing is lost between phases).**
+- Do it for me, best candidates (most effort saved, safe undo): dinner on sea days (G10a, done); excursion booking in Prebook, not just port day (G10b); packing list started from the sailing, the weather and the party (G10c); arrival-time and getting-there plan from flight or drive time (G10d).
+- Say what changed (G10e): if a tender is late, a port changes or the weather turns, the guide reorders and Stanley says why. A calm "your all-aboard time moved" beats any nudge.
+- Hand off at stage changes (G10f): one short message when a stage opens ("You're in Prebook. Check-in opens Thursday. Two things first"), instead of leaving the guest to find Home.
+- Group awareness (G10g): for families, Stanley says who is missing a document, not just that one is. Per-traveller counts exist for documents but not for check-in or muster.
+- Ask, don't assume (G10h): Stanley asks one question at a natural moment ("travelling with kids?") and feeds the answer into the fit, so the guest is not asked up front.
+- Working rules still apply: one phase at a time, commit and stop, npm checks only, no `dotnet test` (the user compiles and runs the C# on Windows).

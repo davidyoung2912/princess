@@ -8,7 +8,7 @@ import { demoNow } from '../../demo/store'
 import { isoDay } from '../../domain/rates'
 import { taskCalendarFile } from '../../guide/calendar'
 import { CalendarButton } from '../delights/Cards'
-import { doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs, tourChoices } from '../../guide/stanley'
+import { doItArgs, doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs, tourChoices } from '../../guide/stanley'
 import { useSettings } from '../../hooks/useSettings'
 import { stanleyLevelFor } from '../../settings/settings'
 import { taskMeta, taskWords } from '../../guide/words'
@@ -124,7 +124,7 @@ export function TaskDoIt({ task, where }: { task: GuideTask; where: 'home' | 'as
   const kind = doItFor(task, stanleyLevelFor(settings), where)
   if (!kind) return null
   const title = taskWords(task).title
-  const ask = async (args: Record<string, string> = {}) => {
+  const ask = async (args: Record<string, string> = doItArgs(kind)) => {
     setBusy(true); setFailed(false)
     try {
       const a = normalizeAction(await stanleyActions.prepare({ kind, args }))
