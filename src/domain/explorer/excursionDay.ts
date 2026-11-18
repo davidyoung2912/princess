@@ -47,3 +47,13 @@ export function consideredOnDay(view: Pick<ExcursionsView, 'offers' | 'booked'>,
   const booked = new Set(view.booked.filter((b) => b.status === 'booked').map((b) => b.excursionId))
   return offersOnDay(view.offers, day).filter((o) => saved.includes(planKey(o.item.id)) && !booked.has(o.item.id))
 }
+
+/** The offers whose name, summary or interests hold every word typed; no words keeps them all. */
+export const searchOffers = (offers: readonly ExcursionOffer[], query: string): ExcursionOffer[] => {
+  const words = query.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return [...offers]
+  return offers.filter((o) => {
+    const hay = `${o.item.name} ${o.item.summary} ${o.item.interests.join(' ')}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    return words.every((w) => hay.includes(w))
+  })
+}

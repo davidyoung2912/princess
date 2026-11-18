@@ -5,7 +5,7 @@ import { tourKey } from '../../../domain/explorer/shortlist'
 import { SaveButton } from '../SaveButton'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../../api/types'
 import { formatDate, formatTime } from '../../../domain/cruise'
-import { bookingsOnDay, planKey, filterDayOffers, nearestTourDay, NO_DAY_FILTER, offersOnDay, type DayFilter } from '../../../domain/explorer/excursionDay'
+import { bookingsOnDay, planKey, filterDayOffers, searchOffers, nearestTourDay, NO_DAY_FILTER, offersOnDay, type DayFilter } from '../../../domain/explorer/excursionDay'
 import { ACTIVITIES, formatHours, guestPrice, INTERESTS, type Interest } from '../../../domain/excursions'
 import { excursionBookingCard } from '../../../domain/explorer/bookingState'
 import { shortDate } from '../../../domain/explorer/presentation'
@@ -206,6 +206,7 @@ function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDa
   const [params] = useSearchParams()
   const [start] = useState(() => readUrlFilter(params))
   const [filter, setFilter] = useState<DayFilter>(() => ({ ...NO_DAY_FILTER, interest: (INTERESTS as readonly string[]).includes(start.type ?? '') ? (start.type as Interest) : null }))
+  const [query, setQuery] = useState(start.q)
   const [suits, setSuits] = useState(false)
   const { state: mem } = useMemory()
   const { stage } = useExplorerStage()
@@ -213,7 +214,7 @@ function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDa
   const sailing = useSailing()
   const cart = useCart(view, reload)
   const today = offersOnDay(view.offers, state.day)
-  const shown = filterDayOffers(today, filter).filter((x) => !suits || difficultyConcerns(x.item, mem.access).length === 0)
+  const shown = filterDayOffers(searchOffers(today, query), filter).filter((x) => !suits || difficultyConcerns(x.item, mem.access).length === 0)
   const set = (change: Partial<DayFilter>) => setFilter({ ...filter, ...change })
   const other = today.length === 0 ? nearestTourDay(view.offers, state.day) : null
   return (
@@ -245,6 +246,10 @@ function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDa
               <Chip pressed={filter.accessible} onToggle={() => set({ accessible: !filter.accessible })}>{t('exc.f.accessible')}</Chip>
               <Chip pressed={suits} onToggle={() => setSuits(!suits)}>{t('exc.f.suits')}</Chip>
             </fieldset>
+            <div className="field">
+              <label htmlFor="exx-search">{t('exx.search')}</label>
+              <input id="exx-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
+            </div>
             <p className="muted" role="status">{t('exc.count', { count: shown.length })}</p>
             <ul className="card-grid">
               {shown.map((o) => <OfferCard key={o.item.id} offer={o} view={view} day={state.day} busy={cart.busy} concerns={difficultyConcerns(o.item, mem.access)} onAdd={() => void cart.pick(o)} />)}

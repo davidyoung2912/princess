@@ -9,6 +9,7 @@ import { ITEMS } from '../../domain/catalogue'
 import { PLACES } from '../../domain/deck'
 import { EXCURSIONS } from '../../domain/excursions'
 import { DIRECTORY } from '../../domain/menus'
+import { catalogueShips } from '../../domain/shipCatalogue'
 import { EVENTS } from '../../domain/program'
 import { CATALOGUE_PORTS, PORTS } from '../../domain/sailings'
 import { CONCEPTS, COMMON_WORDS, STOP_WORDS } from './lexicon'
@@ -16,7 +17,7 @@ import { wordsOf } from './normalise'
 import { distance } from './spell'
 import { stem } from './stem'
 
-export type EntityKind = 'venue' | 'show' | 'tour' | 'port' | 'country' | 'service' | 'place'
+export type EntityKind = 'venue' | 'show' | 'tour' | 'port' | 'country' | 'service' | 'place' | 'ship'
 
 export interface Entity {
   id: string
@@ -70,6 +71,7 @@ function collect(): Entity[] {
   for (const p of [...Object.values(PORTS), ...Object.values(CATALOGUE_PORTS)]) {
     if (p.country && p.countryCode && !countries.has(p.countryCode)) { countries.add(p.countryCode); add(p.countryCode.toLowerCase(), 'country', p.country, `/home/countries/${p.countryCode.toLowerCase()}`) }
   }
+  for (const sh of catalogueShips()) add(sh.id, 'ship', sh.name, `/home/ships/${sh.id}`)
   for (const i of ITEMS) add(i.id, 'service', i.title, serviceRoute(i.group))
   const named = new Set(DIRECTORY.map((v) => v.placeId))
   for (const p of PLACES) if (!named.has(p.id)) add(p.id, 'place', p.name, '/ship/map')
@@ -79,7 +81,7 @@ function collect(): Entity[] {
 interface Index { entities: Entity[]; /** How many entities each token appears in. */ spread: Map<string, number>; signature: string }
 let index: Index | null = null
 
-const signature = (): string => [DIRECTORY.length, EVENTS.length, EXCURSIONS.length, Object.keys(PORTS).length, Object.keys(CATALOGUE_PORTS).length, ITEMS.length, PLACES.length].join('.')
+const signature = (): string => [DIRECTORY.length, EVENTS.length, EXCURSIONS.length, Object.keys(PORTS).length, Object.keys(CATALOGUE_PORTS).length, ITEMS.length, PLACES.length, catalogueShips().length].join('.')
 
 /** Every entity the catalogue holds now. */
 export function entityIndex(): Index {

@@ -182,6 +182,7 @@ export const enAnswers = {
   'understand.entity.country': 'About {name}',
   'understand.entity.service': 'See {name}',
   'understand.entity.place': 'Find {name} on the map',
+  'understand.entity.ship': 'About {name}',
   'understand.entity.tours': 'Tours in {name}',
   'understand.ambiguous': 'I am not sure which you mean. Is it one of these?',
   'understand.miss': 'I am not sure I understood that. You could search the app, look at Help, or ask a person.',

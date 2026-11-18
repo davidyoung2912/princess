@@ -522,6 +522,7 @@ export const enCore = {
   'exx.none': 'You have no excursions booked for this day.',
   'exx.noneHere': 'You have not booked this excursion.',
   'exx.list': 'In port',
+  'exx.search': 'Search tours by name or what they are',
   'exx.noTours': 'No excursions run on this day. It may be a sea day.',
   'exx.goToDay': 'Show day {day}, the nearest with excursions',
   'exx.easyOnly': 'Easy only',

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { DIRECTORY } from '../../domain/menus'
 import { EXCURSIONS } from '../../domain/excursions'
+import { searchOffers } from '../../domain/explorer/excursionDay'
 import { PORTS } from '../../domain/sailings'
 import { askBefore } from '../../domain/chatStanley'
 import { readUrlFilter } from '../../domain/explorer/urlFilter'
@@ -89,5 +90,15 @@ describe('address filters', () => {
     expect(readUrlFilter(new URLSearchParams('q=%20vegetarian%20%20food&type=bar'))).toEqual({ q: 'vegetarian food', type: 'bar' })
     expect(readUrlFilter(new URLSearchParams('')).type).toBeNull()
     expect(readUrlFilter(new URLSearchParams(`q=${'a'.repeat(500)}`)).q.length).toBe(60)
+  })
+})
+
+describe('tour search', () => {
+  it('keeps offers holding every word, and all with no words', () => {
+    const x = EXCURSIONS[0]!
+    const offers = [{ item: x }] as unknown as Parameters<typeof searchOffers>[0]
+    expect(searchOffers(offers, '')).toHaveLength(1)
+    expect(searchOffers(offers, x.name.split(' ')[0]!)).toHaveLength(1)
+    expect(searchOffers(offers, 'zzzqqq')).toHaveLength(0)
   })
 })
