@@ -12,7 +12,7 @@ import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
 import { countUnderstood } from '../../diagnostics/stanleyUnderstood'
-import { answerFromData, composeReply, liveShip, readQuestion } from '../../ai/understand'
+import { answerFromData, choiceOf, composeReply, EMPTY_THREAD, liveShip, previousOf, readQuestion, remember } from '../../ai/understand'
 import { cardText } from '../../ai/stanleyCard'
 import { portDays } from '../../ai/understand/portDays'
 import { getContext, subscribeContext } from '../../account/context'
@@ -43,6 +43,9 @@ function wording(turn: StanleyTurn): string {
     default: return t('stanley.unreachable')
   }
 }
+
+/** What the last turns were about, for a follow-up like "and how much?". In memory only, shared by the dialog and the chat, and forgotten after ten minutes or a change of stage (see understand/thread.ts). */
+let thread = EMPTY_THREAD
 
 /** Whether a question is waiting for its answer. Kept outside the hook so the Stanley chat's history can show the waiting dots where the answer will land. */
 let waiting = false
@@ -92,10 +95,23 @@ export function useStanleyAsk() {
     const withUser = [...getStanleyThread(), asked]
     setStanleyThread(withUser)
     onAccepted?.()
+    // A typed answer to a clarifying question ("the first one", "yes", "no") is answered here and never sent on; anything else may lean on the last topic.
+    const choice = screen(asked.text) ? null : choiceOf(asked.text, thread, at, stage)
+    if (choice) {
+      const picked = 'pick' in choice
+      const understoodPick = picked ? readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports, previous: { topic: choice.pick, acts: thread.acts, entities: thread.entities, force: true } }) : null
+      const composedPick = understoodPick ? composeReply(understoodPick, { kind: 'offtopic', existing: [] }, { text: asked.text, stage }) : null
+      thread = understoodPick ? remember(thread, understoodPick, Date.now(), stage) : { ...thread, options: [] }
+      setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: composedPick?.text ?? t('understand.declined'), at: Date.now(), kind: 'answer', actions: composedPick?.actions ?? [] }])
+      countUnderstood([`outcome:${picked ? 'confident' : 'skipped'}`, ...(composedPick?.topic ? [`topic:${composedPick.topic}`] : [])])
+      setNow(Date.now())
+      return
+    }
+    const previous = previousOf(thread, at, stage)
     // Away from the ship: the safety screen still comes first (an emergency goes to the handoff below); anything else is answered here, from what the app holds.
     if (awayFacts && !screen(asked.text)) {
       const topic = awayTopic(asked.text)
-      const away = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports }), { kind: 'answer', source: 'library', existing: [] })
+      const away = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports }), { kind: 'answer', source: 'library', existing: [] }, { text: asked.text, stage })
       setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: awayAnswer(topic, awayFacts, t as (k: string, p?: Record<string, string | number>) => string), at: Date.now(), kind: 'answer', actions: away.actions }])
       countUnderstood([`outcome:${away.outcome}`])
       countTier('library', `away:${topic ?? 'none'}`)
@@ -114,7 +130,9 @@ export function useStanleyAsk() {
     let turn: StanleyTurn
     const id = `a-${at}-${withUser.length}`
     // A plain question about a named thing (hours, where, price, what it is) is answered from the app's own data, as a card; the safety screen and the library have already had their turn, and a question about the guest goes on to the server.
-    const understood = readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports })
+    const understood = readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports, previous })
+    // A question that tripped the safety screen is never carried into the next one.
+    thread = screen(asked.text) ? EMPTY_THREAD : remember(thread, understood, Date.now(), stage)
     const direct = !known && !route && decision.kind === 'server' ? answerFromData(asked.text, understood, stage && ABOARD.includes(stage) ? liveShip(sailing, Date.now()) : null) : null
     if (direct) { source = 'ship'; turn = { kind: 'answer', text: cardText(direct), handoff: null, fallback: null, card: direct } }
     else if (known) { source = 'library'; link = known.link; entryId = known.id; turn = { kind: 'answer', text: answerOf(known), handoff: null, fallback: null } }
@@ -131,7 +149,7 @@ export function useStanleyAsk() {
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
     const own = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
     // Understand the question with no model: pills for the likeliest screens under the answer, and where there was no answer at all, words and pills of its own.
-    const composed = composeReply(understood, { kind: turn.kind, source, scripted: turn.tier === 'model' && turn.source === 'scripted', existing: own })
+    const composed = composeReply(understood, { kind: turn.kind, source, scripted: turn.tier === 'model' && turn.source === 'scripted', existing: own }, { text: asked.text, stage })
     const actions = composed.actions
     const shown: StanleyTurn = composed.replaced ? { kind: 'answer', text: composed.text ?? '', handoff: null, fallback: null } : turn
     countUnderstood([`outcome:${composed.replaced ? 'replaced' : composed.outcome}`, ...(composed.topic ? [`topic:${composed.topic}`] : [])])

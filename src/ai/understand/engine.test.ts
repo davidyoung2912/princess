@@ -126,7 +126,7 @@ describe('what the guest sees', () => {
     const c = composeReply(readQuestion('asdfgh', {}), facts({ kind: 'unavailable' }))
     expect(c.replaced).toBe(true)
     expect(c.text).toBe(t('understand.miss'))
-    expect(c.actions.map((a) => a.path)).toEqual(['/ship/search', '/me/help', '/me/contact'])
+    expect(c.actions.map((a) => a.path)).toEqual(['/ship/search', '/', '/me/contact'])
   })
   it('leaves a canned server answer in place only when it is not canned', () => {
     expect(composeReply(spa, facts({ scripted: true })).replaced).toBe(true)

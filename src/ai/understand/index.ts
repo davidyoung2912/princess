@@ -1,18 +1,20 @@
 /** The understanding engine, joined to the app's words (docs/stanley-answers-plan.md). Everything else in this folder is pure and has no idea what a locale is. */
 import { t, type StringKey } from '../../i18n'
-import type { JourneyStage } from '../../routes/hubs'
+import { STAGE_ACTION, type JourneyStage } from '../../routes/hubs'
+import type { Pill } from './understand'
 import { compose, type Composed, type ReplyFacts, type Words } from './reply'
 import type { EntityKind } from './entities'
-import { understand, type Understood } from './understand'
+import { understand, type Previous, type Understood } from './understand'
 import { directAnswer, type LiveShip } from './answers'
 import { formatTime } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
 import type { StanleyCard } from '../stanleyCard'
 
 export type { Composed, ReplyFacts } from './reply'
-export type { Understood, Pill, Outcome, Named } from './understand'
+export type { Understood, Pill, Outcome, Named, Previous } from './understand'
+export { EMPTY_THREAD, choiceOf, previousOf, remember, type Choice, type Thread } from './thread'
 
-export interface Where { stage?: JourneyStage; hasBooking?: boolean; screenId?: string; portDays?: Readonly<Record<string, number>> }
+export interface Where { stage?: JourneyStage; hasBooking?: boolean; screenId?: string; portDays?: Readonly<Record<string, number>>; previous?: Previous }
 
 /** The words on a pill. */
 export const pillLabel = (destination: string): string => t(`understand.pill.${destination}` as StringKey)
@@ -23,17 +25,31 @@ export const entityLabel = (kind: EntityKind, name: string, variant: 'open' | 't
 /** Reads a question as this guest, right now. */
 export const readQuestion = (text: string, where: Where): Understood => understand(text, where, pillLabel, entityLabel)
 
-const words = (): Words => ({
+/** What the honest miss needs to know: the guest's words (for the search pill) and their stage (for its home screen). */
+export interface Asked { text: string; stage?: JourneyStage }
+
+const SEARCH_WORDS = 40
+
+const words = (asked: Asked): Words => ({
   topic: (id) => t(`understand.topic.${id}` as StringKey),
   say: (act, topic) => t(`understand.say.${act}` as StringKey, { topic }),
   named: (name) => t('understand.named', { name }),
+  clarify: (topics) => t('understand.clarify', { options: topics.length === 2 ? t('understand.clarify.two', { a: topics[0]!, b: topics[1]! }) : t('understand.clarify.three', { a: topics[0]!, b: topics[1]!, c: topics[2] ?? '' }) }),
   ambiguous: t('understand.ambiguous'),
   miss: t('understand.miss'),
-  fallback: ['search', 'help', 'contact'].map((id) => ({ id, label: pillLabel(id), path: ({ search: '/ship/search', help: '/me/help', contact: '/me/contact' } as const)[id as 'search'] })),
+  fallback: missPills(asked),
 })
 
+/** The three ways on after a miss: search the app for the guest's own words, browse from where they are in the trip, or talk to a person. */
+export function missPills(asked: Asked): Pill[] {
+  const typed = asked.text.replace(/\s+/g, ' ').trim()
+  const short = typed.length > SEARCH_WORDS ? `${typed.slice(0, SEARCH_WORDS - 1).trimEnd()}…` : typed
+  const search: Pill = typed ? { id: 'search', label: t('understand.miss.search', { words: short }), path: `/ship/search?q=${encodeURIComponent(typed.slice(0, 80))}` } : { id: 'search', label: pillLabel('search'), path: '/ship/search' }
+  return [search, { id: 'browse', label: t('understand.miss.browse'), path: asked.stage ? STAGE_ACTION[asked.stage] : '/' }, { id: 'contact', label: t('understand.miss.person'), path: '/me/contact' }]
+}
+
 /** What to show for a reply once the question is understood: new words if it was no answer, and the pills. */
-export const composeReply = (understood: Understood, facts: ReplyFacts): Composed => compose(understood, facts, words())
+export const composeReply = (understood: Understood, facts: ReplyFacts, asked: Asked = { text: '' }): Composed => compose(understood, facts, words(asked))
 
 /** A card that answers the question from the app's own data, or null when the pills and the server should (see answers.ts). */
 export const answerFromData = (text: string, understood: Understood, live: LiveShip | null): StanleyCard | null =>

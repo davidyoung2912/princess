@@ -21,7 +21,7 @@ public sealed record StanleyCardDto(string Id, string Title, List<string> Lines,
 
 public static class StanleyChips
 {
-    public const string Booking = "Your booking", Schedule = "Ship schedule", Policy = "Princess policy", Estimated = "Estimated", Cached = "Cached";
+    public const string Booking = "Your booking", Schedule = "Ship schedule", Policy = "Princess policy", Estimated = "Estimated", Cached = "Cached", Live = "Live from the ship";
 }
 
 /// <summary>What a resolver sees: the question, the guest's trip facts and the time the facts were read against.</summary>

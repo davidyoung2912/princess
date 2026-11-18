@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { formatTemp } from '../../domain/readiness'
 import { useSettings } from '../../hooks/useSettings'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { PORTS } from '../../domain/sailings'
 import { searchChips } from '../../domain/ease'
 import { ABOARD_STAGES } from '../../routes/stageHome'
@@ -90,7 +90,9 @@ function GlanceBody({ p, units }: { p: ShipPosition; units: Units }) {
 
 /** Search across all content (OB-07): venues, dishes, shows, services, tours, ports and screens. */
 export function SearchScreen() {
-  const [query, setQuery] = useState('')
+  // A pill can open the search with the guest's words already in the box; they can change or clear them.
+  const [params] = useSearchParams()
+  const [query, setQuery] = useState(() => (params.get('q') ?? '').replace(/\s+/g, ' ').trim().slice(0, 80))
   const [recent, setRecent] = useState<Recent[]>(loadRecent)
   const remember = (item: Recent) => setRecent(rememberSearch(recent, item))
   const forget = () => { clearRecent(); setRecent([]) }

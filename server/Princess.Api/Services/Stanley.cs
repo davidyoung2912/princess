@@ -60,7 +60,7 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         // The active voyage: the one the device named, or the only one. With two possible and none named, Stanley asks and never picks (phase 4).
         var packet = packets is null ? null : await packets.BuildAsync(user, context, ct);
         var trip = await trips.LoadAsync(user, packet?.Choice.Chosen?.SailingId, ct);
-        if (packet is { Choice.MustAsk: true } && (StanleyResolvers.Takes(turns.Message) || StanleyRouter.Route(turns.Message, context.Stage, true).Route == StanleyRoute.Trip))
+        if (packet is { Choice.MustAsk: true } && (StanleyResolvers.Takes(turns.Message) || StanleyLive.Takes(turns.Message) || StanleyRouter.Route(turns.Message, context.Stage, true).Route == StanleyRoute.Trip))
             return await End(WhichTrip(packet.Choice.Options), "whichTrip", "asked");
         if (packet is { Choice.MustAsk: true }) trip = null;
         if (StanleyRules.IsMuster(turns.Message))
@@ -99,7 +99,8 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
             // "What changed" and "explain this change" are answered from the change engine (phase 11), the same cards as Home, with each change's source and how sure it is.
             var useChanges = o.Switches.Changes && changes is not null;
             var explain = useChanges && StanleyChangeRules.IsExplainQuestion(turns.Message);
-            var resolved = explain ? null : StanleyResolvers.Resolve(turns.Message, trip, trip.AsOf ?? clock.UtcNow);
+            // Live ship facts (next port, weather, sea state, what is on soon) are read from the ship's services at this moment; they come before the booking's cards.
+            var resolved = explain ? null : StanleyLive.Resolve(turns.Message, trip, clock.UtcNow) ?? StanleyResolvers.Resolve(turns.Message, trip, trip.AsOf ?? clock.UtcNow);
             if (useChanges && (explain || resolved?.Id == "changed"))
                 resolved = await changes!.ChatAsync(user, packet?.Choice.Chosen?.SailingId ?? context.SailingId, explain, ct) ?? resolved;
             if (resolved is { } card)
