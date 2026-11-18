@@ -17,7 +17,7 @@ public sealed record ChallengeUsage(int Requests, int Attempts);
 /// <summary>Where one person's failed password tries from one address stand.</summary>
 public sealed record ThrottleState(int Failures, int Strikes, DateTime? LockedUntil);
 
-public sealed record NewAccount(string Email, string PasswordHash, string FirstName, string LastName, DateOnly Dob, string? ReviewReason = null);
+public sealed record NewAccount(string Email, string PasswordHash, string FirstName, string LastName, DateOnly Dob, string? ReviewReason = null, string? Phone = null);
 
 /// <summary>Another adult account with the same name and date of birth as a flagged one (IDN-03). Never an email address.</summary>
 public sealed record ReviewMatch(Guid Id, string AccountNumber, DateTime CreatedAt);

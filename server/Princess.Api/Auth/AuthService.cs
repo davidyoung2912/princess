@@ -174,6 +174,9 @@ public sealed class AuthService(
         var last = request.LastName?.Trim();
         if (email is null || !ValidPassword(request.Password) || string.IsNullOrEmpty(first) || string.IsNullOrEmpty(last) || first.Length > 60 || last.Length > 60)
             throw ApiException.Invalid();
+        var phone = request.Phone?.Trim();
+        if (!string.IsNullOrEmpty(phone) && (phone.Length > 30 || phone.Any(ch => !(char.IsAsciiDigit(ch) || " +().-".Contains(ch))) || PhoneRules.Normalise(phone).Count(char.IsAsciiDigit) is < 7 or > 15))
+            throw ApiException.Invalid();
         if (!DateOnly.TryParseExact(request.Dob, "yyyy-MM-dd", out var dob) || !AdultOn(dob, DateOnly.FromDateTime(clock.UtcNow)))
             throw ApiException.Invalid("tooYoung");
 
@@ -184,7 +187,7 @@ public sealed class AuthService(
             await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.register", Outcome = AuditOutcome.Denied, Detail = AuditContext.Json(new { reason = "possibleDuplicate", attempt = AuditContext.Fingerprint(email) }) }, ct);
             throw ApiException.Conflict("possibleDuplicate");
         }
-        var id = await signIn.CreateAccountAsync(new NewAccount(email, hasher.Hash(request.Password!), first, last, dob, twin is null ? null : "duplicate"), clock.UtcNow, ct)
+        var id = await signIn.CreateAccountAsync(new NewAccount(email, hasher.Hash(request.Password!), first, last, dob, twin is null ? null : "duplicate", string.IsNullOrEmpty(phone) ? null : phone), clock.UtcNow, ct)
             ?? await EmailTakenAsync(email, ct);
         var user = await users.FindByIdAsync(id, ct) ?? throw ApiException.Invalid();
         await Audit("auth.register", AuditOutcome.Success, user, twin is null ? null : new { review = "duplicate", matches = twin }, ct);

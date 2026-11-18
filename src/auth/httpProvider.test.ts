@@ -161,7 +161,7 @@ describe('createHttpAuthProvider', () => {
   describe('sign-up and recovery', () => {
     it('registers and signs in, trimming the email', async () => {
       const { auth, s, storage } = make(() => reply(200, session(1, 'new@example.com')))
-      const got = await auth.account!.register({ email: ' new@example.com ', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01' })
+      const got = await auth.account!.register({ email: ' new@example.com ', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+1 555 123 4567' })
       expect(got.user?.email).toBe('new@example.com')
       expect(s.calls[0]).toMatchObject({ url: '/api/v1/auth/register', auth: null })
       expect(JSON.parse(s.calls[0].body!).email).toBe('new@example.com')
@@ -169,12 +169,12 @@ describe('createHttpAuthProvider', () => {
     })
     it('sends confirmedDifferent and keeps the review flag', async () => {
       const { auth, s } = make(() => reply(200, { ...session(1), user: { ...user('n@b.co'), needsReview: true } }))
-      const got = await auth.account!.register({ email: 'n@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', confirmedDifferent: true })
+      const got = await auth.account!.register({ email: 'n@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+1 555 123 4567', confirmedDifferent: true })
       expect(JSON.parse(s.calls.at(-1)!.body!)).toMatchObject({ confirmedDifferent: true })
       expect(got.user?.needsReview).toBe(true)
     })
     it('maps the named failures', async () => {
-      const input = { email: 'a@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01' }
+      const input = { email: 'a@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+1 555 123 4567' }
       await expect(make(() => reply(409, { title: 'emailTaken' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'emailTaken' })
       await expect(make(() => reply(409, { title: 'possibleDuplicate' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'possibleDuplicate' })
       await expect(make(() => reply(400, { title: 'tooYoung' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'tooYoung' })

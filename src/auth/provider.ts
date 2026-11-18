@@ -35,7 +35,7 @@ export type Credentials =
 export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'emailTaken' | 'tooYoung' | 'badCode' | 'possibleDuplicate' | 'invalid'
 
 /** What a new account needs. `dob` is "YYYY-MM-DD"; the account holder must be an adult. */
-export interface Registration { email: string; password: string; firstName: string; lastName: string; dob: string; /** Sent after a `possibleDuplicate` answer, when the person says it is not them. */ confirmedDifferent?: boolean }
+export interface Registration { email: string; password: string; firstName: string; lastName: string; dob: string; /** The phone number, as typed. */ phone: string; /** Sent after a `possibleDuplicate` answer, when the person says it is not them. */ confirmedDifferent?: boolean }
 
 export type CodePurpose = 'reset' | 'magic'
 

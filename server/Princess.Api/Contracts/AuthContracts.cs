@@ -36,7 +36,7 @@ public sealed record SessionResponse(string AccessToken, long ExpiresAt, string 
 public sealed record ViewAsResponse(string AccessToken, long ExpiresAt, MeResponse User);
 
 /// <summary>Sign-up. The account holder must be an adult; children are added as supervised guests by their booker. <c>Dob</c> is "yyyy-MM-dd".</summary>
-public sealed record RegisterRequest(string? Email, string? Password, string? FirstName, string? LastName, string? Dob, bool? ConfirmedDifferent = null);
+public sealed record RegisterRequest(string? Email, string? Password, string? FirstName, string? LastName, string? Dob, bool? ConfirmedDifferent = null, string? Phone = null);
 
 /// <summary>Asks for a one-time code by email: for <c>/auth/forgot</c> a password reset, for <c>/auth/magic</c> a sign-in.</summary>
 public sealed record CodeRequest(string? Email);

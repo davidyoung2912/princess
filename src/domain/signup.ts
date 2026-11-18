@@ -5,9 +5,12 @@ import { limit } from './limits'
 export const MIN_PASSWORD = 10
 export let MIN_ACCOUNT_AGE = 18
 
-export type SignupProblem = 'email' | 'password' | 'firstName' | 'lastName' | 'dob' | 'tooYoung' | 'confirm'
+export type SignupProblem = 'email' | 'password' | 'firstName' | 'lastName' | 'dob' | 'phone' | 'tooYoung' | 'confirm'
 
 export const isEmail = (s: string): boolean => /^[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+$/.test(s.trim()) && s.trim().length <= 254
+
+/** A phone number people can reach: 7 to 15 digits, optionally with a leading plus, spaces, dashes, dots and brackets. */
+export const isPhone = (s: string): boolean => /^\+?[\d\s().-]+$/.test(s.trim()) && s.replace(/\D/g, '').length >= 7 && s.replace(/\D/g, '').length <= 15
 
 const isRealDate = (dob: string): boolean => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob)
@@ -31,6 +34,7 @@ export function signupProblems(r: Registration, today: string, confirm?: string)
   if (!r.lastName.trim() || r.lastName.trim().length > 60) out.push('lastName')
   if (!isRealDate(r.dob)) out.push('dob')
   else if (!isAdult(r.dob, today)) out.push('tooYoung')
+  if (!isPhone(r.phone)) out.push('phone')
   return out
 }
 
