@@ -19,7 +19,7 @@ export interface PhoneCountry {
 const c = (iso: string, name: string, code: string, min: number, max: number, pattern: string): PhoneCountry => ({ iso, name, code, min, max, pattern })
 
 export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
-  c('us', 'United States, Canada and Caribbean', '1', 10, 10, '(###) ###-####'),
+  c('us', 'USA / Canada', '1', 10, 10, '(###) ###-####'),
   c('gb', 'United Kingdom', '44', 9, 10, '#### ######'),
   c('au', 'Australia', '61', 9, 9, '### ### ###'),
   c('nz', 'New Zealand', '64', 8, 10, '## ### ####'),
@@ -58,7 +58,7 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   c('id', 'Indonesia', '62', 8, 12, '### #### ####'),
   c('vn', 'Vietnam', '84', 9, 10, '## ### ## ##'),
   c('in', 'India', '91', 10, 10, '##### #####'),
-  c('ae', 'United Arab Emirates', '971', 8, 9, '## ### ####'),
+  c('ae', 'UAE', '971', 8, 9, '## ### ####'),
   c('sa', 'Saudi Arabia', '966', 9, 9, '## ### ####'),
   c('il', 'Israel', '972', 8, 9, '## ### ####'),
   c('eg', 'Egypt', '20', 9, 10, '## #### ####'),

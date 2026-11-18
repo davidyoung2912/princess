@@ -9,7 +9,7 @@ export interface TourStep {
   /** Which side of the target the card would like to sit on. */
   side: Side
   /** The icon shown beside the title (a key into the tour's icon table). */
-  icon: 'nav' | 'search' | 'stanley' | 'help' | 'menu' | 'date' | 'header' | 'tip'
+  icon: 'nav' | 'search' | 'stanley' | 'help' | 'menu' | 'date' | 'header' | 'tip' | 'chat' | 'today' | 'explorers' | 'weather' | 'navigation'
 }
 
 /**
@@ -18,6 +18,11 @@ export interface TourStep {
  */
 export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'date', target: 'date', side: 'bottom', icon: 'date' },
+  { id: 'chat', target: 'chat', side: 'bottom', icon: 'chat' },
+  { id: 'today', target: 'today', side: 'bottom', icon: 'today' },
+  { id: 'explorers', target: 'explorers', side: 'bottom', icon: 'explorers' },
+  { id: 'weather', target: 'weather', side: 'bottom', icon: 'weather' },
+  { id: 'navigation', target: 'navigation', side: 'bottom', icon: 'navigation' },
   { id: 'header', target: 'header', side: 'bottom', icon: 'header' },
   { id: 'tip', target: 'tip', side: 'bottom', icon: 'tip' },
   { id: 'nav', target: 'nav', side: 'right', icon: 'nav' },

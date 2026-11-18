@@ -7,23 +7,30 @@ import { useDialog } from '../hooks/useDialog'
 import { loadTourSeen, markTourStep, skipTour, subscribeTour } from '../settings/tour'
 import { nextStep, TOUR_STEPS, type TourStep } from '../tour/steps'
 import { placeCard, spotlight, type Box, type Side } from '../tour/placement'
-import { CalendarClock, Compass, Help, Lightbulb, Menu, Search, Sparkles } from './icons'
+import { CalendarClock, CloudSun, Compass, Help, Home, Info, Lightbulb, MapPin, Menu, MessagesSquare, Plan, Search, Sparkles } from './icons'
 import { Button } from './Button'
 
 const ICONS: Record<TourStep['icon'], ComponentType<{ 'aria-hidden'?: boolean | 'true' | 'false'; className?: string }>> = {
-  nav: Compass, search: Search, stanley: Sparkles, help: Help, menu: Menu, date: CalendarClock, header: Compass, tip: Lightbulb,
+  nav: Home, search: Search, stanley: Sparkles, help: Help, menu: Menu, date: CalendarClock, header: Info, tip: Lightbulb,
+  chat: MessagesSquare, today: Plan, explorers: MapPin, weather: CloudSun, navigation: Compass,
 }
 
-/** The first part of the screen marked `data-tour="<name>"` that is actually showing, or null. */
-function findTarget(name: string): HTMLElement | null {
-  for (const el of document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`)) {
+/** Every part of the screen marked `data-tour="<name>"` that is showing. */
+const targetsOf = (name: string): HTMLElement[] => [...document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`)].filter((el) => getComputedStyle(el).visibility !== 'hidden')
+
+/** The box around the parts marked `<name>`: where they are on screen, and for several (a row of buttons) the box around them all, cut to the carousel they scroll in. Null when none is showing. */
+function targetBox(name: string): Box | null {
+  let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity
+  for (const el of targetsOf(name)) {
     const r = el.getBoundingClientRect()
-    if (r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden') return el
+    const clip = el.closest('.testbar__at')?.getBoundingClientRect()
+    const l = Math.max(r.left, clip?.left ?? -Infinity), rt = Math.min(r.right, clip?.right ?? Infinity)
+    if (r.width <= 0 || r.height <= 0 || rt - l < 1) continue
+    left = Math.min(left, l); right = Math.max(right, rt); top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom)
   }
-  return null
+  return right > left ? { left, top, width: right - left, height: bottom - top } : null
 }
 
-const boxOf = (el: HTMLElement): Box => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height } }
 const view = () => ({ width: document.documentElement.clientWidth, height: window.innerHeight })
 
 /**
@@ -39,8 +46,8 @@ export function Tour({ paused = false }: { paused?: boolean }) {
     if (paused) return
     const look = () => setStep((now) => {
       if (document.querySelector('.dialog-backdrop')) return now
-      if (now && !seen.includes(now.id) && findTarget(now.target)) return now
-      return nextStep(seen, (name) => findTarget(name) !== null)
+      if (now && !seen.includes(now.id) && targetBox(now.target)) return now
+      return nextStep(seen, (name) => targetBox(name) !== null)
     })
     queueMicrotask(look)
     return startVisibleInterval(look, 700)
@@ -61,18 +68,21 @@ function TourCard({ step, count, last }: { step: TourStep; count: string; last: 
   const Icon = ICONS[step.icon]
 
   const measure = useCallback(() => {
-    const el = findTarget(step.target)
-    if (el) setTarget(boxOf(el))
+    const found = targetBox(step.target)
+    if (found) setTarget(found)
     setVp(view())
   }, [step.target])
 
   // Bring the part being explained into view, then keep the glass and the card lined up with it through scrolling and resizing.
   useLayoutEffect(() => {
-    const el = findTarget(step.target)
+    const el = targetsOf(step.target)[0]
     if (el) {
       const r = el.getBoundingClientRect()
       const v = view()
       if (r.top < 0 || r.bottom > v.height) el.scrollIntoView({ block: 'center', behavior: 'auto' })
+      // A button inside the scrolling row of ship buttons is slid to the start of the row.
+      const track = el.closest<HTMLElement>('.testbar__at')
+      if (track) track.scrollTo({ left: track.scrollLeft + r.left - track.getBoundingClientRect().left, behavior: 'auto' })
     }
     const frame = requestAnimationFrame(measure)
     box.current?.querySelector<HTMLElement>('.tour__got')?.focus({ preventScroll: true })

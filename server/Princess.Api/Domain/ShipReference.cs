@@ -49,31 +49,31 @@ public static class ShipReference
  "highlights": [
   {
    "title": "The Piazza",
-   "body": "Three levels of cafés, bars and live music under the Sphere, with game shows and roaming performers."
+   "body": "The heart of the ship: a three-level gathering place under the glass Sphere, open from morning coffee until late. Each level has cafés, bars and live music, and through the day there are game shows, roaming performers and dancing. It is the easiest place to meet your group, so many guests make it their usual meeting point."
   },
   {
    "title": "The Dome",
-   "body": "A glass dome on decks 17 and 18: a pool by day, acrobatic theatre at night, and a dance party late."
+   "body": "A glass dome on decks 17 and 18. By day it is a pool and lounge with views out to sea in any weather. By night it becomes a theatre with acrobatic shows, and late in the evening it turns into a dance party. Show times appear in Today’s Plan, and seats go quickly, so arrive early."
   },
   {
    "title": "Princess Arena",
-   "body": "The main show venue, seating about 900, set up three ways for different productions."
+   "body": "The main show venue, seating about 900. The seating is set up three ways (a traditional stage, a keyhole and in the round) so each production can use the room differently. Arrive about half an hour early for a good seat, and ask a crew member about wheelchair-accessible places."
   },
   {
    "title": "Dining included",
-   "body": "Three dining rooms, the Eatery buffet, the Americana Diner, casual grills and pizza, plus 24-hour room service."
+   "body": "Three dining rooms serve breakfast, lunch and dinner at no extra charge, with menus that change each night. The Eatery buffet, the Americana Diner, casual grills and pizza are open through the day, and room service runs 24 hours. Menus flag dietary needs and allergens, and you can tell your server about them on your first night."
   },
   {
    "title": "Specialty dining",
-   "body": "Steakhouse, Italian, seafood, sushi, teppanyaki and a prix fixe with sea views, at an extra charge unless your package covers them."
+   "body": "Steakhouse, Italian, seafood, sushi, teppanyaki and a prix fixe with sea views. Each is at an extra charge unless your package covers it, and tables are limited, so reserve before you sail or on the first day. Stanley can check what your package covers and book a table for you."
   },
   {
    "title": "Kids and teens",
-   "body": "Firefly Park (3–7), Neon Grove (8–12) and The Underground (13–17), all on decks 6 and 7."
+   "body": "Three clubs by age, all on decks 6 and 7: Firefly Park (3–7), Neon Grove (8–12) and The Underground (13–17). Each has games, crafts, sports and evening activities led by youth staff. Register your children before you sail so signing in at the door is quick, and ask staff about pickup and sign-out rules."
   },
   {
    "title": "The Sanctuary",
-   "body": "An adults-only retreat on deck 18 for guests in the Sanctuary Collection of 215 staterooms."
+   "body": "An adults-only retreat on deck 18 for guests in the Sanctuary Collection of 215 staterooms. It is a quieter place to lounge, with its own bar and dining, away from the busier decks. Guests under 18 are not admitted."
   }
  ],
  "categories": [
@@ -83,7 +83,7 @@ public static class ShipReference
    "code": "IF",
    "size": "135–145 sq ft",
    "view": "No window",
-   "summary": "The best-value way to sail. Sleeps two to four.",
+   "summary": "The best-value way to sail. Sleeps two to four, with two lower beds that can be made into a queen and pull-down beds for a third and fourth guest. There is no window, so the room stays dark and quiet for sleeping in. Every room has a private bathroom with a shower, a desk, a TV and a safe, and you have the same access to everything on the ship as in any other room.",
    "ratio": 1
   },
   {
@@ -92,7 +92,7 @@ public static class ShipReference
    "code": "OV",
    "size": "About 215 sq ft",
    "view": "Large window, no balcony",
-   "summary": "Daylight and a sea view without a balcony.",
+   "summary": "Daylight and a sea view without a balcony, through a large picture window. Sleeps two to three, with a sitting area, a desk and a private bathroom. A good middle choice if you want to watch each port arrive but would rather not pay for a balcony.",
    "ratio": 1.22
   },
   {
@@ -101,7 +101,7 @@ public static class ShipReference
    "code": "BF",
    "size": "About 236 sq ft",
    "view": "Private balcony",
-   "summary": "Sofa bed, desk, mini-fridge and a balcony to watch each port arrive.",
+   "summary": "Sofa bed, desk, mini-fridge and a balcony to watch each port arrive. Sleeps two to four, with two lower beds that can be made into a queen and a private bathroom with a shower. Step outside for fresh air, an unhurried breakfast and the sunset.",
    "ratio": 1.45
   },
   {
@@ -110,7 +110,7 @@ public static class ShipReference
    "code": "MB",
    "size": "Larger than a balcony",
    "view": "Private balcony",
-   "summary": "Extra room, a sitting area and a larger bathroom.",
+   "summary": "Extra room, a sitting area and a larger bathroom. A sofa bed makes space for a third guest, and there is a private balcony. A good choice for a family of three or four, or for anyone who spends a lot of time in the room. Suite guests pay the higher daily gratuity.",
    "ratio": 1.9,
    "suite": true
   },
@@ -120,7 +120,7 @@ public static class ShipReference
    "code": "M1",
    "size": "Mini-suite size",
    "view": "Private balcony",
-   "summary": "Includes the adults-only Sanctuary, the Sanctuary restaurant and the Premier package.",
+   "summary": "Includes the adults-only Sanctuary, the Sanctuary restaurant and the Premier package, which bundles extras such as drinks, Wi-Fi and specialty dining. Part of the Sanctuary Collection of 215 staterooms, with a private balcony and the extra room of a mini-suite. Suite guests pay the higher daily gratuity.",
    "ratio": 2.45,
    "suite": true
   },
@@ -130,7 +130,7 @@ public static class ShipReference
    "code": "SS",
    "size": "About 270 sq ft plus balcony",
    "view": "Large balcony",
-   "summary": "Suite lounge access, priority boarding and the Premier package.",
+   "summary": "Suite lounge access, priority boarding and the Premier package. The largest rooms on the ship, with a large balcony, a separate living area and space to sleep up to four. Suite guests pay the higher daily gratuity.",
    "ratio": 3.4,
    "suite": true
   }

@@ -10,8 +10,9 @@ import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { useNow } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t } from '../../i18n'
+import type { StringKey } from '../../i18n'
 import { api } from '../../runtime'
-import { Compass } from '../icons'
+import { Compass, Games } from '../icons'
 import { ExplorerIcon } from './ExplorerIcon'
 import { useDiningView } from './dining/diningView'
 import { useSpaView } from './spa/spaView'
@@ -39,10 +40,16 @@ function Tiles({ stage, facts, counts, next }: { stage: JourneyStage; facts: (id
           return (
             <li key={id} className="card">
               <h3><Icon id={id} /> <Link to={EXPLORER_ROUTES[id]}>{t(EXPLORER_TITLE_KEYS[id])}</Link></h3>
+              <p>{t(`explorers.about.${id}` as StringKey)}</p>
               {text && <p className="muted">{text}</p>}
             </li>
           )
         })}
+        <li className="card">
+          <h3><Games className="explorer-icon" aria-hidden="true" focusable="false" /> <Link to="/games-explorer">{t('route.gamesExplorer')}</Link></h3>
+          <p>{t('explorers.about.games')}</p>
+          <p className="muted">{t('explorers.see.games')}</p>
+        </li>
       </ul>
     </section>
   )
