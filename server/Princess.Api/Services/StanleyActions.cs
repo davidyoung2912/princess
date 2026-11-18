@@ -491,6 +491,14 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return new StanleyPreviewFacts("Draft your customs declaration from your ship purchases", lines, ["You"], null,
                     "Nothing is filed with any authority; the official form stays official. You can change or delete the draft on the declaration page, or ask me to take it back.", $"customs|{booking.Number}|{plan.GoodsUsd}");
             }
+            case StanleyActionKinds.PackingStart:
+            {
+                var labels = await planService.PackingStartPlanAsync(user, booking.Number, ct) ?? throw ApiException.Conflict("nothing");
+                var lines = labels.Select(l => $"Add: {l}").ToList();
+                lines.Add("These go on your own packing list on top of the suggested ones. Nothing is ticked, and nothing already on the list is changed.");
+                return new StanleyPreviewFacts("Add to your packing list from your bookings", lines, ["You"], null,
+                    "Nothing is bought or booked. You can remove any item on the packing screen, or ask me to take them all back until you tick one.", $"packing|{booking.Number}|{string.Join(";", labels)}");
+            }
             case StanleyActionKinds.ExcursionPlan:
             {
                 var wishes = await WishesAsync(user, intent, ct);
@@ -646,6 +654,8 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return new StanleyEffectResult(await checkin.PrefillApplyAsync(user, booking.Number, ct));
             case StanleyActionKinds.CustomsDraft:
                 return new StanleyEffectResult(await disembark.CustomsDraftApplyAsync(user, booking.Number, ct));
+            case StanleyActionKinds.PackingStart:
+                return new StanleyEffectResult(await planService.PackingStartApplyAsync(user, booking.Number, ct));
             case StanleyActionKinds.ExcursionPlan:
             {
                 var scope = await scopes.LoadAsync(user, booking.Number, write: true, ct);
@@ -689,6 +699,8 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return (await checkin.PrefillPlanAsync(user, booking.Number, ct)).Count == 0;
             case StanleyActionKinds.CustomsDraft:
                 return await disembark.CustomsDraftPlanAsync(user, booking.Number, ct) is null;
+            case StanleyActionKinds.PackingStart:
+                return await planService.PackingStartPlanAsync(user, booking.Number, ct) is null;
             case StanleyActionKinds.ExcursionPlan:
                 return (intent.Arg("ahead") == "1" ? await planService.ExcursionAheadAsync(user, booking.Number, ct) : await planService.ExcursionPlanAsync(user, booking.Number, ct)) is null;
             default:
@@ -734,6 +746,9 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
             }
             case StanleyActionKinds.CheckinPrefill:
                 await checkin.PrefillUndoAsync(user, booking.Number, effectRef, ct);
+                break;
+            case StanleyActionKinds.PackingStart:
+                await planService.PackingStartUndoAsync(user, booking.Number, effectRef, ct);
                 break;
             case StanleyActionKinds.CustomsDraft:
                 await disembark.CustomsDraftUndoAsync(user, booking.Number, effectRef, ct);

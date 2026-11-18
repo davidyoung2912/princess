@@ -86,6 +86,17 @@ describe('doItFor', () => {
   })
 })
 
+describe('packing start', () => {
+  it('is offered on the packing task by the level rules, with no arguments', () => {
+    const pack = task('prebook.packing', { doIt: 'packing_start' })
+    expect(doItFor(pack, 'helpful', 'home')).toBe('packing_start')
+    expect(doItFor(pack, 'asked', 'home')).toBeNull()
+    expect(doItFor(pack, 'asked', 'asked')).toBe('packing_start')
+    expect(doItFor(pack, 'off', 'asked')).toBeNull()
+    expect(doItArgs('packing_start', 'prebook.packing')).toEqual({})
+  })
+})
+
 describe('tourChoices', () => {
   it('reads the other tours the server named and drops anything odd', () => {
     expect(tourChoices({ alt1: 'coz-beach|Beach day', alt2: 'coz-ruins|Ruins | and more' })).toEqual([{ id: 'coz-beach', name: 'Beach day' }, { id: 'coz-ruins', name: 'Ruins | and more' }])

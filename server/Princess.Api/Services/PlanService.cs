@@ -836,6 +836,43 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         return await PackingViewAsync(c, ct);
     }
 
+    /// <summary>The items Stanley would add to the packing list: a day bag for each booked tour and an outfit for each specialty dinner with a dress code, none the list already has. Null when there is nothing to add. Used to preview, to offer the button and to check an unsure outcome.</summary>
+    public async Task<List<string>?> PackingStartPlanAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        if (c.Today > c.LastDay) return null;
+        var tours = (await plan.ListToursAsync(c.Booking.BookingId, ct)).Where(t => t.Status == "booked").Select(t => ExcursionRules.ById(t.ExcursionId)).OfType<Excursion>();
+        var venues = (await plan.ListTablesAsync(c.Booking.BookingId, ct)).Select(t => DiningRules.VenueById(t.VenueId)).OfType<Venue>();
+        var edits = await plan.ListPackingEditsAsync(c.Booking.BookingId, ct);
+        var state = await PackingAsync(c, ct);
+        var labels = PlanRules.StarterItems(tours, venues, state.Items.Select(i => i.Label).Concat(state.Hidden.Select(i => i.Label)), OwnPackMax - edits.Count(e => e.Kind == "own"));
+        return labels.Count == 0 ? null : labels;
+    }
+
+    /// <summary>Adds the starter items to the guest's own list and answers the ids it made, comma separated, for the undo.</summary>
+    public async Task<string> PackingStartApplyAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var labels = await PackingStartPlanAsync(actor, number, ct) ?? throw ApiException.Conflict("nothing");
+        var c = await LoadAsync(actor, number, true, ct);
+        var ids = new List<string>();
+        foreach (var label in labels)
+        {
+            var id = "c" + Guid.NewGuid().ToString("N")[..12];
+            await plan.SavePackingEditAsync(c.Booking.BookingId, new(id, "own", label, false, null), c.Now, ct);
+            ids.Add(id);
+        }
+        return string.Join(',', ids);
+    }
+
+    /// <summary>Removes the items Stanley added, each only while it is still there and not yet ticked (a ticked one is the guest's now).</summary>
+    public async Task PackingStartUndoAsync(UserRecord actor, string? number, string effectRef, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        var made = effectRef.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+        foreach (var e in (await plan.ListPackingEditsAsync(c.Booking.BookingId, ct)).Where(e => e.Kind == "own" && !e.Done && made.Contains(e.ItemId)))
+            await plan.DeletePackingEditAsync(c.Booking.BookingId, e.ItemId, ct);
+    }
+
     /// <summary>Removes an item the guest added. A suggested item is hidden instead (<see cref="HidePackingAsync"/>).</summary>
     public async Task<PackingViewDto> RemoveOwnPackingAsync(UserRecord actor, string? number, string? id, CancellationToken ct)
     {

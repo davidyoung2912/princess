@@ -37,6 +37,7 @@ public static class StanleyTripSoFarRules
         StanleyActionKinds.CheckinPrefill => "the check-in steps I filled in",
         StanleyActionKinds.CustomsDraft => "the customs draft I made",
         StanleyActionKinds.ExcursionPlan => "the tour I chose for you",
+        StanleyActionKinds.PackingStart => "the packing items I added",
         _ => "",
     };
 

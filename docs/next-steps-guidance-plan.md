@@ -369,6 +369,13 @@ Five ideas: more "Do it for me", say what changed, hand off at stage changes, gr
 - Guide: `GuideTrip.CanPlanTours` (Prebook, not an agent booking, a tour found) puts `doIt: "excursion_plan"` on `prebook.tours`. Client: `doItArgs(kind, taskId)` sends `ahead` for that task only. The task is still done by a booked tour, so the button goes when every port day has a tour.
 - Tests: `doit.test.ts` (source gates), `stanley.test.ts` (args); C# `ExcursionPlanTests.AheadLeavesADayTheGuestHasPlanned...`. Not run or compiled (no `dotnet`).
 
+**G10c, packing list start (built).**
+- New action kind `packing_start` (server `StanleyActionKinds`, in the model's `propose_action` list, a server action with undo; the kind count is now thirteen). The suggested list was already built from the season, the weather and the party, so Stanley adds only what it does not name: from the guest's own bookings, a "Day bag for {tour}" for each booked tour and an "Outfit for {restaurant}: {dress}" for each specialty restaurant with a dress code and a table booked (`PlanRules.StarterItems`, pure: at most six, within the 20-item own-list limit, 60 characters each, never an item the list already has or the guest hid).
+- They go in as the guest's own items, unticked, through the same edit store as typing one. The preview lists each; Confirm adds them; undo removes only those items, only while not ticked. Nothing is bought or booked.
+- Guide: `GuideTrip.CanStartPacking` (Prebook, not an agent booking, something to add) puts `doIt: "packing_start"` on `prebook.packing`. Client: `GuideDoIt` has five kinds, receipt link "See your packing list".
+- Tests: `doit.test.ts` (source gates), `stanley.test.ts` (levels), release gate's kind list; C# `PackingStartTests`. Not run or compiled (no `dotnet`).
+- **Next:** G10d getting-there plan, then G10e to G10h.
+
 **G10 backlog (the full list, so nothing is lost between phases).**
 - Do it for me, best candidates (most effort saved, safe undo): dinner on sea days (G10a, done); excursion booking in Prebook, not just port day (G10b); packing list started from the sailing, the weather and the party (G10c); arrival-time and getting-there plan from flight or drive time (G10d).
 - Say what changed (G10e): if a tender is late, a port changes or the weather turns, the guide reorders and Stanley says why. A calm "your all-aboard time moved" beats any nudge.

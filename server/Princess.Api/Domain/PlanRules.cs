@@ -191,6 +191,24 @@ public static class PlanRules
         return items;
     }
 
+    /// <summary>The most items Stanley adds to a packing list in one go.</summary>
+    public const int StarterMax = 6;
+
+    /// <summary>
+    /// The items Stanley adds to the guest's own packing list, from what the party has actually booked and that the suggested list does not name: a day bag for each booked tour, and an outfit for each specialty
+    /// restaurant that has a dress code. At most <see cref="StarterMax"/>, never past <paramref name="room"/> and never an item the list already has (same words, any case). Each is 60 characters or fewer.
+    /// </summary>
+    public static List<string> StarterItems(IEnumerable<Excursion> tours, IEnumerable<Venue> venues, IEnumerable<string> have, int room)
+    {
+        var taken = new HashSet<string>(have, StringComparer.OrdinalIgnoreCase);
+        var labels = new List<string>();
+        static string Cut(string s) => s.Length <= 60 ? s : s[..59].TrimEnd() + "…";
+        void Add(string label) { label = Cut(label); if (labels.Count < Math.Min(StarterMax, room) && taken.Add(label)) labels.Add(label); }
+        foreach (var x in tours.DistinctBy(x => x.Id).OrderBy(x => x.Id, StringComparer.Ordinal)) Add($"Day bag for {x.Name}");
+        foreach (var v in venues.DistinctBy(v => v.Id).Where(v => v.Kind != "main" && v.Dress.Trim().Length > 0).OrderBy(v => v.Id, StringComparer.Ordinal)) Add($"Outfit for {v.Name}: {v.Dress.Trim()}");
+        return labels;
+    }
+
     // ---- Overview ----
 
     public sealed record PlanEntry(string Kind, string Time, string Name, string? Id, List<Guid> Guests);

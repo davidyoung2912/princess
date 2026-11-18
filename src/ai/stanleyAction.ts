@@ -5,10 +5,10 @@ import { UNDO_ASSISTANT_MIN, isHhmm, type Change, type PlanEntry, type PlanRow }
  * the device only shows it, sends the guest's Confirm with an idempotency key, and shows the receipt. A day-plan change and a reminder are applied here, from the confirmed receipt, because
  * those live on the device. Framework-free, so it is tested in node.
  */
-export type ActionKind = 'order_item' | 'add_excursion' | 'move_dinner' | 'reserve_dinner' | 'draft_case' | 'plan_change' | 'remind_me' | 'create_poll' | 'change_seating' | 'checkin_prefill' | 'customs_draft' | 'excursion_plan'
+export type ActionKind = 'order_item' | 'add_excursion' | 'move_dinner' | 'reserve_dinner' | 'draft_case' | 'plan_change' | 'remind_me' | 'create_poll' | 'change_seating' | 'checkin_prefill' | 'customs_draft' | 'excursion_plan' | 'packing_start'
 export type ActionStatus = 'prepared' | 'executing' | 'done' | 'failed' | 'pending' | 'expired' | 'changed' | 'undone'
 
-const KINDS: readonly ActionKind[] = ['order_item', 'add_excursion', 'move_dinner', 'reserve_dinner', 'draft_case', 'plan_change', 'remind_me', 'create_poll', 'change_seating', 'checkin_prefill', 'customs_draft', 'excursion_plan']
+const KINDS: readonly ActionKind[] = ['order_item', 'add_excursion', 'move_dinner', 'reserve_dinner', 'draft_case', 'plan_change', 'remind_me', 'create_poll', 'change_seating', 'checkin_prefill', 'customs_draft', 'excursion_plan', 'packing_start']
 const STATUSES: readonly ActionStatus[] = ['prepared', 'executing', 'done', 'failed', 'pending', 'expired', 'changed', 'undone']
 
 /** A preview and, once confirmed, its receipt. Nothing has happened while `status` is `prepared`. */

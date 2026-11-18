@@ -35,7 +35,7 @@ describe('Do it for me: check-in', () => {
     const kinds = server('Domain/StanleyActions.cs')
     expect(kinds).toContain('CheckinPrefill = "checkin_prefill"')
     expect(kinds).not.toMatch(/OnDevice = \[[^\]]*CheckinPrefill/)
-    expect(GUIDE_DO_IT).toEqual(['checkin_prefill', 'customs_draft', 'excursion_plan', 'reserve_dinner'])
+    expect(GUIDE_DO_IT).toEqual(['checkin_prefill', 'customs_draft', 'excursion_plan', 'packing_start', 'reserve_dinner'])
     for (const k of ['guide.doIt', 'guide.doIt.aria', 'guide.doIt.failed', 'action.go.checkin', 'action.reason.nothing']) expect(k in en, k).toBe(true)
   })
 })
@@ -122,6 +122,31 @@ describe('Do it for me: excursion plan', () => {
     expect(server('Domain/GuideRules.cs')).toMatch(/"prebook\.tours"[^\n]*Agent: false, CanPlanTours: true[^\n]*"excursion_plan"/)
     expect(server('Domain/StanleyActions.cs')).toContain('args["ahead"] = "1"')
     expect(effects).toContain('intent.Arg("ahead") == "1"')
+  })
+
+  describe('packing list start (packing_start on prebook.packing)', () => {
+    it('adds only the guest\'s own items from booked tours and dressy specialty dinners, never ticks, and is offered only when there is something to add', () => {
+      const rules = server('Domain/PlanRules.cs')
+      const starter = rules.slice(rules.indexOf('StarterItems('), rules.indexOf('// ---- Overview'))
+      expect(starter).toContain('Day bag for')
+      expect(starter).toContain('Outfit for')
+      expect(starter).toContain('StarterMax')
+      const plan = server('Services/PlanService.cs')
+      const apply = plan.slice(plan.indexOf('PackingStartApplyAsync('), plan.indexOf('PackingStartUndoAsync('))
+      expect(apply).toContain('"own"')
+      expect(apply).toContain('false, null')
+      expect(plan.slice(plan.indexOf('PackingStartPlanAsync('), plan.indexOf('PackingStartApplyAsync(')))
+        .toContain('OwnPackMax')
+      expect(server('Domain/GuideRules.cs')).toMatch(/"prebook\.packing"[^\n]*Agent: false, CanStartPacking: true[^\n]*"packing_start"/)
+      expect('action.go.packing' in en).toBe(true)
+    })
+    it('is a confirmed server action whose undo removes only its own unticked items', () => {
+      expect(server('Domain/StanleyActions.cs')).toContain('PackingStart = "packing_start"')
+      const plan = server('Services/PlanService.cs')
+      const undo = plan.slice(plan.indexOf('PackingStartUndoAsync('), plan.indexOf('Removes an item the guest added'))
+      expect(undo).toContain('!e.Done')
+      expect(undo).toContain('made.Contains(e.ItemId)')
+    })
   })
 
   describe('tonight\'s dinner (reserve_dinner on sea.dinner)', () => {
