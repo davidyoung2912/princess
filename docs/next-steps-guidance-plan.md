@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, first part) are built; the rest of G4 and G5 are next.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, with G4b) are built; G5 is next.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -228,3 +228,10 @@ Found while reading the code. None are built; each is small.
 - Dead ends fixed by pointing at screens that exist: checklist insurance to `/plan/health-prep`, phone to `/plan/phone`, bags to `/home/luggage`; Prepare delights phone to `/plan/phone`, charge to `/plan/packing`. No new screens were written.
 - The Help sheet leads with "What should I do now?" (opens Home, which shows the guide).
 - **Not done yet:** tab dots and "Start here", Search putting the primary task first, the printable plan, and a dedicated insurance task and meet-people screen.
+
+**G4b, the rest of G4 (built).**
+- **Tab dots and "Start here".** `src/guide/tabs.ts` (pure, tested): a tab gets a dot when the first tab listing a screen holds an open task that is urgent (now or soon); Home and Me never do. The Shell merges these with the tile-based dots. The primary task's screen carries a "Start here" tag in its tab list.
+- **Search** leads with a "Start with this" card (the primary task and why) before the guest types.
+- **Printable plan.** "Your plan for this stage" is a fifth sheet on Paper copies (`/me/print`): what moves you on, still to do with dates, then done.
+- **Insurance and meet people.** New optional guide tasks `manage.insurance` (to `/plan/health-prep`, which already lists the insurance reminder) and `prebook.meet` (solo or one-guest bookings, to the sailing rooms `/chat/rooms`). No new screens were needed. C# rules and tests written, not run or compiled (no `dotnet`).
+- Optional visit tasks with no welcome step (these two, clubs, solo) never turn done by visiting; they stay as optional until a later phase records visits by path.

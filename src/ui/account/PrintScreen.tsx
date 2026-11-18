@@ -10,13 +10,17 @@ import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { useDemo, useSailing } from '../../hooks/useDemo'
 import { t, th, type StringKey } from '../../i18n'
+import type { GuideTask } from '../../api/guideTypes'
+import { doneTasks, openTasks } from '../../guide/view'
+import { moveOnWords, taskMeta, taskWords } from '../../guide/words'
+import { useGuideView } from '../../hooks/useGuideView'
 import { Button } from '../Button'
 import { Printer } from '../icons'
 import { names } from '../plan/people'
 import { BackLink } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
 
-type Sheet = 'plan' | 'itinerary' | 'tickets' | 'help'
+type Sheet = 'plan' | 'guide' | 'itinerary' | 'tickets' | 'help'
 
 /**
  * Paper copies (INC-01, ACS-06): the daily plan, the itinerary, excursion tickets and the "no app" sheet, each in plain black on white with a
@@ -34,7 +38,7 @@ export function PrintScreen() {
         <p>{t('prt.intro')}</p>
         <fieldset>
           <legend>{t('prt.which')}</legend>
-          {(['plan', 'itinerary', 'tickets', 'help'] as const).map((x) => (
+          {(['plan', 'guide', 'itinerary', 'tickets', 'help'] as const).map((x) => (
             <label key={x} className="choice">
               <input type="radio" name="sheet" checked={sheet === x} onChange={() => setSheet(x)} />
               {t(`prt.sheet.${x}` as StringKey)}
@@ -59,6 +63,7 @@ export function PrintScreen() {
 
       <article className={['print-sheet', large ? 'print-sheet--large' : ''].filter(Boolean).join(' ')} aria-label={t(`prt.sheet.${sheet}` as StringKey)}>
         {sheet === 'plan' && <PlanSheet day={day} changes={demo.scenarios.includes('planChange')} />}
+        {sheet === 'guide' && <GuideSheet />}
         {sheet === 'itinerary' && <ItinerarySheet />}
         {sheet === 'tickets' && <TicketsSheet />}
         {sheet === 'help' && <HelpSheet />}
@@ -137,6 +142,24 @@ function TicketsSheet() {
         )
       })}
       <p>{t('prt.tickets.note')}</p>
+    </>
+  )
+}
+
+/** The plan for this stage on paper (journey rule 6: it works without the app): what is still to do, with dates, then what is done, then what moves the guest on. */
+function GuideSheet() {
+  const { data: view } = useGuideView()
+  if (!view) return <p>{t('guide.print.none')}</p>
+  const open = openTasks(view, view.tasks.length)
+  const done = doneTasks(view)
+  const line = (x: GuideTask) => <li key={x.id}><strong>{taskWords(x).title}</strong>. {taskWords(x).why} <span>{taskMeta(x).join(' · ')}</span></li>
+  return (
+    <>
+      <h2>{t('guide.print.title', { stage: t(`journey.stage.${view.stage}` as StringKey) })}</h2>
+      <p>{moveOnWords(view.moveOn)}</p>
+      <h3>{t('guide.print.todo')}</h3>
+      {open.length > 0 ? <ol>{open.map(line)}</ol> : <p>{t('guide.allDone')}</p>}
+      {done.length > 0 && <><h3>{t('guide.print.done')}</h3><ul>{done.map((x) => <li key={x.id}>{taskWords(x).title}</li>)}</ul></>}
     </>
   )
 }

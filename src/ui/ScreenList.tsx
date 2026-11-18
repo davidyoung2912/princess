@@ -10,6 +10,8 @@ import { usePins } from '../hooks/usePins'
 import { orderForParty } from '../domain/tileOrder'
 import type { TileLine } from '../domain/tileLive'
 import { TileLiveLine } from './TileLiveLine'
+import { useGuideView } from '../hooks/useGuideView'
+import { startHerePath } from '../guide/tabs'
 
 /**
  * A list of screens from the registry, in the order given: the title as a link with what the guest can do there beneath. Each link says which
@@ -19,6 +21,8 @@ import { TileLiveLine } from './TileLiveLine'
 export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headingId }: { ids: readonly string[]; colour: TabColour; badges?: Record<string, ReactNode>; live?: Record<string, TileLine>; heading?: string; headingId: string }) {
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
   const { screens: pins, toggleScreen, ready } = usePins()
+  const { data: guide } = useGuideView()
+  const start = guide ? startHerePath(guide) : null
   const items = listedScreens(orderForParty(ids, pins), { sailingId: context?.focusSailingId ?? context?.sailingId ?? null, tripNumber: context?.booking?.number ?? null })
   if (items.length === 0) return null
   return (
@@ -31,6 +35,7 @@ export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headi
             <TileItem key={screen.id} id={screen.id} title={th(screen.titleKey)} text={t(screen.subtextKey)} live={live[screen.path]} icon={<Icon className="screen-list__icon" size={20} aria-hidden="true" />}>
               <button type="button" className="screen-list__pin" disabled={!ready} aria-pressed={pins.includes(screen.id)} aria-label={t('pin.label', { title: th(screen.titleKey) })} onClick={() => void toggleScreen(screen.id)}><Pin size={16} aria-hidden="true" /></button>
               <Link to={to} state={openedFrom(colour)}><Icon className="screen-list__icon" size={20} aria-hidden="true" />{th(screen.titleKey)}{badges[screen.path]}</Link>
+              {screen.path === start && <span className="screen-list__start">{t('guide.startHere')}</span>}
             </TileItem>
           )
         })}

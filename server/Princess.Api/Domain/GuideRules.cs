@@ -192,6 +192,7 @@ public static class GuideRules
                     Pay(f),
                     Documents(f, "manage.documents"),
                     new("manage.readiness", "/plan/readiness", 5, false, ByVisit),
+                    new("manage.insurance", "/plan/health-prep", 5, false, ByVisit, Optional: true),
                     Item(t, "manage.assistance", "/plan/assistance", 5, "assistance", ByData, optional: true),
                 ];
             case StageRules.Prebook:
@@ -207,7 +208,11 @@ public static class GuideRules
                 raws.Add(Item(t, "prebook.travel", "/plan/travel", 5, "travel", ByData));
                 if (!fit.Quiet) raws.Add(Item(t, "prebook.packages", "/me/packages", 5, "packages", ByTick, optional: true));
                 if (t is { Children: > 0 }) raws.Add(new("prebook.clubs", "/plan/clubs", 5, false, ByVisit, Optional: true));
-                if (fit.Solo || t is { Guests: 1 }) raws.Add(new("prebook.solo", "/ship/solo", 3, false, ByVisit, Optional: true));
+                if (fit.Solo || t is { Guests: 1 })
+                {
+                    raws.Add(new("prebook.solo", "/ship/solo", 3, false, ByVisit, Optional: true));
+                    raws.Add(new("prebook.meet", "/chat/rooms", 3, false, ByVisit, Optional: true));
+                }
                 return raws;
             }
             case StageRules.GetToShip:

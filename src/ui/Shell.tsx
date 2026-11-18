@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Suspense, useMemo, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties } from 'react'
 import logo from '../assets/princess.webp'
 import stanley from '../assets/stanley-small.png'
@@ -13,13 +13,15 @@ import { t, th } from '../i18n'
 import { routeForPath } from '../routes/nav'
 import { recordVisit } from '../routes/trail'
 import { useRecentVisit } from '../hooks/useRecentVisit'
-import { screenForPath, type TabColour } from '../routes/screens'
+import { SCREEN_BY_ID, screenForPath, type TabColour } from '../routes/screens'
+import { useGuideView } from '../hooks/useGuideView'
+import { tabsHoldingUrgent } from '../guide/tabs'
 import { useTabAlerts } from '../hooks/useTabAlerts'
 import { useChatSummary } from '../hooks/useChatSummary'
 import { useChatNotice } from '../hooks/useChatNotice'
 import { ChatToast } from './ChatToast'
 import { chatBadge } from '../domain/chatConnections'
-import { accessAt, activeTabKey, areaAt, isChatPath, earlierAt, navTabs, shellArea, tabAtPath } from '../routes/stageNav'
+import { accessAt, activeTabKey, areaAt, isChatPath, earlierAt, navTabs, shellArea, tabAtPath, tabScreenIds } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
 import { CalendarCheck, Help, MessagesSquare, Search } from './icons'
 import { actionWords } from '../routes/pageTitle'
@@ -94,7 +96,9 @@ export function Shell() {
   const screen = route && !route.public ? screenForPath(route.path) : undefined
   const landing = tabAtPath(pathname, stage)
   const tabs = navTabs(stage)
-  const alerts = useTabAlerts(stage, !!route && !route.public)
+  const tileAlerts = useTabAlerts(stage, !!route && !route.public)
+  const { data: guideView } = useGuideView()
+  const alerts = useMemo(() => new Set([...tileAlerts, ...(guideView ? tabsHoldingUrgent(guideView, tabs.map((x) => ({ key: x.key, paths: tabScreenIds(x, stage).map((id) => SCREEN_BY_ID.get(id)?.path ?? '') }))) : [])]), [tileAlerts, guideView, tabs, stage])
   const chat = useChatSummary(!!route && !route.public)
   const chatCount = chatBadge(chat)
   const chatNotice = useChatNotice(chat)

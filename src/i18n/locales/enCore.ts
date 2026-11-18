@@ -5363,6 +5363,7 @@ export const enCore = {
   'prt.intro': 'Plain black-on-white sheets for people who prefer paper. Choose a sheet, then print it or save it as a PDF.',
   'prt.which': 'Which sheet',
   'prt.sheet.plan': 'Daily plan',
+  'prt.sheet.guide': 'Your plan for this stage',
   'prt.sheet.itinerary': 'Itinerary',
   'prt.sheet.tickets': 'Excursion tickets',
   'prt.sheet.help': 'Without the app',

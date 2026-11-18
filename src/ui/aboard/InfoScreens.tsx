@@ -22,6 +22,10 @@ import { positionFeed } from '../../feeds/navigation'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { FeedWaiting } from '../FeedWaiting'
 import { coordinates, positionLine } from '../onboard/navigationText'
+import { useGuideView } from '../../hooks/useGuideView'
+import { primaryOf } from '../../guide/view'
+import { taskWords } from '../../guide/words'
+import { openedFrom } from '../../routes/screens'
 import { isFromEarlier, screenHits, visibleAt } from '../../routes/screenWords'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { useNow, useSailing } from '../../hooks/useDemo'
@@ -97,6 +101,8 @@ export function SearchScreen() {
   const remember = (item: Recent) => setRecent(rememberSearch(recent, item))
   const forget = () => { clearRecent(); setRecent([]) }
   const { stage } = useJourneyPosition()
+  const { data: guide } = useGuideView()
+  const startTask = guide ? primaryOf(guide) : null
   const chips = searchChips(ABOARD_STAGES.includes(stage))
   const now = searchContent(query, screenHits(t, stage), (to) => visibleAt(stage, to))
   // Screens of an earlier stage come after, labelled, and open from the result.
@@ -116,6 +122,13 @@ export function SearchScreen() {
       </form>
       <p role="status" className="muted">{enough ? t('search.count', { count: hits.length }) : ''}</p>
       {enough && hits.length === 0 && <Banner kind="info" title={t('search.none')}><p>{t('search.noneBody')} <Link to="/me/help">{t('route.helpCentre')}</Link></p></Banner>}
+      {!enough && startTask && (
+        <Card labelledBy="search-start-h">
+          <h2 id="search-start-h">{t('guide.search.title')}</h2>
+          <p><Link to={startTask.to} state={openedFrom('blue', startTask.id)}>{taskWords(startTask).title}</Link></p>
+          <p className="muted">{taskWords(startTask).why}</p>
+        </Card>
+      )}
       {!enough && (
         <section aria-labelledby="chips-h">
           <h2 id="chips-h">{th('search.try')}</h2>

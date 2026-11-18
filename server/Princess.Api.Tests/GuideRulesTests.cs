@@ -230,6 +230,8 @@ public class GuideRulesTests
         Assert.DoesNotContain(At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }).Tasks, t => t.Id == "prebook.solo");
         Assert.Contains(At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }, fit: new GuideFit(false, true, false)).Tasks, t => t.Id == "prebook.solo");
         Assert.Contains(At(StageRules.Prebook, today, Trip(today) with { Guests = 1 }).Tasks, t => t.Id == "prebook.solo");
+        Assert.Contains(At(StageRules.Prebook, today, Trip(today) with { Guests = 1 }).Tasks, t => t.Id == "prebook.meet");
+        Assert.DoesNotContain(At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }).Tasks, t => t.Id == "prebook.meet");
     }
 
     [Fact]

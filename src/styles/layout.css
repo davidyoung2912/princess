@@ -366,3 +366,4 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .guide-next { margin-top: var(--space-4, 1rem); }
 .guide-next h2 { margin: 0 0 0.25rem; font-size: 1.125rem; }
 .guide-next p { margin: 0 0 0.5rem; }
+.screen-list__start { display: inline-block; margin-inline-start: var(--space-2, 0.5rem); padding: 0 0.5rem; border-radius: 999px; border: 1px solid currentColor; font-size: 0.75rem; font-weight: 600; }
