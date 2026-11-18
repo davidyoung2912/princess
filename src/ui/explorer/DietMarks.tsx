@@ -1,6 +1,6 @@
-import type { DietMark } from '../../api/explorerTypes'
+import type { DietMark, DishFlag } from '../../api/explorerTypes'
 import { t, type StringKey } from '../../i18n'
-import { DietNas, DietVegan, DietVegetarian } from '../icons'
+import { DietNas, DietVegan, DietVegetarian, FlagAlcohol, FlagRaw, FlagSpicy } from '../icons'
 
 const ICON = { vegan: DietVegan, vegetarian: DietVegetarian, nas: DietNas } as const
 const LABEL: Record<DietMark, StringKey> = { vegan: 'exp.diet.vegan', vegetarian: 'exp.diet.vegetarian', nas: 'exp.diet.nas' }
@@ -25,6 +25,35 @@ export function DietLegend() {
   return (
     <ul className="diet-legend" aria-label={t('exp.diet.legend')}>
       {ORDER.map((m) => <li key={m}><DietMarkIcon mark={m} /> <span>{t(LABEL[m])}</span> <small className="muted">{t(WHAT[m])}</small></li>)}
+    </ul>
+  )
+}
+
+const FLAG_ICON = { alcohol: FlagAlcohol, raw: FlagRaw, spicy: FlagSpicy } as const
+const FLAG_LABEL: Record<DishFlag, StringKey> = { alcohol: 'exp.flag.alcohol', raw: 'exp.flag.raw', spicy: 'exp.flag.spicy' }
+const FLAG_WHAT: Record<DishFlag, StringKey> = { alcohol: 'exp.flag.alcohol.what', raw: 'exp.flag.raw.what', spicy: 'exp.flag.spicy.what' }
+const FLAG_ORDER: readonly DishFlag[] = ['alcohol', 'raw', 'spicy']
+
+/** One heads-up beside a dish (alcohol, raw or undercooked, spicy): an icon with a name for a screen reader, in a different shape from the diet marks so it is never read as one. */
+export function DishFlagIcon({ flag }: { flag: DishFlag }) {
+  const Icon = FLAG_ICON[flag]
+  return <span className={`diet-mark dish-flag dish-flag--${flag}`} role="img" aria-label={t(FLAG_LABEL[flag])} title={t(FLAG_LABEL[flag])}><Icon aria-hidden="true" focusable="false" /></span>
+}
+
+/** The heads-ups of a dish, always in the same order. */
+export function DishFlags({ flags }: { flags?: readonly DishFlag[] }) {
+  const shown = FLAG_ORDER.filter((f) => flags?.includes(f))
+  if (shown.length === 0) return null
+  return <span className="diet-marks">{shown.map((f) => <DishFlagIcon key={f} flag={f} />)}</span>
+}
+
+/** What the heads-ups mean, for the flags the menu actually uses. */
+export function FlagLegend({ used }: { used: readonly DishFlag[] }) {
+  const shown = FLAG_ORDER.filter((f) => used.includes(f))
+  if (shown.length === 0) return null
+  return (
+    <ul className="diet-legend" aria-label={t('exp.flag.legend')}>
+      {shown.map((f) => <li key={f}><DishFlagIcon flag={f} /> <span>{t(FLAG_LABEL[f])}</span> <small className="muted">{t(FLAG_WHAT[f])}</small></li>)}
     </ul>
   )
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ExplorerVenueInfo, HoursDay, MealMenu, VenueDay } from '../../api/explorerTypes'
-import { dishHits, filterDining, markedDishes, matchesPrompt, NO_DINING_FILTER, servesPeriod, sortDining } from './diningDiscovery'
+import { dishHits, filterDining, markedDishes, matchesPrompt, NO_DINING_FILTER, servesPeriod, sortDining, usedFlags } from './diningDiscovery'
 
 const hours = (...windows: [string, string][]): HoursDay => ({ windows, staffed: [], closedBecause: null })
 const menu = (meal: MealMenu['meal'], ...dishes: string[]): MealMenu => ({ venueId: 'x', meal, from: '12:00', to: '14:00', title: meal, formal: false, courses: [{ name: 'c', dishes: dishes.map((name) => ({ name, contains: [] })) }] })
@@ -54,6 +54,14 @@ describe('diet marks', () => {
   })
   it('keeps only the places with such a dish', () => {
     expect(filterDining([...all, green], { ...NO_DINING_FILTER, diet: 'vegetarian' }).map((d) => d.venue.id)).toEqual(['green'])
+  })
+})
+
+describe('dish flags', () => {
+  const flagged: MealMenu = { venueId: 'x', meal: 'dinner', from: '17:00', to: '21:00', title: 'dinner', formal: false, courses: [{ name: 'c', dishes: [{ name: 'Tuna tartare', contains: ['fish'], flags: ['raw'] }, { name: 'Negroni', contains: [], flags: ['alcohol'] }, { name: 'Plain rice', contains: [] }] }] }
+  it('names only the flags a menu uses, in a fixed order', () => {
+    expect(usedFlags([flagged])).toEqual(['alcohol', 'raw'])
+    expect(usedFlags([menu('lunch', 'Penne')])).toEqual([])
   })
 })
 

@@ -95,6 +95,14 @@ describe('the Explorer content of the ships', () => {
         expect(dishes.find((d) => d.name === 'Aubergine Parmigiana')?.contains).not.toContain('egg')
       })
 
+      it('flags alcohol, raw food and spice from the dish itself, never on a zero-proof drink', () => {
+        const dishes = content.menus.flatMap((m) => m.courses.flatMap((c) => c.dishes))
+        for (const d of dishes) {
+          if (d.flags) expect(d.flags.length, d.name).toBeGreaterThan(0)
+          if (/zero-proof|non-alcoholic/i.test(`${d.name} ${d.note ?? ''}`)) expect(d.flags ?? []).not.toContain('alcohol')
+        }
+      })
+
       it('marks the diets: every section of every menu has a vegan, a vegetarian and a no-added-sugar dish, and no meat or fish dish is marked vegan or vegetarian', () => {
         for (const m of content.menus) {
           for (const c of m.courses) {

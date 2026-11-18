@@ -445,6 +445,7 @@ button.chat-quote { cursor: pointer; }
 .diet-mark--vegan { color: var(--success); background: var(--success-tint); }
 .diet-mark--vegetarian { color: var(--success); background: transparent; }
 .diet-mark--nas { color: var(--text); background: var(--brand-tint); }
+.dish-flag { border-radius: 0.375rem; color: var(--text); background: var(--warning-tint, transparent); border-style: dashed; }
 .diet-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); list-style: none; padding: 0; margin: var(--space-2) 0; }
 .diet-legend li { display: inline-flex; align-items: center; gap: var(--space-2); }
 @media (forced-colors: active) { .diet-mark { border-color: CanvasText; color: CanvasText; background: Canvas; } }

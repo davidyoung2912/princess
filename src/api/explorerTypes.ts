@@ -67,7 +67,8 @@ export interface ExplorerEvent {
 }
 
 export type DietMark = 'vegan' | 'vegetarian' | 'nas'
-export interface MealDish { name: string; contains: string[]; note?: string; /** Vegan, vegetarian and NAS (no added sugar), as the ship marks the dish. */ marks?: DietMark[] }
+export type DishFlag = 'alcohol' | 'raw' | 'spicy'
+export interface MealDish { name: string; contains: string[]; note?: string; /** Vegan, vegetarian and NAS (no added sugar), as the ship marks the dish. */ marks?: DietMark[]; /** Heads-ups: alcohol in the dish, raw or undercooked food, a spicy kick. Not diets: a flag never says a dish suits anyone. */ flags?: DishFlag[] }
 export interface MealCourse { name: string; dishes: MealDish[] }
 
 export interface MealMenu {

@@ -6,6 +6,7 @@ import { formatTime } from '../../domain/cruise'
 import { NEEDS_ASKING, dishSuits, type Dish } from '../../domain/menus'
 import { formatMoney } from '../../domain/money'
 import { fillingUp, mealOver, openState, type Span } from '../../domain/explorer/presentation'
+import { usedFlags } from '../../domain/explorer/diningDiscovery'
 import { happeningNow } from '../../domain/explorer/planTimeline'
 import { eventPhase } from '../../domain/explorer/upcoming'
 import { t, type StringKey, headingCase } from '../../i18n'
@@ -16,7 +17,7 @@ import { ACCESS_FEATURES, type AccessFeature } from '../../domain/eventAccess'
 import { EXPLORER_LEADS, REMINDER_DEFAULT } from '../../domain/notifications'
 import { StatusBadge } from '../StatusBadge'
 import { SendToChat } from '../onboard/SendToChat'
-import { DietLegend, DietMarks } from './DietMarks'
+import { DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
 
 /** Open, closed or finished for the chosen day, in words and an icon, never colour alone. */
 export function HoursBadge({ hours, day, currentDay, now }: { hours: HoursDay; day: number; currentDay: number; now: string }) {
@@ -135,7 +136,7 @@ function MealCard({ venueId, m, over, suits }: { venueId: string; m: MealMenu; o
           <div key={c.name}>
             <h4>{c.name}</h4>
             <ul className="plain-bullets">
-              {shown.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} />{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}
+              {shown.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} />{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}
             </ul>
           </div>
         )
@@ -151,12 +152,14 @@ export function MenuPanel({ venueId, menus, diets, day, currentDay, now }: { ven
   const filtering = onlyMine && diets.length > 0
   const suits = (name: string, contains: readonly string[]): boolean => !filtering || diets.every((d) => dishSuits({ name, contains: contains as Dish['contains'] }, d))
   const ask = diets.filter((d) => NEEDS_ASKING.includes(d))
+  const flagsUsed = usedFlags(menus)
   return (
     <section aria-labelledby="exp-menu-h">
       <h2 id="exp-menu-h">{headingCase(t('exp.menu.title'))}</h2>
       {diets.length > 0 && <div className="chip-row"><Chip pressed={onlyMine} onToggle={() => setOnlyMine(!onlyMine)}>{t('exp.menu.suits')}</Chip></div>}
       {ask.length > 0 && <p className="muted">{t('exp.menu.ask')}</p>}
       {menus.some((m) => m.courses.some((c) => c.dishes.some((d) => (d.marks?.length ?? 0) > 0))) && <><DietLegend /><p className="muted">{t('exp.diet.ask')}</p></>}
+      {flagsUsed.length > 0 && <FlagLegend used={flagsUsed} />}
       {menus.map((m) => <MealCard key={`${m.meal}-${m.from}`} venueId={venueId} m={m} over={mealOver(m, day, currentDay, now)} suits={suits} />)}
     </section>
   )

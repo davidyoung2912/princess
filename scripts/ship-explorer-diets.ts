@@ -3,7 +3,9 @@
 // are a guide like the allergen tags, and the screen tells the guest to ask the maître d' about anything that matters to them.
 type Contains = 'meat' | 'pork' | 'fish' | 'shellfish' | 'dairy' | 'egg' | 'gluten' | 'nuts'
 export type Mark = 'vegan' | 'vegetarian' | 'nas'
-export interface MenuDish { name: string; contains: string[]; note?: string; marks?: Mark[] }
+/** Heads-up flags, kept apart from the diet marks: they say something to know about a dish, never that it suits a diet. */
+export type Flag = 'alcohol' | 'raw' | 'spicy'
+export interface MenuDish { name: string; contains: string[]; note?: string; marks?: Mark[]; flags?: Flag[] }
 export interface MenuCourse { name: string; dishes: MenuDish[] }
 
 /** What a dish is marked as. Vegan: nothing from an animal (and no honey or gelatine); vegetarian: no meat, fish or shellfish but something from an animal. */
@@ -14,6 +16,23 @@ export function marksOf(name: string, contains: readonly string[], nas = false):
   if (!animal && !hidden) marks.push(['dairy', 'egg'].some((c) => contains.includes(c)) ? 'vegetarian' : 'vegan')
   if (nas) marks.push('nas')
   return marks
+}
+
+const ALCOHOL = /\b(wine|beer|rum|vodka|whisk(?:e)?y|bourbon|brandy|cognac|liqueur|champagne|prosecco|martini|margarita|mojito|spritz|spritzer|bellini|negroni|sake|marsala|stout|lager|aperol|gin|tequila|mezcal|sherry(?! vinegar)|vermouth|mimosa|sangria|daiquiri|cosmopolitan|old fashioned|amaretto|limoncello|grand marnier|kahl[uú]a|baileys|irish coffee|flamb[eé](?:ed)?|cabernet|chardonnay|pinot|merlot|ros[eé])\b/i
+const NO_ALCOHOL = /zero-proof|non-alcoholic|alcohol-free|\bvirgin\b|\bno-jito\b/i
+const RAW_ANIMAL = ['meat', 'pork', 'fish', 'shellfish', 'egg']
+const RAW = /\b(raw|tartare|carpaccio|sashimi|nigiri|sushi|ceviche|crudo|poke|tataki|oysters?|rare|medium-rare|poached eggs?|soft-boiled|runny)\b/i
+const SPICY = /\b(spicy|chil(?:i|li|e)|jalape[ñn]o|sriracha|harissa|cayenne|hot sauce|wasabi|kimchi|jerk|diavola|diabla|arrabbiata|buffalo|vindaloo|sichuan|szechuan|gochujang|habanero|peri-peri|piri-piri|chipotle|green curry|red curry)\b/i
+const MILD_SPICE = /sweet chil|chil(?:i|li|e) flakes|mild/i
+
+/** The heads-up flags of a dish, from its name and note. Alcohol: wine, beer or spirits named in the dish (zero-proof drinks excluded). Raw: raw or undercooked fish, meat or egg. Spicy: a named chilli, hot sauce or hot spice. A guide only: nothing here says a dish is free of anything. */
+export function flagsOf(name: string, contains: readonly string[], note = ''): { flags?: Flag[] } {
+  const text = `${name} ${note}`
+  const flags: Flag[] = []
+  if (ALCOHOL.test(text) && !NO_ALCOHOL.test(text)) flags.push('alcohol')
+  if (RAW.test(text) && (/\braw\b/i.test(text) || RAW_ANIMAL.some((c) => contains.includes(c)))) flags.push('raw')
+  if (SPICY.test(text) && !MILD_SPICE.test(text)) flags.push('spicy')
+  return flags.length > 0 ? { flags } : {}
 }
 
 const SWEET = /glaz|teriyaki|bbq|barbecue|honey|sweet|candied|maple|chocolate|cake|tart\b|pie\b|ice cream|sorbet|pudding|cookie|pastry|danish|croissant|muffin|pancake|waffle|french toast|cinnamon|milkshake|brownie|sundae|mousse|cheesecake|strudel|tiramisu|cannoli|baklava|souffl|brûlée|brulee|alaska|macaron|mochi|churro|fudge|syrup|jam\b|marmalade|lava|torte|opera|panna|key lime|mille|sticky|toffee|normande|candy|soft-serve|cone\b|cocktail|bellini|spritz|martini|daiquiri|colada|mule|margarita|lemonade|latte|mocha|macchiato|hot chocolate|biscotti|fondant|crumble|sphere|rossini|miami vice|bahama|love boat|lava flow|cider/i
@@ -137,12 +156,12 @@ export function kindOf(course: string, meal: string): Kind {
   return /station|tonight/i.test(course) ? 'main' : 'snack'
 }
 
-const toDish = ([name, contains, nas, note]: P): MenuDish => ({ name, contains: [...contains].sort(), note, marks: marksOf(name, contains, nas) })
+const toDish = ([name, contains, nas, note]: P): MenuDish => ({ name, contains: [...contains].sort(), note, marks: marksOf(name, contains, nas), ...flagsOf(name, contains, note) })
 
 /** Marks the dishes of a section, then adds from its pool until it has a vegan, a vegetarian and a NAS dish and a wider choice (`extra` more). The pick turns with `seed`, so each night and room differs. */
 export function fillSection(course: MenuCourse, kind: Kind, seed: string, extra = 1): MenuCourse {
   // A drink already on the list is never marked (wine and spirits can be fined or made with animal products); only the pool's zero-proof drinks are.
-  const dishes: MenuDish[] = course.dishes.map((d) => ({ ...d, marks: kind === 'drink' ? [] : marksOf(d.name, d.contains, isNas(d.name)) }))
+  const dishes: MenuDish[] = course.dishes.map((d) => ({ ...d, marks: kind === 'drink' ? [] : marksOf(d.name, d.contains, isNas(d.name)), ...flagsOf(d.name, d.contains, d.note) }))
   const have = (m: Mark, only = false) => dishes.some((d) => d.marks?.includes(m) && (!only || !d.marks.includes('vegan')))
   const used = new Set(dishes.map((d) => d.name))
   const pool = POOLS[kind]

@@ -3,7 +3,7 @@
 import type { DirectoryVenue } from '../src/domain/menus.ts'
 import { dishCopy } from '../src/domain/dishCopy.ts'
 import type { HoursRule } from '../src/domain/explorer/types.ts'
-import { fillSection, kindOf, marksOf, isNas, sectionsOf, type MenuCourse } from './ship-explorer-diets.ts'
+import { fillSection, flagsOf, kindOf, marksOf, isNas, sectionsOf, type MenuCourse } from './ship-explorer-diets.ts'
 import { EXTRA_DINING, type ExtraDining } from './ship-explorer-extra-dining.ts'
 import type { ExplorerEventRow, ExplorerVenueRow, MealCourseRow, MealMenuRow } from './ship-explorer-data.ts'
 
@@ -94,7 +94,7 @@ export function diningMenus(venues: readonly ExplorerVenueRow[], directory: read
     }
   }
   // Every dish carries its marks, including the single chef's specials the sections above leave alone.
-  for (const m of out) for (const c of m.courses) c.dishes = c.dishes.map((d) => (d.marks ? d : { ...d, marks: marksOf(d.name, d.contains, isNas(d.name)) }))
+  for (const m of out) for (const c of m.courses) c.dishes = c.dishes.map((d) => ({ ...(d.marks ? d : { ...d, marks: marksOf(d.name, d.contains, isNas(d.name)) }), ...flagsOf(d.name, d.contains, d.note) }))
   return out
 }
 
