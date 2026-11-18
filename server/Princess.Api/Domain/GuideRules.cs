@@ -18,8 +18,14 @@ public sealed record GuideChoices(IReadOnlySet<string> Skipped, IReadOnlyDiction
     public static readonly GuideChoices None = new(new HashSet<string>(), new Dictionary<string, DateOnly>());
 }
 
+/// <summary>The guest's own answers to "make this plan fit me": a first cruise, travelling alone, and keeping offers quiet (no selling tasks). Never anything about health or access.</summary>
+public sealed record GuideFit(bool FirstCruise, bool Solo, bool Quiet)
+{
+    public static readonly GuideFit None = new(false, false, false);
+}
+
 /// <summary>Everything the guide is worked out from.</summary>
-public sealed record GuideFacts(string Stage, DateOnly Today, int SavedSailings, GuideDraft? Draft, GuideTrip? Trip, bool LastFullDay, bool FeedbackSent, GuideChoices? Choices = null);
+public sealed record GuideFacts(string Stage, DateOnly Today, int SavedSailings, GuideDraft? Draft, GuideTrip? Trip, bool LastFullDay, bool FeedbackSent, GuideChoices? Choices = null, GuideFit? Fit = null);
 
 /// <summary>How many of the travellers a task is done for ("2 of 4 ready").</summary>
 public sealed record GuideWho(int Done, int Total);
@@ -61,6 +67,13 @@ public static class GuideRules
     private sealed record Raw(
         string Id, string To, int Minutes, bool Done, string DoneBy, bool Hard = false, bool Optional = false, string? Check = null,
         string? BlockedBy = null, DateOnly? OpensAt = null, DateOnly? Due = null, string? DueSource = null, string? Reason = null, string? From = null, GuideWho? Who = null);
+
+    /// <summary>Reads the <c>guideFit</c> document (<c>{ firstCruise, solo, quiet }</c>); anything unreadable counts as no.</summary>
+    public static GuideFit ReadFit(System.Text.Json.Nodes.JsonObject? data)
+    {
+        static bool Flag(System.Text.Json.Nodes.JsonObject? o, string k) => o?[k] is System.Text.Json.Nodes.JsonValue v && v.TryGetValue<bool>(out var b) && b;
+        return new GuideFit(Flag(data, "firstCruise"), Flag(data, "solo"), Flag(data, "quiet"));
+    }
 
     /// <summary>Reads the <c>guideChoices</c> document (<c>{ skipped: { id: atMs }, later: { id: "yyyy-MM-dd" } }</c>); anything unreadable is left out.</summary>
     public static GuideChoices ReadChoices(System.Text.Json.Nodes.JsonObject? data)
@@ -184,14 +197,17 @@ public static class GuideRules
             case StageRules.Prebook:
             {
                 var raws = new List<Raw>();
+                var fit = f.Fit ?? GuideFit.None;
                 if (t is { Paid: false }) raws.Add(Pay(f, StageRules.Manage));
                 if (t is { Agent: false, DocumentsOk: false }) raws.Add(Documents(f, "manage.documents", StageRules.Manage));
+                if (fit.FirstCruise) raws.Add(new("prebook.firstTime", "/plan/starter", 10, false, ByVisit));
                 raws.Add(Item(t, "prebook.tours", "/excursions-explorer", 15, "tours", ByData));
                 raws.Add(Item(t, "prebook.dining", "/dining-today", 10, "dining", ByData));
                 raws.Add(Item(t, "prebook.packing", "/plan/packing", 10, "packing", ByTick));
                 raws.Add(Item(t, "prebook.travel", "/plan/travel", 5, "travel", ByData));
-                raws.Add(Item(t, "prebook.packages", "/me/packages", 5, "packages", ByTick, optional: true));
+                if (!fit.Quiet) raws.Add(Item(t, "prebook.packages", "/me/packages", 5, "packages", ByTick, optional: true));
                 if (t is { Children: > 0 }) raws.Add(new("prebook.clubs", "/plan/clubs", 5, false, ByVisit, Optional: true));
+                if (fit.Solo || t is { Guests: 1 }) raws.Add(new("prebook.solo", "/ship/solo", 3, false, ByVisit, Optional: true));
                 return raws;
             }
             case StageRules.GetToShip:

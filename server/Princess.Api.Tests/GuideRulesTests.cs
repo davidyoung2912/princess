@@ -10,8 +10,8 @@ public class GuideRulesTests
     private static GuideTrip Trip(DateOnly today, bool paid = false, bool docs = false, string checkin = "notOpen", bool muster = false, bool agent = false, Dictionary<string, GuideCheck>? list = null) =>
         new("PR123", Departure, agent, paid, Departure.AddDays(-75), docs, checkin, Departure.AddDays(-3), muster, list ?? []);
 
-    private static GuideView At(string stage, DateOnly today, GuideTrip? trip = null, int saved = 0, GuideDraft? draft = null, bool lastFull = false, bool feedback = false, GuideChoices? choices = null) =>
-        GuideRules.Build(new GuideFacts(stage, today, saved, draft, trip, lastFull, feedback, choices));
+    private static GuideView At(string stage, DateOnly today, GuideTrip? trip = null, int saved = 0, GuideDraft? draft = null, bool lastFull = false, bool feedback = false, GuideChoices? choices = null, GuideFit? fit = null) =>
+        GuideRules.Build(new GuideFacts(stage, today, saved, draft, trip, lastFull, feedback, choices, fit));
 
     private static GuideChoices Skip(params string[] ids) => new(new HashSet<string>(ids), new Dictionary<string, DateOnly>());
 
@@ -203,5 +203,39 @@ public class GuideRulesTests
         Assert.Contains("a.b", c.Skipped);
         Assert.Equal(new DateOnly(2027, 1, 2), c.Later["c.d"]);
         Assert.False(c.Later.ContainsKey("e.f"));
+    }
+
+    [Fact]
+    public void AFirstCruiseAddsTheStarterTask()
+    {
+        var today = Departure.AddDays(-40);
+        Assert.DoesNotContain(At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }).Tasks, t => t.Id == "prebook.firstTime");
+        var first = At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }, fit: new GuideFit(true, false, false)).Tasks.Single(t => t.Id == "prebook.firstTime");
+        Assert.Equal("/plan/starter", first.To);
+        Assert.False(first.Optional);
+    }
+
+    [Fact]
+    public void QuietOffersDropThePackagesTask()
+    {
+        var today = Departure.AddDays(-40);
+        Assert.Contains(At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }).Tasks, t => t.Id == "prebook.packages");
+        Assert.DoesNotContain(At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }, fit: new GuideFit(false, false, true)).Tasks, t => t.Id == "prebook.packages");
+    }
+
+    [Fact]
+    public void SoloIsFromTheAnswerOrAPartyOfOne()
+    {
+        var today = Departure.AddDays(-40);
+        Assert.DoesNotContain(At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }).Tasks, t => t.Id == "prebook.solo");
+        Assert.Contains(At(StageRules.Prebook, today, Trip(today) with { Guests = 2 }, fit: new GuideFit(false, true, false)).Tasks, t => t.Id == "prebook.solo");
+        Assert.Contains(At(StageRules.Prebook, today, Trip(today) with { Guests = 1 }).Tasks, t => t.Id == "prebook.solo");
+    }
+
+    [Fact]
+    public void ReadFitIgnoresAnythingElse()
+    {
+        var f = GuideRules.ReadFit(System.Text.Json.Nodes.JsonNode.Parse("{\"firstCruise\":true,\"solo\":\"yes\",\"quiet\":false}") as System.Text.Json.Nodes.JsonObject);
+        Assert.Equal(new GuideFit(true, false, false), f);
     }
 }

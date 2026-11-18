@@ -26,7 +26,7 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
         if (ctx.Booking is not null || ctx.Stage is not (StageRules.Dream or StageRules.Discover or StageRules.Book))
             (trip, lastFullDay) = await TripFactsAsync(user, ctx, now, today, ct);
 
-        var facts = new GuideFacts(ctx.Stage, today, saved, draft is null ? null : new GuideDraft(draft.Id, !string.IsNullOrEmpty(draft.CategoryId)), trip, lastFullDay, feedback, await ChoicesAsync(user.Id, ct));
+        var facts = new GuideFacts(ctx.Stage, today, saved, draft is null ? null : new GuideDraft(draft.Id, !string.IsNullOrEmpty(draft.CategoryId)), trip, lastFullDay, feedback, await ChoicesAsync(user.Id, ct), await FitAsync(user.Id, ct));
         return GuideRules.Build(facts);
     }
 
@@ -37,6 +37,15 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
         if (row is null) return GuideChoices.None;
         try { return GuideRules.ReadChoices(System.Text.Json.Nodes.JsonNode.Parse(row.Json) as System.Text.Json.Nodes.JsonObject); }
         catch (System.Text.Json.JsonException) { return GuideChoices.None; }
+    }
+
+    /// <summary>The guest's answers to "make this plan fit me" (the <c>guideFit</c> document); an unreadable one counts as none.</summary>
+    private async Task<GuideFit> FitAsync(long userId, CancellationToken ct)
+    {
+        var row = await state.GetAsync(false, userId, "guideFit", ct);
+        if (row is null) return GuideFit.None;
+        try { return GuideRules.ReadFit(System.Text.Json.Nodes.JsonNode.Parse(row.Json) as System.Text.Json.Nodes.JsonObject); }
+        catch (System.Text.Json.JsonException) { return GuideFit.None; }
     }
 
     private async Task<(GuideTrip?, bool)> TripFactsAsync(UserRecord user, ContextDto ctx, DateTime now, DateOnly today, CancellationToken ct)

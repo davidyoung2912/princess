@@ -18,6 +18,8 @@ import { mergeWelcome, EMPTY_WELCOME } from '../routes/stageWelcome'
 import { mergeProgress, EMPTY_PROGRESS } from '../routes/stageProgress'
 import { applyRemoteProgress, getProgress } from '../stageProgress/store'
 import { EMPTY_CHOICES, mergeChoices } from '../guide/choices'
+import { EMPTY_FIT, mergeFit } from '../guide/fit'
+import { applyRemoteFit, getFit } from '../guide/fitStore'
 import { applyRemoteChoices, getChoices } from '../guide/choicesStore'
 import { applyRemoteWelcome, getWelcome, markWelcomeLoaded } from '../stageWelcome/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
@@ -222,10 +224,19 @@ const guideChoices: Binding = {
   merge: mergeChoices,
 }
 
+/** The guest's answers to "make this plan fit me" (first cruise, alone, quiet offers), so they follow the guest across devices. */
+const guideFit: Binding = {
+  key: 'guideFit',
+  read: (id) => getFit(id),
+  apply: (id, raw) => applyRemoteFit(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_FIT),
+  merge: mergeFit,
+}
+
 let registered = false
 /** Connects the stores to the sync module. Safe to call more than once. */
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, recent, stageWelcome, stageProgress, guideChoices, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
+  for (const b of [settings, offers, recent, stageWelcome, stageProgress, guideChoices, guideFit, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
 }

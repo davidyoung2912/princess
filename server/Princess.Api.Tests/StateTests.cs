@@ -245,4 +245,13 @@ public class StateApiTests : JourneyWorld
         foreach (var bad in new[] { "{\"other\":{}}", "{\"skipped\":{\"bad id\":1}}", "{\"skipped\":{\"a.b\":\"x\"}}", "{\"later\":{\"a.b\":\"soon\"}}", "{\"later\":[]}" })
             Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "guideChoices", JsonNode.Parse(bad)));
     }
+
+    [Fact]
+    public void GuideFitAcceptsTheThreeAnswersOnly()
+    {
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "guideFit", JsonNode.Parse("{\"firstCruise\":true,\"solo\":false,\"quiet\":true,\"at\":1700000000000}")));
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "guideFit", new JsonObject()));
+        foreach (var bad in new[] { "{\"access\":true}", "{\"solo\":\"yes\"}", "{\"at\":\"now\"}", "{\"quiet\":{}}" })
+            Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "guideFit", JsonNode.Parse(bad)));
+    }
 }

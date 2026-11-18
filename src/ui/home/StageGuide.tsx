@@ -15,8 +15,8 @@ import { getContext, subscribeContext } from '../../account/context'
 import { demoNow } from '../../demo/store'
 import { isoDay } from '../../domain/rates'
 import { putOffGuideTask, restoreGuideTask, skipGuideTask } from '../../guide/choicesStore'
-import { forgetSharedLoads } from '../../hooks/useSharedMine'
-import { sync } from '../../sync'
+import { refreshGuide } from '../../guide/refresh'
+import { FitPrompt } from './FitPrompt'
 import { formatDate } from '../../domain/cruise'
 import { Card } from '../Card'
 
@@ -46,9 +46,7 @@ function useAside() {
       restoreGuideTask(personId, id)
       setSaid(t('guide.restored.live', { task: taskWords({ id }).title }))
       // The server drops a put-aside task from the plan, so read it again once the change is saved.
-      await sync.flush()
-      forgetSharedLoads()
-      window.dispatchEvent(new Event('guide:refresh'))
+      await refreshGuide()
     },
   }
 }
@@ -113,6 +111,7 @@ export function StageGuide() {
   return (
     <section aria-label={t('guide.title')} className="guide">
       <StageLine view={view} />
+      {(view.stage === 'dream' || view.stage === 'discover') && <FitPrompt />}
       {stale && <p className="muted">{t('guide.stale')}</p>}
       {primary ? <DoNow task={primary} aside={aside} /> : (
         <Card info>

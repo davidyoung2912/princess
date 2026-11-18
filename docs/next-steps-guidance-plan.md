@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) are built; G4 (in-flow guidance) is next.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) are built; G4 (in-flow guidance) is next.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -214,3 +214,10 @@ Found while reading the code. None are built; each is small.
 - **Already there from G1:** the facts for excursions, dining, packing, travel, packages and assistance come from the checklist's own data, so no new fact builders were needed. Carry-over of payment and documents was built in G1.
 - **Not done (moved on):** the three-tap "Make this plan fit me" prompt, and an insurance task (no screen yet, section 8). Both belong with G6's content passes.
 - Tests: `choices.test.ts`, the guard test; C# `GuideRulesTests` and `StateTests` written, not run (no `dotnet test`, and `dotnet` is not installed in this shell, so the C# has not been compiled either).
+
+**G3b, "Make this plan fit me" (built).**
+- A plain `guideFit` document in `/me/state` (`{ firstCruise, solo, quiet, at }`, checked in `StateRules.cs`) holds three answers. Nothing about health or access is kept in it, and the access-needs answer was left out on purpose: the assistance task already carries that.
+- `FitPrompt` (Dream and Discover Home): three toggle buttons and "Save my answers" or "No thanks"; asked once, then a "Change how this plan fits me" button. Saving flushes the sync and reads the plan again (`src/guide/refresh.ts`, also used by "Bring back").
+- Rules (`GuideRules`): first cruise adds `prebook.firstTime` (Occasion Starter, `/plan/starter`); quiet drops `prebook.packages`; solo, or a booking with one guest, adds the optional `prebook.solo` (the solo safety timer, `/ship/solo`).
+- Tests: `fit.test.ts`; C# `GuideRulesTests` and `StateTests` written, not run or compiled.
+- **Still open:** an insurance task (G4, with the other missing screens), and a "meet people" task for solo guests (no suitable screen yet).

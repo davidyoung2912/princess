@@ -31,6 +31,7 @@ public static class StateRules
         ["stageWelcome"] = 8_000,
         ["stageProgress"] = 12_000,
         ["guideChoices"] = 8_000,
+        ["guideFit"] = 500,
     };
 
     /// <summary>The most stage welcomes <c>stageWelcome</c> remembers, and the longest sailing id in an entry's key.</summary>
@@ -108,6 +109,22 @@ public static class StateRules
         return null;
     }
 
+    /// <summary>
+    /// The problem for a <c>guideFit</c> document: <c>{ firstCruise, solo, quiet: bool, at: ms }</c>, the three answers of the "make this plan fit me" prompt and when it was answered.
+    /// It holds nothing sensitive (access and health needs are never kept here); every field is optional.
+    /// </summary>
+    private static string? GuideFitProblem(JsonObject data)
+    {
+        foreach (var (key, node) in data)
+        {
+            if (node is not JsonValue v) return "badData";
+            if (key is "firstCruise" or "solo" or "quiet") { if (!v.TryGetValue<bool>(out _)) return "badData"; }
+            else if (key == "at") { if (!v.TryGetValue<double>(out _)) return "badData"; }
+            else return "badData";
+        }
+        return null;
+    }
+
     /// <summary>The most screens <c>recent</c> keeps, and the longest address it accepts.</summary>
     public const int RecentMaxItems = 3, RecentMaxPath = 200;
 
@@ -162,6 +179,7 @@ public static class StateRules
             "stageWelcome" => StageWelcomeProblem(obj),
             "stageProgress" => StageProgressProblem(obj),
             "guideChoices" => GuideChoicesProblem(obj),
+            "guideFit" => GuideFitProblem(obj),
             _ => null,
         };
     }
