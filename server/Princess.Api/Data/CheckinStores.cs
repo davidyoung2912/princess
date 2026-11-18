@@ -47,6 +47,8 @@ public interface ICheckinStore
     Task<List<CheckinStepRow>> ListStepsAsync(long bookingId, CancellationToken ct);
     /// <summary>Saves the same payload for each guest, replacing an earlier answer to the step.</summary>
     Task SaveStepAsync(long bookingId, string step, IReadOnlyList<long> userIds, DateTime at, string dataJson, CancellationToken ct);
+    /// <summary>Removes the answer to a step for each guest (Stanley's undo of a prefill). A guest with no answer is left as they were.</summary>
+    Task DeleteStepAsync(long bookingId, string step, IReadOnlyList<long> userIds, CancellationToken ct);
 
     Task<CheckinBookingRow?> GetBookingAsync(long bookingId, CancellationToken ct);
     Task SavePaymentAsync(long bookingId, long cardId, string label, DateTime at, CancellationToken ct);

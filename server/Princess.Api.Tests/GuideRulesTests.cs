@@ -278,4 +278,16 @@ public class GuideRulesTests
         var f = GuideRules.ReadFit(System.Text.Json.Nodes.JsonNode.Parse("{\"firstCruise\":true,\"solo\":\"yes\",\"quiet\":false}") as System.Text.Json.Nodes.JsonObject);
         Assert.Equal(new GuideFit(true, false, false), f);
     }
+
+    [Fact]
+    public void CheckinOffersStanleyToFillItInOnlyWhenItIsOpenAndThereIsSomethingToFill()
+    {
+        var today = Departure.AddDays(-2);
+        string? DoIt(GuideTrip t) => At(StageRules.GetToShip, today, t).Tasks.Single(x => x.Id == "getToShip.checkin").DoIt;
+        Assert.Equal("checkin_prefill", DoIt(Trip(today, paid: true, docs: true, checkin: "open") with { CanPrefill = true }));
+        Assert.Null(DoIt(Trip(today, paid: true, docs: true, checkin: "open")));
+        Assert.Null(DoIt(Trip(today, paid: true, docs: true, checkin: "notOpen") with { CanPrefill = true }));
+        Assert.Null(DoIt(Trip(today, paid: true, docs: true, checkin: "open", agent: true) with { CanPrefill = true }));
+        Assert.Null(DoIt(Trip(today, paid: true, docs: true, checkin: "done") with { CanPrefill = true }));
+    }
 }

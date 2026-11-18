@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { guide, task } from './fixture'
-import { helpScreenId, nowTask, remindDay, taskRemindArgs } from './stanley'
+import { doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs } from './stanley'
 
 describe('nowTask', () => {
   it('is the guide primary, so Stanley and Home agree', () => {
@@ -39,5 +39,24 @@ describe('taskRemindArgs', () => {
     const a = taskRemindArgs('2026-12-09', 'x'.repeat(100))
     expect(a).toMatchObject({ when: 'clock', at: '09:00', date: '2026-12-09' })
     expect(a.text).toHaveLength(80)
+  })
+})
+
+describe('doItFor', () => {
+  const open = task('getToShip.checkin', { doIt: 'checkin_prefill' })
+  it('offers Do it for me on Home at Helpful and Chatty, never at Asked or Off', () => {
+    expect(doItFor(open, 'chatty', 'home')).toBe('checkin_prefill')
+    expect(doItFor(open, 'helpful', 'home')).toBe('checkin_prefill')
+    expect(doItFor(open, 'asked', 'home')).toBeNull()
+    expect(doItFor(open, 'off', 'home')).toBeNull()
+  })
+  it('also offers it at Asked when the guest asked Stanley what to do, but never at Off', () => {
+    expect(doItFor(open, 'asked', 'asked')).toBe('checkin_prefill')
+    expect(doItFor(open, 'off', 'asked')).toBeNull()
+  })
+  it('offers nothing the server did not mark, for a done task, or for an action this app does not know', () => {
+    expect(doItFor(task('getToShip.checkin'), 'chatty', 'home')).toBeNull()
+    expect(doItFor({ ...open, state: 'done' }, 'chatty', 'home')).toBeNull()
+    expect(doItFor({ ...open, doIt: 'pay_bill' as never }, 'chatty', 'home')).toBeNull()
   })
 })

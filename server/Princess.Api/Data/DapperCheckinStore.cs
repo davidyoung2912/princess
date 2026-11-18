@@ -34,6 +34,12 @@ public sealed class DapperCheckinStore(IDbConnectionFactory db) : ICheckinStore
         await tx.CommitAsync(ct);
     }
 
+    public async Task DeleteStepAsync(long bookingId, string step, IReadOnlyList<long> userIds, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.CheckinGuests WHERE BookingId = @bookingId AND Step = @step AND UserId IN @userIds", new { bookingId, step, userIds = userIds.ToArray() }, null, ct));
+    }
+
     public async Task<CheckinBookingRow?> GetBookingAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

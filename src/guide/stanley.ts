@@ -1,6 +1,8 @@
 import type { GuideTask, GuideView } from '../api/guideTypes'
 import { addDays } from '../domain/timezones'
 import { SCREEN_LIST } from '../routes/screens'
+import type { StanleyLevel } from '../settings/settings'
+import { GUIDE_DO_IT, type GuideDoIt } from '../api/guideTypes'
 import { primaryOf } from './view'
 
 /** The most days ahead a reminder can be set (the server refuses beyond 30; one day less keeps a clear margin). */
@@ -38,4 +40,15 @@ export function remindDay(task: Pick<GuideTask, 'state' | 'due' | 'opensAt'>, to
 /** The arguments `POST /me/stanley/actions/prepare` takes for a clock reminder at 09:00 on a day. The words are the task's title, cut to the server's limit. */
 export function taskRemindArgs(day: string, title: string): Record<string, string> {
   return { when: 'clock', at: REMIND_AT, date: day, text: title.slice(0, 80) }
+}
+
+/**
+ * Whether Stanley offers "Do it for me" on a task. The server says what he can do (`doIt`, only when there is something to do); the guest's Stanley level says how loudly. On Home's "Do this now"
+ * he offers it at Helpful and Chatty and stays quiet at Asked and Off; in his own answer to "What should I do now?" (the guest asked) he also offers it at Asked. Never at Off, never as a push.
+ */
+export function doItFor(task: Pick<GuideTask, 'state' | 'doIt'>, level: StanleyLevel, where: 'home' | 'asked'): GuideDoIt | null {
+  if (task.state !== 'todo' || !task.doIt || !GUIDE_DO_IT.includes(task.doIt)) return null
+  if (level === 'off') return null
+  if (where === 'home' && level === 'asked') return null
+  return task.doIt
 }

@@ -34,6 +34,7 @@ public static class StanleyTripSoFarRules
         StanleyActionKinds.RemindMe => "your reminders",
         StanleyActionKinds.CreatePoll => "the polls I set up",
         StanleyActionKinds.ChangeSeating => "your seating changes",
+        StanleyActionKinds.CheckinPrefill => "the check-in steps I filled in",
         _ => "",
     };
 

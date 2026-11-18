@@ -308,7 +308,7 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
 /// The real effects: each action goes through the service the screens use (stateroom requests, the excursion cart, dining, cases), as the guest, so those services' own checks, limits and
 /// permission rules apply at execution time. A day-plan change and a reminder are checked here and applied by the device.
 /// </summary>
-public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanService planService, ServiceRequestService requests, CaseService cases, ScopeLoader scopes, IUserClock clock, StanleyPollService polls, StanleyDiningPlanService dining, StanleyReminderService reminders) : IStanleyEffects
+public sealed class StanleyEffects(CheckinService checkin, ITripStore trips, IPlanStore plan, PlanService planService, ServiceRequestService requests, CaseService cases, ScopeLoader scopes, IUserClock clock, StanleyPollService polls, StanleyDiningPlanService dining, StanleyReminderService reminders) : IStanleyEffects
 {
     private async Task<BookingRow> BookingAsync(UserRecord user, string? sailingId, CancellationToken ct)
     {
@@ -452,6 +452,15 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                     [$"Now: {DiningPlanRules.Label(p.From)}", $"After: {DiningPlanRules.Label(p.To)}", "This changes the dinner plan for everyone on the booking, for the whole cruise."], who, null,
                     $"No charge. You can change it back until {DiningPlanRules.FreezeDays} days before sailing.", p.Facts);
             }
+            case StanleyActionKinds.CheckinPrefill:
+            {
+                var items = await checkin.PrefillPlanAsync(user, booking.Number, ct);
+                if (items.Count == 0) throw ApiException.Conflict("nothing");
+                var lines = items.Select(i => i.Step == "confirm" ? $"Confirm the details of {i.Detail}" : $"Emergency contact for {i.First}: {i.Detail}").ToList();
+                lines.Add("Not touched: passports, photos, the cruise contract, health questions and your card. Those stay yours to do, and check-in is not finished until you finish it.");
+                return new StanleyPreviewFacts("Fill in the parts of check-in I can", lines, [.. items.Select(i => i.First).Distinct()], null,
+                    "Nothing is submitted. You can take these back until you finish check-in, and change any answer on the check-in screen.", $"checkin|{booking.Number}|{string.Join(",", items.Select(i => $"{i.Step}:{i.Guest}"))}");
+            }
             case StanleyActionKinds.DraftCase:
             {
                 var kind = intent.Arg("caseKind");
@@ -566,6 +575,8 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 var was = await dining.ChangeAsync(user, booking.Number, intent.Arg("plan"), ct);
                 return new StanleyEffectResult($"{was}|{intent.Arg("plan")}");
             }
+            case StanleyActionKinds.CheckinPrefill:
+                return new StanleyEffectResult(await checkin.PrefillApplyAsync(user, booking.Number, ct));
             case StanleyActionKinds.DraftCase:
             {
                 var view = await cases.OpenAsync(user, booking.Number, new OpenCaseRequest(intent.Arg("caseKind"), intent.Arg("summary"), intent.Arg("place"), null, 0), ct);
@@ -596,6 +607,8 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 return await polls.ExistsAsync(user, booking.Number, intent.Arg("question"), ct);
             case StanleyActionKinds.ChangeSeating:
                 return await dining.IsAsync(user, booking.Number, intent.Arg("plan"), ct);
+            case StanleyActionKinds.CheckinPrefill:
+                return (await checkin.PrefillPlanAsync(user, booking.Number, ct)).Count == 0;
             default:
                 return (await cases.ListAsync(user, booking.Number, ct)).Cases.Any(c => c.Kind == intent.Arg("caseKind") && c.Summary == intent.Arg("summary") && c.CanWithdraw);
         }
@@ -636,6 +649,9 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 await dining.RestoreAsync(user, booking.Number, parts[0], parts[1], ct);
                 break;
             }
+            case StanleyActionKinds.CheckinPrefill:
+                await checkin.PrefillUndoAsync(user, booking.Number, effectRef, ct);
+                break;
             default:
                 await cases.WithdrawAsync(user, booking.Number, Guid.Parse(effectRef), ct);
                 break;

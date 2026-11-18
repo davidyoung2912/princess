@@ -25,6 +25,12 @@ public sealed class InMemoryCheckinStore(InMemoryJourney world) : ICheckinStore
         return Task.CompletedTask;
     }
 
+    public Task DeleteStepAsync(long bookingId, string step, IReadOnlyList<long> userIds, CancellationToken ct)
+    {
+        Steps.RemoveAll(s => s.BookingId == bookingId && s.Row.Step == step && userIds.Contains(s.Row.UserId));
+        return Task.CompletedTask;
+    }
+
     private CheckinBookingRow Row(long bookingId) => Bookings.TryGetValue(bookingId, out var r) ? r : Bookings[bookingId] = new CheckinBookingRow();
 
     public Task<CheckinBookingRow?> GetBookingAsync(long bookingId, CancellationToken ct) => Task.FromResult(Bookings.GetValueOrDefault(bookingId));

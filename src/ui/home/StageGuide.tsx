@@ -20,7 +20,7 @@ import { refreshGuide } from '../../guide/refresh'
 import { FitPrompt } from './FitPrompt'
 import { formatDate } from '../../domain/cruise'
 import { Card } from '../Card'
-import { TaskHelp, TaskRemind } from '../ai/GuideStanley'
+import { TaskDoIt, TaskHelp, TaskRemind } from '../ai/GuideStanley'
 
 const Meta = ({ task }: { task: GuideTask }) => <p className="guide__meta muted">{taskMeta(task).join(' · ')}</p>
 
@@ -75,7 +75,7 @@ function DoNow({ task, aside, view }: { task: GuideTask; aside: Aside; view: Gui
       <p>{w.why}</p>
       {task.urgency === 'now' && <p className="guide__urgent"><Clock size={16} aria-hidden="true" /> {t('guide.urgent')}</p>}
       <Meta task={task} />
-      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} /><TaskRemind task={task} /></div>
+      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><TaskDoIt task={task} where="home" /><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} /><TaskRemind task={task} /></div>
     </Card>
   )
 }

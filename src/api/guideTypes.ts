@@ -35,7 +35,13 @@ export interface GuideTask {
   carriedFrom: JourneyStage | null
   /** For a task done per traveller: how many are done of how many ("2 of 4 ready"). */
   who?: { done: number; total: number } | null
+  /** The Stanley action the server can do for this task once the guest confirms its preview (`checkin_prefill`), set only when there is something to do. Absent on a copy kept before it existed. */
+  doIt?: GuideDoIt | null
 }
+
+/** The things Stanley can do for a guide task. Each is a kind of Stanley action; the server decides when one is on offer. */
+export type GuideDoIt = 'checkin_prefill'
+export const GUIDE_DO_IT: readonly GuideDoIt[] = ['checkin_prefill']
 
 export interface GuideView {
   stage: JourneyStage

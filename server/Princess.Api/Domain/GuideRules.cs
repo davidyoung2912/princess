@@ -10,7 +10,7 @@ public sealed record GuideDraft(string Id, bool CategoryChosen);
 /// The confirmed trip. <c>Checklist</c> is the checklist by item id (the same facts the checklist screen shows); it is empty for a trip the guest cannot plan on (a linked agent booking).
 /// <c>CheckinState</c> is <c>notOpen</c>, <c>open</c>, <c>closed</c> or <c>done</c>.
 /// </summary>
-public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0);
+public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0, bool CanPrefill = false);
 
 /// <summary>What the guest has put aside: tasks they said are not for them (<c>Skipped</c>) and tasks they will do later (<c>Later</c>, by the day each returns). A task with a real deadline is never put aside.</summary>
 public sealed record GuideChoices(IReadOnlySet<string> Skipped, IReadOnlyDictionary<string, DateOnly> Later)
@@ -38,7 +38,7 @@ public sealed record GuideWho(int Done, int Total);
 /// </summary>
 public sealed record GuideTask(
     string Id, string Stage, string To, string State, string Urgency, string? UrgencyReason, string? Due, string? DueSource, string? OpensAt,
-    int Minutes, bool Hard, bool Optional, string DoneBy, string? BlockedBy, string? CarriedFrom, GuideWho? Who = null);
+    int Minutes, bool Hard, bool Optional, string DoneBy, string? BlockedBy, string? CarriedFrom, GuideWho? Who = null, string? DoIt = null);
 
 /// <summary>What really moves the guest to the next stage (the words are the client's, by stage), and the date when there is one.</summary>
 public sealed record GuideMoveOn(string Stage, string? Date);
@@ -66,7 +66,7 @@ public static class GuideRules
 
     private sealed record Raw(
         string Id, string To, int Minutes, bool Done, string DoneBy, bool Hard = false, bool Optional = false, string? Check = null,
-        string? BlockedBy = null, DateOnly? OpensAt = null, DateOnly? Due = null, string? DueSource = null, string? Reason = null, string? From = null, GuideWho? Who = null);
+        string? BlockedBy = null, DateOnly? OpensAt = null, DateOnly? Due = null, string? DueSource = null, string? Reason = null, string? From = null, GuideWho? Who = null, string? DoIt = null);
 
     /// <summary>Reads the <c>guideFit</c> document (<c>{ firstCruise, solo, quiet }</c>); anything unreadable counts as no.</summary>
     public static GuideFit ReadFit(System.Text.Json.Nodes.JsonObject? data)
@@ -125,7 +125,7 @@ public static class GuideRules
             else if (r.Due is { } due) urgency = due.DayNumber - f.Today.DayNumber <= SoonDays ? Soon : Later;
         }
         return new GuideTask(r.Id, r.Id[..r.Id.IndexOf('.')], r.To, state, urgency, reason, r.Due is { } d ? Iso(d) : null, r.DueSource, state == Waiting && r.OpensAt is { } opens ? Iso(opens) : null,
-            r.Minutes, r.Hard, r.Optional, r.DoneBy, state == Blocked ? r.BlockedBy : null, r.From, state == Done ? null : r.Who);
+            r.Minutes, r.Hard, r.Optional, r.DoneBy, state == Blocked ? r.BlockedBy : null, r.From, state == Done ? null : r.Who, state == Done ? null : r.DoIt);
     }
 
     /// <summary>The checklist item's own date and state when the guest has a checklist, else the fallback.</summary>
@@ -233,7 +233,8 @@ public static class GuideRules
                 var days = t is null ? int.MaxValue : t.Departure.DayNumber - f.Today.DayNumber;
                 raws.Add(new("getToShip.checkin", state == "closed" ? "/home/check-in/terminal" : "/home/check-in", 10, checkinDone, ByData, Hard: true, Check: "checkin",
                     OpensAt: state == "notOpen" ? t?.CheckinOpens : null, Due: t?.Departure, DueSource: t is null ? null : "booking",
-                    Reason: state is "open" or "closed" && days <= 3 ? "checkin" : null));
+                    Reason: state is "open" or "closed" && days <= 3 ? "checkin" : null,
+                    DoIt: state == "open" && t is { Agent: false, CanPrefill: true } ? "checkin_prefill" : null));
                 raws.Add(new("getToShip.pass", "/home/boarding-pass", 2, false, ByVisit, BlockedBy: checkinDone ? null : "getToShip.checkin"));
                 raws.Add(new("getToShip.travel", "/plan/getting-there", 5, false, ByVisit));
                 raws.Add(Documents(f, "getToShip.documents"));

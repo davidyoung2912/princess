@@ -43,6 +43,7 @@ public static class StanleyActivityRules
         StanleyActionKinds.ReserveDinner => "Cancel the table.",
         StanleyActionKinds.DraftCase => "Withdraw the case, if the team has not picked it up yet.",
         StanleyActionKinds.CreatePoll => "Delete the poll.",
+        StanleyActionKinds.CheckinPrefill => "Clear what I filled in, while check-in is still open and not finished.",
         StanleyActionKinds.ChangeSeating => "Put your old seating back.",
         StanleyActionKinds.PlanChange => "Undo it from your plan on the device where you made the change.",
         StanleyActionKinds.RemindMe => "Remove the reminder from your reminders.",
@@ -57,6 +58,7 @@ public static class StanleyActivityRules
         StanleyActionKinds.PlanChange => "Your plan as it was when you said yes.",
         StanleyActionKinds.RemindMe => "The all-aboard time and your plan as they were when you said yes.",
         StanleyActionKinds.DraftCase => "Only what you chose to send. Nothing was added.",
+        StanleyActionKinds.CheckinPrefill => "Your details and emergency contact as they were on file when you said yes.",
         _ => "The price and availability shown to you, checked again when you said yes.",
     };
 

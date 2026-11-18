@@ -248,6 +248,47 @@ public sealed class CheckinService(
 
     private Task Log(Scope c, string detail, CancellationToken ct) => accounts.AddHistoryAsync(c.Actor.Id, c.Actor.Id, "checkin", detail, c.Now, ct);
 
+    // ---- What Stanley fills in for the guest (G8) ----
+
+    /// <summary>The steps Stanley could save now: none unless check-in is open for this adult guest. Used to preview, to offer the button, and to check an unsure outcome.</summary>
+    public async Task<List<CheckinRules.PrefillItem>> PrefillPlanAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var c = await OpenAsync(actor, number, ct);
+        if (c.Actor.IsSupervised) return [];
+        var view = await BuildViewAsync(c, ct);
+        if (view.FinishedAt is not null) return [];
+        return CheckinRules.PrefillPlan([.. view.Guests.Select(g => new CheckinRules.PrefillGuest(g.Id, g.Name, g.First, g.Age, g.Record.Confirm is not null, g.Record.Emergency is not null,
+            g.Defaults.Emergency.Name, g.Defaults.Emergency.Phone, g.Defaults.Emergency.Relationship))]);
+    }
+
+    /// <summary>Saves each planned step through the same path as the screen, so every rule that applies to typing it applies here. Returns what was saved, so it can be undone.</summary>
+    public async Task<string> PrefillApplyAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var items = await PrefillPlanAsync(actor, number, ct);
+        if (items.Count == 0) throw ApiException.Conflict("nothing");
+        foreach (var i in items)
+        {
+            var req = i.Step == "emergency"
+                ? new CheckinSaveRequest([i.Guest], null, null, null, null, null, null, i.Name, i.Phone, i.Relationship, null, null, null)
+                : new CheckinSaveRequest([i.Guest], null, null, null, null, null, null, null, null, null, null, null, null);
+            await SaveAsync(actor, number, i.Step, req, ct);
+        }
+        return string.Join(",", items.Select(i => $"{i.Step}:{i.Guest}"));
+    }
+
+    /// <summary>Takes back what <see cref="PrefillApplyAsync"/> saved, while check-in is still open and not finished. Only the steps it made, only for guests still on the booking.</summary>
+    public async Task PrefillUndoAsync(UserRecord actor, string? number, string made, CancellationToken ct)
+    {
+        var c = await OpenAsync(actor, number, ct);
+        if ((await store.GetBookingAsync(c.Booking.BookingId, ct))?.FinishedAt is not null) throw ApiException.Conflict("tooLate");
+        foreach (var group in made.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Split(':')).Where(p => p.Length == 2 && Guid.TryParse(p[1], out _)).GroupBy(p => p[0]))
+        {
+            if (group.Key is not ("confirm" or "emergency")) continue;
+            var ids = group.Select(p => c.PersonById(Guid.Parse(p[1]))).OfType<ScopePerson>().Select(p => p.UserId).ToList();
+            if (ids.Count > 0) await store.DeleteStepAsync(c.Booking.BookingId, group.Key, ids, ct);
+        }
+    }
+
     // ---- Finishing ----
 
     public async Task<CheckinStatusDto> SubmitAsync(UserRecord actor, string? number, CancellationToken ct)

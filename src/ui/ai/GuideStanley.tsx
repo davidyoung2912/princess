@@ -6,7 +6,9 @@ import { chipsFor, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary
 import type { GuideTask, GuideView } from '../../api/guideTypes'
 import { demoNow } from '../../demo/store'
 import { isoDay } from '../../domain/rates'
-import { helpScreenId, nowTask, remindDay, taskRemindArgs } from '../../guide/stanley'
+import { doItFor, helpScreenId, nowTask, remindDay, taskRemindArgs } from '../../guide/stanley'
+import { useSettings } from '../../hooks/useSettings'
+import { stanleyLevelFor } from '../../settings/settings'
 import { taskMeta, taskWords } from '../../guide/words'
 import { t } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
@@ -37,6 +39,7 @@ export function NowAnswer({ view, onClose }: { view: GuideView; onClose: () => v
             <p>{taskWords(task).why}</p>
             <p className="muted">{taskMeta(task).join(' · ')}</p>
             <div className="button-row">
+              <TaskDoIt task={task} where="asked" />
               <LinkButton to={task.to} state={openedFrom('blue', task.id)} onClick={onClose}>{t('guide.start')}</LinkButton>
               <Link to="/" onClick={onClose}>{t('guide.next.home')}</Link>
             </div>
@@ -95,6 +98,36 @@ export function TaskRemind({ task }: { task: GuideTask }) {
     <span className="remind-me">
       {prepared === null && <Button variant="tertiary" disabled={busy} aria-label={t('remindMe.aria', { title })} onClick={() => { void ask() }}>{t('remindMe.button')}</Button>}
       {failed && <span role="alert" className="field__error"> {t('remindMe.failed')}</span>}
+      {prepared && <span role="status" className="remind-me__card"><StanleyActionCard action={prepared} onChange={setPrepared} /></span>}
+    </span>
+  )
+}
+
+/**
+ * "Do it for me" on a task the server says Stanley can do (today: filling in the parts of check-in he can from what the app already holds). It asks the server for a preview and shows the card:
+ * exactly what he would do and what he leaves alone, and nothing happens until the guest presses Confirm. He offers it at Helpful and Chatty, and on request at Asked (see `doItFor`).
+ */
+export function TaskDoIt({ task, where }: { task: GuideTask; where: 'home' | 'asked' }) {
+  const [settings] = useSettings()
+  const [prepared, setPrepared] = useState<StanleyAction | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const kind = doItFor(task, stanleyLevelFor(settings), where)
+  if (!kind) return null
+  const title = taskWords(task).title
+  const ask = async () => {
+    setBusy(true); setFailed(false)
+    try {
+      const a = normalizeAction(await stanleyActions.prepare({ kind, args: {} }))
+      setPrepared(a)
+      setFailed(a === null)
+    } catch { setFailed(true) }
+    setBusy(false)
+  }
+  return (
+    <span className="remind-me">
+      {prepared === null && <Button variant="secondary" disabled={busy} aria-label={t('guide.doIt.aria', { task: title })} onClick={() => { void ask() }}>{t('guide.doIt')}</Button>}
+      {failed && <span role="alert" className="field__error"> {t('guide.doIt.failed')}</span>}
       {prepared && <span role="status" className="remind-me__card"><StanleyActionCard action={prepared} onChange={setPrepared} /></span>}
     </span>
   )

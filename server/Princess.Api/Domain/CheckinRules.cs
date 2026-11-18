@@ -128,4 +128,30 @@ public static partial class CheckinRules
     /// <summary>Online check-in at a moment: <c>notOpen</c>, <c>open</c> or <c>closed</c>. A finished check-in is <c>done</c> whatever the clock says.</summary>
     public static string State(bool finished, DateTime now, DateTime opensAt, DateTime closesAt) =>
         finished ? "done" : TripRules.CheckinWindow(now, opensAt, closesAt);
+
+    // ---- What Stanley can fill in (G8) ----
+
+    /// <summary>One guest as the prefill rules see them: what is already answered, and the emergency contact on file for them (their own, or the booker's).</summary>
+    public sealed record PrefillGuest(Guid Id, string Name, string First, int Age, bool Confirmed, bool HasEmergency, string EmergencyName, string EmergencyPhone, string EmergencyRelationship);
+
+    /// <summary>One step Stanley would save for one guest, with the words the preview shows. Emergency items carry the contact to save.</summary>
+    public sealed record PrefillItem(string Step, Guid Guest, string First, string Detail, string Name = "", string Phone = "", string Relationship = "");
+
+    /// <summary>
+    /// The steps Stanley may fill in from what the app already holds: confirming a guest's details (the preview lists them, so the guest reads them before saying yes) and the emergency contact
+    /// on file, when it passes the same check as typing it. Never a passport, a photo, the contract, the health questions or a card: those are the guest's own.
+    /// </summary>
+    public static List<PrefillItem> PrefillPlan(IReadOnlyList<PrefillGuest> guests)
+    {
+        var names = guests.Select(g => g.Name).ToList();
+        var items = new List<PrefillItem>();
+        foreach (var g in guests.Where(g => !g.Confirmed)) items.Add(new PrefillItem("confirm", g.Id, g.First, $"{g.Name}, age {g.Age}"));
+        foreach (var g in guests.Where(g => !g.HasEmergency))
+        {
+            var (name, phone, relationship) = (g.EmergencyName.Trim(), g.EmergencyPhone.Trim(), g.EmergencyRelationship.Trim());
+            if (ValidateEmergency(name, phone, relationship, names) is not null) continue;
+            items.Add(new PrefillItem("emergency", g.Id, g.First, $"{name} ({relationship}), {phone}", name, phone, relationship));
+        }
+        return items;
+    }
 }
