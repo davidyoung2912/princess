@@ -10,7 +10,7 @@ public sealed record GuideDraft(string Id, bool CategoryChosen);
 /// The confirmed trip. <c>Checklist</c> is the checklist by item id (the same facts the checklist screen shows); it is empty for a trip the guest cannot plan on (a linked agent booking).
 /// <c>CheckinState</c> is <c>notOpen</c>, <c>open</c>, <c>closed</c> or <c>done</c>.
 /// </summary>
-public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0, bool CanPrefill = false, bool CanDraftCustoms = false, bool CanPlanExcursion = false, bool CanBookDinner = false, bool CanPlanTours = false, bool CanStartPacking = false, bool CanPlanTravel = false);
+public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0, IReadOnlyList<string>? NotReady = null, bool CanPrefill = false, bool CanDraftCustoms = false, bool CanPlanExcursion = false, bool CanBookDinner = false, bool CanPlanTours = false, bool CanStartPacking = false, bool CanPlanTravel = false);
 
 /// <summary>What the guest has put aside: tasks they said are not for them (<c>Skipped</c>) and tasks they will do later (<c>Later</c>, by the day each returns). A task with a real deadline is never put aside.</summary>
 public sealed record GuideChoices(IReadOnlySet<string> Skipped, IReadOnlyDictionary<string, DateOnly> Later)
@@ -34,7 +34,7 @@ public sealed record GuideChange(string Kind, string What, string Why);
 public sealed record GuideChanged(string What, string Why);
 
 /// <summary>How many of the travellers a task is done for ("2 of 4 ready").</summary>
-public sealed record GuideWho(int Done, int Total);
+public sealed record GuideWho(int Done, int Total, IReadOnlyList<string>? Missing = null);
 
 /// <summary>
 /// One thing the guest could do now. <c>State</c> is todo, blocked (needs <c>BlockedBy</c> first), waiting (not open until <c>OpensAt</c>) or done.
@@ -195,7 +195,7 @@ public static class GuideRules
         var (_, due, source) = FromCheck(t, "documents", false);
         return new(id, "/me/documents", 10, t?.DocumentsOk ?? false, ByData, Hard: true, Check: "documents", Due: due, DueSource: source,
             Reason: t is not null && !t.Agent && !t.DocumentsOk && days <= 30 ? "documents" : null, From: from,
-            Who: t is { Agent: false, Guests: > 1 } ? new GuideWho(Math.Min(t.Ready, t.Guests), t.Guests) : null);
+            Who: t is { Agent: false, Guests: > 1 } ? new GuideWho(Math.Min(t.Ready, t.Guests), t.Guests, t.NotReady is { Count: > 0 } ? t.NotReady : null) : null);
     }
 
     private static List<Raw> Catalogue(GuideFacts f)

@@ -224,6 +224,15 @@ public class GuideRulesTests
     }
 
     [Fact]
+    public void DocumentsNameTheTravellersWhoAreNotReady()
+    {
+        var today = Departure.AddDays(-40);
+        var trip = Trip(today) with { Guests = 4, Ready = 2, NotReady = new[] { "Ana", "Leo" } };
+        var docs = At(StageRules.Manage, today, trip).Tasks.Single(t => t.Id == "manage.documents");
+        Assert.Equal(new[] { "Ana", "Leo" }, docs.Who!.Missing);
+    }
+
+    [Fact]
     public void ChildrenInThePartyAddTheClubsTask()
     {
         var today = Departure.AddDays(-40);

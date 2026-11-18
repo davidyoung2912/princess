@@ -64,7 +64,7 @@ describe('the words the plan uses', () => {
   })
 
   it('keeps every {placeholder} in the plan\'s own texts to the few the code fills in', () => {
-    const known = new Set(['n', 'total', 'task', 'stage', 'done', 'count', 'date', 'moveOn', 'minutes', 'seen', 'skipped', 'port'])
+    const known = new Set(['n', 'total', 'task', 'stage', 'done', 'count', 'date', 'moveOn', 'minutes', 'seen', 'skipped', 'port', 'names'])
     const own = guideKeys.filter(([k]) => /^guide\.(?:moveOn\.|[a-zA-Z]+\.[a-zA-Z]+\.(?:title|why)$)/.test(k) || /^guide\.[a-zA-Z]+$/.test(k))
     for (const [k, v] of own) for (const m of String(v).matchAll(/\{(\w+)\}/g)) expect(known.has(m[1]), `${k} {${m[1]}}`).toBe(true)
   })

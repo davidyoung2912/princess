@@ -19,7 +19,10 @@ export function taskMeta(task: GuideTask, titleOf: (id: string) => string = (id)
   const out: string[] = []
   if (task.carriedFrom) out.push(t('guide.carried', { stage: stageName(task.carriedFrom) }))
   if (task.optional) out.push(t('guide.optional'))
-  if (task.who) out.push(t('guide.who', { done: task.who.done, total: task.who.total }))
+  if (task.who) {
+    out.push(t('guide.who', { done: task.who.done, total: task.who.total }))
+    if (task.who.done < task.who.total && task.who.missing?.length) out.push(t('guide.whoMissing', { names: task.who.missing.join(', ') }))
+  }
   if (task.state === 'waiting' && task.opensAt) out.push(t('guide.opens', { date: formatDate(task.opensAt) }))
   else if (task.state === 'blocked' && task.blockedBy) out.push(t('guide.after', { task: titleOf(task.blockedBy).toLowerCase() }))
   else if (task.due) out.push(t('guide.due', { date: formatDate(task.due) }))

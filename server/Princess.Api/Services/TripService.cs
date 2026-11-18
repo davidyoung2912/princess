@@ -39,7 +39,8 @@ public sealed class TripService(AccessService access, SubjectAccess subjects, IT
             var checks = party.Select(g => DocumentService.Check(g, b.Departure, b.Nights)).ToList();
             missing = checks.Sum(c => c.Blocking);
             documents = new TripDocumentsDto(party.Count, missing, checks.Count(DocumentRules.PassportProblem), checks.Count(c => c.Ready),
-                party.Count(g => AccountRules.AgeOn(D(g.Dob), D(b.Departure)) < ExcursionRules.ChildAge));
+                party.Count(g => AccountRules.AgeOn(D(g.Dob), D(b.Departure)) < ExcursionRules.ChildAge),
+                party.Zip(checks).Where(p => !p.Second.Ready).Select(p => p.First.FirstName).Take(8).ToList());
         }
 
         var opensAt = TripRules.CheckinOpensAt(departure);

@@ -6329,6 +6329,7 @@ export const enLate = {
   'guide.stale': 'Showing your last saved plan.',
   'guide.doneCount': 'Done ({count})',
   'guide.who': '{done} of {total} travellers ready',
+  'guide.whoMissing': 'Still to do: {names}',
   'guide.skip': 'Not for me',
   'guide.skipFor': 'Not for me: {task}',
   'guide.later': 'Tomorrow',

@@ -68,6 +68,13 @@ describe('the guide on the phone', () => {
 })
 
 describe('what a task says about itself', () => {
+  it('names the travellers still to do, only while some are', () => {
+    const who = (done: number, missing?: string[]) => taskMeta(task('manage.documents', { who: { done, total: 4, missing } })).slice(0, 2)
+    expect(who(2, ['Ana', 'Leo'])).toEqual(['2 of 4 travellers ready', 'Still to do: Ana, Leo'])
+    expect(who(4, ['Ana'])).toEqual(['4 of 4 travellers ready', '5 min'])
+    expect(who(2)).toEqual(['2 of 4 travellers ready', '5 min'])
+  })
+
   it('gives the due date and minutes, then opens, blocked and carried-over notes', () => {
     expect(taskMeta(task('manage.pay', { due: '2026-12-04' }))).toEqual(['Due Fri, Dec 4, 2026', '5 min'])
     expect(taskMeta(task('getToShip.checkin', { state: 'waiting', opensAt: '2026-12-19', due: '2026-12-22', minutes: 10 }))).toEqual(['Opens Sat, Dec 19, 2026', '10 min'])

@@ -395,10 +395,16 @@ Five ideas: more "Do it for me", say what changed, hand off at stage changes, gr
 - Remembered once dismissed in the existing `stageProgress` document under step 9 (`HANDOFF_STEP`, past the welcome's three and the optional visits 4 to 6, so no visit can set it), keyed by stage and sailing, so no device asks again. No server change, no new limit. Client only.
 - Tests: `handoff.test.ts`.
 
+**G10g, group awareness (built).**
+- The trip's documents summary (`TripDocumentsDto.NotReady`) now lists the first names of the travellers whose documents are not ready (at most eight), carried through `GuideTrip.NotReady` to `GuideWho.Missing`. The documents task shows "Still to do: Ana, Leo" under "2 of 4 travellers ready", and only while some are not ready.
+- Check-in and muster have no per-traveller state on the server, so they are left as they were; naming them would need new stores.
+- Tests: `view.test.ts`; C# `GuideRulesTests` (not run or compiled, no `dotnet`).
+- **Next:** G10h.
+
 **G10 backlog (the full list, so nothing is lost between phases).**
 - Do it for me, best candidates (most effort saved, safe undo): dinner on sea days (G10a, done); excursion booking in Prebook, not just port day (G10b); packing list started from the sailing, the weather and the party (G10c); arrival-time and getting-there plan from flight or drive time (G10d).
 - Say what changed (G10e): if a tender is late, a port changes or the weather turns, the guide reorders and Stanley says why. A calm "your all-aboard time moved" beats any nudge.
 - Hand off at stage changes (G10f): one short message when a stage opens ("You're in Prebook. Check-in opens Thursday. Two things first"), instead of leaving the guest to find Home.
-- Group awareness (G10g): for families, Stanley says who is missing a document, not just that one is. Per-traveller counts exist for documents but not for check-in or muster.
+- Group awareness (G10g, built): for families, Stanley says who is missing a document, not just that one is. Per-traveller counts exist for documents but not for check-in or muster.
 - Ask, don't assume (G10h): Stanley asks one question at a natural moment ("travelling with kids?") and feeds the answer into the fit, so the guest is not asked up front.
 - Working rules still apply: one phase at a time, commit and stop, npm checks only, no `dotnet test` (the user compiles and runs the C# on Windows).
