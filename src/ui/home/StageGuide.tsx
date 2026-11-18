@@ -15,6 +15,7 @@ import { getContext, subscribeContext } from '../../account/context'
 import { demoNow } from '../../demo/store'
 import { isoDay } from '../../domain/rates'
 import { putOffGuideTask, restoreGuideTask, skipGuideTask } from '../../guide/choicesStore'
+import { markTaskHere, noteGuideHere } from '../../diagnostics/guideFunnel'
 import { refreshGuide } from '../../guide/refresh'
 import { FitPrompt } from './FitPrompt'
 import { formatDate } from '../../domain/cruise'
@@ -41,7 +42,7 @@ function useAside() {
   const [said, setSaid] = useState('')
   return {
     said,
-    skip: (task: GuideTask) => { skipGuideTask(personId, task, demoNow()); setSaid(t('guide.aside.live', { task: taskWords(task).title })) },
+    skip: (task: GuideTask) => { skipGuideTask(personId, task, demoNow()); markTaskHere(task.id, 'skipped'); setSaid(t('guide.aside.live', { task: taskWords(task).title })) },
     later: (task: GuideTask) => { putOffGuideTask(personId, task, isoDay(demoNow() + DAY_MS)); setSaid(t('guide.aside.live', { task: taskWords(task).title })) },
     restore: async (id: string) => {
       restoreGuideTask(personId, id)
@@ -103,6 +104,7 @@ export function StageGuide() {
   const [settings] = useSettings()
   const reason = dotReason(view, stanleyLevelFor(settings))
   useEffect(() => { publishDot(reason); return () => publishDot(null) }, [reason])
+  useEffect(() => { if (view) noteGuideHere(view) }, [view])
   if (!view) return null
   const primary = primaryOf(view)
   const open = openTasks(view)

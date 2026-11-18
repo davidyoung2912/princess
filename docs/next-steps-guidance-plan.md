@@ -269,3 +269,34 @@ Found while reading the code. None are built; each is small.
 - **Disembark:** `disembark.sweep` and `disembark.customs` join the must-dos (a forgotten phone and a customs form cost most); optional `disembark.onward` and `disembark.lost`.
 - **Remember:** optional `remember.history` (receipts), `remember.memories` (memory book) and `remember.followup`.
 - Optional visit tasks stay offers. Tests: C# `GuideRulesTests` written, not run (no `dotnet test`).
+
+**G7, prove it (built).**
+- `src/guide/coverage.test.ts` reads the server catalogue as text (the C# is not run) and checks: every task id and destination is found; every destination is a real route; every task has a destination in its own line; each stage has tasks; each task's screen is listed in its own stage's tiles, tabs or Me (Chat is global and the booking steps are named as reached by address); how a task is known done is one of data, tick or visit; every due date names a source (booking or checklist); a task id written under two stages is passed a `from` stage (carry-over); there is no clock call in the rules; hard tasks stay few.
+- The coverage test found three optional tasks whose screens were in no stage tab (`manage.phone`, `prebook.firstTime`, `prebook.solo`); they were added to their stage's tabs (Manage Trip, Prebook Plan, Prebook Prepare), so the tab dots and "Start here" can find them. Stage screen counts in `screens.test.ts` moved to Manage 66 and Prebook 81.
+- `src/guide/a11y.test.ts` holds, in the source, what the plan promises: a polite live region on Home and on step screens, task buttons told apart by name for a screen reader, urgency and done never by colour alone, headed sections and lists, and plain wording (no dash as a pause, a title under 60 characters with no full stop, a why under 220 characters as one sentence, only known placeholders). Reduced motion is already held by `motionPolicy.test.ts`.
+- **Funnel.** `src/diagnostics/guideFunnel.ts`: for each task id, three yes-or-no marks (seen, done, put aside), kept on this device only, never sent, with nothing typed and no dates. Home's plan notes what it lists (`noteGuideHere`) and "Not for me" marks a task put aside. Settings, Problem log shows tasks seen, done and put aside by stage, with a clear button. Test: `guideFunnel.test.ts`.
+- **Not proved here:** "every stage has a primary task at every time of day" needs the C# to run (`GuideRules.Build` with test dates). That belongs in `GuideRulesTests.cs`, which is not run in this repo's checks, so it is left as a C# test to add when `dotnet test` can be run by the user.
+
+## 11. "Do it for me" (G8): design step, nothing built
+
+Today only reminders map to a Stanley action, and "Remind me" already covers that, so this is a feature phase and not a content pass. It needs a design decision before code.
+
+**The model stays the one Stanley already uses:** propose, confirm, do, undo. A task offers "Do it for me" only where the server can really do the work. Stanley shows a preview card of exactly what will happen, nothing is changed until the guest presses Confirm, and where the change can be reversed it can be undone for two hours (as the plan changes already can). The front end only calls a server action; it does not know whether a provider behind it is simulated.
+
+**Where it saves the most effort (three to build, in this order):**
+
+| Task | What Stanley would do | Server action needed (none exists yet) | Undo |
+|---|---|---|---|
+| `getToShip.checkin` | Start check-in with the answers the app already holds (names, passports, contact, emergency contact), show every field, and submit only on Confirm. | `POST /me/trip/check-in/draft` to build the pre-filled form from stored traveller data, then the existing check-in submit on confirm. | None once submitted (the preview says so); the draft can be discarded. |
+| `disembark.customs` | Draft a customs declaration from the purchases on the ship bill (shop, spa, onboard sales), with the guest's allowances shown against the total. | `POST /me/trip/customs/draft` reading the bill lines and the destination rules (simulated behind an interface like the other providers). | Draft can be deleted; nothing is filed for the guest. |
+| `port.excursion` | Propose an excursion plan for the day that fits the all-aboard time, the guide's interests and the budget, and book the chosen one. | `POST /me/trip/ports/{day}/plan` returning options that respect all-aboard minus a buffer; booking uses the existing excursion booking. | Cancel through the existing booking cancel, within its own rules. |
+
+Smaller candidates for later: adding a calendar entry for a dated task (a downloadable `.ics` needs no server change) and pre-filling the family-at-home link.
+
+**Decisions needed before building (please answer):**
+1. Are these the right three, and in this order? (My guess matches yours: customs, check-in, excursion plan.)
+2. Should check-in submit from Stanley at all, or stop at "open the form filled in"? Submitting is the larger promise and has no undo.
+3. For customs: a draft the guest copies or prints, or a form the app files? Recommendation: a draft only; the app should not file anything with an authority.
+4. Which Stanley levels may offer it? Recommendation: Helpful and Chatty only, and never as a push; Asked shows it only after the guest asks.
+
+**Shape of the build once decided:** a `doIt` field on a guide task (the action id, set by the server only when the data to do it exists, so the button never appears without a result); a `GuideStanley` "Do it for me" button beside "Remind me" that opens the existing preview and confirm card; one server action and one C# unit test per task; client tests on fixtures that fail if a task offers an action the server did not mark. Each task is its own phase, committed and stopped, starting with the one chosen in question 1.

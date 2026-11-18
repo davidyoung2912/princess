@@ -331,7 +331,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Your booking is confirmed. Here is what needs you next.',
     tiles: ['P14', 'M06', 'P12', 'H21', 'H10', 'P09'],
     tabs: [
-      { label: 'Trip', colour: 'teal', subtext: 'Your confirmed trip, and what changes.', screens: ['M02', 'M03', 'H20', 'H21', 'H23', 'H05', 'H08', 'H09', 'H52', 'H53', 'H54', 'H10', 'S01', 'S02', 'S03', 'P01', 'P13', 'P14', 'X20', 'X16'] },
+      { label: 'Trip', colour: 'teal', subtext: 'Your confirmed trip, and what changes.', screens: ['M02', 'M03', 'H20', 'H21', 'H23', 'H05', 'H08', 'H09', 'H52', 'H53', 'H54', 'H10', 'S01', 'S02', 'S03', 'P01', 'P05', 'P13', 'P14', 'X20', 'X16'] },
       { label: 'Needs', colour: 'pink', subtext: 'Documents, health and access for every traveller.', screens: ['M06', 'M05', 'P12', 'P08', 'P09', 'P10', 'P11', 'P07', 'H38'] },
       { label: 'Group', colour: 'gold', subtext: 'Your travel party and the people at home.', screens: ['P47', 'P48', 'P49', 'P50', 'P43', 'P46', 'P51', 'P52', 'M14'] },
     ],
@@ -341,8 +341,8 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Shape your days before you sail.',
     tiles: ['X28', 'X13', 'M08', 'P02', 'P01', 'P47'],
     tabs: [
-      { label: 'Plan', colour: 'teal', subtext: 'Book excursions and dining and shape your days.', screens: ['X28', 'X13', 'P35', 'P36', 'P26', 'P27', 'P24', 'P23', 'P25', 'P28', 'P34', 'P39', 'P40', 'P41', 'P42', 'P44', 'P45', 'P06', 'S18', 'S19', 'S38', 'H09', 'X20', 'X16', 'S01', 'S02'] },
-      { label: 'Prepare', colour: 'pink', subtext: 'Pack, travel and sort things at home.', screens: ['P01', 'P02', 'P03', 'P05', 'P07', 'P29', 'P31', 'P33', 'H38', 'H24'] },
+      { label: 'Plan', colour: 'teal', subtext: 'Book excursions and dining and shape your days.', screens: ['X28', 'X13', 'P04', 'P35', 'P36', 'P26', 'P27', 'P24', 'P23', 'P25', 'P28', 'P34', 'P39', 'P40', 'P41', 'P42', 'P44', 'P45', 'P06', 'S18', 'S19', 'S38', 'H09', 'X20', 'X16', 'S01', 'S02'] },
+      { label: 'Prepare', colour: 'pink', subtext: 'Pack, travel and sort things at home.', screens: ['P01', 'P02', 'P03', 'P05', 'P07', 'P29', 'P31', 'P33', 'H38', 'H24', 'S45'] },
       { label: 'Group', colour: 'gold', subtext: 'Your travel party and the people at home.', screens: ['P47', 'P48', 'P49', 'P50', 'P43', 'P46', 'P51', 'P52', 'M14'] },
     ],
     me: { subtext: 'Payments, documents, packages and rewards.', screens: ['M02', 'M03', 'M06', 'M07', 'M08', 'M09', 'P13', 'P14', 'P12', 'P15', 'P16', 'P17', 'P18', 'M14', ...SETTINGS_AND_HELP] },

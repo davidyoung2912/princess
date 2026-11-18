@@ -93,7 +93,7 @@ describe('screen registry (P2)', () => {
 
   it('counts the screens each stage uses as the plan lists them (Chat is global, so it is not counted)', () => {
     const counts = Object.fromEntries(JOURNEY_STAGES.map((s) => [s, screensOfStage(s).length]))
-    expect(counts).toEqual({ dream: 47, discover: 51, book: 50, manage: 65, prebook: 79, getToShip: 68, embark: 71, sea: 97, port: 96, disembark: 52, remember: 58 })
+    expect(counts).toEqual({ dream: 47, discover: 51, book: 50, manage: 66, prebook: 81, getToShip: 68, embark: 71, sea: 97, port: 96, disembark: 52, remember: 58 })
   })
 
   it('lets guests browse the ship from Dream on, but keeps the on-board services for on board', () => {
