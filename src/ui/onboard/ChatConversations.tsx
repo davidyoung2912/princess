@@ -5,7 +5,7 @@ import stanleyPicture from '../../assets/stanley-small.png'
 import { useStanleyAsk, useStanleyBusy } from '../ai/useStanleyAsk'
 import { StanleyReply } from '../ai/StanleyReply'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
-import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
+import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, GroupStanley, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
@@ -65,7 +65,7 @@ import { CoordinatorButton, CoordinatorProvider, RemainingCard, RemindersSwitch 
 import { RoomDetails, RulesDialog } from './ChatRooms'
 import { FlagToStaff, HostPanel } from './ChatHost'
 import { ChatSearch, SaveChat } from './ChatSearch'
-import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWrite, Icebreakers, PolishDraft, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
+import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWrite, PolishDraft, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
 import { showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
 import { ChatAvatar } from './ChatLooks'
@@ -225,7 +225,6 @@ function ConversationItem({ c, urgentIds, onOpen, shipTime, now, keptDay }: { c:
             <strong>{c.name}</strong>
             {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
           </span>
-          {isStanleyChat(c) && subtitleOf(c) && <span className="muted conv__sub">{t('stanley.chat.speaking', { name: subtitleOf(c) })}</span>}
           {level !== 'normal' && <UrgencyTag level={level} />}
           <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>
           {tags.length > 0 && <span className="conv__tags muted">{tags.join(' · ')}</span>}
@@ -724,8 +723,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     <StanleyTapProvider value={tap}>
     <CoordinatorProvider value={(conversation?.kind === 'group' || conversation?.kind === 'huddle') && groupStanley.data ? { groupId: id, state: groupStanley.data } : null}>
     <section aria-labelledby="thread-h">
-      <h2 id="thread-h" className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</h2>
-      {permanent && <><p className="muted">{t('stanley.chat.speaking', { name: subtitleOf(conversation) })}</p><p className="muted" role="note">{t('stanley.chat.permanent')}</p></>}
+      <h2 id="thread-h"><span className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</span></h2>
+      {permanent && <p className="muted" role="note">{t('stanley.chat.permanent')}</p>}
       {conversation && conversation.kind !== 'direct' && !permanent && !room && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
@@ -746,11 +745,10 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {permanent && supervisedChild && <p className="muted" role="note">{t('stanley.chat.noticeOnly')}</p>}
       {permanent && <PushPromptNote prompt={pushPrompt(currentSupport(), supervisedChild, messages.some((m) => m.notice !== undefined && m.acked === false && noticeState(m, now) === 'active'))} />}
       {permanent && <NeedsYouStrip messages={messages} ackBusy={ack.busy} onAck={runAck} />}
-      {hasMore && <Button variant="secondary" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}
+      {hasMore && <Button variant="secondary" className="chat-jump" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}
       <ActionError error={older.error} />
-      {dividerId && !jumped && <Button variant="secondary" onClick={jumpToUnread}>{t('conv.jumpUnread')}</Button>}
+      {dividerId && !jumped && <Button variant="secondary" className="chat-jump" onClick={jumpToUnread}>{t('conv.jumpUnread')}</Button>}
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
-      {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && tap?.available === true && !room && <Icebreakers onPick={putInBox} />}
       {!permanent && <PinBar pins={pins} canPin={conversation?.canPin === true} busy={pin.busy} onGo={goToPin} onUnpin={(messageId) => void pin.run(messageId, false)} />}
       {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must take focus so the keyboard can scroll it */}
       <div ref={logBox} className="chat-scroll" tabIndex={0} role="region" aria-label={t('conv.messages', { name })}>

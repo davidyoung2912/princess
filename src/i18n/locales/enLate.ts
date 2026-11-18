@@ -5801,7 +5801,6 @@ export const enLate = {
   'stanley.term.disembarkation': 'disembarkation',
   'stanley.explain.disembarkation': 'Disembarkation is the day you leave the ship at the end of the cruise. Bags go out the night before, and you get an exit time.',
   // ---- BM53 ----
-  'stanley.chat.speaking': 'Speaking for {name}',
   'stanley.chat.permanent': 'This chat stays with your account. It cannot be muted, left or removed.',
   'stanley.chat.askLabel': 'What are you curious about?',
   'stanley.chat.history': 'Your questions and Stanley’s answers are kept on this device only. Notices from Princess Cruises and your ship are kept with your account.',

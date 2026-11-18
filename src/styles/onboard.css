@@ -704,3 +704,7 @@ button.chat-quote { cursor: pointer; }
 /* In Stanley's chat the history, the notices panel and the ask box sit close together. */
 .chat-more--tools.chat-notices { margin-top: var(--space-2); }
 .chat-more--tools.chat-notices + .composer--ask, .composer--ask { margin-top: var(--space-2); }
+
+/* Buttons above the message history (earlier messages, jump to first unread) keep clear of the text above and the box below. */
+.chat-jump { margin-block: var(--space-3); }
+
