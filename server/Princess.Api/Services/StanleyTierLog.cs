@@ -6,7 +6,7 @@ namespace Princess.Api.Services;
 public sealed class StanleyTierEntry
 {
     public DateTime At { get; set; }
-    /// <summary>blocked, handoff, offtopic, unavailable, trip, before or model.</summary>
+    /// <summary>blocked, handoff, offtopic, unavailable, unanswered, trip, before or model.</summary>
     public string Tier { get; set; } = "";
     /// <summary>claude, scripted or empty.</summary>
     public string Source { get; set; } = "";

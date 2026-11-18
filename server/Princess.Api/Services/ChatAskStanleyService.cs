@@ -121,7 +121,7 @@ public sealed class ChatAskStanleyService(IChatStore store, IChatStanleyStore us
             try { text = await ModelAnswerAsync(actor, member, readable, asked, name, question, now, ct); }
             catch (ConciergeModelException) { text = null; }
         }
-        else text = StanleyRules.LooksOnTopic(question) ? StanleyRules.ScriptedAnswerFor(question) : ChatAskStanleyRules.OffTopic;
+        else text = StanleyRules.LooksOnTopic(question) ? StanleyRules.ScriptedAnswerFor(question) ?? ChatAskStanleyRules.NotSure : ChatAskStanleyRules.OffTopic;
 
         typing.Clear(member.GroupId, 0);
         var clean = ChatAskStanleyRules.Clean(text);

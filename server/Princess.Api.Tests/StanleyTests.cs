@@ -73,6 +73,13 @@ public class StanleyRulesTests
         Assert.True(StanleyRules.LooksOnTopic("What is there to do in Cozumel?"));
         Assert.True(StanleyRules.LooksOnTopic("¿A qué hora es el embarque?"));
         Assert.False(StanleyRules.LooksOnTopic("Write me a poem about my cat"));
+        Assert.Null(StanleyRules.ScriptedAnswerFor("Tell me about the ship"));
+        Assert.DoesNotContain("Cozumel", StanleyRules.UnansweredText + StanleyRules.AnswerSystem);
+        Assert.All(new[] { "What should I pack?", "Will it rain?", "Tell me about the ports", "dinner?", "my cabin", "passport" }, q => Assert.DoesNotContain("Roatan", StanleyRules.ScriptedAnswerFor(q) ?? ""));
+        Assert.True(StanleyRules.SkipsModel(new StanleyHintDto("spa.book", true, true), false));
+        Assert.False(StanleyRules.SkipsModel(new StanleyHintDto("spa.book", true, true), true));
+        Assert.False(StanleyRules.SkipsModel(new StanleyHintDto("spa.book", false, true), false));
+        Assert.False(StanleyRules.SkipsModel(new StanleyHintDto("bad topic!", true, true), false));
     }
 }
 
@@ -505,7 +512,7 @@ public class StanleyApiTests : JourneyWorld
         Assert.Equal(HttpStatusCode.OK, ok.Status);
         Assert.Equal("answer", ok.Json.GetProperty("kind").GetString());
         Assert.Equal("scripted", ok.Json.GetProperty("source").GetString());
-        Assert.Equal("model", ok.Json.GetProperty("tier").GetString());
+        Assert.Equal("unanswered", ok.Json.GetProperty("tier").GetString());
         Assert.Equal("text", ok.Json.GetProperty("blocks")[0].GetProperty("type").GetString());
         var blocked = await Call(HttpMethod.Post, "/api/v1/me/stanley", token, new StanleyRequestDto([new("user", "shut up", 1)]));
         Assert.Equal("blocked", blocked.Json.GetProperty("kind").GetString());

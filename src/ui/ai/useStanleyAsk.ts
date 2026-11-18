@@ -12,7 +12,7 @@ import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
 import { countUnderstood } from '../../diagnostics/stanleyUnderstood'
-import { answerFromData, choiceOf, composeReply, EMPTY_THREAD, liveShip, previousOf, readQuestion, remember } from '../../ai/understand'
+import { answerFromData, choiceOf, composeReply, EMPTY_THREAD, hintOf, liveShip, previousOf, readQuestion, remember } from '../../ai/understand'
 import { cardText } from '../../ai/stanleyCard'
 import { portDays } from '../../ai/understand/portDays'
 import { getContext, subscribeContext } from '../../account/context'
@@ -141,7 +141,7 @@ export function useStanleyAsk() {
       // The server turns a request to change something into a typed preview; it needs today's plan and the all-aboard time to name an item or a reminder's basis.
       const actionContext: ActionContext = { plan: hasBooking && dayPlan.ready ? planSnapshot(dayPlan.rows, dayPlan.alternatives, dayPlan.day) : [], sailingId: sailing.id }
       if (allAboardAt !== null) actionContext.allAboard = { at: clockHhmm(allAboardAt, shipZoneAt(sailing, allAboardAt)), label: 'ship time' }
-      turn = await askStanley(sendStanley, withUser, { context: { stage, screen: screenId, sailingId: sailing.id, level: stanleyLevelFor(settings) }, mobility: assistantMobility(mem.access), actionContext })
+      turn = await askStanley(sendStanley, withUser, { context: { stage, screen: screenId, sailingId: sailing.id, level: stanleyLevelFor(settings) }, mobility: assistantMobility(mem.access), actionContext, hint: hintOf(understood) })
       if (turn.tier === 'trip' || turn.tier === 'before') source = turn.tier
       else if (turn.tier === 'resolver' || turn.tier === 'action') source = 'trip'
     }
@@ -149,7 +149,7 @@ export function useStanleyAsk() {
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
     const own = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
     // Understand the question with no model: pills for the likeliest screens under the answer, and where there was no answer at all, words and pills of its own.
-    const composed = composeReply(understood, { kind: turn.kind, source, scripted: turn.tier === 'model' && turn.source === 'scripted', existing: own }, { text: asked.text, stage })
+    const composed = composeReply(understood, { kind: turn.kind, source, scripted: (turn.tier === 'model' || turn.tier === 'unanswered') && turn.source === 'scripted', existing: own }, { text: asked.text, stage })
     const actions = composed.actions
     const shown: StanleyTurn = composed.replaced ? { kind: 'answer', text: composed.text ?? '', handoff: null, fallback: null } : turn
     countUnderstood([`outcome:${composed.replaced ? 'replaced' : composed.outcome}`, ...(composed.topic ? [`topic:${composed.topic}`] : [])])

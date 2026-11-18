@@ -10,7 +10,7 @@ import type { Citation } from './types'
 export type StanleyKind = 'answer' | 'blocked' | 'offtopic' | 'handoff' | 'unavailable'
 export type StanleyFallback = 'limit' | 'auth' | 'rate' | 'network' | 'bad' | 'off'
 /** Which route of the server's gateway handled a reply: a question answered with no model as a card (`resolver`), a preview of a change to confirm (`action`), the guest's own booking (`trip`), someone still choosing (`before`) or open chat (`model`), or why there was no answer. */
-export type StanleyTier = 'blocked' | 'handoff' | 'offtopic' | 'unavailable' | 'resolver' | 'action' | 'trip' | 'before' | 'model'
+export type StanleyTier = 'blocked' | 'handoff' | 'offtopic' | 'unavailable' | 'resolver' | 'action' | 'trip' | 'before' | 'model' | 'unanswered'
 
 export interface StanleyMessage {
   id: string
@@ -66,7 +66,12 @@ export interface StanleyBody {
   mobility?: 'any' | 'easy' | 'wheelchair'
   /** Today's plan and the all-aboard time, so the server can name a plan item or a reminder's basis. Titles and times only. */
   actionContext?: ActionContext
+  /** What the device's own engine made of the question. It can only make the server spend less: never a cap raised, a model turned on or a safety step skipped. */
+  hint?: StanleyHint
 }
+
+/** The engine's reading of the question: its topic id, whether it was confident and whether the question only asks for a pointer or a lookup. */
+export interface StanleyHint { topic: string; confident: boolean; pointer: boolean }
 
 /** Sends one turn to `POST /me/stanley`. Set by the runtime. */
 export type StanleySender = (body: StanleyBody) => Promise<unknown>
@@ -78,7 +83,7 @@ export const MAX_SENT = 60
 const KINDS: readonly StanleyKind[] = ['answer', 'blocked', 'offtopic', 'handoff', 'unavailable']
 const HANDOFFS: readonly Handoff[] = ['emergency', 'medical', 'legal', 'person']
 const FALLBACKS: readonly StanleyFallback[] = ['limit', 'auth', 'rate', 'network', 'bad', 'off']
-const TIERS: readonly StanleyTier[] = ['blocked', 'handoff', 'offtopic', 'unavailable', 'resolver', 'action', 'trip', 'before', 'model']
+const TIERS: readonly StanleyTier[] = ['blocked', 'handoff', 'offtopic', 'unavailable', 'resolver', 'action', 'trip', 'before', 'model', 'unanswered']
 
 export type StanleyProblem = 'empty' | 'long'
 export const stanleyProblem = (message: string): StanleyProblem | null => (!message.trim() ? 'empty' : message.trim().length > MAX_MESSAGE ? 'long' : null)
@@ -121,7 +126,7 @@ export function historyToSend(thread: readonly StanleyMessage[]): { role: 'user'
  * One turn. The server's gateway decides everything (word filter, safety screen, which source answers, model, tools, budget). The one check kept on the device is the
  * safety screen, so an emergency message shows the numbers to call even with no signal. When the server cannot be reached the guest is told so.
  */
-export async function askStanley(send: StanleySender, thread: readonly StanleyMessage[], where: Pick<StanleyBody, 'context' | 'mobility' | 'actionContext'> = {}): Promise<StanleyTurn> {
+export async function askStanley(send: StanleySender, thread: readonly StanleyMessage[], where: Pick<StanleyBody, 'context' | 'mobility' | 'actionContext' | 'hint'> = {}): Promise<StanleyTurn> {
   const message = thread[thread.length - 1]?.text ?? ''
   const handoff = screen(message)
   if (handoff) return { kind: 'handoff', text: '', handoff, fallback: null }

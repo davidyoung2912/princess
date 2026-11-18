@@ -147,10 +147,14 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         if (!modelUsable)
         {
             if (!o.Switches.Resolver) return await End(Unavailable("off"), routing.Topic, "off");
-            return StanleyRules.LooksOnTopic(turns.Message)
-                ? await End(Answer(StanleyRules.ScriptedAnswerFor(turns.Message, trip), "scripted", "model", null, null), routing.Topic, "ok")
-                : await End(new StanleyReplyDto("offtopic", "", null, "", null, "offtopic"), routing.Topic, "offtopic");
+            if (!StanleyRules.LooksOnTopic(turns.Message)) return await End(new StanleyReplyDto("offtopic", "", null, "", null, "offtopic"), routing.Topic, "offtopic");
+            return StanleyRules.ScriptedAnswerFor(turns.Message, trip) is { } scriptedText
+                ? await End(Answer(scriptedText, "scripted", "model", null, null), routing.Topic, "ok")
+                : await End(Unanswered(), routing.Topic, "unanswered");
         }
+
+        // The device's engine was sure what this was and it only asks for a pointer: the pills answer it, so the model is not called (and no call is counted against the guest).
+        if (StanleyRules.SkipsModel(request.Hint, routing.Planning)) return await End(Unanswered(), routing.Topic, "unanswered");
 
         try
         {
@@ -186,6 +190,9 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         var card = new StanleyCardDto("whichTrip", "Which trip do you mean?", lines, new StanleyProvenance([StanleyChips.Booking], "Your booking", null, "live", false, "You have more than one trip, so I will not choose for you."), false, [new CitationDto("My trips", "/me/trips")]);
         return new StanleyReplyDto("answer", card.Text, null, "scripted", null, "resolver", [new StanleyBlockDto("text", card.Text)], card.Links ?? [], null, card);
     }
+
+    /// <summary>An explicit "not answered": the text names nothing, the tier says so, and the device replaces the words with its own and adds pills.</summary>
+    private static StanleyReplyDto Unanswered() => Answer(StanleyRules.UnansweredText, "scripted", StanleyRules.UnansweredTier, null, null);
 
     private static StanleyReplyDto Unavailable(string code) => new("unavailable", "", null, "", code, "unavailable");
 

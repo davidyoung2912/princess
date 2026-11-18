@@ -4,7 +4,7 @@ import { SCREEN_SPECS } from './screenSpec'
 import { CONCEPTS } from './lexicon'
 import { normalise } from './normalise'
 import { CORPUS } from './corpus/topics'
-import { composeReply, pillLabel, readQuestion, topicName } from './index'
+import { composeReply, hintOf, pillLabel, readQuestion, topicName } from './index'
 import { correctWord, understand } from './understand'
 import { stem } from './stem'
 import { distance } from './spell'
@@ -141,6 +141,11 @@ describe('what the guest sees', () => {
   it('leaves a canned server answer in place only when it is not canned', () => {
     expect(composeReply(spa, facts({ scripted: true })).replaced).toBe(true)
     expect(composeReply(spa, facts({ scripted: false })).replaced).toBe(false)
+  })
+  it('hints the server only for a confident pointer question', () => {
+    expect(hintOf(readQuestion('where can I book a massage', { stage: 'sea', hasBooking: true }))).toMatchObject({ confident: true, pointer: true })
+    expect(hintOf(readQuestion('asdfgh', {}))).toBeUndefined()
+    expect(hintOf(readQuestion('what is my massage booking', { stage: 'sea', hasBooking: true }))?.pointer ?? false).toBe(false)
   })
   it('does not replace what the device answered itself', () => {
     expect(composeReply(spa, facts({ source: 'library' })).replaced).toBe(false)

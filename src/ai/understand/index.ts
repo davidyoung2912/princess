@@ -14,6 +14,7 @@ import { formatMoney } from '../../domain/money'
 import type { StanleyCard } from '../stanleyCard'
 
 export type { Composed, ReplyFacts } from './reply'
+export { hintOf } from './reply'
 export type { Understood, Pill, Outcome, Named, Previous } from './understand'
 export { EMPTY_THREAD, choiceOf, previousOf, remember, type Choice, type Thread } from './thread'
 

@@ -76,3 +76,13 @@ export function compose(u: Understood, facts: ReplyFacts, words: Words): Compose
   }
   return { text: words.miss, actions: merge([], words.fallback), outcome: u.outcome === 'empty' ? 'miss' : u.outcome, replaced: true, topic: null }
 }
+
+/** Questions that ask where, when, how much, how to or what something is: a pointer or a lookup, which never needs a model. */
+const POINTER_ACTS: readonly Act[] = ['FIND', 'WHEN', 'PRICE', 'HOW', 'WHAT_IS', 'STATUS', 'CONTACT', 'LIST', 'ALLOWED', 'REQUIRE', 'BOOK', 'ORDER', 'REMIND']
+
+/** What the server may use to skip a model: only a confident topic whose acts are all pointers. Anything that recommends, compares or plans is left to it. */
+export function hintOf(u: Understood): { topic: string; confident: boolean; pointer: boolean } | undefined {
+  const topic = u.topics[0]?.id
+  if (!topic || u.outcome !== 'confident') return undefined
+  return { topic, confident: true, pointer: u.acts.length > 0 && u.acts.every((a) => POINTER_ACTS.includes(a)) && !u.personal }
+}

@@ -49,6 +49,9 @@ public static partial class ChatAskStanleyRules
     public const string BookingOnly = "I can only share ship and port information here. Ask me privately for anything about your booking.";
     public const string OffTopic = "I can only help with cruising questions here, like the ship, the ports and what to do on board.";
     public const string Busy = "Stanley needs a minute. Please ask again soon.";
+    /// <summary>The shared line when nothing here answers and no model is on. Each member's device adds pills for their own situation under it.</summary>
+    public const string NotSure = "I do not have a ready answer to that one. The links under this message open the screens most likely to help.";
+
     public const string CannotAnswer = "Stanley can't answer that right now.";
     public const string TurnedOff = "Stanley's help is turned off in this chat.";
     public const string NoQuestion = "Ask me after @Stanley, like: @Stanley what is there to do in Cozumel?";
