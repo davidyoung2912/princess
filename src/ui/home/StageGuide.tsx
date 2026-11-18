@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Link } from 'react-router'
-import { Check, Clock } from 'lucide-react'
+import { ArrowRight, Check, Clock } from 'lucide-react'
 import type { GuideTask, GuideView } from '../../api/guideTypes'
 import { dotReason, publishDot } from '../../ai/stanleyDot'
 import { doneTasks, moreCount, openTasks, primaryOf } from '../../guide/view'
@@ -99,7 +99,8 @@ function DoNow({ task, aside, view }: { task: GuideTask; aside: Aside; view: Gui
       <p>{w.why}</p>
       {task.urgency === 'now' && <p className="guide__urgent"><Clock size={16} aria-hidden="true" /> {t('guide.urgent')}</p>}
       <Meta task={task} />
-      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><TaskDoIt task={task} where="home" /><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} /><TaskRemind task={task} /><TaskCalendar task={task} /></div>
+      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><TaskDoIt task={task} where="home" /></div>
+      <div className="guide__more"><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} /><TaskRemind task={task} /><TaskCalendar task={task} /></div>
     </Card>
   )
 }
@@ -109,7 +110,7 @@ function Row({ task, aside, view }: { task: GuideTask; aside: Aside; view: Guide
   return (
     <li className="stage-step">
       <span className="stage-step__body">
-        <Link to={task.to} state={openedFrom('blue', task.id)}>{w.title}</Link>
+        <LinkButton variant="secondary" icon={ArrowRight} to={task.to} state={openedFrom('blue', task.id)}>{w.title}</LinkButton>
         <Meta task={task} />
       </span>
       <PutAside task={task} aside={aside} />

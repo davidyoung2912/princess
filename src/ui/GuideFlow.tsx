@@ -18,9 +18,11 @@ export function GuideCrumb() {
   const flow = view && from ? flowAt(view, pathname, from) : null
   if (!flow) return null
   return (
-    <p className="guide-crumb muted">
-      <Link to="/" state={openedFrom('blue')}>{t('guide.crumb.back')}</Link> · {t('guide.crumb', { n: flow.n, total: flow.total, task: taskWords(flow.task).title })}
-    </p>
+    <div className="page guide-crumb-wrap">
+      <p className="guide-crumb muted">
+        <Link to="/" state={openedFrom('blue')}>{t('guide.crumb.back')}</Link> · {t('guide.crumb', { n: flow.n, total: flow.total, task: taskWords(flow.task).title })}
+      </p>
+    </div>
   )
 }
 
@@ -49,7 +51,7 @@ export function WhatNext() {
   const stage = stageName(view.stage)
   const { next, left } = flow
   return (
-    <>
+    <div className="page guide-next-wrap">
       <section className="card guide-next" aria-labelledby="guide-next-h">
         <h2 id="guide-next-h">{t('guide.next.title')}</h2>
         <p className="muted">{left > 0 ? t('guide.next.left', { count: left, stage }) : t('guide.next.none', { stage })}</p>
@@ -60,6 +62,6 @@ export function WhatNext() {
         </div>
       </section>
       <div className="visually-hidden" role="status" aria-live="polite">{said}</div>
-    </>
+    </div>
   )
 }

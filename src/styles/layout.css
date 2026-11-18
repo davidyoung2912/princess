@@ -175,7 +175,7 @@
 .testbar__item:hover { border-color: var(--primary); }
 .testbar__item--time { align-items: flex-start; justify-content: center; text-align: start; }
 .testbar__main { font-weight: 700; }
-.testbar__item--date { cursor: default; border-color: transparent; }
+.testbar__item--date, .testbar__item--date:hover { cursor: default; border-color: transparent; } /* the date button inside draws its own hover border, so the wrapper must not draw a second one */
 .testbar__pick { background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: start; border: 2px solid transparent; border-radius: var(--radius-md, 0.5rem); min-height: var(--target-min); padding: 0 var(--space-1); cursor: pointer; }
 .testbar__pick:hover { border-color: var(--primary); }
 a.testbar__stage { text-decoration: none; display: inline-flex; align-items: center; min-height: 1.5rem; }
@@ -363,9 +363,17 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .guide__handoff p { margin: 0 0 var(--space-1); }
 .guide__done summary { min-height: var(--target-min); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
 .guide__aside { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
+/* The quieter actions stack under the Start button, one per line, left-aligned. */
+.guide__more, .guide__more .guide__aside { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
 
 .guide-crumb { margin: 0 0 var(--space-2, 0.5rem); font-size: 0.875rem; }
 .guide-next { margin-top: var(--space-4, 1rem); }
 .guide-next h2 { margin: 0 0 0.25rem; font-size: 1.125rem; }
 .guide-next p { margin: 0 0 0.5rem; }
 .screen-list__start { display: inline-block; margin-inline-start: var(--space-2, 0.5rem); padding: 0 0.5rem; border-radius: 999px; border: 1px solid currentColor; font-size: 0.75rem; font-weight: 600; }
+
+/* The what-is-next card sits in its own .page block so it lines up with the screen above it (same max width, centred, same gutters). */
+.guide-next-wrap { padding-block: 0 var(--space-4); }
+.shell__main:has(.page--wide) > .guide-next-wrap { max-width: 90rem; }
+.guide-crumb-wrap { padding-block: 0; }
+.shell__main:has(.page--wide) > .guide-crumb-wrap { max-width: 90rem; }
