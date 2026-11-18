@@ -1,4 +1,4 @@
-import type { ExplorerVenueInfo, HoursDay, MealMenu, VenueDay } from '../../api/explorerTypes'
+import type { DietMark, ExplorerVenueInfo, HoursDay, MealMenu, VenueDay } from '../../api/explorerTypes'
 import { openState } from './presentation'
 import type { Window } from './types'
 
@@ -55,6 +55,13 @@ export function dishHits(menus: readonly MealMenu[], query: string): DishHit[] {
   return hits
 }
 
+/** The dishes on a venue's menus for the day that the ship marks with a diet (vegan, vegetarian, no added sugar). Only the ship's own marks: this never says a dish is free of an allergen. */
+export function markedDishes(menus: readonly MealMenu[], mark: DietMark): DishHit[] {
+  const hits: DishHit[] = []
+  for (const m of menus) for (const c of m.courses) for (const d of c.dishes) if (d.marks?.includes(mark) && !hits.some((h) => h.name === d.name)) hits.push({ name: d.name, meal: m.meal })
+  return hits
+}
+
 export type DiningSort = 'suggested' | 'open' | 'price'
 export const DINING_SORTS: readonly DiningSort[] = ['suggested', 'open', 'price']
 
@@ -63,13 +70,15 @@ export interface DiningFilter {
   period: MealPeriod | null
   prompt: DiningPrompt | null
   kidsMenu: boolean
+  /** Only places with a dish the ship marks with this diet on the day's menus. */
+  diet: DietMark | null
   query: string
 }
 
-export const NO_DINING_FILTER: DiningFilter = { kind: null, period: null, prompt: null, kidsMenu: false, query: '' }
+export const NO_DINING_FILTER: DiningFilter = { kind: null, period: null, prompt: null, kidsMenu: false, diet: null, query: '' }
 
 /** Whether any filter is on, for the "clear" control. */
-export const isFiltering = (f: DiningFilter): boolean => f.kind !== null || f.period !== null || f.prompt !== null || f.kidsMenu || f.query.trim() !== ''
+export const isFiltering = (f: DiningFilter): boolean => f.kind !== null || f.period !== null || f.prompt !== null || f.kidsMenu || f.diet !== null || f.query.trim() !== ''
 
 const matchesWords = (v: Pick<ExplorerVenueInfo, 'title' | 'short' | 'long'>, query: string): boolean => {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
@@ -84,6 +93,7 @@ export function filterDining<V extends Pick<VenueDay, 'venue' | 'hours' | 'menus
     (f.period === null || servesPeriod(d.hours, f.period)) &&
     (f.prompt === null || matchesPrompt(d, f.prompt)) &&
     (!f.kidsMenu || hasKidsMenu(d.venue)) &&
+    (f.diet === null || markedDishes(d.menus, f.diet).length > 0) &&
     (f.query.trim() === '' || matchesWords(d.venue, f.query) || dishHits(d.menus, f.query).length > 0))
 }
 

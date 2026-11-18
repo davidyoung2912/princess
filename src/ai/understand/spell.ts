@@ -19,7 +19,7 @@ const substitution = (x: string, y: string): number =>
   x === y ? 0 : adjacent.get(x)?.has(y) || (VOWELS.includes(x) && VOWELS.includes(y)) || SOUND_ALIKE.some((p) => (p[0] === x && p[1] === y) || (p[0] === y && p[1] === x)) ? 1 : 2
 
 /** Optimal string alignment distance (insert or delete 1, substitute by `substitution`, swap two neighbours 1), giving up above `max`. */
-export function distance(a: string, b: string, max = 2): number {
+export function distance(a: string, b: string, max = 2, strict = false): number {
   if (a === b) return 0
   if (Math.abs(a.length - b.length) > max) return max + 1
   const prev2: number[] = []
@@ -28,7 +28,7 @@ export function distance(a: string, b: string, max = 2): number {
     const row: number[] = [i]
     let best = i
     for (let j = 1; j <= b.length; j++) {
-      const cost = substitution(a[i - 1]!, b[j - 1]!)
+      const cost = strict ? (a[i - 1] === b[j - 1] ? 0 : 2) : substitution(a[i - 1]!, b[j - 1]!)
       let v = Math.min(prev[j]! + 1, row[j - 1]! + 1, prev[j - 1]! + cost)
       if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2]! + 1)
       row.push(v)
@@ -41,6 +41,9 @@ export function distance(a: string, b: string, max = 2): number {
   }
   return prev[b.length]!
 }
+
+/** Up to this many letters, a word is only repaired by a missing, extra or swapped letter, never by reading one letter as another: "fnord" is not "fjord", and a short nonsense word is left alone. */
+const STRICT_UP_TO = 5
 
 /** Longest word that may be corrected by one edit, and the length from which two edits are allowed. */
 const ONE_EDIT_FROM = 4
@@ -85,9 +88,11 @@ export function makeSpeller(vocabulary: Iterable<string>, known: ReadonlySet<str
     let pick: string[] = []
     for (const c of found) {
       if (c[0] !== word[0] && !(c[0] === word[1] && c[1] === word[0])) continue
-      const dist = distance(word, c, max)
+      const dist = distance(word, c, max, word.length <= STRICT_UP_TO)
       if (dist < best) { best = dist; pick = [c] } else if (dist === best) pick.push(c)
     }
+    // A tie between a word that keeps the first letter and one that only fits by swapping the first two ("lsot": lost, slot) goes to the one that keeps it.
+    if (pick.length > 1) { const kept = pick.filter((c) => c[0] === word[0]); if (kept.length > 0) pick = kept }
     return best <= max && pick.length === 1 ? pick[0]! : word
   }
   return { correct, has }

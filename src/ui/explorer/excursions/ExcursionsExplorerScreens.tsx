@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { readUrlFilter } from '../../../domain/explorer/urlFilter'
+import { MAX_AGE, readUrlFilter } from '../../../domain/explorer/urlFilter'
 import { tourKey } from '../../../domain/explorer/shortlist'
 import { SaveButton } from '../SaveButton'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../../api/types'
@@ -205,7 +205,7 @@ export function ExcursionsExplorerScreen() {
 function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDayState; reload: () => void }) {
   const [params] = useSearchParams()
   const [start] = useState(() => readUrlFilter(params))
-  const [filter, setFilter] = useState<DayFilter>(() => ({ ...NO_DAY_FILTER, interest: (INTERESTS as readonly string[]).includes(start.type ?? '') ? (start.type as Interest) : null }))
+  const [filter, setFilter] = useState<DayFilter>(() => ({ ...NO_DAY_FILTER, age: start.age, interest: (INTERESTS as readonly string[]).includes(start.type ?? '') ? (start.type as Interest) : null }))
   const [query, setQuery] = useState(start.q)
   const [suits, setSuits] = useState(false)
   const { state: mem } = useMemory()
@@ -246,6 +246,11 @@ function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDa
               <Chip pressed={filter.accessible} onToggle={() => set({ accessible: !filter.accessible })}>{t('exc.f.accessible')}</Chip>
               <Chip pressed={suits} onToggle={() => setSuits(!suits)}>{t('exc.f.suits')}</Chip>
             </fieldset>
+            <div className="field">
+              <label htmlFor="exx-age">{t('exx.age')}</label>
+              <input id="exx-age" className="field__input" type="number" inputMode="numeric" min={0} max={MAX_AGE} value={filter.age ?? ''} onChange={(e) => { const n = e.target.value === '' ? null : Math.round(Number(e.target.value)); set({ age: n === null || Number.isNaN(n) ? null : Math.min(MAX_AGE, Math.max(0, n)) }) }} />
+              <p className="muted">{t('exx.age.hint')}</p>
+            </div>
             <div className="field">
               <label htmlFor="exx-search">{t('exx.search')}</label>
               <input id="exx-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} />

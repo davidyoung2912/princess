@@ -32,4 +32,9 @@ describe('excursion explorer day helpers', () => {
     expect(filterDayOffers(offers, { ...NO_DAY_FILTER, interest: 'adventure' }).map((o) => o.item.id)).toEqual(['c'])
     expect(filterDayOffers(offers, { ...NO_DAY_FILTER, family: true, accessible: true })).toHaveLength(2)
   })
+  it('keeps out tours with a minimum age above the youngest guest', () => {
+    expect(filterDayOffers(offers, { ...NO_DAY_FILTER, age: 8 }).map((o) => o.item.id)).toEqual(['b', 'a'])
+    expect(filterDayOffers(offers, { ...NO_DAY_FILTER, age: 12 })).toHaveLength(3)
+    expect(filterDayOffers(offers, { ...NO_DAY_FILTER, age: 0 })).toHaveLength(2)
+  })
 })

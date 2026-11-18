@@ -87,7 +87,7 @@ describe('group answers', () => {
 
 describe('address filters', () => {
   it('reads and bounds q and type', () => {
-    expect(readUrlFilter(new URLSearchParams('q=%20vegetarian%20%20food&type=bar'))).toEqual({ q: 'vegetarian food', type: 'bar' })
+    expect(readUrlFilter(new URLSearchParams('q=%20vegetarian%20%20food&type=bar'))).toEqual({ q: 'vegetarian food', type: 'bar', diet: null, age: null })
     expect(readUrlFilter(new URLSearchParams('')).type).toBeNull()
     expect(readUrlFilter(new URLSearchParams(`q=${'a'.repeat(500)}`)).q.length).toBe(60)
   })

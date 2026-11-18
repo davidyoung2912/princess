@@ -1,5 +1,5 @@
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../api/types'
-import type { Activity, Interest } from '../excursions'
+import { minAge, type Activity, type Interest } from '../excursions'
 
 /** The excursions that run on one cruise day, in start order. */
 export const offersOnDay = (offers: readonly ExcursionOffer[], day: number): ExcursionOffer[] =>
@@ -23,8 +23,9 @@ export function nearestTourDay(offers: readonly ExcursionOffer[], from: number):
   return days.sort((a, b) => Math.abs(a - from) - Math.abs(b - from) || b - a)[0]
 }
 
-export interface DayFilter { interest: Interest | null; maxActivity: Activity | null; family: boolean; accessible: boolean }
-export const NO_DAY_FILTER: DayFilter = { interest: null, maxActivity: null, family: false, accessible: false }
+/** `age` is the youngest guest's age: only tours that guest may join (a tour with a minimum age needs the guest to be at least that old). */
+export interface DayFilter { interest: Interest | null; maxActivity: Activity | null; family: boolean; accessible: boolean; age: number | null }
+export const NO_DAY_FILTER: DayFilter = { interest: null, maxActivity: null, family: false, accessible: false, age: null }
 
 const LEVEL: readonly Activity[] = ['easy', 'moderate', 'strenuous']
 
@@ -36,6 +37,7 @@ export const filterDayOffers = (offers: readonly ExcursionOffer[], f: DayFilter)
     if (f.maxActivity && LEVEL.indexOf(x.activity) > LEVEL.indexOf(f.maxActivity)) return false
     if (f.family && !x.family) return false
     if (f.accessible && !x.wheelchair) return false
+    if (f.age !== null && f.age < minAge(x)) return false
     return true
   })
 

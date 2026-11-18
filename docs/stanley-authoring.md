@@ -20,6 +20,8 @@ A word belongs to a **concept**. Nouns name things ("spa", "towel"), verbs are t
 
 Rules the lexicon lint enforces: a word maps to one concept of a part of speech; a stop word is never evidence; every concept is used by at least one topic.
 
+For a long tail topic (a line of `screenSpec.ts`) a guest recognised only by whole phrases, so new ways of saying it go in `screenSpecMore.ts` (the topic's id, then plain phrases of two or more words; one word only when it means one thing on a ship). Do not copy a held-out question into it.
+
 ## 3. Add a topic (`topics.ts`, and `screenSpec.ts` for a screen)
 
 - **A screen to reach:** add one line to `screenSpec.ts` (id, nouns, plain questions, the screen). The lexicon, topic table, destinations and corpus are built from it, so it is added in one place.
@@ -28,7 +30,11 @@ Rules the lexicon lint enforces: a word maps to one concept of a part of speech;
 
 ## 4. Add corpus lines (`corpus/`)
 
-For the topic add, as real phrases a guest would type: at least 8 paraphrases, 3 typos, 3 fragments or slang forms, and 4 near-miss negatives. Put 20 percent more in the **held-out** file, written without looking at the lexicon, and never tune against it. The held-out set is the honest measure.
+For the topic add, as real phrases a guest would type: at least 8 paraphrases, 3 typos, 3 fragments or slang forms, and 4 near-miss negatives. Put 20 percent more in the **held-out** file, written without looking at the lexicon, and never tune against it. The held-out set is the honest measure. For the long tail, `corpus/heldoutFresh.ts` is the untouched measure (first score 0.52, gate 0.5) and `heldoutBlind.ts` is a regression guard; when a set has been tuned on, write a new one.
+
+`stages.test.ts` holds typical questions for each of the eleven journey stages: add a line there when a question's best answer depends on the stage.
+
+A filter a question can ask for (a diet the ship marks, a child's age) is a *qualifier* in `understand.ts`; its pill is a destination in `destinations.ts` listed in `QUALIFIED`.
 
 ## 5. Check
 

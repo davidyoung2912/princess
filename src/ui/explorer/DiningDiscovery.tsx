@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import type { StringKey } from '../../i18n'
 import { t } from '../../i18n'
+import { DIET_MARKS } from '../../domain/explorer/urlFilter'
 import { DINING_PROMPTS, DINING_SORTS, MEAL_PERIODS, NO_DINING_FILTER, isFiltering, type DiningFilter, type DiningPrompt, type DiningSort, type MealPeriod } from '../../domain/explorer/diningDiscovery'
 import { Button } from '../Button'
 import { Chip } from '../Chip'
@@ -34,6 +35,10 @@ export function DiningControls({ kinds, kindLabels, filter, onFilter, sort, onSo
         {DINING_PROMPTS.map((p) => <Chip key={p} pressed={filter.prompt === p} onToggle={() => set({ prompt: filter.prompt === p ? null : p })}>{t(PROMPT[p])}</Chip>)}
         {anyKidsMenu && <Chip pressed={filter.kidsMenu} onToggle={() => set({ kidsMenu: !filter.kidsMenu })}>{t('exp.dining.kidsMenu')}</Chip>}
       </div>
+      <div role="group" aria-label={t('exp.dining.diet.label')} className="chip-row">
+        {DIET_MARKS.map((d) => <Chip key={d} pressed={filter.diet === d} onToggle={() => set({ diet: filter.diet === d ? null : d })}>{t(`exp.dining.diet.${d}` as StringKey)}</Chip>)}
+      </div>
+      {filter.diet !== null && <p className="muted">{t('exp.dining.diet.note')}</p>}
       <FilterChips kinds={kinds} label={t('exp.filter.label')} value={filter.kind} onChange={(kind) => set({ kind })} labels={kindLabels} />
       <div className="field">
         <label htmlFor="exp-search">{t('exp.dining.search.label')}</label>

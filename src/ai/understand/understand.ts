@@ -5,6 +5,7 @@
 import type { JourneyStage } from '../../routes/hubs'
 import { COMMON_WORDS, CONCEPTS, DROP_WORDS, NEVER_WORDS, STOP_WORDS, ACTS, type Act } from './lexicon'
 import { DESTINATIONS, type Need } from './destinations'
+import { MAX_AGE } from '../../domain/explorer/urlFilter'
 import { findEntities, type EntityKind } from './entities'
 import { normalise, wordsOf } from './normalise'
 import { makeSpeller, type Speller } from './spell'
@@ -189,6 +190,26 @@ export type Labeller = (destination: string) => string
 export type EntityLabeller = (kind: EntityKind, name: string, variant: 'open' | 'tours') => string
 const plainEntity: EntityLabeller = (_kind, name) => name
 
+/** The ship's own diet marks a question may ask for ("vegan options"); gluten, allergies and the rest have no mark and get no filter. */
+const DIET_WORDS: readonly (readonly [string, RegExp])[] = [['vegan', /\bvegan/], ['vegetarian', /\b(vegetarian|veggie)/], ['nas', /\b(sugar free|no added sugar|diabetic|low sugar)/]]
+/** The youngest guest's age when the question names a child's age ("my 5 year old", "aged 7"). */
+const AGE_WORDS = /\b(?:aged?|ages) (\d{1,2})\b|\b(\d{1,2}) ?(?:years? old|yrs? old|year olds?|yo)\b/
+
+/** A filter the question asks for, as a pill that opens the explorer already narrowed: a diet on dining, a child's age on tours. Never for an allergy question, and never for a topic the filter does not fit. */
+function qualifier(topic: string, raw: readonly string[], present: ReadonlySet<string>): { id: string; path: string } | null {
+  const said = raw.join(' ')
+  if ((topic === 'dining' || topic === 'dining.diet') && !present.has('n.allergy')) {
+    const diet = DIET_WORDS.find(([, re]) => re.test(said))?.[0]
+    if (diet) return { id: `dining.${diet}`, path: `${DESTINATIONS[`dining.${diet}`]!.path}` }
+  }
+  if (topic === 'excursions') {
+    const m = AGE_WORDS.exec(said)
+    const age = m ? Number(m[1] ?? m[2]) : NaN
+    if (age >= 0 && age <= MAX_AGE) return { id: 'excursions.age', path: `/excursions-explorer?age=${age}` }
+  }
+  return null
+}
+
 /** Reads a question. `label` turns a destination id into the words on its pill (the locale file). */
 export function understand(text: string, ctx: UnderstandContext, label: Labeller, entityLabel: EntityLabeller = plainEntity): Understood {
   const empty: Understood = { outcome: 'empty', topics: [], acts: [], pills: [], personal: false, entities: [], carried: false, options: [] }
@@ -282,7 +303,9 @@ export function understand(text: string, ctx: UnderstandContext, label: Labeller
   const second = scored[1]
   // A long ramble needs a stronger match than a short, direct question.
   const stretch = raw.length > 14 ? 1.25 : 1
-  const confident = top.score >= T_HIGH * stretch && (!second || top.score - second.score >= MARGIN)
+  // Dining and special diets are one place to go: a diet the ship marks, asked for with dining words, settles it.
+  const dishes = !!second && top.id.startsWith('dining') && second.id.startsWith('dining') && qualifier('dining', raw, present) !== null
+  const confident = top.score >= T_HIGH * stretch && (!second || top.score - second.score >= MARGIN || dishes)
   const ranked = scored.slice(0, 3).map(({ id, score }) => ({ id, score }))
   if (!confident && top.score < T_LOW * stretch) {
     if (entities.length > 0) return { outcome: 'confident', topics: ranked, acts, pills: withEntities([]), personal, entities, carried: false, options: [] }
@@ -292,8 +315,11 @@ export function understand(text: string, ctx: UnderstandContext, label: Labeller
   const topicPills: Pill[] = []
   let options: string[] = []
   const add = (dest: string) => { const d = DESTINATIONS[dest]!; if (!topicPills.some((p) => p.path === d.path)) topicPills.push({ id: dest, label: label(dest), path: d.path }) }
-  if (confident) for (const dest of pillsFor(top.topic, acts, ctx)) add(dest)
-  else {
+  if (confident) {
+    const q = qualifier(top.id.startsWith('dining') ? 'dining' : top.id, raw, present)
+    if (q) topicPills.push({ id: q.id, label: label(q.id), path: q.path })
+    for (const dest of pillsFor(top.topic, acts, ctx)) add(dest)
+  } else {
     // Not sure: one screen from each of the likeliest topics, so the guest can pick.
     const close = scored.filter((s) => s.score >= T_LOW * stretch && s.score >= top.score - MARGIN * 2).slice(0, MAX_PILLS)
     options = close.map((s) => s.id)

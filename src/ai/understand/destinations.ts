@@ -11,7 +11,7 @@ export interface Destination { path: string; needs?: Need; instead?: string }
 
 const BASE_DESTINATIONS: Readonly<Record<string, Destination>> = {
   // explorers and the ship
-  dining: { path: '/dining-today' }, 'dining.book': { path: '/dining-today?reserve=new', needs: 'booking', instead: 'dining' }, 'dining.mine': { path: '/dining-today?view=trip', needs: 'booking' },
+  dining: { path: '/dining-today' }, 'dining.vegan': { path: '/dining-today?diet=vegan' }, 'dining.vegetarian': { path: '/dining-today?diet=vegetarian' }, 'dining.nas': { path: '/dining-today?diet=nas' }, 'excursions.age': { path: '/excursions-explorer' }, 'dining.book': { path: '/dining-today?reserve=new', needs: 'booking', instead: 'dining' }, 'dining.mine': { path: '/dining-today?view=trip', needs: 'booking' },
   venues: { path: '/ship/venues' }, drinks: { path: '/ship/drinks' }, order: { path: '/ship/order', needs: 'aboard', instead: 'dining' },
   entertainment: { path: '/entertainment' }, activities: { path: '/activities-explorer' }, games: { path: '/games-explorer' }, challenges: { path: '/ship/games' },
   spa: { path: '/spa-explorer' }, 'spa.book': { path: '/spa-explorer?book=new', needs: 'booking', instead: 'spa' }, exercise: { path: '/exercise-explorer' }, shops: { path: '/shopping-today' },
@@ -36,6 +36,9 @@ const BASE_DESTINATIONS: Readonly<Record<string, Destination>> = {
   allergy: { path: '/plan/allergy' }, medallion: { path: '/home/medallion' }, gettingthere: { path: '/plan/getting-there' }, sustain: { path: '/me/sustainability' },
   family: { path: '/ship/family' }, teen: { path: '/ship/teen' }, solo: { path: '/ship/solo' }, itinerary: { path: '/itinerary' }, today: { path: '/today' }, search: { path: '/ship/search' },
 }
+
+/** Destinations offered by a filter the words ask for (a diet, a child's age), not by a topic's own pill list. */
+export const QUALIFIED: ReadonlySet<string> = new Set(['dining.vegan', 'dining.vegetarian', 'dining.nas', 'excursions.age'])
 
 /** The names the base table uses, so a long tail screen can be checked against them. */
 export const BASE_DESTINATION_NAMES: ReadonlySet<string> = new Set(Object.keys(BASE_DESTINATIONS))

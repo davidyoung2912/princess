@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ExplorerVenueInfo, HoursDay, MealMenu, VenueDay } from '../../api/explorerTypes'
-import { dishHits, filterDining, matchesPrompt, NO_DINING_FILTER, servesPeriod, sortDining } from './diningDiscovery'
+import { dishHits, filterDining, markedDishes, matchesPrompt, NO_DINING_FILTER, servesPeriod, sortDining } from './diningDiscovery'
 
 const hours = (...windows: [string, string][]): HoursDay => ({ windows, staffed: [], closedBecause: null })
 const menu = (meal: MealMenu['meal'], ...dishes: string[]): MealMenu => ({ venueId: 'x', meal, from: '12:00', to: '14:00', title: meal, formal: false, courses: [{ name: 'c', dishes: dishes.map((name) => ({ name, contains: [] })) }] })
@@ -41,6 +41,19 @@ describe('prompts', () => {
   })
   it('keeps adults-only places and bars out of family-friendly', () => {
     expect(all.filter((d) => matchesPrompt(d, 'family')).map((d) => d.venue.id)).toEqual(['buffet', 'dining'])
+  })
+})
+
+describe('diet marks', () => {
+  const marked: MealMenu = { venueId: 'x', meal: 'dinner', from: '17:00', to: '21:00', title: 'dinner', formal: false, courses: [{ name: 'c', dishes: [{ name: 'Lentil curry', contains: [], marks: ['vegan', 'vegetarian'] }, { name: 'Steak', contains: [] }, { name: 'Fruit plate', contains: [], marks: ['nas'] }] }] }
+  const green = day('green', 'main', hours(['17:00', '21:00']), {}, [marked])
+  it('lists the dishes the ship marks with a diet, and only those', () => {
+    expect(markedDishes(green.menus, 'vegan')).toEqual([{ name: 'Lentil curry', meal: 'dinner' }])
+    expect(markedDishes(green.menus, 'nas').map((d) => d.name)).toEqual(['Fruit plate'])
+    expect(markedDishes(buffet.menus, 'vegan')).toEqual([])
+  })
+  it('keeps only the places with such a dish', () => {
+    expect(filterDining([...all, green], { ...NO_DINING_FILTER, diet: 'vegetarian' }).map((d) => d.venue.id)).toEqual(['green'])
   })
 })
 

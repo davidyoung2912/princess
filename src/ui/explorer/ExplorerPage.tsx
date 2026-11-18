@@ -2,12 +2,12 @@ import { useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { readUrlFilter } from '../../domain/explorer/urlFilter'
 import { Link } from 'react-router'
-import type { ExplorerDay, VenueDay } from '../../api/explorerTypes'
+import type { DietMark, ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import { cancelledListed, filterVenues, kindsOf, SEARCH_FROM } from '../../domain/explorer/presentation'
 import { upcomingEvents } from '../../domain/explorer/upcoming'
 import type { ExplorerKind } from '../../domain/explorer/types'
 import { useExplorerData, useExplorerDay, type ExplorerDayState } from '../../hooks/useExplorer'
-import { t, headingCase } from '../../i18n'
+import { t, headingCase, type StringKey } from '../../i18n'
 import { Saved } from '../onboard/common'
 import { PickDateButton } from './DateControls'
 import { EventRow, FilterChips, HappeningNow, HoursBadge } from './Parts'
@@ -15,7 +15,7 @@ import { MEAL } from './mealStrings'
 import { useVenuePins, type VenuePins } from '../../hooks/useVenuePins'
 import { PinButton } from './Pins'
 import { DiningControls } from './DiningDiscovery'
-import { dishHits, filterDining, hasKidsMenu, NO_DINING_FILTER, sortDining, type DiningFilter, type DiningSort } from '../../domain/explorer/diningDiscovery'
+import { dishHits, filterDining, hasKidsMenu, markedDishes, NO_DINING_FILTER, sortDining, type DiningFilter, type DiningSort } from '../../domain/explorer/diningDiscovery'
 import { ShipClockCard } from './ShipClockCard'
 import { DaySummaryCard } from './DaySummaryCard'
 import { WhatChanged } from './WhatChanged'
@@ -69,7 +69,7 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
   const [query, setQuery] = useState(start.q)
   const pins = useVenuePins(data.venues.map((v) => v.venue))
   const dining = data.explorer === 'dining'
-  const [filter, setFilter] = useState<DiningFilter>({ ...NO_DINING_FILTER, kind: startKind, query: start.q })
+  const [filter, setFilter] = useState<DiningFilter>({ ...NO_DINING_FILTER, kind: startKind, diet: start.diet, query: start.q })
   const [sort, setSort] = useState<DiningSort>('suggested')
   const { profile: taste } = useTaste()
   const pinnedIds = data.venues.filter((v) => pins.isPinned(v.venue)).map((v) => v.venue.id)
@@ -97,7 +97,7 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
       {pins.message && <p className="muted" aria-hidden="true">{pins.message}</p>}
       {shown.length === 0 ? <p className="muted">{t('exp.list.none')}</p> : (
         <ul className="card-grid">
-          {shown.map((v) => <VenueCard key={v.venue.id} day={v} state={state} basePath={basePath} pins={pins} kindLabels={kindLabels} dishQuery={dining ? filter.query : ''} forYou={pickedVenues.includes(v.venue.id)} />)}
+          {shown.map((v) => <VenueCard key={v.venue.id} day={v} state={state} basePath={basePath} pins={pins} kindLabels={kindLabels} dishQuery={dining ? filter.query : ''} diet={dining ? filter.diet : null} forYou={pickedVenues.includes(v.venue.id)} />)}
         </ul>
       )}
     </section>
@@ -106,8 +106,9 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
 }
 
 /** One venue: its pin, its words, whether it is open on the chosen day and the next events there. The whole card links to the venue's page; the pin is a button of its own. */
-function VenueCard({ day, state, basePath, pins, kindLabels, dishQuery, forYou }: { day: VenueDay; state: ExplorerDayState; basePath: string; pins: VenuePins; kindLabels: Record<string, string>; dishQuery: string; forYou: boolean }) {
+function VenueCard({ day, state, basePath, pins, kindLabels, dishQuery, diet, forYou }: { day: VenueDay; state: ExplorerDayState; basePath: string; pins: VenuePins; kindLabels: Record<string, string>; dishQuery: string; diet: DietMark | null; forYou: boolean }) {
   const dishes = dishHits(day.menus, dishQuery).slice(0, 3)
+  const marked = diet ? markedDishes(day.menus, diet).slice(0, 3) : []
   const v = day.venue
   const upcoming = upcomingEvents(day.events, { chosenDay: state.day, currentDay: state.currentDay, now: state.nowAt })
   const cancelled = cancelledListed(day.events, { chosenDay: state.day, currentDay: state.currentDay, now: state.nowAt })
@@ -120,6 +121,7 @@ function VenueCard({ day, state, basePath, pins, kindLabels, dishQuery, forYou }
       <HoursBadge hours={day.hours} day={state.day} currentDay={state.currentDay} now={state.now} />
       <p>{v.short}</p>
       {dishes.length > 0 && <p>{t('exp.dining.serves', { list: dishes.map((d) => `${d.name} (${t(MEAL[d.meal])})`).join(', ') })}</p>}
+      {marked.length > 0 && <p>{t('exp.dining.marked', { diet: t(`exp.dining.diet.${diet!}` as StringKey), list: marked.map((d) => `${d.name} (${t(MEAL[d.meal])})`).join(', ') })}</p>}
       {upcoming.length + cancelled.length > 0 && (
         <ul className="exp-events">
           {[...upcoming, ...cancelled].sort((a, b) => a.startAt - b.startAt).map((e) => <EventRow key={e.id} event={e} now={state.nowAt} compact />)}

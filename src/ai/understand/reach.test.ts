@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCREEN_LIST } from '../../routes/screens'
-import { DESTINATIONS } from './destinations'
+import { DESTINATIONS, QUALIFIED } from './destinations'
 import { entityIndex } from './entities'
 import { NOT_ASKED } from './screenSpec'
 import { TOPICS } from './topics'
@@ -9,7 +9,7 @@ import { TOPICS } from './topics'
 describe('coverage', () => {
   it('offers every destination from some topic', () => {
     const offered = new Set(TOPICS.flatMap((t) => t.pills.map((p) => p.dest)))
-    expect(Object.keys(DESTINATIONS).filter((d) => !offered.has(d) && d !== 'search')).toEqual([])
+    expect(Object.keys(DESTINATIONS).filter((d) => !offered.has(d) && !QUALIFIED.has(d) && d !== 'search')).toEqual([])
   })
 
   it('reaches every screen with a fixed path', () => {

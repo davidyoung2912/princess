@@ -5,11 +5,13 @@
  *  - `dests`: `name=SCREENID`, the first is offered first.
  *  - `high`: a risk topic, shown only as the official screens, with no claim from the engine.
  */
+import { MORE_WORDS } from './screenSpecMore'
+
 export interface ScreenSpec { id: string; name: string; words: string; say: string; dests: string; high?: boolean }
 
 const S = (id: string, name: string, words: string, say: string, dests: string, high = false): ScreenSpec => ({ id, name, words, say, dests, high })
 
-export const SCREEN_SPECS: readonly ScreenSpec[] = [
+const BASE_SPECS: readonly ScreenSpec[] = [
   // ---- before the trip ----
   S('advisor', 'a travel advisor', 'travel advisor, talk to an advisor, cruise consultant, book with an advisor, advisor call, advisor, an advisor, my advisor, cruise advisor, travel agent, consultant, my agent, someone who sells cruises, sells cruises',
     'can I talk to a travel advisor|I want to speak with a cruise advisor|can an advisor help me book|put me in touch with a cruise consultant|I would like advice from a travel advisor|how do I reach my advisor|book my cruise through an advisor|get advice from a cruise advisor', 'advisors=H03'),
@@ -210,6 +212,9 @@ export const SCREEN_SPECS: readonly ScreenSpec[] = [
   S('daydetails', 'day details', 'day details, details of the day, full day details, timeline for the day, hour by hour, hour by hour plan, detailed day',
     'show the day details|details of the day please|give me an hour by hour plan|a timeline for the day|full day details|open the detailed day|show my day in detail|what is happening hour by hour', 'daydetails=X27'),
 ]
+
+/** The topics with the other ways of saying each (`screenSpecMore.ts`) added to their words. */
+export const SCREEN_SPECS: readonly ScreenSpec[] = BASE_SPECS.map((x) => (MORE_WORDS[x.id] ? { ...x, words: `${x.words}, ${MORE_WORDS[x.id]}` } : x))
 
 /** Screens that are not something a guest asks for, so no topic offers them: each is reached another way. */
 export const NOT_ASKED: Readonly<Record<string, string>> = {

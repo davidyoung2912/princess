@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router'
 import { MAX_MESSAGE, screen } from '../../ai/guard'
-import { awayAnswer, awayTopic } from '../../ai/stanleyAway'
+import { awayAnswer, awayTopic, type AwayTopic } from '../../ai/stanleyAway'
 import { useAwayFacts } from '../../hooks/useAwayFacts'
 import { clockHhmm, planSnapshot, type ActionContext } from '../../ai/stanleyAction'
 import { decideStanley } from '../../ai/stanleyDecide'
@@ -47,6 +47,8 @@ function wording(turn: StanleyTurn): string {
 
 /** What the last turns were about, for a follow-up like "and how much?". In memory only, shared by the dialog and the chat, and forgotten after ten minutes or a change of stage (see understand/thread.ts). */
 let thread = EMPTY_THREAD
+/** The away topic last answered, for a follow-up while the guest is off the ship. */
+let awayLast: AwayTopic | null = null
 
 /** Whether a question is waiting for its answer. Kept outside the hook so the Stanley chat's history can show the waiting dots where the answer will land. */
 let waiting = false
@@ -111,8 +113,13 @@ export function useStanleyAsk() {
     const previous = previousOf(thread, at, stage)
     // Away from the ship: the safety screen still comes first (an emergency goes to the handoff below); anything else is answered here, from what the app holds.
     if (awayFacts && !screen(asked.text)) {
-      const topic = awayTopic(asked.text)
-      const away = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports }), { kind: 'answer', source: 'library', existing: [] }, { text: asked.text, stage })
+      // The follow-ups ("and a taxi?", "what about lunch?") lean on the last turn here as they do on the ship.
+      const understoodAway = readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports, previous })
+      thread = remember(thread, understoodAway, Date.now(), stage)
+      // A short follow-up with no topic word of its own ("and how much?") is about the away topic just answered.
+      const topic = awayTopic(asked.text) ?? (understoodAway.carried ? awayLast : null)
+      awayLast = topic
+      const away = composeReply(understoodAway, { kind: 'answer', source: 'library', existing: [] }, { text: asked.text, stage })
       setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: awayAnswer(topic, awayFacts, t as (k: string, p?: Record<string, string | number>) => string), at: Date.now(), kind: 'answer', actions: away.actions }])
       countUnderstood([`outcome:${away.outcome}`])
       countTier('library', `away:${topic ?? 'none'}`)
