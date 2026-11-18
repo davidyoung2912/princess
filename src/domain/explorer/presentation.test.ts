@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { HoursDay } from '../../api/explorerTypes'
-import { cancelledListed, clashesWith, fillingUp, filterVenues, kindsOf, openState } from './presentation'
+import { cancelledListed, clashesWith, fillingUp, filterVenues, kindsOf, mealOver, openState } from './presentation'
 
 const hours = (windows: [string, string][], closedBecause: HoursDay['closedBecause'] = null): HoursDay => ({ windows, staffed: [], closedBecause })
 
@@ -65,5 +65,20 @@ describe('cancelledListed and fillingUp', () => {
     expect(fillingUp({ capacity: 40, left: 11 })).toBe(false)
     expect(fillingUp({ capacity: 12, left: 0 })).toBe(false)
     expect(fillingUp({})).toBe(false)
+  })
+})
+
+describe('mealOver', () => {
+  const lunch = { from: '12:00', to: '14:00' }
+  it('is over on past days, never on future days', () => {
+    expect(mealOver(lunch, 1, 2, '09:00')).toBe(true)
+    expect(mealOver(lunch, 3, 2, '23:00')).toBe(false)
+  })
+  it('on the current day is over once the end time has come', () => {
+    expect(mealOver(lunch, 2, 2, '13:59')).toBe(false)
+    expect(mealOver(lunch, 2, 2, '14:00')).toBe(true)
+  })
+  it('keeps a meal that runs past midnight open', () => {
+    expect(mealOver({ from: '22:00', to: '01:00' }, 2, 2, '23:30')).toBe(false)
   })
 })

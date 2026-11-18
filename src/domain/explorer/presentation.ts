@@ -32,6 +32,13 @@ export function openState(hours: HoursDay, chosenDay: number, currentDay: number
   return next ? { kind: 'opensAt', at: next[0] } : { kind: 'closedNow' }
 }
 
+/** Whether a meal's serving time has passed: any meal of an earlier day, none of a later day, and on the ship's day one whose end is at or before now. A meal that runs past midnight is not over until the day is. */
+export function mealOver(meal: { from: string; to: string }, chosenDay: number, currentDay: number, now: string): boolean {
+  const phase = dayPhase(chosenDay, currentDay)
+  if (phase !== 'current') return phase === 'past'
+  return mins(meal.to) > mins(meal.from) && mins(meal.to) <= mins(now)
+}
+
 /** A guest's reservation or event as the span of time it fills, in epoch ms. */
 export interface Span { id: string; title: string; startAt: number; endAt: number }
 

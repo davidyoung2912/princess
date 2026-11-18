@@ -110,7 +110,7 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
       </Card>
       <PickDateButton state={state} />
       {above?.(ctx)}
-      <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} />
+      <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} day={state.day} currentDay={state.currentDay} now={state.now} />
       {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
         <section aria-labelledby="exp-fam-h">
           <h2 id="exp-fam-h">{headingCase(t('exp.family.title'))}</h2>

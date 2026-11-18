@@ -398,6 +398,7 @@ export const enCore = {
   'exp.meal.allDay': 'Menu',
   'exp.menu.title': 'Menu for the day',
   'exp.menu.to': 'to',
+  'exp.menu.served': 'Served',
   'exp.menu.formal': 'Formal night',
   'exp.diet.legend': 'What the dish marks mean',
   'exp.diet.vegan': 'Vegan',
