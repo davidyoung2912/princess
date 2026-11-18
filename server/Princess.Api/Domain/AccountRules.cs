@@ -14,6 +14,8 @@ public static partial class AccountRules
     public static readonly string[] Needs = ["mobility", "hearing", "vision", "cpap", "oxygen", "serviceAnimal"];
     public static readonly string[] Bedding = ["queen", "twin", "noPreference"];
     /// <summary>The preference groups a guest can keep out of later bookings (MNG-16). Only these two are carried into a new booking, so only these two can be left out.</summary>
+    /// <summary>Dish heads-ups a guest can ask to have flagged on menus.</summary>
+    public static readonly string[] DishFlags = ["alcohol", "raw", "spicy"];
     public static readonly string[] KeepOutGroups = ["dietary", "needs"];
     public static readonly string[] CardBrands = ["visa", "mastercard", "amex", "discover"];
     public static readonly string[] Permissions = ["view", "documents", "payments", "profile", "folio", "checkin", "trip", "stanley"];
@@ -125,4 +127,5 @@ public sealed record ProfileInput(
     string? Bedding,
     string? SpecialRequests,
     EmergencyInput? Emergency,
-    string[]? KeepOut = null);
+    string[]? KeepOut = null,
+    string[]? AvoidFlags = null);

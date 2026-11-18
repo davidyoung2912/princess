@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import type { ExplorerDay, VenueDay } from '../../api/explorerTypes'
+import type { DishFlag } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
 import { formatMoney } from '../../domain/money'
 import { clashesWith, type Span } from '../../domain/explorer/presentation'
@@ -40,11 +41,11 @@ interface VenueDetailProps {
   busy?: (c: VenueContext) => readonly Span[]
 }
 
-/** The diets of the signed-in guest, so the menus can show first what suits them. */
-function useMyDiets(): DietaryId[] {
+/** The diets and the dish heads-ups to call out for the signed-in guest, so the menus can show first what suits them. */
+function useMyDiets(): { diets: DietaryId[]; avoid: DishFlag[] } {
   const me = usePersona()
   const profile = useMine(() => api.account.profile(me!.id), [me?.id])
-  return profile.data?.profile.dietary ?? []
+  return { diets: profile.data?.profile.dietary ?? [], avoid: profile.data?.profile.avoidFlags ?? [] }
 }
 
 /** The page every Explorer's venue shares: where it is, the day's hours, the guest's reservations, the menu, and every event of the day with a plan toggle. */
@@ -53,7 +54,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
   const state = useExplorerDay()
   const venueCopy = useVenueData(kind, venueId, state.day)
   const dayCopy = useExplorerData(kind, state.day)
-  const diets = useMyDiets()
+  const { diets, avoid } = useMyDiets()
   const siblings = dayCopy.data?.venues ?? []
   return (
     <div className="page exp-split">
@@ -78,7 +79,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
         </>
       ) : (
         <Saved copy={venueCopy}>
-          {(venue) => <Body kind={kind} venue={venue} explorerDay={dayCopy.data} state={state} diets={diets} above={above} busy={busy} reload={() => { venueCopy.retry(); dayCopy.retry() }} />}
+          {(venue) => <Body kind={kind} venue={venue} explorerDay={dayCopy.data} state={state} diets={diets} avoid={avoid} above={above} busy={busy} reload={() => { venueCopy.retry(); dayCopy.retry() }} />}
         </Saved>
       )}
       <BackLink to={`${basePath}?day=${state.day}`} label={backLabel} />
@@ -87,7 +88,7 @@ export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: Venu
   )
 }
 
-function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: { kind: ExplorerKind; venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; diets: DietaryId[]; above?: VenueDetailProps['above']; busy?: VenueDetailProps['busy']; reload: () => void }) {
+function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, reload }: { kind: ExplorerKind; venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; diets: DietaryId[]; avoid: DishFlag[]; above?: VenueDetailProps['above']; busy?: VenueDetailProps['busy']; reload: () => void }) {
   const v = venue.venue
   const pins = useVenuePins([v])
   const plan = usePlan(state.day, explorerDay?.mine ?? [], explorerDay?.reminders, { added: (title) => t('exp.plan.added', { title }), removed: (title) => t('exp.plan.removed', { title }) })
@@ -110,7 +111,7 @@ function Body({ kind, venue, explorerDay, state, diets, above, busy, reload }: {
       </Card>
       <PickDateButton state={state} />
       {above?.(ctx)}
-      <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} day={state.day} currentDay={state.currentDay} now={state.now} />
+      <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} avoid={avoid} day={state.day} currentDay={state.currentDay} now={state.now} />
       {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
         <section aria-labelledby="exp-fam-h">
           <h2 id="exp-fam-h">{headingCase(t('exp.family.title'))}</h2>

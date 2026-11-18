@@ -1,4 +1,5 @@
 import type { Citizenship } from './documents'
+import type { DishFlag } from '../api/explorerTypes'
 import { limit } from './limits'
 
 /** Account data (ACT-03, MNG-04): profile, preferences, cards and the helper role. Defaults come from the demo person; saved edits replace them. */
@@ -7,6 +8,8 @@ export type NeedId = 'mobility' | 'hearing' | 'vision' | 'cpap' | 'oxygen' | 'se
 export type Bedding = 'queen' | 'twin' | 'noPreference'
 
 export const DIETARY: readonly DietaryId[] = ['vegetarian', 'vegan', 'glutenFree', 'nutAllergy', 'shellfishAllergy', 'dairyFree', 'halal', 'kosher']
+/** Dish heads-ups a guest can ask to have called out on menus. */
+export const DISH_FLAGS: readonly DishFlag[] = ['alcohol', 'raw', 'spicy']
 export const NEEDS: readonly NeedId[] = ['mobility', 'hearing', 'vision', 'cpap', 'oxygen', 'serviceAnimal']
 export const BEDDING: readonly Bedding[] = ['queen', 'twin', 'noPreference']
 
@@ -29,6 +32,8 @@ export interface Profile {
   emergency: EmergencyContact
   /** Preference groups kept out of later bookings (MNG-16). Absent means none. */
   keepOut?: KeepOutGroup[]
+  /** Dish heads-ups the guest wants called out on menus (for example alcohol). Absent means none. */
+  avoidFlags?: DishFlag[]
 }
 
 const str = (v: unknown, fallback: string, max = 200): string => (typeof v === 'string' ? v.slice(0, max) : fallback)

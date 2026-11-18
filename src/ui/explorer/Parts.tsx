@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import type { ExplorerDay, ExplorerEvent, HoursDay, MealMenu } from '../../api/explorerTypes'
+import type { DishFlag, ExplorerDay, ExplorerEvent, HoursDay, MealMenu } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
 import { formatTime } from '../../domain/cruise'
 import { NEEDS_ASKING, dishSuits, type Dish } from '../../domain/menus'
 import { formatMoney } from '../../domain/money'
 import { fillingUp, mealOver, openState, type Span } from '../../domain/explorer/presentation'
-import { usedFlags } from '../../domain/explorer/diningDiscovery'
+import { avoidedFlags, usedFlags } from '../../domain/explorer/diningDiscovery'
 import { happeningNow } from '../../domain/explorer/planTimeline'
 import { eventPhase } from '../../domain/explorer/upcoming'
 import { t, type StringKey, headingCase } from '../../i18n'
@@ -17,7 +17,7 @@ import { ACCESS_FEATURES, type AccessFeature } from '../../domain/eventAccess'
 import { EXPLORER_LEADS, REMINDER_DEFAULT } from '../../domain/notifications'
 import { StatusBadge } from '../StatusBadge'
 import { SendToChat } from '../onboard/SendToChat'
-import { DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
+import { AvoidNote, DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
 
 /** Open, closed or finished for the chosen day, in words and an icon, never colour alone. */
 export function HoursBadge({ hours, day, currentDay, now }: { hours: HoursDay; day: number; currentDay: number; now: string }) {
@@ -118,7 +118,7 @@ export function FilterChips({ kinds, label, value, onChange, labels }: { kinds: 
 
 
 /** One meal's menu as a collapsible card. A meal already served starts collapsed; the guest's own choice after that is kept. */
-function MealCard({ venueId, m, over, suits }: { venueId: string; m: MealMenu; over: boolean; suits: (name: string, contains: readonly string[]) => boolean }) {
+function MealCard({ venueId, m, over, suits, avoid }: { venueId: string; m: MealMenu; over: boolean; avoid: readonly DishFlag[]; suits: (name: string, contains: readonly string[]) => boolean }) {
   const [open, setOpen] = useState(!over)
   const title = m.theme ? `${t(MEAL[m.meal])}: ${m.theme}` : m.title
   return (
@@ -136,7 +136,7 @@ function MealCard({ venueId, m, over, suits }: { venueId: string; m: MealMenu; o
           <div key={c.name}>
             <h4>{c.name}</h4>
             <ul className="plain-bullets">
-              {shown.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} />{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}
+              {shown.map((d) => { const asked = avoidedFlags(d.flags, avoid); return <li key={d.name} className={asked.length > 0 ? 'dish--avoid' : undefined}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} />{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}<AvoidNote flags={asked} /></li> })}
             </ul>
           </div>
         )
@@ -146,7 +146,7 @@ function MealCard({ venueId, m, over, suits }: { venueId: string; m: MealMenu; o
 }
 
 /** The menus of a restaurant for the day, with what each dish contains and a switch that keeps only the dishes that suit the guest's diets. */
-export function MenuPanel({ venueId, menus, diets, day, currentDay, now }: { venueId: string; menus: readonly MealMenu[]; diets: readonly DietaryId[]; day: number; currentDay: number; now: string }) {
+export function MenuPanel({ venueId, menus, diets, avoid = [], day, currentDay, now }: { venueId: string; menus: readonly MealMenu[]; diets: readonly DietaryId[]; avoid?: readonly DishFlag[]; day: number; currentDay: number; now: string }) {
   const [onlyMine, setOnlyMine] = useState(true)
   if (menus.length === 0) return null
   const filtering = onlyMine && diets.length > 0
@@ -160,7 +160,7 @@ export function MenuPanel({ venueId, menus, diets, day, currentDay, now }: { ven
       {ask.length > 0 && <p className="muted">{t('exp.menu.ask')}</p>}
       {menus.some((m) => m.courses.some((c) => c.dishes.some((d) => (d.marks?.length ?? 0) > 0))) && <><DietLegend /><p className="muted">{t('exp.diet.ask')}</p></>}
       {flagsUsed.length > 0 && <FlagLegend used={flagsUsed} />}
-      {menus.map((m) => <MealCard key={`${m.meal}-${m.from}`} venueId={venueId} m={m} over={mealOver(m, day, currentDay, now)} suits={suits} />)}
+      {menus.map((m) => <MealCard key={`${m.meal}-${m.from}`} venueId={venueId} m={m} over={mealOver(m, day, currentDay, now)} suits={suits} avoid={avoid} />)}
     </section>
   )
 }

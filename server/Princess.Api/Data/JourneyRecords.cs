@@ -40,6 +40,8 @@ public sealed class ProfileRecord
     public string SpecialRequests { get; set; } = "";
     /// <summary>Comma-separated preference groups (dietary, needs, bedding, requests) the guest keeps out of later bookings (MNG-16).</summary>
     public string KeepOut { get; set; } = "";
+    /// <summary>Comma-separated dish heads-ups (alcohol, raw, spicy) the guest wants flagged on menus.</summary>
+    public string AvoidFlags { get; set; } = "";
     public string EmergencyName { get; set; } = "";
     public string EmergencyPhone { get; set; } = "";
     public string EmergencyRelationship { get; set; } = "";

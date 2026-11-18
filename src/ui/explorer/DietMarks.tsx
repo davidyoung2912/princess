@@ -47,6 +47,12 @@ export function DishFlags({ flags }: { flags?: readonly DishFlag[] }) {
   return <span className="diet-marks">{shown.map((f) => <DishFlagIcon key={f} flag={f} />)}</span>
 }
 
+/** A written call-out under a dish that carries a heads-up the guest asked to be told about (words, not colour alone). */
+export function AvoidNote({ flags }: { flags: readonly DishFlag[] }) {
+  if (flags.length === 0) return null
+  return <small className="dish-avoid">{t('exp.flag.avoid', { list: FLAG_ORDER.filter((f) => flags.includes(f)).map((f) => t(FLAG_LABEL[f]).toLowerCase()).join(', ') })}</small>
+}
+
 /** What the heads-ups mean, for the flags the menu actually uses. */
 export function FlagLegend({ used }: { used: readonly DishFlag[] }) {
   const shown = FLAG_ORDER.filter((f) => used.includes(f))

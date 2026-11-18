@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { HelpTip } from '../HelpTip'
 import { Link, useParams } from 'react-router'
 import type { ProfileView } from '../../api/types'
-import { BEDDING, DIETARY, NEEDS, nameChange, validateProfile, type Bedding, type DietaryId, type NeedId, type Profile, type ProfileErrors, type ProfileField } from '../../domain/account'
+import { BEDDING, DIETARY, DISH_FLAGS, NEEDS, nameChange, validateProfile, type Bedding, type DietaryId, type NeedId, type Profile, type ProfileErrors, type ProfileField } from '../../domain/account'
 
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
@@ -128,6 +128,11 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
           <legend>{t('profile.dietary')}</legend>
 <HelpTip about={t('profile.dietary')}>{t('helptip.dietary')}</HelpTip>
           {DIETARY.map((d: DietaryId) => <label key={d} className="choice"><input type="checkbox" checked={p.dietary.includes(d)} onChange={() => set({ dietary: toggle(p.dietary, d) })} /><span>{t(`profile.dietary.${d}` as StringKey)}</span></label>)}
+        </fieldset>
+        <fieldset>
+          <legend>{t('profile.avoid')}</legend>
+          <p className="field__hint">{t('profile.avoidHint')}</p>
+          {DISH_FLAGS.map((f) => <label key={f} className="choice"><input type="checkbox" checked={(p.avoidFlags ?? []).includes(f)} onChange={() => set({ avoidFlags: toggle(p.avoidFlags ?? [], f) })} /><span>{t(`exp.flag.${f}` as StringKey)}</span></label>)}
         </fieldset>
         <fieldset>
           <legend>{t('profile.needs')}</legend>

@@ -68,6 +68,11 @@ export function usedFlags(menus: readonly MealMenu[]): DishFlag[] {
   return (['alcohol', 'raw', 'spicy'] as const).filter((f) => dishes.some((d) => d.flags?.includes(f)))
 }
 
+/** The flags on a dish that the guest asked to be told about, in the order the dish lists them. */
+export function avoidedFlags(flags: readonly DishFlag[] | undefined, avoid: readonly DishFlag[] | undefined): DishFlag[] {
+  return (flags ?? []).filter((f) => avoid?.includes(f))
+}
+
 export type DiningSort = 'suggested' | 'open' | 'price'
 export const DINING_SORTS: readonly DiningSort[] = ['suggested', 'open', 'price']
 

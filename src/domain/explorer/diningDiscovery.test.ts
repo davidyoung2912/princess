@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ExplorerVenueInfo, HoursDay, MealMenu, VenueDay } from '../../api/explorerTypes'
-import { dishHits, filterDining, markedDishes, matchesPrompt, NO_DINING_FILTER, servesPeriod, sortDining, usedFlags } from './diningDiscovery'
+import { dishHits, filterDining, markedDishes, matchesPrompt, NO_DINING_FILTER, servesPeriod, sortDining, avoidedFlags, usedFlags } from './diningDiscovery'
 
 const hours = (...windows: [string, string][]): HoursDay => ({ windows, staffed: [], closedBecause: null })
 const menu = (meal: MealMenu['meal'], ...dishes: string[]): MealMenu => ({ venueId: 'x', meal, from: '12:00', to: '14:00', title: meal, formal: false, courses: [{ name: 'c', dishes: dishes.map((name) => ({ name, contains: [] })) }] })
@@ -62,6 +62,18 @@ describe('dish flags', () => {
   it('names only the flags a menu uses, in a fixed order', () => {
     expect(usedFlags([flagged])).toEqual(['alcohol', 'raw'])
     expect(usedFlags([menu('lunch', 'Penne')])).toEqual([])
+  })
+})
+
+describe('avoidedFlags', () => {
+  it('keeps only the flags the guest asked about, in the dish\'s order', () => {
+    expect(avoidedFlags(['alcohol', 'spicy'], ['spicy'])).toEqual(['spicy'])
+    expect(avoidedFlags(['raw', 'alcohol'], ['alcohol', 'raw'])).toEqual(['raw', 'alcohol'])
+  })
+  it('is empty with no flags or no request', () => {
+    expect(avoidedFlags(undefined, ['alcohol'])).toEqual([])
+    expect(avoidedFlags(['alcohol'], undefined)).toEqual([])
+    expect(avoidedFlags(['alcohol'], [])).toEqual([])
   })
 })
 
