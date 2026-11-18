@@ -686,7 +686,7 @@ export interface ChatRoomsStaffApi {
 /** A flag a guest raised on a post. The post's words are not here; staff read it in the room's posts. */
 export interface ChatHostFlag { id: string; roomId: string; roomName: string; messageId: string; reason: HostFlagReason; at: number }
 
-export type AvatarGroup = 'people' | 'sketch' | 'robots' | 'critters'
+export type AvatarGroup = 'people' | 'sketch' | 'robots' | 'critters' | 'pixel' | 'abstract'
 
 /** One picture in the chat avatar catalogue (phase 9c); the picture itself is at `/public/avatars/{id}`. */
 export interface AvatarChoice {

@@ -3541,7 +3541,7 @@ BEGIN
 CREATE TABLE dbo.ChatAvatars (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_ChatAvatars PRIMARY KEY,          -- style and number, e.g. bottts-31
   Label NVARCHAR(60) NOT NULL,                                             -- what a screen reader says, e.g. "Robot 1"
-  GroupName NVARCHAR(20) NOT NULL,                                         -- people, sketch, robots or critters
+  GroupName NVARCHAR(20) NOT NULL,                                         -- people, sketch, robots, critters, pixel or abstract
   Style NVARCHAR(30) NOT NULL, Seed NVARCHAR(60) NOT NULL,                 -- how it was made, so it can be made again
   Creator NVARCHAR(80) NOT NULL, Licence NVARCHAR(60) NOT NULL,
   SortOrder INT NOT NULL,

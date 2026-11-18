@@ -11,14 +11,14 @@ import { Button } from './Button'
 import { ChevronLeft, ChevronRight, Undo } from './icons'
 
 /**
- * The picture a guest chooses for chat: a couple of hundred cartoon avatars (people, sketches, robots and critters), shown two lines at a time with arrows at each side that wrap round, each a labelled radio button with a tick on the chosen one.
- * Four checkboxes narrow the list by kind (all on to start; the last one cannot be switched off). They only change what is shown; the chosen picture stays chosen.
+ * The picture a guest chooses for chat: a couple of hundred cartoon avatars (people, sketches, robots, critters, pixel people and abstract patterns), shown two lines at a time with arrows at each side that wrap round, each a labelled radio button with a tick on the chosen one.
+ * One checkbox per kind narrows the list by kind (all on to start; the last one cannot be switched off). They only change what is shown; the chosen picture stays chosen.
  * The choice is saved as it is made (and follows the guest between devices). Used in the welcome and in Settings. Photos are never uploaded.
  */
 /** Lines of pictures shown at a time. */
 const ROWS = 2
 
-export function AvatarPicker({ onCurrent }: { onCurrent?: (id: string | null) => void } = {}) {
+export function AvatarPicker() {
   const catalogue = useMine(() => api.messages.avatars())
   const stored = useMine(() => api.messages.avatar())
   const [shown, setShown] = useState<string | null | undefined>(undefined)
@@ -43,7 +43,6 @@ export function AvatarPicker({ onCurrent }: { onCurrent?: (id: string | null) =>
     return () => watch.disconnect()
   }, [ready])
   const current = shown === undefined ? (stored.data ?? null) : shown
-  useEffect(() => { onCurrent?.(current) }, [current, onCurrent])
   const choose = useAction(async (id: string | null) => {
     await optimistic(() => setShown(id), () => api.messages.setAvatar(id), () => setShown(undefined))
     setMyAvatar(id)

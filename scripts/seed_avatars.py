@@ -94,6 +94,26 @@ def build():
         rows.append(("robots", "bottts-neutral", f"princess-botface-{i}", f"Robot face {i}", {}))
     for i in range(9, 31):
         rows.append(("critters", "thumbs", f"princess-critter-{i}", f"Critter {i}", {}))
+    # Faces without bodies, in the same hands as the People and Sketches above, added to those groups.
+    for i in range(1, 11):
+        rows.append(("people", "avataaars-neutral", f"princess-face-{i}", f"Person {80 + i}, face only", {}))
+    for i in range(1, 9):
+        rows.append(("sketch", "lorelei-neutral", f"princess-portrait-face-{i}", f"Portrait face {i}", {}))
+    for i in range(1, 9):
+        rows.append(("sketch", "notionists-neutral", f"princess-doodle-face-{i}", f"Doodle face {i}", {}))
+    # Two new groups: retro pixel people and faces, and abstract patterns for a guest who would rather not show a face.
+    for i in range(1, 31):
+        rows.append(("pixel", "pixel-art", f"princess-pixel-{i}", f"Pixel person {i}", {}))
+    for i in range(1, 21):
+        rows.append(("pixel", "pixel-art-neutral", f"princess-pixel-face-{i}", f"Pixel face {i}", {}))
+    for i in range(1, 21):
+        rows.append(("abstract", "shapes", f"princess-shape-{i}", f"Shapes {i}", {}))
+    for i in range(1, 11):
+        rows.append(("abstract", "rings", f"princess-ring-{i}", f"Rings {i}", {}))
+    for i in range(1, 11):
+        rows.append(("abstract", "glass", f"princess-glass-{i}", f"Glass {i}", {}))
+    for i in range(1, 11):
+        rows.append(("abstract", "identicon", f"princess-pattern-{i}", f"Pattern {i}", {}))
     return rows
 
 

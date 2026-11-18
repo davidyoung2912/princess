@@ -1,6 +1,6 @@
 namespace Princess.Api.Domain;
 
-/// <summary>A guest's chat avatar (phase 9c): one of the pictures in <c>dbo.ChatAvatars</c> (about 200, drawn by DiceBear and stored by <c>scripts/seed_avatars.py</c>), never an upload. The choice is the picture's id, for example <c>bottts-31</c>.</summary>
+/// <summary>A guest's chat avatar (phase 9c): one of the pictures in <c>dbo.ChatAvatars</c> (about 340, drawn by DiceBear and stored by <c>scripts/seed_avatars.py</c>), never an upload. The choice is the picture's id, for example <c>bottts-31</c>.</summary>
 public static class ChatAvatarRules
 {
     /// <summary>The shape of an id, checked before the database is asked, so nothing free-form reaches a query or a URL.</summary>

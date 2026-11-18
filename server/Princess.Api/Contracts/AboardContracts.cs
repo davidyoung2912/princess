@@ -217,7 +217,7 @@ public sealed record ChatReceiptsRequest(bool On);
 /// <summary>Phase 9c: the caller's avatar as the id of a catalogue picture; null or empty goes back to the initials. 400 <c>avatar</c> for an id that is not in the catalogue.</summary>
 public sealed record ChatAvatarRequest(string? Avatar);
 
-/// <summary>One avatar to choose from: its id (the picture is at <c>/public/avatars/{id}</c>), what a screen reader says, and its group (people, sketch, robots or critters).</summary>
+/// <summary>One avatar to choose from: its id (the picture is at <c>/public/avatars/{id}</c>), what a screen reader says, and its group (people, sketch, robots, critters, pixel or abstract).</summary>
 public sealed record ChatAvatarDto(string Id, string Label, string Group);
 
 public sealed record ChatBlockRequest(bool On);

@@ -205,7 +205,7 @@ public static class AboardEndpoints
         chat.MapPut("/avatar", async (ChatAvatarRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(new ChatAvatarRequest(await svc.SetAvatarAsync(await me.LoadAsync(ct), body, ct))))
             .WithSummary("Sets the caller's chat avatar to one catalogue id; null or empty goes back to the initials. 400 avatar (not in the catalogue). Other people see it in a direct chat's list row.");
         chat.MapGet("/avatars", async (ChatService svc, CancellationToken ct) => Results.Ok(await svc.AvatarsAsync(ct)))
-            .WithSummary("The avatars a guest can choose from (about 200: people, sketch people, robots and critters): id, spoken label and group, in display order. The picture is `GET /public/avatars/{id}`.");
+            .WithSummary("The avatars a guest can choose from (about 340: people, sketch people, robots, critters, pixel people and abstract patterns): id, spoken label and group, in display order. The picture is `GET /public/avatars/{id}`.");
         api.MapGet("/public/avatars/{id}", async (string id, ChatService svc, HttpContext http, CancellationToken ct) =>
             {
                 var svg = await svc.AvatarSvgAsync(id, ct) ?? throw ApiException.NotFound();

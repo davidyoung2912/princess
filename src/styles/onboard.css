@@ -332,7 +332,7 @@ button.chat-quote { cursor: pointer; }
 .avatar-picker__filter { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-3); }
 .avatar-picker__filter-item { min-height: 0; }
 .avatar-picker__row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-2); }
-.avatar-picker__arrow { display: inline-flex; align-items: center; justify-content: center; align-self: stretch; min-width: 2rem; min-height: 3rem; padding: 0; border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); background: var(--bg); color: var(--primary); cursor: pointer; }
+.avatar-picker__arrow { display: inline-flex; align-items: center; justify-content: center; align-self: center; min-width: 2rem; min-height: 3rem; padding: 0; border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); background: var(--bg); color: var(--primary); cursor: pointer; }
 .avatar-picker__arrow:hover { background: var(--brand-tint); border-color: var(--primary-dark); }
 .avatar-picker__arrow .lucide { width: 1.25rem; height: 1.25rem; }
 .app-welcome__hint { margin-top: var(--space-4); color: var(--text); }
