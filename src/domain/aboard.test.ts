@@ -21,6 +21,23 @@ describe('ship info (OB-06)', () => {
   })
 })
 
+describe('search tolerance', () => {
+  it('finds plurals, synonyms and small typos', () => {
+    expect(searchContent('massages')[0].to).toBe('/ship/spa')
+    expect(searchContent('masage')[0].to).toBe('/ship/spa')
+    expect(searchContent('restroom', [{ kind: 'screen', id: '/t', title: 'Toilets', detail: '', to: '/t' }]).map((h) => h.to)).toContain('/t')
+  })
+  it('widens a natural question to the entries holding most of its words, and still finds nothing for nonsense', () => {
+    expect(searchContent('where can I get a massage zzz').map((h) => h.to)).toContain('/ship/spa')
+    expect(searchContent('where can I zzz')).toEqual([])
+  })
+  it('keeps a strict match ahead of a widened one', () => {
+    const strict = searchContent('italian')
+    expect(searchContent('italian zzz').length).toBeGreaterThan(0)
+    expect(strict[0].id).toBe(searchContent('italian')[0].id)
+  })
+})
+
 describe('search (OB-07)', () => {
   it('finds places, food and activities by any word', () => {
     expect(searchContent('pool').some((h) => h.title.includes('Pool'))).toBe(true)
@@ -31,7 +48,7 @@ describe('search (OB-07)', () => {
 
   it('needs every word, ignores accents and case, and says nothing for too little', () => {
     expect(searchContent('roatan').some((h) => h.kind === 'port')).toBe(true)
-    expect(searchContent('italian pizza zzz')).toEqual([])
+    expect(searchContent('zzz qqq')).toEqual([])
     expect(searchContent('a')).toEqual([])
     expect(searchContent('   ')).toEqual([])
   })

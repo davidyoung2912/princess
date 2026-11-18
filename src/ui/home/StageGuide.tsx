@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Link } from 'react-router'
-import { ArrowRight, Check, Clock } from 'lucide-react'
+import { ArrowRight, Archive, Check, CircleCheck, Clock, ChevronDown } from 'lucide-react'
 import type { GuideTask, GuideView } from '../../api/guideTypes'
 import { dotReason, publishDot } from '../../ai/stanleyDot'
 import { doneTasks, moreCount, openTasks, primaryOf } from '../../guide/view'
@@ -159,16 +159,16 @@ export function StageGuide() {
         </section>
       )}
       {done.length > 0 && (
-        <details className="guide__done">
-          <summary>{th('guide.doneCount', { count: done.length })}</summary>
+        <details className="guide__done guide__fold">
+          <summary><CircleCheck aria-hidden="true" strokeWidth={2.5} /><span>{th('guide.doneCount', { count: done.length })}</span><ChevronDown className="guide__fold-chevron" aria-hidden="true" /></summary>
           <ul className="stage-steps">
             {done.map((x) => <li key={x.id} className="stage-step stage-steps__done"><span className="stage-step__num" aria-hidden="true"><Check size={16} className="tick-draw" /></span><span className="stage-step__body">{taskWords(x).title}<span className="visually-hidden"> · {t('guide.done')}</span></span></li>)}
           </ul>
         </details>
       )}
       {(view.hidden.length > 0 || view.deferred.length > 0) && (
-        <details className="guide__done">
-          <summary>{th('guide.asideCount', { count: view.hidden.length + view.deferred.length })}</summary>
+        <details className="guide__done guide__fold">
+          <summary><Archive aria-hidden="true" strokeWidth={2.5} /><span>{th('guide.asideCount', { count: view.hidden.length + view.deferred.length })}</span><ChevronDown className="guide__fold-chevron" aria-hidden="true" /></summary>
           <ul className="stage-steps">
             {view.hidden.map((id) => <AsideRow key={id} id={id} text={t('guide.asideHidden', { task: taskWords({ id }).title })} aside={aside} />)}
             {view.deferred.map((d) => <AsideRow key={d.id} id={d.id} text={t('guide.asideLater', { date: formatDate(d.until), task: taskWords({ id: d.id }).title })} aside={aside} />)}

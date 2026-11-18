@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Anchor, CircleDot, Compass, Drama, MapPin, ShoppingBag, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { MessageCircleQuestion, Anchor, CircleDot, Compass, Drama, MapPin, ShoppingBag, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 import { SCREEN_ICONS } from '../screenIcons'
 import { formatTemp } from '../../domain/readiness'
 import { useSettings } from '../../hooks/useSettings'
@@ -28,6 +28,9 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
+import { SearchAnswers } from './SearchAnswers'
+import { Button } from '../Button'
+import { requestStanley } from '../../ai/stanleyOpen'
 import { Card } from '../Card'
 import { Field } from '../Field'
 import { Saved } from '../onboard/common'
@@ -129,7 +132,7 @@ export function SearchScreen() {
         <Field label={t('search.label')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" enterKeyHint="search" />
       </form>
       <p role="status" className="search-count">{enough ? boldFirst(t('search.found', { count: hits.length, query: query.trim() }), String(hits.length)) : ''}</p>
-      {enough && hits.length === 0 && <Banner kind="info" title={t('search.none')}><p>{t('search.noneBody')} <Link to="/me/help">{t('route.helpCentre')}</Link></p></Banner>}
+      {enough && hits.length === 0 && <Banner kind="info" title={t('search.none')}><p>{t('search.noneBody')} <Link to="/me/help">{t('route.helpCentre')}</Link></p><div className="button-row"><Button icon={MessageCircleQuestion} onClick={() => requestStanley(query.trim())}>{t('search.askStanley')}</Button></div></Banner>}
       {!enough && recent.length > 0 && (
         <section aria-labelledby="recent-h">
           <h2 id="recent-h">{th('search.recent')}</h2>
@@ -137,6 +140,7 @@ export function SearchScreen() {
           <p><button type="button" className="link-button" onClick={forget}>{t('search.clearRecent')}</button></p>
         </section>
       )}
+      {enough && <SearchAnswers query={query} />}
       {cards.map((c) => (
         <Card key={c.id} labelledBy={`answer-${c.id}`}>
           <p id={`answer-${c.id}`}><strong>{c.id === 'wifi' ? (c.value ? t('search.answer.wifi', { value: c.value }) : t('search.answer.wifiNoPrice')) : c.id === 'dinner' ? (c.value ? t('search.answer.dinner', { value: c.value }) : t('search.answer.dinnerNone')) : t('search.answer.late')}</strong></p>

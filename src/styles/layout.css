@@ -389,6 +389,15 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .guide__urgent { display: inline-flex; align-items: center; gap: var(--space-1); font-weight: 600; margin: 0; }
 .guide__changed { margin: 0; }
 .guide__handoff p { margin: 0 0 var(--space-1); }
+.guide__fold { background: var(--surface, #fff); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); box-shadow: var(--elev-1); margin-top: var(--space-4); padding: 0 var(--space-4); }
+.guide__fold[open] { padding-bottom: var(--space-3); }
+.guide__fold > summary { gap: var(--space-3); list-style: none; color: var(--primary); }
+.guide__fold > summary::-webkit-details-marker { display: none; }
+.guide__fold > summary > span { flex: 1; }
+.guide__fold > summary:hover { color: var(--sec); }
+.guide__fold-chevron { transition: transform var(--t-mid) var(--ease); }
+.guide__fold[open] .guide__fold-chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .guide__fold-chevron { transition: none; } }
 .guide__done summary { min-height: var(--target-min); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
 .guide__aside { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
 /* The quieter actions stack under the Start button, one per line, left-aligned. */
