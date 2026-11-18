@@ -374,6 +374,8 @@ export const enCore = {
   'exp.pin.on': '{title} pinned to the top.',
   'exp.pin.off': '{title} unpinned.',
   'exp.pin.full': 'Ten places are already pinned here. Unpin one first.',
+  'plan.today.toTry': 'To try here: {dishes}',
+  'dine.toTry': 'To try: {dishes}',
   'dish.save': 'Save {title} to remember',
   'dish.on': '{title} saved. It is only a reminder; nothing is ordered.',
   'dish.off': '{title} taken off your saved dishes.',

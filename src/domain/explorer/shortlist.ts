@@ -89,6 +89,11 @@ export function shortlistFrom(items: readonly SavedItemView[], shipId: string): 
   return out
 }
 
+/** The names of the saved dishes served at one venue, in the order saved. */
+export function dishesAt(items: readonly SavedItem[], venueId: string): string[] {
+  return items.filter((i) => i.kind === 'dish' && i.to.split('?')[0].endsWith(`/${venueId}`)).map((i) => i.title)
+}
+
 /** The first saved place in an Explorer, so the reserve page can start on it. Null when none is saved there. */
 export function carryOverVenue(keys: readonly string[], explorer: ExplorerKind, venues: readonly { id: string; shipId: string; explorer: ExplorerKind }[]): string | null {
   for (const key of keys) {

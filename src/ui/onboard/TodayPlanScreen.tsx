@@ -15,12 +15,14 @@ import { useTaste } from '../../hooks/useTaste'
 import { useVenuePins } from '../../hooks/useVenuePins'
 import { DayBundles } from './DayBundles'
 import { StanleyPose } from '../StanleyPose'
+import { dishesAt } from '../../domain/explorer/shortlist'
+import { useSavedDishes } from '../../hooks/useSavedDishes'
 import { useTodayPlan } from '../../hooks/useTodayPlan'
 import { t, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
-import { Clock, MapPin } from '../icons'
+import { Bookmark, Clock, MapPin } from '../icons'
 import { Plus } from 'lucide-react'
 import { InviteDialog } from './InviteDialog'
 import { Card } from '../Card'
@@ -54,6 +56,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
   const pins = useVenuePins(plan.explorers.flatMap((d) => d.venues.map((v) => v.venue)))
   const pinnedVenueIds = plan.explorers.flatMap((d) => d.venues.filter((v) => pins.isPinned(v.venue)).map((v) => v.venue.id))
   const bundles = plan.ready ? dayBundles(plan.explorers, plan.items, taste, { now: state.nowAt, pinnedVenueIds }) : []
+  const savedDishes = useSavedDishes()
   const clockAt = (epoch: number) => formatTime(timeIn(epoch, shipZoneAt(sailing, epoch)))
   const addToCalendar = () => {
     if (!plan.date) return
@@ -85,7 +88,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
             <section key={g.period} aria-labelledby={`tp-${g.period}`}>
               <h2 id={`tp-${g.period}`}>{headingCase(t(PERIOD[g.period]))}</h2>
               <ul className="event-list">
-                {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} onAdd={addToPlan.add} onRemove={addToPlan.remove} busy={addToPlan.busy} />)}
+                {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} dishes={dishesOnLine(i, savedDishes)} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} onAdd={addToPlan.add} onRemove={addToPlan.remove} busy={addToPlan.busy} />)}
               </ul>
             </section>
           ))}
@@ -102,13 +105,16 @@ function PlanDay({ details = false }: { details?: boolean }) {
   )
 }
 
+/** The saved dishes to show on a dining line: those at that venue. */
+const dishesOnLine = (i: PlanItem, saved: Parameters<typeof dishesAt>[0]): string[] => (i.explorer === 'dining' && i.status !== 'cancelled' ? dishesAt(saved, i.venueId) : [])
+
 function changeText(i: PlanItem): string {
   const was = formatTime(i.was ?? i.start)
   if (i.status === 'cancelled') return i.reason ? t('plan.today.cancelledWhy', { title: i.title, reason: i.reason }) : t('plan.today.cancelled', { title: i.title })
   return i.reason ? t('plan.today.movedWhy', { title: i.title, was, time: formatTime(i.start), reason: i.reason }) : t('plan.today.moved', { title: i.title, was, time: formatTime(i.start) })
 }
 
-function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, onRemove, busy }: { item: PlanItem; onRemove: (e: { id: string; title: string }) => Promise<boolean>; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; alternatives: Alternative[]; onAdd: (events: { id: string; title: string }[]) => Promise<boolean>; busy: boolean }) {
+function PlanRow({ item, day, clash, hint, clockAt, dishes, alternatives, onAdd, onRemove, busy }: { item: PlanItem; onRemove: (e: { id: string; title: string }) => Promise<boolean>; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; dishes: string[]; alternatives: Alternative[]; onAdd: (events: { id: string; title: string }[]) => Promise<boolean>; busy: boolean }) {
   const cancelled = item.status === 'cancelled'
   const [inviting, setInviting] = useState(false)
   return (
@@ -125,6 +131,7 @@ function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, onRemov
       </ul>
       {item.detail && <p className="event__detail">{item.detail}</p>}
       {item.venueTitle && item.venueTitle !== item.title && <p className="event__where"><Link className="event__inner-link" to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></p>}
+      {dishes.length > 0 && <p className="event__dishes"><Bookmark aria-hidden="true" focusable="false" /> {t('plan.today.toTry', { dishes: dishes.join(', ') })}</p>}
       {clash && clash.length > 0 && <p className="exp-event__clash" role="note">{t('exp.event.clash', { title: clash[0].title })}</p>}
       {alternatives.length > 0 && (
         <div role="group" aria-label={t('plan.alt.title')}>

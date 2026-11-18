@@ -9,6 +9,8 @@ import { dinnerDays } from '../../../domain/dining'
 import { groupByDay, type ReservationScope } from '../../../domain/explorer/reservationsByDay'
 import { formatMoney } from '../../../domain/money'
 import { useSailing } from '../../../hooks/useDemo'
+import { useSavedDishes } from '../../../hooks/useSavedDishes'
+import { dishesAt } from '../../../domain/explorer/shortlist'
 import { t } from '../../../i18n'
 import { api } from '../../../runtime'
 import { Button } from '../../Button'
@@ -40,6 +42,7 @@ interface Props {
 /** The guest's dinner reservations for the chosen day, with Change, Cancel and a button to reserve, wired to the dining service. */
 export function DiningReservations({ venues, day, venueId, view, reload, basePath, scope = 'day' }: Props) {
   const sailing = useSailing()
+  const saved = useSavedDishes()
   const { stage } = useExplorerStage()
   const ahead = useAheadInput(day)
   const card = diningBookingCard(view, stage)
@@ -58,6 +61,7 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
     facts: [
       names(r.guests), r.charge > 0 ? t('dine.charge', { amount: formatMoney(r.charge) }) : t('dine.included'), ...(r.note ? [r.note] : []),
       ...(r.reminderOn ? [t('dine.reminder', { date: formatDate(r.reminderOn) })] : []),
+      ...(dishesAt(saved, r.venueId).length > 0 ? [t('dine.toTry', { dishes: dishesAt(saved, r.venueId).join(', ') })] : []),
       ...r.dietary.map((d) => t('dine.dietary', { name: d.name, needs: d.needs.map((n) => t(`profile.dietary.${n}` as never)).join(', ') })),
     ],
   })

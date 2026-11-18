@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { carryOverVenue, dishKey, dishSlug, MAX_SAVED_DISHES, eventKey, parseEventKey, MAX_SAVED_ITEMS, parseTourKey, parseTreatmentKey, reminderAt, reminderId, reminderText, savedKeys, shortlistFrom, toggleSavedKey, tourKey, treatmentKey } from './shortlist'
+import { dishesAt, carryOverVenue, dishKey, dishSlug, MAX_SAVED_DISHES, eventKey, parseEventKey, MAX_SAVED_ITEMS, parseTourKey, parseTreatmentKey, reminderAt, reminderId, reminderText, savedKeys, shortlistFrom, toggleSavedKey, tourKey, treatmentKey } from './shortlist'
 
 const lookups = {
   venues: [{ id: 'crown', shipId: 'sun-princess', explorer: 'dining' as const }, { id: 'lotus', shipId: 'sun-princess', explorer: 'spa' as const }],
@@ -113,5 +113,21 @@ describe('saved dishes', () => {
     const item = shortlistFrom([{ key: 'dish:s.crown.fresh-fruit-plate', kind: 'dish', title: 'Fresh fruit plate', explorer: 'dining', itemId: 'fresh-fruit-plate', venueId: 'crown', shipId: 's', detail: 'Crown Grill' }], '')
     expect(item).toMatchObject([{ kind: 'dish', title: 'Fresh fruit plate', detail: 'Crown Grill', bookable: false }])
     expect(item[0].to.endsWith('/crown')).toBe(true)
+  })
+})
+
+describe('dishesAt', () => {
+  const items = shortlistFrom([
+    { key: 'dish:s.crown.fruit', kind: 'dish', title: 'Fresh fruit plate', explorer: 'dining', itemId: 'fruit', venueId: 'crown', shipId: 's', detail: 'Crown Grill' },
+    { key: 'dish:s.buffet.pasta', kind: 'dish', title: 'Buttered pasta', explorer: 'dining', itemId: 'pasta', venueId: 'buffet', shipId: 's', detail: 'Buffet' },
+    { key: 'dish:s.crown.ice', kind: 'dish', title: 'Vanilla ice cream', explorer: 'dining', itemId: 'ice', venueId: 'crown', shipId: 's', detail: 'Crown Grill' },
+  ], '')
+  it('lists the dishes saved at one venue, in the order saved', () => {
+    expect(dishesAt(items, 'crown')).toEqual(['Fresh fruit plate', 'Vanilla ice cream'])
+    expect(dishesAt(items, 'buffet')).toEqual(['Buttered pasta'])
+    expect(dishesAt(items, 'pub')).toEqual([])
+  })
+  it('does not mistake a venue whose id ends the same way', () => {
+    expect(dishesAt(items, 'grill')).toEqual([])
   })
 })

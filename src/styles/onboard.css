@@ -739,3 +739,7 @@ button.chat-quote { cursor: pointer; }
 .dish-save[aria-pressed='true'] { color: var(--primary); }
 .dish-save[aria-pressed='true'] svg { fill: currentColor; fill-opacity: 0.2; }
 @media (prefers-reduced-motion: reduce) { .dish-save { transition: none; } }
+
+/* Saved dishes under a dining line of the day plan. */
+.event__dishes { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-1) 0; }
+.event__dishes svg { flex: none; width: 1.125rem; height: 1.125rem; color: var(--primary); }
