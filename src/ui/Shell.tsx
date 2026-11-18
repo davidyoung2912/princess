@@ -138,11 +138,12 @@ export function Shell() {
   const welcomeReady = useSyncExternalStore(subscribeWelcome, () => welcomeLoaded(personId), () => false)
   // A guest's very first sign-in opens Stanley's introduction before any stage welcome; once it is marked seen the stage's welcome follows when they continue.
   // If the guest has already gone somewhere before the server's copy arrived (after a reset it can be slow), the welcome must not pull them back: it waits for the next time they are at the start.
-  const firstPath = useRef(pathname)
+  const firstPath = useRef<string | null>(null)
   const [wentOn, setWentOn] = useState(false)
   // Signed out, or on a public screen (the sign-in page redirects to Home the moment an account is created), nothing counts as the guest going somewhere: the start is re-taken until they are in.
   useEffect(() => {
-    if (!known || route?.public) { firstPath.current = pathname; return }
+    if (!known || route?.public) { firstPath.current = null; return }
+    if (firstPath.current === null) { firstPath.current = pathname; return }
     if (!welcomeReady && pathname !== firstPath.current && pathname !== '/welcome') setWentOn(true)
   }, [pathname, welcomeReady, known, route?.public])
   const canWelcome = known && !wentOn && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings'
