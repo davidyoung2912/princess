@@ -24,7 +24,7 @@ export interface ExplorerVenueInfo {
   /** Restaurants: seating and care for little ones. */
   family?: string[]
   /** Restaurants: the dishes on the children's menu. */
-  kidsMenu?: string[]
+  kidsMenu?: MealDish[]
 }
 
 /** A venue's hours for the chosen day, worked out by the server. */
@@ -111,10 +111,12 @@ export interface ExplorerDay {
 /** One saved item of the shortlist with its name, resolved by the server so it needs no booking. `venueId` is the place it is at (none for a tour); `shipId` the ship (none for a tour). */
 export interface SavedItemView {
   key: string
-  kind: 'venue' | 'treatment' | 'event' | 'tour'
+  kind: 'venue' | 'treatment' | 'event' | 'tour' | 'dish'
   title: string
   explorer: 'dining' | 'entertainment' | 'shopping' | 'spa' | 'exercise' | 'activities' | 'excursions'
   itemId: string
   venueId: string | null
   shipId: string | null
+  /** Where a dish is served (its venue's name). */
+  detail?: string | null
 }

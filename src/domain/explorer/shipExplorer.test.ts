@@ -4,6 +4,7 @@ import { shipExplorerFileText, shipExplorerRows } from '../../../scripts/ship-ex
 import { ACCESS_FEATURES } from '../eventAccess'
 import { isDayKind, isDayKindOn, type DayShape } from '../dayKinds'
 import { resolveHours } from './hours'
+import { dishKey, dishSlug } from './shortlist'
 import { templateIndexFor } from './dayMapping'
 import { EXPLORER_KINDS } from './types'
 import { EVENTS as PROGRAMME_EVENTS } from '../program'
@@ -55,6 +56,27 @@ describe('the Explorer content of the ships', () => {
           expect((v.family?.length ?? 0) > 0).toBe(eats)
           expect((v.kidsMenu?.length ?? 0) > 0).toBe(eats)
         }
+      })
+
+      it('gives every dish a saved-dish key that fits and names it alone at its venue', () => {
+        for (const v of content.venues) {
+          const names = [...new Set([...content.menus.filter((m) => m.venueId === v.id).flatMap((m) => m.courses.flatMap((c) => c.dishes.map((d) => d.name))), ...(v.kidsMenu ?? []).map((d) => d.name)])]
+          const slugs = names.map(dishSlug)
+          expect(new Set(slugs).size, v.id).toBe(names.length)
+          for (const n of names) expect(dishKey(ship, v.id, n).length - 'dish:'.length, `${v.id} ${n}`).toBeLessThanOrEqual(70)
+        }
+      })
+
+      it('marks every children\'s dish from what it contains, like any other menu', () => {
+        for (const v of content.venues) for (const d of v.kidsMenu ?? []) {
+          const animal = ['meat', 'pork', 'fish', 'shellfish'].some((c) => d.contains.includes(c))
+          expect(d.marks?.includes('vegan') ?? false).toBe(!animal && !['dairy', 'egg'].some((c) => d.contains.includes(c)))
+          if (animal) expect(d.marks).not.toContain('vegetarian')
+        }
+        const kids = content.venues.find((v) => (v.kidsMenu?.length ?? 0) > 0)?.kidsMenu ?? []
+        expect(kids.find((d) => d.name === 'Fresh fruit plate')?.marks).toContain('vegan')
+        expect(kids.find((d) => d.name === 'Macaroni and cheese')?.marks).toContain('vegetarian')
+        expect(kids.find((d) => d.name === 'Chicken tenders and fries')?.marks ?? []).not.toContain('vegetarian')
       })
 
       it('names a venue of the ship and real kinds of day for every event and menu', () => {

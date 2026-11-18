@@ -1,4 +1,4 @@
-import type { DietMark, DishFlag, ExplorerVenueInfo, HoursDay, MealMenu, VenueDay } from '../../api/explorerTypes'
+import type { DietMark, DishFlag, ExplorerVenueInfo, MealDish, HoursDay, MealMenu, VenueDay } from '../../api/explorerTypes'
 import { openState } from './presentation'
 import type { Window } from './types'
 
@@ -64,7 +64,11 @@ export function markedDishes(menus: readonly MealMenu[], mark: DietMark): DishHi
 
 /** The heads-up flags (alcohol, raw or undercooked, spicy) that at least one dish on these menus carries, in a fixed order, so a legend can name only what the menu uses. */
 export function usedFlags(menus: readonly MealMenu[]): DishFlag[] {
-  const dishes = menus.flatMap((m) => m.courses.flatMap((c) => c.dishes))
+  return usedDishFlags(menus.flatMap((m) => m.courses.flatMap((c) => c.dishes)))
+}
+
+/** The same, for a plain list of dishes such as a children's menu. */
+export function usedDishFlags(dishes: readonly Pick<MealDish, 'flags'>[]): DishFlag[] {
   return (['alcohol', 'raw', 'spicy'] as const).filter((f) => dishes.some((d) => d.flags?.includes(f)))
 }
 

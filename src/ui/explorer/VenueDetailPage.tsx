@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
-import type { ExplorerDay, VenueDay } from '../../api/explorerTypes'
-import type { DishFlag } from '../../api/explorerTypes'
+import type { DishFlag, ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
 import { formatMoney } from '../../domain/money'
+import { usedDishFlags } from '../../domain/explorer/diningDiscovery'
 import { clashesWith, type Span } from '../../domain/explorer/presentation'
 import type { ExplorerKind } from '../../domain/explorer/types'
 import { useMine } from '../../hooks/useMine'
@@ -16,9 +16,12 @@ import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { BackLink, Saved } from '../onboard/common'
 import { PickDateButton } from './DateControls'
+import { DishSaveButton } from './DishSave'
+import { DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
 import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
 import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
+import { Clock } from '../icons'
 import { PinButton } from './Pins'
 import { SendToChat } from '../onboard/SendToChat'
 import { eventKey } from '../../domain/explorer/shortlist'
@@ -107,11 +110,18 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
         <h2 id="exp-venue-h" className="card__title">{v.title}</h2>
         <p className="muted">{v.deckLabel}</p>
         <ShipDayInfo state={state} />
+        {(venue.hours.windows.length > 0 || staffedText(venue.hours)) && (
+          <div className="venue-hours">
+            {venue.hours.windows.length > 0 && <p><Clock aria-hidden="true" focusable="false" /> <span>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</span></p>}
+            {staffedText(venue.hours) && <p className="muted">{t('exp.venue.staffed', { hours: staffedText(venue.hours) })}</p>}
+            <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
+          </div>
+        )}
         <p role="status" className="visually-hidden">{pins.message}</p>
       </Card>
       <PickDateButton state={state} />
       {above?.(ctx)}
-      <MenuPanel venueId={v.id} menus={venue.menus} diets={diets} avoid={avoid} day={state.day} currentDay={state.currentDay} now={state.now} />
+      <MenuPanel shipId={v.shipId} venueId={v.id} menus={venue.menus} diets={diets} avoid={avoid} day={state.day} currentDay={state.currentDay} now={state.now} />
       {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
         <section aria-labelledby="exp-fam-h">
           <h2 id="exp-fam-h">{headingCase(t('exp.family.title'))}</h2>
@@ -119,7 +129,9 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
           {(v.kidsMenu?.length ?? 0) > 0 && (
             <>
               <h3>{headingCase(t('exp.family.menu'))}</h3>
-              <ul>{v.kidsMenu?.map((d) => <li key={d}>{d}</li>)}</ul>
+              {(v.kidsMenu ?? []).some((d) => (d.marks?.length ?? 0) > 0) && <DietLegend />}
+              <FlagLegend used={usedDishFlags(v.kidsMenu ?? [])} />
+              <ul className="plain-bullets">{v.kidsMenu?.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} /><DishSaveButton shipId={v.shipId} venueId={v.id} name={d.name} />{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}</ul>
             </>
           )}
         </section>
@@ -144,9 +156,6 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
         <h2 id="exp-sum-h">{headingCase(t('exp.venue.about'))}</h2>
         <p>{v.short}</p>
         {v.long !== v.short && <p>{v.long}</p>}
-        <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
-        {venue.hours.windows.length > 0 && <p>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</p>}
-        {staffedText(venue.hours) && <p>{t('exp.venue.staffed', { hours: staffedText(venue.hours) })}</p>}
         <ul className="tour__facts">
           {v.cover !== undefined && <li>{t('exp.venue.cover', { amount: formatMoney(v.cover) })}</li>}
           {v.minAge !== undefined && <li>{t('exp.venue.minAge', { age: v.minAge })}</li>}

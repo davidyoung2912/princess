@@ -389,8 +389,10 @@ button.chat-quote { cursor: pointer; }
 .exp-events { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-3); }
 .exp-now { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 .exp-sum { margin: var(--space-2) 0 0; padding-inline-start: 1.25rem; display: grid; gap: var(--space-1); }
-.exp-event { padding-block-start: var(--space-2); border-block-start: 1px solid var(--border); }
+.exp-event { padding-block-start: var(--space-3); border-block-start: 3px solid var(--sec, var(--explorer)); }
 .exp-event p { margin: 0 0 var(--space-1); }
+/* The plan, save and share buttons of an event sit side by side with room between them, and wrap on a narrow screen. */
+.exp-event > button { margin-inline-end: var(--space-3); margin-block-end: var(--space-2); }
 .exp-event--cancelled { color: var(--text-muted); }
 .exp-event__clash { color: var(--warning); font-weight: 600; }
 .exp-scope { border: 0; padding: 0; margin: var(--space-3) 0; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); }
@@ -424,8 +426,18 @@ button.chat-quote { cursor: pointer; }
 .ship-section { margin: var(--space-3) 0; }
 .ship-section > summary { cursor: pointer; list-style-position: inside; min-height: var(--target-min); display: flex; align-items: center; gap: var(--space-2); }
 .ship-section > summary::-webkit-details-marker { display: none; }
-.ship-section > summary::before { content: '\25B8'; color: var(--primary); }
+.ship-section > summary::before { content: '\25B8'; color: var(--primary); flex: none; width: 1.5rem; font-size: 1.75rem; line-height: 1; text-align: center; }
 .ship-section[open] > summary::before { content: '\25BE'; }
+/* Each meal of the day has its own accent (the card edge, title and tint), so a stack of menus does not blur into one block in the Explorer's colour; the meal's name stays in the title. */
+.ship-section[data-meal='breakfast'], .ship-section[data-meal='brunch'] { --accent: var(--warning); --tint: var(--warning-tint); }
+.ship-section[data-meal='lunch'] { --accent: var(--teal); --tint: var(--teal-tint); }
+.ship-section[data-meal='tea'] { --accent: var(--success); --tint: var(--success-tint); }
+.ship-section[data-meal='dinner'] { --accent: var(--primary-bright); --tint: var(--sky-tint); }
+.ship-section[data-meal='allDay'] { --accent: var(--plum); --tint: var(--plum-tint); }
+.ship-section { transition: box-shadow var(--t-fast, 0.15s) ease, transform var(--t-fast, 0.15s) ease; }
+.ship-section:hover { --card-shadow: var(--elev-2, 0 6px 16px rgba(0, 0, 0, 0.18)); transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) { .ship-section { transition: none; } .ship-section:hover { transform: none; } }
+@media (forced-colors: active) { .ship-section:hover { outline: 2px solid Highlight; } }
 .ship-section__title { margin: 0; font-size: var(--fs-h3, 1.125rem); }
 
 /* The Day Plan card's title with the Today badge to its right. */
@@ -445,12 +457,15 @@ button.chat-quote { cursor: pointer; }
 .diet-mark--vegan { color: var(--success); background: var(--success-tint); }
 .diet-mark--vegetarian { color: var(--success); background: transparent; }
 .diet-mark--nas { color: var(--text); background: var(--brand-tint); }
+.diet-mark { transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: help; }
+.diet-mark:hover { transform: scale(1.12); box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent), 0 0 10px 2px color-mix(in srgb, currentColor 45%, transparent); }
+@media (prefers-reduced-motion: reduce) { .diet-mark { transition: none; } .diet-mark:hover { transform: none; } }
 .dish-flag { border-radius: 0.375rem; color: var(--text); background: var(--warning-tint, transparent); border-style: dashed; }
 .dish--avoid { border-inline-start: 3px solid var(--text); padding-inline-start: var(--space-2); }
 .dish-avoid { display: block; font-weight: 600; }
 .diet-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); list-style: none; padding: 0; margin: var(--space-2) 0; }
 .diet-legend li { display: inline-flex; align-items: center; gap: var(--space-2); }
-@media (forced-colors: active) { .diet-mark { border-color: CanvasText; color: CanvasText; background: Canvas; } }
+@media (forced-colors: active) { .diet-mark { border-color: CanvasText; color: CanvasText; background: Canvas; } .diet-mark:hover { box-shadow: none; outline: 2px solid Highlight; } }
 .dish-desc { display: block; margin: 2px 0 var(--space-1); color: var(--text-muted); font-style: italic; }
 
 /* An event's description under its times on a card. */
@@ -711,3 +726,16 @@ button.chat-quote { cursor: pointer; }
 /* Buttons above the message history (earlier messages, jump to first unread) keep clear of the text above and the box below. */
 .chat-jump { margin-block: var(--space-3); }
 
+
+/* Opening hours in a venue's first card, under the day's port and time. */
+.venue-hours { margin-block-start: var(--space-2); }
+.venue-hours p { margin: var(--space-1) 0; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.venue-hours svg { flex: none; width: 1.125rem; height: 1.125rem; color: var(--primary); }
+
+/* The small save-for-later toggle beside a dish. */
+.dish-save { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); margin-block: calc(var(--space-2) * -1); background: none; border: 0; border-radius: 50%; color: var(--text-muted); cursor: pointer; vertical-align: middle; transition: color 0.15s ease, box-shadow 0.15s ease; }
+.dish-save svg { width: 1.125rem; height: 1.125rem; }
+.dish-save:hover:not(:disabled) { color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+.dish-save[aria-pressed='true'] { color: var(--primary); }
+.dish-save[aria-pressed='true'] svg { fill: currentColor; fill-opacity: 0.2; }
+@media (prefers-reduced-motion: reduce) { .dish-save { transition: none; } }

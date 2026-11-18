@@ -3,6 +3,7 @@
 // names a person. The values are authored concept content for review, like the rest of the Explorer content: check them against the ship's own information before real use.
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
 import { eventCopy } from './event-copy.ts'
+import { flagsOf, isNas, marksOf, type MenuDish } from './ship-explorer-diets.ts'
 
 type VenueFacts = Pick<ExplorerVenueRow, 'explorer' | 'kind' | 'title'>
 
@@ -128,9 +129,14 @@ const venueFamily = (v: ExplorerVenueRow): string[] => {
 }
 
 /** A short children's menu for every restaurant that has family facilities. */
-const KIDS_MENU = ['Chicken tenders and fries', 'Macaroni and cheese', 'Mini cheese pizza', 'Grilled fish with rice', 'Buttered pasta', 'Fresh fruit plate', 'Vanilla ice cream']
+const KIDS_DISHES: ReadonlyArray<[name: string, contains: string[]]> = [
+  ['Chicken tenders and fries', ['egg', 'gluten', 'meat']], ['Macaroni and cheese', ['dairy', 'gluten']], ['Mini cheese pizza', ['dairy', 'gluten']], ['Grilled fish with rice', ['fish']],
+  ['Buttered pasta', ['dairy', 'gluten']], ['Fresh fruit plate', []], ['Vanilla ice cream', ['dairy', 'egg']],
+]
+/** The same marks and heads-ups as every other menu, worked out from what each dish contains. */
+export const KIDS_MENU: MenuDish[] = KIDS_DISHES.map(([name, contains]) => ({ name, contains, marks: marksOf(name, contains, isNas(name)), ...flagsOf(name, contains) }))
 
 export function detailVenue(v: ExplorerVenueRow): ExplorerVenueRow {
   const family = venueFamily(v)
-  return { ...v, accessibility: [...new Set([...v.accessibility, ...venueAccess(v)])], family, kidsMenu: family.length > 0 ? [...KIDS_MENU] : [] }
+  return { ...v, accessibility: [...new Set([...v.accessibility, ...venueAccess(v)])], family, kidsMenu: family.length > 0 ? KIDS_MENU.map((k) => ({ ...k })) : [] }
 }

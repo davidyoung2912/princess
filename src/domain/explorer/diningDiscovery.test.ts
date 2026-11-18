@@ -8,7 +8,7 @@ const day = (id: string, kind: string, h: HoursDay, extra: Partial<ExplorerVenue
   venue: { id, shipId: 's', explorer: 'dining', kind, title: id, short: '', long: '', placeId: 'p', deckLabel: '', bookable: 'none', order: 0, features: [], accessibility: [], ...extra }, hours: h, events: [], menus,
 })
 
-const buffet = day('buffet', 'casual', hours(['06:00', '24:00']), { family: ['High chairs'], kidsMenu: ['Pasta'] }, [menu('lunch', 'Penne arrabbiata')])
+const buffet = day('buffet', 'casual', hours(['06:00', '24:00']), { family: ['High chairs'], kidsMenu: [{ name: 'Pasta', contains: [] }] }, [menu('lunch', 'Penne arrabbiata')])
 const steak = day('steak', 'specialty', hours(['17:30', '21:30']), { cover: 3500 })
 const dining = day('dining', 'main', hours(['07:00', '09:30'], ['17:30', '21:30']), { family: ['Boosters'] })
 const pub = day('pub', 'bar', hours(['16:00', '24:00']), { minAge: 18 })

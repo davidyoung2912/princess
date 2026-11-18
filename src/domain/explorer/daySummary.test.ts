@@ -41,7 +41,7 @@ describe('summariseDay', () => {
     expect(summariseDay(day([v], { day: 2 }), clock)).toMatchObject({ phase: 'past', eventsLeft: 0 })
   })
   it('counts restaurants with a children’s menu and a cover charge', () => {
-    const s = summariseDay(day([venue('a', [['06:00', '22:00']], [], { kidsMenu: ['Pasta'], cover: 3000 }), venue('b', [['06:00', '22:00']])], { explorer: 'dining' }), clock)
+    const s = summariseDay(day([venue('a', [['06:00', '22:00']], [], { kidsMenu: [{ name: 'Pasta', contains: [] }], cover: 3000 }), venue('b', [['06:00', '22:00']])], { explorer: 'dining' }), clock)
     expect(s).toMatchObject({ kidsMenus: 1, coverCharge: 1 })
   })
 })

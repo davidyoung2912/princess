@@ -10,7 +10,7 @@ public sealed record HoursRule(string Kind, string[] When, string[][]? Windows, 
 /// <summary>One place a guest can go in one of the six Explorers. <see cref="Bookable"/> is <c>none</c>, <c>dining</c> or <c>spa</c>.</summary>
 public sealed record ExplorerVenue(
     string Id, string Explorer, string Kind, string Title, string Short, string Long, string PlaceId, string DeckLabel, HoursRule[] Hours,
-    long? Cover, int? MinAge, string Bookable, int Order, string[] Features, string[] Accessibility, string[]? Family = null, string[]? KidsMenu = null);
+    long? Cover, int? MinAge, string Bookable, int Order, string[] Features, string[] Accessibility, string[]? Family = null, MealDish[]? KidsMenu = null);
 
 /// <summary>Something that happens at a venue, on the kinds of day in <see cref="When"/> (see <see cref="DayKinds"/>). <see cref="Extra"/> is cents per person. <see cref="Capacity"/> is the places there are, when limited. <see cref="Performer"/>, <see cref="Series"/> (the name shared by showings that belong together), <see cref="Access"/> (codes such as <c>hearingLoop</c>), <see cref="Dress"/> and <see cref="Arrive"/> are shown on the event when set.</summary>
 public sealed record ExplorerEventDef(
@@ -96,6 +96,34 @@ public static class ExplorerCatalogue
         if (dot <= 0 || dot == rest.Length - 1) return null;
         var ship = rest[..dot];
         return For(ship)?.Events.FirstOrDefault(e => e.Id == rest[(dot + 1)..]) is { } e ? (ship, e) : null;
+    }
+
+    /// <summary>The slug a saved-dish key holds for a dish name: lower case letters and digits, other runs becoming one dash, at most 22 characters, so the whole key fits the 70 the favourites allow. The app builds the same slug (<c>dishSlug</c> in shortlist.ts).</summary>
+    public static string DishSlug(string name)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var ch in name.ToLowerInvariant())
+        {
+            if (char.IsAsciiLetterOrDigit(ch)) sb.Append(ch);
+            else if (sb.Length > 0 && sb[^1] != '-') sb.Append('-');
+        }
+        var slug = sb.ToString().Trim('-');
+        return slug.Length <= 22 ? slug : slug[..22].TrimEnd('-');
+    }
+
+    /// <summary>The dish a saved-dish key names (<c>dish:&lt;ship&gt;.&lt;venue&gt;.&lt;slug&gt;</c>): the ship, the venue and the dish's name, found on any menu or the children's menu of that venue. Null when any is missing.</summary>
+    public static (string ShipId, ExplorerVenue Venue, string Name)? DishOfKey(string? key)
+    {
+        if (key is null || !key.StartsWith("dish:", StringComparison.Ordinal)) return null;
+        var parts = key["dish:".Length..].Split('.');
+        if (parts.Length != 3 || parts.Any(p => p.Length == 0)) return null;
+        var ship = For(parts[0]);
+        var venue = ship?.Venues.FirstOrDefault(v => v.Id == parts[1]);
+        if (ship is null || venue is null) return null;
+        var names = ship.Menus.Where(m => m.VenueId == venue.Id).SelectMany(m => m.Courses).SelectMany(c => c.Dishes).Select(d => d.Name)
+            .Concat((venue.KidsMenu ?? []).Select(d => d.Name));
+        var name = names.FirstOrDefault(n => DishSlug(n) == parts[2]);
+        return name is null ? null : (parts[0], venue, name);
     }
 
     /// <summary>The ship a venue pin names (<c>venue:&lt;ship&gt;.&lt;venue&gt;</c>) and the venue, or null when either does not exist.</summary>

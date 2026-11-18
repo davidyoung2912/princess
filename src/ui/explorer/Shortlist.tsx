@@ -51,7 +51,7 @@ function ShortlistList({ gate }: { gate: ActionGate | null }) {
           {items.map((i) => (
             <li key={i.key} className="card">
               <h3 className="card__title">{over ? i.title : <Link to={i.to}>{i.title}</Link>}</h3>
-              <p className="muted">{t(`short.kind.${i.kind}`)}</p>
+              <p className="muted">{t(`short.kind.${i.kind}`)}{i.detail ? ` · ${t('short.dishAt', { venue: i.detail })}` : ''}</p>
               {gate && gate.status === 'opensOn' && gate.opensOn && i.explorer === 'dining' && i.bookable && (
                 <>
                   <p>{t('short.opens', { date: formatDayMonth(gate.opensOn) })}</p>

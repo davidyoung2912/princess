@@ -4,4 +4,4 @@ namespace Princess.Api.Contracts;
 public sealed record ReorderFavouritesRequest(List<string>? Keys);
 
 /// <summary>One saved item of the shortlist with its name. <c>Kind</c> is venue, treatment, event or tour; <c>Explorer</c> is the Explorer it belongs to; <c>VenueId</c> is the place it is at (none for a tour); <c>ShipId</c> is the ship it is on (none for a tour).</summary>
-public sealed record SavedItemView(string Key, string Kind, string Title, string Explorer, string ItemId, string? VenueId, string? ShipId);
+public sealed record SavedItemView(string Key, string Kind, string Title, string Explorer, string ItemId, string? VenueId, string? ShipId, string? Detail = null);

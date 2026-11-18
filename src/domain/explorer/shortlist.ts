@@ -11,6 +11,14 @@ export const MAX_SAVED_ITEMS = 10
 
 export const treatmentKey = (shipId: string, treatmentId: string): string => `treatment:${shipId}.${treatmentId}`
 export const eventKey = (shipId: string, eventId: string): string => `event:${shipId}.${eventId}`
+/** The slug of a dish name in a saved-dish key: lower case letters and digits, other runs one dash, at most 22 characters. The server builds the same slug (`DishSlug`). */
+export function dishSlug(name: string): string {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return slug.length <= 22 ? slug : slug.slice(0, 22).replace(/-+$/, '')
+}
+/** A saved dish: `dish:<ship>.<venue>.<slug>`. Saved to remember, never ordered. */
+export const dishKey = (shipId: string, venueId: string, name: string): string => `dish:${shipId}.${venueId}.${dishSlug(name)}`
+export const MAX_SAVED_DISHES = 30
 export const tourKey = (excursionId: string): string => `tour:${excursionId}`
 
 export function parseTreatmentKey(key: unknown): { shipId: string; treatmentId: string } | null {
@@ -33,9 +41,9 @@ export function parseTourKey(key: unknown): string | null {
   return typeof key === 'string' && key.startsWith('tour:') && key.length > 'tour:'.length ? key.slice('tour:'.length) : null
 }
 
-export type SavedKind = 'venue' | 'treatment' | 'event' | 'tour'
+export type SavedKind = 'venue' | 'treatment' | 'event' | 'tour' | 'dish'
 
-const kindOf = (key: string): SavedKind | null => parseVenuePinKey(key) ? 'venue' : parseTreatmentKey(key) ? 'treatment' : parseEventKey(key) ? 'event' : parseTourKey(key) ? 'tour' : null
+const kindOf = (key: string): SavedKind | null => parseVenuePinKey(key) ? 'venue' : parseTreatmentKey(key) ? 'treatment' : parseEventKey(key) ? 'event' : parseTourKey(key) ? 'tour' : key.startsWith('dish:') ? 'dish' : null
 
 /** The saved keys of the shortlist kinds, in the order saved. */
 export const savedKeys = (keys: readonly string[]): string[] => keys.filter((k) => kindOf(k) !== null)
@@ -44,7 +52,7 @@ export const savedKeys = (keys: readonly string[]): string[] => keys.filter((k) 
 export function toggleSavedKey(keys: readonly string[], key: string): { keys: string[]; full: boolean } {
   if (keys.includes(key)) return { keys: keys.filter((k) => k !== key), full: false }
   const kind = kindOf(key)
-  if (kind && kind !== 'venue' && keys.filter((k) => kindOf(k) === kind).length >= MAX_SAVED_ITEMS) return { keys: [...keys], full: true }
+  if (kind && kind !== 'venue' && keys.filter((k) => kindOf(k) === kind).length >= (kind === 'dish' ? MAX_SAVED_DISHES : MAX_SAVED_ITEMS)) return { keys: [...keys], full: true }
   return { keys: [...keys, key], full: false }
 }
 
@@ -58,6 +66,8 @@ export interface SavedItem {
   to: string
   /** True when the item can be reserved or booked (places, treatments, tours); false for a show or event. */
   bookable: boolean
+  /** Where a dish is served, for the list to say. */
+  detail?: string
 }
 
 /**
@@ -73,6 +83,7 @@ export function shortlistFrom(items: readonly SavedItemView[], shipId: string): 
     if (i.kind === 'tour') out.push({ ...base, kind: 'tour', to: `/excursions-explorer/${i.itemId}`, bookable: true })
     else if (i.kind === 'treatment' && i.venueId) out.push({ ...base, kind: 'treatment', to: `/spa-explorer/${i.venueId}?book=new&treatment=${encodeURIComponent(i.itemId)}`, bookable: true })
     else if (i.kind === 'venue' && explorer !== 'excursions') out.push({ ...base, kind: 'venue', to: `${EXPLORER_ROUTES[explorer]}/${i.itemId}`, bookable: explorer === 'dining' || explorer === 'spa' })
+    else if (i.kind === 'dish' && i.venueId && explorer !== 'excursions') out.push({ ...base, kind: 'dish', to: `${EXPLORER_ROUTES[explorer]}/${i.venueId}`, bookable: false, detail: i.detail ?? undefined })
     else if (i.kind === 'event' && i.venueId && explorer !== 'excursions') out.push({ ...base, kind: 'event', to: `${EXPLORER_ROUTES[explorer]}/${i.venueId}`, bookable: false })
   }
   return out

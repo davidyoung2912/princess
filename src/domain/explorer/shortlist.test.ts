@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { carryOverVenue, eventKey, parseEventKey, MAX_SAVED_ITEMS, parseTourKey, parseTreatmentKey, reminderAt, reminderId, reminderText, savedKeys, shortlistFrom, toggleSavedKey, tourKey, treatmentKey } from './shortlist'
+import { carryOverVenue, dishKey, dishSlug, MAX_SAVED_DISHES, eventKey, parseEventKey, MAX_SAVED_ITEMS, parseTourKey, parseTreatmentKey, reminderAt, reminderId, reminderText, savedKeys, shortlistFrom, toggleSavedKey, tourKey, treatmentKey } from './shortlist'
 
 const lookups = {
   venues: [{ id: 'crown', shipId: 'sun-princess', explorer: 'dining' as const }, { id: 'lotus', shipId: 'sun-princess', explorer: 'spa' as const }],
@@ -91,5 +91,27 @@ describe('reminders', () => {
     expect(reminderText('Crown Grill')).toBe('Booking opens today: Crown Grill')
     expect(reminderText('x'.repeat(200)).length).toBe(80)
     expect(reminderText('Crown Grill')).not.toMatch(/guarantee|available|secured/i)
+  })
+})
+
+describe('saved dishes', () => {
+  it('makes one stable key from the ship, the venue and the dish name', () => {
+    expect(dishSlug('Crème brûlée')).toBe('cr-me-br-l-e')
+    expect(dishSlug('  Grilled Fish & Rice!  ')).toBe('grilled-fish-rice')
+    expect(dishSlug('Roasted herb-crusted rack of lamb with mint jelly')).toHaveLength(22)
+    expect(dishSlug('Roasted herb-crusted rack of lamb with mint jelly').endsWith('-')).toBe(false)
+    expect(dishKey('sun-princess', 'crown', 'Fresh fruit plate')).toBe('dish:sun-princess.crown.fresh-fruit-plate')
+  })
+  it('has its own, higher limit and refuses rather than dropping one', () => {
+    const full = Array.from({ length: MAX_SAVED_DISHES }, (_, i) => `dish:s.v.d${i}`)
+    expect(toggleSavedKey(full, 'dish:s.v.extra')).toEqual({ keys: full, full: true })
+    expect(toggleSavedKey(full, 'dish:s.v.d3').keys).toHaveLength(MAX_SAVED_DISHES - 1)
+    const tens = Array.from({ length: MAX_SAVED_ITEMS }, (_, i) => `tour:t${i}`)
+    expect(toggleSavedKey([...tens, ...full.slice(0, 11)], 'dish:s.v.extra').full).toBe(false)
+  })
+  it('shows a saved dish with the place it is served, opening that place', () => {
+    const item = shortlistFrom([{ key: 'dish:s.crown.fresh-fruit-plate', kind: 'dish', title: 'Fresh fruit plate', explorer: 'dining', itemId: 'fresh-fruit-plate', venueId: 'crown', shipId: 's', detail: 'Crown Grill' }], '')
+    expect(item).toMatchObject([{ kind: 'dish', title: 'Fresh fruit plate', detail: 'Crown Grill', bookable: false }])
+    expect(item[0].to.endsWith('/crown')).toBe(true)
   })
 })

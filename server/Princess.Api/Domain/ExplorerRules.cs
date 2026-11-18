@@ -4,7 +4,7 @@ namespace Princess.Api.Domain;
 
 public sealed record ExplorerVenueDto(
     string Id, string ShipId, string Explorer, string Kind, string Title, string Short, string Long, string PlaceId, string DeckLabel,
-    long? Cover, int? MinAge, string Bookable, int Order, string[] Features, string[] Accessibility, string[] Family, string[] KidsMenu);
+    long? Cover, int? MinAge, string Bookable, int Order, string[] Features, string[] Accessibility, string[] Family, MealDish[] KidsMenu);
 
 /// <summary>A venue's hours for one day, worked out here so the app only compares them with the clock. Times are ship time "HH:mm"; empty windows mean closed all day.</summary>
 public sealed record HoursDayDto(List<string[]> Windows, List<string[]> Staffed, string? ClosedBecause);
@@ -37,6 +37,9 @@ public static class ExplorerRules
 
     /// <summary>The most treatments and the most tours a guest can keep on a shortlist (each kind has its own limit).</summary>
     public const int MaxSavedItems = 10;
+
+    /// <summary>The most dishes a guest can save (menus are long, so this has its own, higher limit).</summary>
+    public const int MaxSavedDishes = 30;
 
     public static ExplorerVenueDto Dto(string shipId, ExplorerVenue v) =>
         new(v.Id, shipId, v.Explorer, v.Kind, v.Title, v.Short, v.Long, v.PlaceId, v.DeckLabel, v.Cover, v.MinAge, v.Bookable, v.Order, v.Features, v.Accessibility, v.Family ?? [], v.KidsMenu ?? []);
@@ -182,6 +185,12 @@ public static class ExplorerRules
             _ = ExplorerCatalogue.EventOfKey(key) ?? throw ApiException.Invalid("event");
             if (current.Count(k => k.StartsWith("event:", StringComparison.Ordinal)) >= MaxSavedItems) throw ApiException.Invalid("pinsFull");
         }
+        else if (key.StartsWith("dish:", StringComparison.Ordinal))
+        {
+            // A saved dish must be on a menu of that venue; it is saved to remember, never ordered.
+            _ = ExplorerCatalogue.DishOfKey(key) ?? throw ApiException.Invalid("dish");
+            if (current.Count(k => k.StartsWith("dish:", StringComparison.Ordinal)) >= MaxSavedDishes) throw ApiException.Invalid("pinsFull");
+        }
         else if (key.StartsWith("tour:", StringComparison.Ordinal))
         {
             var id = key["tour:".Length..];
@@ -212,6 +221,7 @@ public static class ExplorerRules
                 var venue = ExplorerCatalogue.VenueOn(e.ShipId, e.Event.VenueId);
                 if (venue is not null) list.Add(new SavedItemView(key, "event", e.Event.Title, venue.Explorer, e.Event.Id, venue.Id, e.ShipId));
             }
+            else if (ExplorerCatalogue.DishOfKey(key) is { } d) list.Add(new SavedItemView(key, "dish", d.Name, d.Venue.Explorer, ExplorerCatalogue.DishSlug(d.Name), d.Venue.Id, d.ShipId, d.Venue.Title));
             else if (key.StartsWith("tour:", StringComparison.Ordinal) && ExcursionRules.ById(key["tour:".Length..]) is { } x) list.Add(new SavedItemView(key, "tour", x.Name, "excursions", x.Id, null, null));
         }
         return list;

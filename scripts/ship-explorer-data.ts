@@ -11,7 +11,7 @@ import type { ExplorerKind, HoursRule } from '../src/domain/explorer/types.ts'
 import type { TemplateDayKind } from '../src/domain/explorer/dayMapping.ts'
 import { shipVenueBundles } from './ship-venue-data.ts'
 import { diningBars, diningEvents, diningMenus, extraDiningVenues } from './ship-explorer-dining.ts'
-import type { Flag, Mark } from './ship-explorer-diets.ts'
+import type { Flag, Mark, MenuDish } from './ship-explorer-diets.ts'
 import { entertainmentEvents, entertainmentVenues } from './ship-explorer-entertainment.ts'
 import { activitiesEvents, activitiesVenues } from './ship-explorer-activities.ts'
 import { exerciseEvents, exerciseVenues } from './ship-explorer-exercise.ts'
@@ -41,7 +41,7 @@ export interface ExplorerVenueRow {
   /** Restaurants only: seating and care for little ones. */
   family?: string[]
   /** Restaurants only: the dishes on the children's menu. */
-  kidsMenu?: string[]
+  kidsMenu?: MenuDish[]
 }
 
 export interface ExplorerEventRow {
