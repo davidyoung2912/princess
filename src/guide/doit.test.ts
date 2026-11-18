@@ -112,6 +112,18 @@ describe('Do it for me: excursion plan', () => {
     expect('action.go.excursions' in en).toBe(true)
   })
 
+  it('offers a tour for a port day still to come in Prebook, never two on one day, through the same action', () => {
+    const rules = server('Domain/ExcursionRules.cs')
+    const ahead = rules.slice(rules.indexOf('List<Excursion> RankAhead('), rules.indexOf('PickForToday'))
+    expect(ahead).toContain('o.DaysToTour >= 0')
+    expect(ahead).toContain('busyDays')
+    expect(ahead).toContain('o.Timing is null')
+    expect(ahead).toContain('o.Spots >= 1')
+    expect(server('Domain/GuideRules.cs')).toMatch(/"prebook\.tours"[^\n]*Agent: false, CanPlanTours: true[^\n]*"excursion_plan"/)
+    expect(server('Domain/StanleyActions.cs')).toContain('args["ahead"] = "1"')
+    expect(effects).toContain('intent.Arg("ahead") == "1"')
+  })
+
   describe('tonight\'s dinner (reserve_dinner on sea.dinner)', () => {
     it('is offered on the sea dinner task only when the server found a table for tonight, never for an agent booking', () => {
       expect(server('Domain/GuideRules.cs')).toMatch(/"sea\.dinner"[^\n]*Agent: false, CanBookDinner: true[^\n]*"reserve_dinner"/)

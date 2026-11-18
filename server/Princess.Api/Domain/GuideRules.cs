@@ -10,7 +10,7 @@ public sealed record GuideDraft(string Id, bool CategoryChosen);
 /// The confirmed trip. <c>Checklist</c> is the checklist by item id (the same facts the checklist screen shows); it is empty for a trip the guest cannot plan on (a linked agent booking).
 /// <c>CheckinState</c> is <c>notOpen</c>, <c>open</c>, <c>closed</c> or <c>done</c>.
 /// </summary>
-public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0, bool CanPrefill = false, bool CanDraftCustoms = false, bool CanPlanExcursion = false, bool CanBookDinner = false);
+public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0, bool CanPrefill = false, bool CanDraftCustoms = false, bool CanPlanExcursion = false, bool CanBookDinner = false, bool CanPlanTours = false);
 
 /// <summary>What the guest has put aside: tasks they said are not for them (<c>Skipped</c>) and tasks they will do later (<c>Later</c>, by the day each returns). A task with a real deadline is never put aside.</summary>
 public sealed record GuideChoices(IReadOnlySet<string> Skipped, IReadOnlyDictionary<string, DateOnly> Later)
@@ -215,7 +215,7 @@ public static class GuideRules
                 if (t is { Paid: false }) raws.Add(Pay(f, StageRules.Manage));
                 if (t is { Agent: false, DocumentsOk: false }) raws.Add(Documents(f, "manage.documents", StageRules.Manage));
                 if (fit.FirstCruise) raws.Add(new("prebook.firstTime", "/plan/starter", 10, false, ByVisit));
-                raws.Add(Item(t, "prebook.tours", "/excursions-explorer", 15, "tours", ByData));
+                raws.Add(Item(t, "prebook.tours", "/excursions-explorer", 15, "tours", ByData) with { DoIt = t is { Agent: false, CanPlanTours: true } ? "excursion_plan" : null });
                 raws.Add(Item(t, "prebook.dining", "/dining-today", 10, "dining", ByData));
                 raws.Add(Item(t, "prebook.packing", "/plan/packing", 10, "packing", ByTick));
                 raws.Add(Item(t, "prebook.travel", "/plan/travel", 5, "travel", ByData));

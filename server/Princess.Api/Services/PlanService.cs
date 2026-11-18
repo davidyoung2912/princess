@@ -200,13 +200,18 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     public async Task<ExcursionOfferDto?> ExcursionPlanAsync(UserRecord actor, string? number, CancellationToken ct) =>
         (await ExcursionOptionsAsync(actor, number, null, ExcursionRules.PlanOptions, ct)).FirstOrDefault();
 
+    /// <summary>The tour Stanley would put in the cart ahead of the port day (Prebook), or none: not an adult guest who can book, or no tour left on a day the guest has not planned.</summary>
+    public async Task<ExcursionOfferDto?> ExcursionAheadAsync(UserRecord actor, string? number, CancellationToken ct) =>
+        (await ExcursionOptionsAsync(actor, number, null, ExcursionRules.PlanOptions, ct, ahead: true)).FirstOrDefault();
+
     /// <summary>The tours that fit today's port, best first for the guest's wishes (interests and a budget), up to <paramref name="take"/>. Empty when there is nothing to plan.</summary>
-    public async Task<List<ExcursionOfferDto>> ExcursionOptionsAsync(UserRecord actor, string? number, ExcursionRules.PlanWishes? wishes, int take, CancellationToken ct)
+    public async Task<List<ExcursionOfferDto>> ExcursionOptionsAsync(UserRecord actor, string? number, ExcursionRules.PlanWishes? wishes, int take, CancellationToken ct, bool ahead = false)
     {
         var view = await ExcursionsViewAsync(await LoadAsync(actor, number, false, ct), ct);
         if (!view.CanBook) return [];
         var held = view.Booked.Where(b => b.Status == "booked").Select(b => b.ExcursionId).Concat(view.Cart.Select(l => l.ExcursionId)).ToList();
-        var picks = ExcursionRules.RankForToday(view.Offers.Select(o => new ExcursionRules.TodayOffer(o.Item, o.DaysToTour, o.Spots, o.Timing)), held, wishes, take);
+        var offers = view.Offers.Select(o => new ExcursionRules.TodayOffer(o.Item, o.DaysToTour, o.Spots, o.Timing)).ToList();
+        var picks = ahead ? ExcursionRules.RankAhead(offers, held, wishes, take) : ExcursionRules.RankForToday(offers, held, wishes, take);
         return [.. picks.Select(x => view.Offers.First(o => o.Item.Id == x.Id))];
     }
 

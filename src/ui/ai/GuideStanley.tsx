@@ -124,7 +124,7 @@ export function TaskDoIt({ task, where }: { task: GuideTask; where: 'home' | 'as
   const kind = doItFor(task, stanleyLevelFor(settings), where)
   if (!kind) return null
   const title = taskWords(task).title
-  const ask = async (args: Record<string, string> = doItArgs(kind)) => {
+  const ask = async (args: Record<string, string> = doItArgs(kind, task.id)) => {
     setBusy(true); setFailed(false)
     try {
       const a = normalizeAction(await stanleyActions.prepare({ kind, args }))
@@ -139,7 +139,7 @@ export function TaskDoIt({ task, where }: { task: GuideTask; where: 'home' | 'as
       {failed && <span role="alert" className="field__error"> {t('guide.doIt.failed')}</span>}
       {prepared && <span role="status" className="remind-me__card"><StanleyActionCard action={prepared} onChange={setPrepared} /></span>}
       {prepared?.status === 'prepared' && prepared.kind === 'excursion_plan' && tourChoices(prepared.params).map((c) => (
-        <Button key={c.id} variant="tertiary" disabled={busy} onClick={() => { void ask({ excursionId: c.id }) }}>{t('guide.doIt.tourInstead', { name: c.name })}</Button>
+        <Button key={c.id} variant="tertiary" disabled={busy} onClick={() => { void ask({ ...doItArgs(kind, task.id), excursionId: c.id }) }}>{t('guide.doIt.tourInstead', { name: c.name })}</Button>
       ))}
     </span>
   )

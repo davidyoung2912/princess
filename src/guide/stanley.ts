@@ -53,9 +53,10 @@ export function doItFor(task: Pick<GuideTask, 'state' | 'doIt'>, level: StanleyL
   return task.doIt
 }
 
-/** The arguments the first preview of a "Do it for me" action takes. Most need none; the dinner asks for tonight's table and lets the server pick the time. */
-export function doItArgs(kind: GuideDoIt): Record<string, string> {
-  return kind === 'reserve_dinner' ? { tonight: '1' } : {}
+/** The arguments the first preview of a "Do it for me" action takes. Most need none; the dinner asks for tonight's table and lets the server pick the time; the Prebook tours task asks for a port day still to come. */
+export function doItArgs(kind: GuideDoIt, taskId = ''): Record<string, string> {
+  if (kind === 'reserve_dinner') return { tonight: '1' }
+  return kind === 'excursion_plan' && taskId === 'prebook.tours' ? { ahead: '1' } : {}
 }
 
 /** A tour Stanley offers instead of the one he previewed: its id and name. */

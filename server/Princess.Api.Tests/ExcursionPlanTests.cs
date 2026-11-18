@@ -65,5 +65,13 @@ public class ExcursionPlanTests
         Assert.All(ranked, x => Assert.True(x.Price <= cheapest));
         Assert.Empty(ExcursionRules.RankForToday(offers, [], new ExcursionRules.PlanWishes([], cheapest - 1)));
     }
-}
 
+    [Fact]
+    public void AheadLeavesADayTheGuestHasPlannedAndNeverOffersAGoneTour()
+    {
+        var offers = new[] { Offer("coz-snorkel", days: 2), Offer("coz-beach", days: 2), Offer("coz-ruins", days: 4), Offer("coz-glass", days: -1) };
+        var ranked = ExcursionRules.RankAhead(offers, ["coz-beach"]);
+        Assert.Equal(["coz-ruins"], ranked.Select(x => x.Id));
+        Assert.Empty(ExcursionRules.RankAhead([Offer("coz-glass", days: -1), Offer("coz-ruins", spots: 0, days: 3), Offer("coz-beach", days: 3, timing: "tooLate")], []));
+    }
+}

@@ -74,6 +74,8 @@ describe('doItFor', () => {
     expect(doItFor(dinner, 'off', 'asked')).toBeNull()
     expect(doItArgs('reserve_dinner')).toEqual({ tonight: '1' })
     expect(doItArgs('checkin_prefill')).toEqual({})
+    expect(doItArgs('excursion_plan', 'prebook.tours')).toEqual({ ahead: '1' })
+    expect(doItArgs('excursion_plan', 'port.excursion')).toEqual({})
   })
   it('offers the customs draft by the same level rules', () => {
     const customs = task('disembark.customs', { doIt: 'customs_draft' })

@@ -494,7 +494,8 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
             case StanleyActionKinds.ExcursionPlan:
             {
                 var wishes = await WishesAsync(user, intent, ct);
-                var options = await planService.ExcursionOptionsAsync(user, booking.Number, wishes, ExcursionRules.PlanOptions, ct);
+                var ahead = intent.Arg("ahead") == "1";
+                var options = await planService.ExcursionOptionsAsync(user, booking.Number, wishes, ExcursionRules.PlanOptions, ct, ahead);
                 if (options.Count == 0) throw ApiException.Conflict("nothing");
                 var asked = intent.Arg("excursionId");
                 var offer = options.FirstOrDefault(o => o.Item.Id == asked) ?? options[0];
@@ -505,18 +506,18 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 var lines = new List<string>
                 {
                     x.Name, x.Summary, $"{x.Hours:0.#} hours, starting {x.Start}. {x.Meeting}",
-                    $"Fits today: be back at the landing by {offer.BackBy}, before all aboard.",
+                    ahead ? $"Port day {offer.Day}, {offer.Date}: be back at the landing by {offer.BackBy}, before all aboard." : $"Fits today: be back at the landing by {offer.BackBy}, before all aboard.",
                     $"{offer.Spots} place{(offer.Spots == 1 ? "" : "s")} left. Rated {x.Rating:0.0} by {x.Reviews} guests.",
                 };
                 if (wishes.Interests.Count > 0 && x.Interests.Any(i => wishes.Interests.Contains(i, StringComparer.OrdinalIgnoreCase)))
                     lines.Add($"Chosen to match what you like: {string.Join(", ", x.Interests.Where(i => wishes.Interests.Contains(i, StringComparer.OrdinalIgnoreCase)))}.");
                 if (wishes.BudgetCents is { } budget) lines.Add($"Within your budget of {Money(budget)} a person.");
                 lines.AddRange(me.Select(p => $"{p.First}: {Money(ExcursionRules.GuestPrice(x, p.Age))}"));
-                if (others.Count > 0) lines.Add($"Other tours that fit today: {string.Join("; ", others.Select(o => $"{o.Item.Name} ({Money(o.Item.Price)})"))}. You can choose one of them instead before you confirm.");
+                if (others.Count > 0) lines.Add($"{(ahead ? "Other tours that fit a port day" : "Other tours that fit today")}: {string.Join("; ", others.Select(o => $"{o.Item.Name} ({Money(o.Item.Price)})"))}. You can choose one of them instead before you confirm.");
                 lines.Add("This puts it in your cart for you only. Nothing is charged until you check out on the Excursions screen, and nobody else is added.");
                 var resolved = new Dictionary<string, string> { ["excursionId"] = x.Id };
                 for (var i = 0; i < others.Count; i++) resolved[$"alt{i + 1}"] = $"{others[i].Item.Id}|{others[i].Item.Name}";
-                return new StanleyPreviewFacts($"Plan today in port: add {x.Name} to your cart", lines, [.. me.Select(p => p.First)], total,
+                return new StanleyPreviewFacts(ahead ? $"Plan a port day: add {x.Name} to your cart" : $"Plan today in port: add {x.Name} to your cart", lines, [.. me.Select(p => p.First)], total,
                     $"Free to cancel until {ExcursionRules.FreeCancelDays} days before the port day, then no refund.", $"plan|{x.Id}|{string.Join(",", me.Select(p => p.Id))}|{total}", resolved);
             }
             case StanleyActionKinds.DraftCase:
@@ -649,7 +650,7 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
             {
                 var scope = await scopes.LoadAsync(user, booking.Number, write: true, ct);
                 // The tour the guest saw must still fit today (any tour that fits counts, not only the best for their wishes), or nothing is added.
-                var fits = await planService.ExcursionOptionsAsync(user, booking.Number, null, int.MaxValue, ct);
+                var fits = await planService.ExcursionOptionsAsync(user, booking.Number, null, int.MaxValue, ct, intent.Arg("ahead") == "1");
                 var offer = fits.FirstOrDefault(o => o.Item.Id == intent.Arg("excursionId")) ?? throw ApiException.Conflict("nothing");
                 await planService.AddToCartAsync(user, booking.Number, offer.Item.Id, new CartRequest([.. WhoFor(user, booking, scope, "me").Select(p => p.Id)]), ct);
                 return new StanleyEffectResult(offer.Item.Id);
@@ -689,7 +690,7 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
             case StanleyActionKinds.CustomsDraft:
                 return await disembark.CustomsDraftPlanAsync(user, booking.Number, ct) is null;
             case StanleyActionKinds.ExcursionPlan:
-                return await planService.ExcursionPlanAsync(user, booking.Number, ct) is null;
+                return (intent.Arg("ahead") == "1" ? await planService.ExcursionAheadAsync(user, booking.Number, ct) : await planService.ExcursionPlanAsync(user, booking.Number, ct)) is null;
             default:
                 return (await cases.ListAsync(user, booking.Number, ct)).Cases.Any(c => c.Kind == intent.Arg("caseKind") && c.Summary == intent.Arg("summary") && c.CanWithdraw);
         }

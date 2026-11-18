@@ -141,6 +141,21 @@ public static class ExcursionRules
             .Select(o => o.Item).Take(take)];
     }
 
+    /// <summary>
+    /// The tours Stanley would put in the cart ahead of the port day (Prebook), best first, up to <paramref name="take"/>: any tour not yet gone that fits its own port day's timing, has a place left and is
+    /// within the budget, on a day when the guest holds no tour yet (booked or in the cart), ranked as <see cref="RankForToday"/>. Never two on one day, and a day the guest has planned is left alone.
+    /// </summary>
+    public static List<Excursion> RankAhead(IEnumerable<TodayOffer> offers, IReadOnlyCollection<string> heldIds, PlanWishes? wishes = null, int take = PlanOptions)
+    {
+        wishes ??= PlanWishes.None;
+        var all = offers.Where(o => o.DaysToTour >= 0).ToList();
+        var busyDays = all.Where(o => heldIds.Contains(o.Item.Id)).Select(o => o.DaysToTour).ToHashSet();
+        int Match(Excursion x) => x.Interests.Count(i => wishes.Interests.Contains(i, StringComparer.OrdinalIgnoreCase));
+        return [.. all.Where(o => !busyDays.Contains(o.DaysToTour) && o.Timing is null && o.Spots >= 1 && (wishes.BudgetCents is not { } b || o.Item.Price <= b))
+            .OrderByDescending(o => Match(o.Item)).ThenByDescending(o => o.Item.Rating).ThenByDescending(o => o.Item.Reviews).ThenBy(o => o.Item.Id, StringComparer.Ordinal)
+            .Select(o => o.Item).Take(take)];
+    }
+
     /// <summary>The one tour Stanley would choose with no wishes given.</summary>
     public static Excursion? PickForToday(IEnumerable<TodayOffer> offers, IReadOnlyCollection<string> heldIds) => RankForToday(offers, heldIds, null, 1).FirstOrDefault();
 

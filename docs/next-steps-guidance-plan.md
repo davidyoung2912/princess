@@ -361,7 +361,13 @@ Five ideas: more "Do it for me", say what changed, hand off at stage changes, gr
 - **Preview:** the room, night, time, who, tables left, "Main dining is included in your fare", and a line saying why that time. The server writes the chosen day and time into the stored preview, so Confirm and the two-hour undo (cancel the table) work as for a typed booking. No charge.
 - **Guide:** `GuideTrip.CanBookDinner` (sea stage, not an agent booking, a table found), `doIt: "reserve_dinner"` on `sea.dinner`. Level rules unchanged.
 - Tests: `stanley.test.ts` (levels and args), `doit.test.ts` (source gates), C# `DinnerTonightTests` (PickNearest). Not run or compiled (no `dotnet`); `StanleyEffects` gained an `IStateStore` parameter (DI only).
-- **Next:** G10b excursion booking in Prebook, G10c packing list, G10d getting-there plan, then the four other ideas.
+- **Next:** G10b (built, below), then G10c packing list, G10d getting-there plan, then the four other ideas.
+
+**G10b, tours in Prebook (built).**
+- No new action kind: `excursion_plan` takes an optional `ahead: "1"`. `ExcursionRules.RankAhead` ranks tours on any port day not yet gone (timing fits, a place left, within budget, interests first as G9d), and leaves out every day where the guest already holds a tour (booked or in the cart), so it never stacks two on one day. `PlanService.ExcursionAheadAsync` is the first result; `ExcursionOptionsAsync` takes an `ahead` flag.
+- Preview names the port day and date, the price for the guest alone, up to two other tours to choose instead (kept with `ahead`), and says nothing is charged. Confirm re-checks that the tour still fits, adds to the cart through `AddToCartAsync`, and undo removes the cart line.
+- Guide: `GuideTrip.CanPlanTours` (Prebook, not an agent booking, a tour found) puts `doIt: "excursion_plan"` on `prebook.tours`. Client: `doItArgs(kind, taskId)` sends `ahead` for that task only. The task is still done by a booked tour, so the button goes when every port day has a tour.
+- Tests: `doit.test.ts` (source gates), `stanley.test.ts` (args); C# `ExcursionPlanTests.AheadLeavesADayTheGuestHasPlanned...`. Not run or compiled (no `dotnet`).
 
 **G10 backlog (the full list, so nothing is lost between phases).**
 - Do it for me, best candidates (most effort saved, safe undo): dinner on sea days (G10a, done); excursion booking in Prebook, not just port day (G10b); packing list started from the sailing, the weather and the party (G10c); arrival-time and getting-there plan from flight or drive time (G10d).
