@@ -8,6 +8,10 @@ import { addAuto, dayFor } from '../../domain/tripDiary'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useSettings } from '../../hooks/useSettings'
+import { useGuideView } from '../../hooks/useGuideView'
+import { primaryOf } from '../../guide/view'
+import { taskWords } from '../../guide/words'
+import { openedFrom } from '../../routes/screens'
 import { t, type StringKey, headingCase } from '../../i18n'
 import { isSeen, markSeen, seenVersion, subscribeSeen } from '../../settings/stanleySeen'
 import { BUZZ, buzz } from '../../settings/haptics'
@@ -45,6 +49,8 @@ export function StanleyMoment({ id, subject, params = {} }: { id: MomentId; subj
   const [settings] = useSettings()
   useSyncExternalStore(subscribeSeen, seenVersion, seenVersion)
   const key = momentKey(id, subject)
+  const { data: view } = useGuideView()
+  const next = view ? primaryOf(view) : null
   const show = momentsShow(stanleyLevelFor(settings)) && !isSeen(key)
   // A small buzz when it first appears (Android only; calm mode and reduced motion keep it quiet).
   useEffect(() => { if (show) buzz(settings, BUZZ.moment) }, [show, settings])
@@ -59,7 +65,7 @@ export function StanleyMoment({ id, subject, params = {} }: { id: MomentId; subj
         <h2 className="stanley-moment__title">{headingCase(t(`stanley.moment.${id}.title` as StringKey, params))}</h2>
         <p>{t(`stanley.moment.${id}.line` as StringKey, params)}</p>
         <div className="stanley-moment__actions">
-          <LinkButton to={def.to} variant="secondary" onClick={() => markSeen(key)}>{t(`stanley.moment.${id}.go` as StringKey)}</LinkButton>
+          <LinkButton to={next?.to ?? def.to} state={next ? openedFrom('blue', next.id) : undefined} variant="secondary" onClick={() => markSeen(key)}>{next ? t('guide.next.go', { task: taskWords(next).title }) : t(`stanley.moment.${id}.go` as StringKey)}</LinkButton>
           <AddToDiary id={id} subject={subject} params={params} />
           <Button variant="secondary" onClick={() => markSeen(key)}>{t('stanley.moment.done')}</Button>
           <WhyThis kind="moment" fact={t('stanley.why.fact.moment')} what={t(`stanley.moment.${id}.title` as StringKey, params)} />

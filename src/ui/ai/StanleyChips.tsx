@@ -10,6 +10,8 @@ import type { JourneyStage } from '../../routes/hubs'
 import { stanleyLevelFor } from '../../settings/settings'
 import { t, th, headingCase } from '../../i18n'
 import { useSettings } from '../../hooks/useSettings'
+import { useGuideView } from '../../hooks/useGuideView'
+import { NowAnswer } from './GuideStanley'
 import { Ask, Chat } from '../icons'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
@@ -21,10 +23,12 @@ import { DialogHeader } from '../DialogHeader'
 export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | undefined; stage: JourneyStage; onAsk: () => void }) {
   const [settings] = useSettings()
   const [open, setOpen] = useState<LibraryEntry | null>(null)
+  const [now, setNow] = useState(false)
+  const { data: view } = useGuideView()
   const level = stanleyLevelFor(settings)
   if (level === 'asked' || level === 'off') return null
   const chips = chipsFor(screenId, stage)
-  if (chips.length === 0) return null
+  if (chips.length === 0 && !view) return null
   return (
     <aside className="page stanley-chips no-print" aria-labelledby="stanley-chips-h">
       <div className="stanley-card">
@@ -33,10 +37,12 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
           <h2 id="stanley-chips-h" className="stanley-card__title">{headingCase(t('stanley.chips.intro'))}</h2>
         </div>
         <ul className="stanley-chips__list" aria-label={t('stanley.chips.label')}>
+          {view && <li><button type="button" className="chip-q" onClick={() => setNow(true)}><Ask className="chip-q__icon" size={16} aria-hidden="true" />{t('help.now')}</button></li>}
           {chips.map((e) => <li key={e.id}><button type="button" className="chip-q" onClick={() => setOpen(e)}><Ask className="chip-q__icon" size={16} aria-hidden="true" />{questionOf(e)}</button></li>)}
           <li><button type="button" className="chip-q chip-q--more" onClick={onAsk}><Chat className="chip-q__icon" size={16} aria-hidden="true" />{t('stanley.chips.more')}</button></li>
         </ul>
       </div>
+      {now && view && <NowAnswer view={view} onClose={() => setNow(false)} />}
       {open && <StanleyAnswer entry={open} onClose={() => setOpen(null)} onAsk={() => { setOpen(null); onAsk() }} />}
     </aside>
   )

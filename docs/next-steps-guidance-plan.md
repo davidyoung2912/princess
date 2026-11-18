@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, with G4b) are built; G5 is next.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, with G4b) and G5 (Stanley) are built; G6 is next.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -235,3 +235,11 @@ Found while reading the code. None are built; each is small.
 - **Printable plan.** "Your plan for this stage" is a fifth sheet on Paper copies (`/me/print`): what moves you on, still to do with dates, then done.
 - **Insurance and meet people.** New optional guide tasks `manage.insurance` (to `/plan/health-prep`, which already lists the insurance reminder) and `prebook.meet` (solo or one-guest bookings, to the sailing rooms `/chat/rooms`). No new screens were needed. C# rules and tests written, not run or compiled (no `dotnet`).
 - Optional visit tasks with no welcome step (these two, clubs, solo) never turn done by visiting; they stay as optional until a later phase records visits by path.
+
+**G5, Stanley (built).**
+- `src/guide/stanley.ts` (pure, tested): `nowTask` (the guide's primary), `helpScreenId` (the screen a task opens, to find Stanley's notes for it), `remindDay` and `taskRemindArgs` (a 09:00 clock reminder the day before a due date, or on the day a waiting task opens; none when done, undated, today or past the 29-day limit).
+- `src/ui/ai/GuideStanley.tsx`: `NowAnswer`, `TaskHelp`, `TaskRemind`.
+- **"What should I do now?"** is the first chip in Stanley's chips on every page that shows them (Helpful and Chatty). Its sheet is built from the guide (task, why, due, button), no model call, so it always matches Home.
+- **"Help me with this"** and **"Remind me"** sit beside Do this now on Home. Help lists Stanley's library questions for the screen the task opens (hidden when there are none). Remind me uses the existing `remind_me` action: a preview card, nothing set until confirmed.
+- **Moments** (booked, checked in, docs ready and the rest) now send "what next" to the guide's first open task ("Next: ..."), falling back to their own destination when the guide has nothing open, so a celebration never points somewhere Home does not.
+- **Not done:** "Do it for me" (no guide task maps to an existing Stanley action other than reminders yet; belongs with G6's content passes), Help and Remind me on the "Coming up" rows, and keying server push to guide task ids (the server pushes are unchanged; no new push was added, so nothing can duplicate a guide task).

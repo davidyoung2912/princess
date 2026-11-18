@@ -19,6 +19,7 @@ import { refreshGuide } from '../../guide/refresh'
 import { FitPrompt } from './FitPrompt'
 import { formatDate } from '../../domain/cruise'
 import { Card } from '../Card'
+import { TaskHelp, TaskRemind } from '../ai/GuideStanley'
 
 const Meta = ({ task }: { task: GuideTask }) => <p className="guide__meta muted">{taskMeta(task).join(' · ')}</p>
 
@@ -64,7 +65,7 @@ function PutAside({ task, aside }: { task: GuideTask; aside: Aside }) {
   )
 }
 
-function DoNow({ task, aside }: { task: GuideTask; aside: Aside }) {
+function DoNow({ task, aside, view }: { task: GuideTask; aside: Aside; view: GuideView }) {
   const w = taskWords(task)
   return (
     <Card hero labelledBy="guide-now-h">
@@ -73,7 +74,7 @@ function DoNow({ task, aside }: { task: GuideTask; aside: Aside }) {
       <p>{w.why}</p>
       {task.urgency === 'now' && <p className="guide__urgent"><Clock size={16} aria-hidden="true" /> {t('guide.urgent')}</p>}
       <Meta task={task} />
-      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><PutAside task={task} aside={aside} /></div>
+      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} /><TaskRemind task={task} /></div>
     </Card>
   )
 }
@@ -113,7 +114,7 @@ export function StageGuide() {
       <StageLine view={view} />
       {(view.stage === 'dream' || view.stage === 'discover') && <FitPrompt />}
       {stale && <p className="muted">{t('guide.stale')}</p>}
-      {primary ? <DoNow task={primary} aside={aside} /> : (
+      {primary ? <DoNow task={primary} aside={aside} view={view} /> : (
         <Card info>
           <p>{t('guide.ahead')}</p>
           <p className="muted">{t('guide.aheadNext', { moveOn: moveOnWords(view.moveOn) })}</p>
