@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, with G4b) and G5 (Stanley) and G6a (Dream to Book content) are built; G6b is next.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, with G4b) and G5 (Stanley) and G6a (Dream to Book content) G6b (Manage to Get to the ship) and G6c (Embark to Remember) are built; G6 is complete.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -252,3 +252,20 @@ Found while reading the code. None are built; each is small.
 - Optional visit tasks never turn done by visiting (as with G4b), so they stay as offers.
 - Tests: C# `GuideRulesTests` written, not run (no `dotnet test`); the guide-words test covers the new keys.
 - **Left for 6b and 6c:** Manage to Get to the ship, then Embark to Remember with the time-aware rules. Still open from earlier: access needs in the fit, "Do it for me".
+
+**G6b, content pass for Manage, Prebook and Get to the ship (built).**
+- Read against `customer-journey-priorities.md` sections 6 to 8. Existing screens only.
+- **Manage:** optional `manage.phone` (bill-shock shield, `/plan/phone`) and `manage.family` (family-at-home link, `/plan/family-link`), after the must-dos so the primary never changes.
+- **Get to the ship:** optional `getToShip.delayed` (`/home/delayed`) appears only in the last two days before departure, when "what if I am late" becomes real.
+- Optional visit tasks stay offers (never done by visiting).
+- Tests: C# `GuideRulesTests` written, not run (no `dotnet test`); the guide-words test covers the new keys.
+- **Left for 6c:** Embark to Remember with the time-aware rules.
+
+**G6c, content pass for Embark to Remember (built).**
+- Read against `customer-journey-priorities.md` sections 9 to 13. Existing screens only.
+- **Embark:** optional `embark.room` (`/ship/room`) and `embark.key` (`/home/medallion`), after the muster so the primary stays the drill.
+- **Sea:** optional `sea.spend` (`/me/bill`), `sea.help` (`/ship/help-now`), and `sea.family` (`/ship/family`) only when children are in the party. Bag night is still the one time-aware task.
+- **Port:** optional `port.late` (`/home/delayed`).
+- **Disembark:** `disembark.sweep` and `disembark.customs` join the must-dos (a forgotten phone and a customs form cost most); optional `disembark.onward` and `disembark.lost`.
+- **Remember:** optional `remember.history` (receipts), `remember.memories` (memory book) and `remember.followup`.
+- Optional visit tasks stay offers. Tests: C# `GuideRulesTests` written, not run (no `dotnet test`).

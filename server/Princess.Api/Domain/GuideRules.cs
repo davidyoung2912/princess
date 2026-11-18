@@ -201,6 +201,8 @@ public static class GuideRules
                     new("manage.readiness", "/plan/readiness", 5, false, ByVisit),
                     new("manage.insurance", "/plan/health-prep", 5, false, ByVisit, Optional: true),
                     Item(t, "manage.assistance", "/plan/assistance", 5, "assistance", ByData, optional: true),
+                    new("manage.phone", "/plan/phone", 5, false, ByVisit, Optional: true),
+                    new("manage.family", "/plan/family-link", 3, false, ByVisit, Optional: true),
                 ];
             case StageRules.Prebook:
             {
@@ -235,6 +237,7 @@ public static class GuideRules
                 raws.Add(new("getToShip.pass", "/home/boarding-pass", 2, false, ByVisit, BlockedBy: checkinDone ? null : "getToShip.checkin"));
                 raws.Add(new("getToShip.travel", "/plan/getting-there", 5, false, ByVisit));
                 raws.Add(Documents(f, "getToShip.documents"));
+                if (days <= 2) raws.Add(new("getToShip.delayed", "/home/delayed", 1, false, ByVisit, Optional: true));
                 return raws;
             }
             case StageRules.Embark:
@@ -243,10 +246,15 @@ public static class GuideRules
                     new("embark.steps", "/home/embarkation/steps", 5, false, ByVisit),
                     new("embark.group", "/home/meeting-point", 5, false, ByVisit),
                     new("embark.muster", "/ship/muster", 15, t?.MusterDone ?? false, ByData, Hard: true, Reason: t is { MusterDone: false } ? "muster" : null),
+                    new("embark.room", "/ship/room", 3, false, ByVisit, Optional: true),
+                    new("embark.key", "/home/medallion", 2, false, ByVisit, Optional: true),
                 ];
             case StageRules.Sea:
             {
                 var raws = new List<Raw> { new("sea.today", "/plan/day", 3, false, ByVisit), new("sea.dinner", "/dining-today", 5, false, ByVisit) };
+                raws.Add(new("sea.spend", "/me/bill", 3, false, ByVisit, Optional: true));
+                if (t is { Children: > 0 }) raws.Add(new("sea.family", "/ship/family", 3, false, ByVisit, Optional: true));
+                raws.Add(new("sea.help", "/ship/help-now", 1, false, ByVisit, Optional: true));
                 if (f.LastFullDay) raws.Add(new("sea.bags", "/home/disembark/bags", 10, false, ByVisit, Hard: true, Reason: "bags"));
                 return raws;
             }
@@ -256,13 +264,18 @@ public static class GuideRules
                     new("port.leaveby", "/ship/port", 2, false, ByVisit),
                     new("port.excursion", "/excursions-explorer", 10, false, ByVisit),
                     new("port.safe", "/ship/safe-ashore", 3, false, ByVisit, Optional: true),
+                    new("port.late", "/home/delayed", 1, false, ByVisit, Optional: true),
                 ];
             case StageRules.Disembark:
                 return
                 [
                     new("disembark.exit", "/home/disembark", 3, false, ByVisit),
                     new("disembark.bags", "/home/disembark/bags", 10, false, ByVisit, Hard: true),
+                    new("disembark.sweep", "/home/disembark/sweep", 3, false, ByVisit),
+                    new("disembark.customs", "/home/disembark/customs", 5, false, ByVisit),
                     new("disembark.bill", "/me/bill", 5, false, ByVisit),
+                    new("disembark.onward", "/home/disembark/onward", 5, false, ByVisit, Optional: true),
+                    new("disembark.lost", "/ship/lost-found", 2, false, ByVisit, Optional: true),
                 ];
             case StageRules.Remember:
                 return
@@ -270,6 +283,9 @@ public static class GuideRules
                     new("remember.recap", "/me/recap", 5, false, ByVisit),
                     new("remember.feedback", "/me/feedback", 5, f.FeedbackSent, ByData),
                     new("remember.next", "/home/sailings", 5, f.SavedSailings > 0, ByData, Optional: true),
+                    new("remember.history", "/me/history", 3, false, ByVisit, Optional: true),
+                    new("remember.memories", "/me/memories", 5, false, ByVisit, Optional: true),
+                    new("remember.followup", "/me/follow-up", 2, false, ByVisit, Optional: true),
                 ];
             default:
                 return [];

@@ -144,6 +144,34 @@ public class GuideRulesTests
     }
 
     [Fact]
+    public void ManageOffersPhoneAndFamilyAndTheDelayedPageAppearsOnlyInTheLastTwoDays()
+    {
+        var today = Departure.AddDays(-120);
+        var m = At(StageRules.Manage, today, Trip(today)).Tasks;
+        Assert.Contains(m, t => t.Id == "manage.phone" && t.Optional);
+        Assert.Contains(m, t => t.Id == "manage.family" && t.Optional);
+        var early = Departure.AddDays(-5);
+        Assert.DoesNotContain(At(StageRules.GetToShip, early, Trip(early, paid: true, docs: true)).Tasks, t => t.Id == "getToShip.delayed");
+        var near = Departure.AddDays(-1);
+        Assert.Contains(At(StageRules.GetToShip, near, Trip(near, paid: true, docs: true)).Tasks, t => t.Id == "getToShip.delayed" && t.Optional);
+    }
+
+    [Fact]
+    public void LaterStagesOfferOptionalTasksAndFamilyOnlyWithChildren()
+    {
+        var today = Departure;
+        Assert.Contains(At(StageRules.Embark, today, Trip(today, paid: true)).Tasks, t => t.Id == "embark.key" && t.Optional);
+        Assert.Equal("embark.muster", At(StageRules.Embark, today, Trip(today, paid: true)).PrimaryId);
+        Assert.Contains(At(StageRules.Sea, today, Trip(today, paid: true)).Tasks, t => t.Id == "sea.help" && t.Optional);
+        Assert.DoesNotContain(At(StageRules.Sea, today, Trip(today, paid: true)).Tasks, t => t.Id == "sea.family");
+        Assert.Contains(At(StageRules.Port, today, Trip(today, paid: true)).Tasks, t => t.Id == "port.late" && t.Optional);
+        var d = At(StageRules.Disembark, today, Trip(today, paid: true)).Tasks;
+        Assert.Contains(d, t => t.Id == "disembark.customs" && !t.Optional);
+        Assert.Contains(d, t => t.Id == "disembark.lost" && t.Optional);
+        Assert.Contains(At(StageRules.Remember, today, Trip(today, paid: true)).Tasks, t => t.Id == "remember.memories" && t.Optional);
+    }
+
+    [Fact]
     public void ComparingSailingsIsOfferedOnlyWithTwoSavedAndBookingNamesComeBeforeThePayment()
     {
         Assert.DoesNotContain(At(StageRules.Discover, Departure.AddDays(-200), saved: 1).Tasks, t => t.Id == "discover.compare");
