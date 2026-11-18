@@ -355,8 +355,8 @@ export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_S
   out.push(
     ...merge(
       'ref.Sailings', ['Id'], ['Id', 'ShipId', 'Departure', 'Nights', 'IsHoliday', 'IsReference', 'Title', 'BookingOpen', 'PatternId', 'StartPortId', 'EndPortId', 'LegCount', 'RegionId', 'DataStatus'],
-      material.map(({ s, m }) => [q(s.id), q(s.ship), `CAST('${s.departure}' AS DATE)`, String(m.nights), bit(s.holiday), '0', q(s.title), '0', q(s.legs[0].pattern), q(m.startPort), q(m.endPort), String(m.legs.length), q(m.region), q(s.dataStatus)]),
-      ['ShipId', 'Departure', 'Nights', 'IsHoliday', 'Title', 'PatternId', 'StartPortId', 'EndPortId', 'LegCount', 'RegionId', 'DataStatus'], `${material.length} sample sailings (not open for booking until X0c prices them)`,
+      material.map(({ s, m }) => [q(s.id), q(s.ship), `CAST('${s.departure}' AS DATE)`, String(m.nights), bit(s.holiday), '0', q(s.title), '1', q(s.legs[0].pattern), q(m.startPort), q(m.endPort), String(m.legs.length), q(m.region), q(s.dataStatus)]),
+      ['ShipId', 'Departure', 'Nights', 'IsHoliday', 'Title', 'BookingOpen', 'PatternId', 'StartPortId', 'EndPortId', 'LegCount', 'RegionId', 'DataStatus'], `${material.length} sample sailings (open for booking, priced from ref.SailingFares)`,
     ),
   )
   const dayRows = material.flatMap(({ s, m }) => m.days.map((d) => [q(s.id), String(d.day), `CAST('${d.date}' AS DATE)`, q(d.port), t(d.arrive), t(d.depart), t(d.allAboard), n(d.clockChange), d.clockChange === null ? t(undefined) : t('02:00')]))

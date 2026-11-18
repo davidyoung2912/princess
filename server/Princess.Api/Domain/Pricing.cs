@@ -57,7 +57,7 @@ public static class Pricing
         ["sun-2027-03-21"] = 189_900,
     };
 
-    /// <summary>Departures not yet open for booking. They can be held after a cruise (POS-06) and priced, but are not offered by Discover or Booking.</summary>
+    /// <summary>Next season's departures. They can be held after a cruise (POS-06), and are priced and offered by Discover and Booking once <c>ref.Sailings.BookingOpen</c> is set.</summary>
     internal static readonly Dictionary<string, long> NextSeasonFare = new()
     {
         ["sun-2027-11-07"] = 164_900,
@@ -102,7 +102,7 @@ public static class Pricing
 
     public static FareInfo? Fare(string? id) => Fares.FirstOrDefault(f => f.Id == id);
 
-    public static bool HasPrice(string sailingId) => InteriorFare.ContainsKey(sailingId) || FareBook.Offered(sailingId);
+    public static bool HasPrice(string sailingId) => InteriorFare.ContainsKey(sailingId) || NextSeasonFare.ContainsKey(sailingId) || FareBook.Offered(sailingId);
 
     /// <summary>The nights of a sailing: its length in data, or seven when the sailing is not known.</summary>
     public static int NightsOf(string sailingId) => FareBook.Nights(sailingId) ?? Nights;

@@ -99,12 +99,12 @@ export function buildTables(): Table[] {
   add('02-itinerary', 'ref.Sailings', ['Id'],
     [t('Id', 'str'), t('ShipId', 'str'), t('Departure', 'date'), t('Nights', 'int'), t('IsHoliday', 'bit'), t('IsReference', 'bit'), t('Title', 'str'), t('BookingOpen', 'bit')],
     [...SAILINGS.map((s) => [s.id, SHIP_ID, s.departure, 7, !!s.holiday, !!s.reference, `${s.holiday ? 'Holiday ' : ''}Western Caribbean, 7 nights from Fort Lauderdale, ${s.departure}`, true] as Cell[]),
-      // Next season: can be held after a cruise (POS-06, RebookHolds.SailingId) but is not open for booking.
-      ...FUTURE_DEPARTURES.map((f) => [f.id, SHIP_ID, f.departure, 7, false, false, `Western Caribbean, 7 nights from Fort Lauderdale, ${f.departure}`, false] as Cell[])])
+      // Next season: can be held after a cruise (POS-06, RebookHolds.SailingId) and is open for booking, priced from Pricing.NextSeasonFare.
+      ...FUTURE_DEPARTURES.map((f) => [f.id, SHIP_ID, f.departure, 7, false, false, `Western Caribbean, 7 nights from Fort Lauderdale, ${f.departure}`, true] as Cell[])])
 
   add('02-itinerary', 'ref.ItineraryDays', ['SailingId', 'Day'],
     [t('SailingId', 'str'), t('Day', 'int'), t('Date', 'date'), t('PortId', 'str'), t('ArriveLocal', 'time'), t('DepartLocal', 'time'), t('AllAboardLocal', 'time'), t('ClockChangeHours', 'int'), t('ClockChangeAtLocal', 'time')],
-    SAILINGS.flatMap((s) => {
+    [...SAILINGS, ...FUTURE_DEPARTURES].flatMap((s) => {
       const changes = shipClockChanges(s)
       const clockDays = [4, 7]
       return itinerary(s).map((d) => {

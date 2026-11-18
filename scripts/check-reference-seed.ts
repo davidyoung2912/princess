@@ -138,7 +138,7 @@ const count = (name: string, expected: number) => {
   if (got !== expected) fail(`${name} has ${got} rows, the source has ${expected}`)
 }
 count('ref.Sailings', SAILINGS.length + FUTURE_DEPARTURES.length)
-count('ref.ItineraryDays', SAILINGS.length * 8)
+count('ref.ItineraryDays', (SAILINGS.length + FUTURE_DEPARTURES.length) * 8)
 count('ref.Excursions', EXCURSIONS.length)
 count('ref.ExcursionDepartures', EXCURSIONS.length * SAILINGS.length)
 count('ref.Events', EVENTS.length)

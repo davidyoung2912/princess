@@ -33,17 +33,17 @@ USING (VALUES
   (N'sun-2027-02-07', N'sun-princess', CAST('2027-02-07' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-02-07', 1),
   (N'sun-2027-02-28', N'sun-princess', CAST('2027-02-28' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-02-28', 1),
   (N'sun-2027-03-21', N'sun-princess', CAST('2027-03-21' AS DATE), 7, 0, 1, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-03-21', 1),
-  (N'sun-2027-11-07', N'sun-princess', CAST('2027-11-07' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-11-07', 0),
-  (N'sun-2027-11-21', N'sun-princess', CAST('2027-11-21' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-11-21', 0),
-  (N'sun-2027-12-05', N'sun-princess', CAST('2027-12-05' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-12-05', 0),
-  (N'sun-2028-01-09', N'sun-princess', CAST('2028-01-09' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2028-01-09', 0)
+  (N'sun-2027-11-07', N'sun-princess', CAST('2027-11-07' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-11-07', 1),
+  (N'sun-2027-11-21', N'sun-princess', CAST('2027-11-21' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-11-21', 1),
+  (N'sun-2027-12-05', N'sun-princess', CAST('2027-12-05' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-12-05', 1),
+  (N'sun-2028-01-09', N'sun-princess', CAST('2028-01-09' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2028-01-09', 1)
 ) AS s ([Id], [ShipId], [Departure], [Nights], [IsHoliday], [IsReference], [Title], [BookingOpen])
 ON t.[Id] = s.[Id]
 WHEN MATCHED THEN UPDATE SET t.[ShipId] = s.[ShipId], t.[Departure] = s.[Departure], t.[Nights] = s.[Nights], t.[IsHoliday] = s.[IsHoliday], t.[IsReference] = s.[IsReference], t.[Title] = s.[Title], t.[BookingOpen] = s.[BookingOpen]
 WHEN NOT MATCHED THEN INSERT ([Id], [ShipId], [Departure], [Nights], [IsHoliday], [IsReference], [Title], [BookingOpen]) VALUES (s.[Id], s.[ShipId], s.[Departure], s.[Nights], s.[IsHoliday], s.[IsReference], s.[Title], s.[BookingOpen]);
 GO
 
--- ref.ItineraryDays: 64 rows
+-- ref.ItineraryDays: 96 rows
 MERGE ref.ItineraryDays AS t
 USING (VALUES
   (N'sun-2026-11-08', 1, CAST('2026-11-08' AS DATE), N'fll', CAST(NULL AS TIME(0)), CAST('15:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
@@ -109,7 +109,39 @@ USING (VALUES
   (N'sun-2027-03-21', 5, CAST('2027-03-25' AS DATE), N'roatan', CAST('08:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
   (N'sun-2027-03-21', 6, CAST('2027-03-26' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
   (N'sun-2027-03-21', 7, CAST('2027-03-27' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), 2, CAST('02:00:00' AS TIME(0))),
-  (N'sun-2027-03-21', 8, CAST('2027-03-28' AS DATE), N'fll', CAST('06:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0)))
+  (N'sun-2027-03-21', 8, CAST('2027-03-28' AS DATE), N'fll', CAST('06:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-07', 1, CAST('2027-11-07' AS DATE), N'fll', CAST(NULL AS TIME(0)), CAST('15:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-07', 2, CAST('2027-11-08' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-07', 3, CAST('2027-11-09' AS DATE), N'cozumel', CAST('07:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-07', 4, CAST('2027-11-10' AS DATE), N'belize', CAST('07:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:00:00' AS TIME(0)), -1, CAST('02:00:00' AS TIME(0))),
+  (N'sun-2027-11-07', 5, CAST('2027-11-11' AS DATE), N'roatan', CAST('08:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-07', 6, CAST('2027-11-12' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-07', 7, CAST('2027-11-13' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), 1, CAST('02:00:00' AS TIME(0))),
+  (N'sun-2027-11-07', 8, CAST('2027-11-14' AS DATE), N'fll', CAST('06:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-21', 1, CAST('2027-11-21' AS DATE), N'fll', CAST(NULL AS TIME(0)), CAST('15:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-21', 2, CAST('2027-11-22' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-21', 3, CAST('2027-11-23' AS DATE), N'cozumel', CAST('07:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-21', 4, CAST('2027-11-24' AS DATE), N'belize', CAST('07:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:00:00' AS TIME(0)), -1, CAST('02:00:00' AS TIME(0))),
+  (N'sun-2027-11-21', 5, CAST('2027-11-25' AS DATE), N'roatan', CAST('08:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-21', 6, CAST('2027-11-26' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-11-21', 7, CAST('2027-11-27' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), 1, CAST('02:00:00' AS TIME(0))),
+  (N'sun-2027-11-21', 8, CAST('2027-11-28' AS DATE), N'fll', CAST('06:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-12-05', 1, CAST('2027-12-05' AS DATE), N'fll', CAST(NULL AS TIME(0)), CAST('15:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-12-05', 2, CAST('2027-12-06' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-12-05', 3, CAST('2027-12-07' AS DATE), N'cozumel', CAST('07:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-12-05', 4, CAST('2027-12-08' AS DATE), N'belize', CAST('07:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:00:00' AS TIME(0)), -1, CAST('02:00:00' AS TIME(0))),
+  (N'sun-2027-12-05', 5, CAST('2027-12-09' AS DATE), N'roatan', CAST('08:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-12-05', 6, CAST('2027-12-10' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2027-12-05', 7, CAST('2027-12-11' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), 1, CAST('02:00:00' AS TIME(0))),
+  (N'sun-2027-12-05', 8, CAST('2027-12-12' AS DATE), N'fll', CAST('06:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2028-01-09', 1, CAST('2028-01-09' AS DATE), N'fll', CAST(NULL AS TIME(0)), CAST('15:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2028-01-09', 2, CAST('2028-01-10' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2028-01-09', 3, CAST('2028-01-11' AS DATE), N'cozumel', CAST('07:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2028-01-09', 4, CAST('2028-01-12' AS DATE), N'belize', CAST('07:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:00:00' AS TIME(0)), -1, CAST('02:00:00' AS TIME(0))),
+  (N'sun-2028-01-09', 5, CAST('2028-01-13' AS DATE), N'roatan', CAST('08:00:00' AS TIME(0)), CAST('17:00:00' AS TIME(0)), CAST('16:30:00' AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2028-01-09', 6, CAST('2028-01-14' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0))),
+  (N'sun-2028-01-09', 7, CAST('2028-01-15' AS DATE), N'sea', CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), 1, CAST('02:00:00' AS TIME(0))),
+  (N'sun-2028-01-09', 8, CAST('2028-01-16' AS DATE), N'fll', CAST('06:00:00' AS TIME(0)), CAST(NULL AS TIME(0)), CAST(NULL AS TIME(0)), NULL, CAST(NULL AS TIME(0)))
 ) AS s ([SailingId], [Day], [Date], [PortId], [ArriveLocal], [DepartLocal], [AllAboardLocal], [ClockChangeHours], [ClockChangeAtLocal])
 ON t.[SailingId] = s.[SailingId] AND t.[Day] = s.[Day]
 WHEN MATCHED THEN UPDATE SET t.[Date] = s.[Date], t.[PortId] = s.[PortId], t.[ArriveLocal] = s.[ArriveLocal], t.[DepartLocal] = s.[DepartLocal], t.[AllAboardLocal] = s.[AllAboardLocal], t.[ClockChangeHours] = s.[ClockChangeHours], t.[ClockChangeAtLocal] = s.[ClockChangeAtLocal]
