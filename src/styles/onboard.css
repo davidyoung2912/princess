@@ -739,13 +739,21 @@ button.chat-quote { cursor: pointer; }
 .venue-hours p { margin: var(--space-1) 0; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .venue-hours svg { flex: none; width: 1.125rem; height: 1.125rem; color: var(--primary); }
 
-/* The small save-for-later toggle beside a dish. */
-.dish-save { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); margin-block: calc(var(--space-2) * -1); background: none; border: 0; border-radius: 50%; color: var(--text-muted); cursor: pointer; vertical-align: middle; transition: color 0.15s ease, box-shadow 0.15s ease; }
-.dish-save svg { width: 1.125rem; height: 1.125rem; }
-.dish-save:hover:not(:disabled) { color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
-.dish-save[aria-pressed='true'] { color: var(--primary); }
-.dish-save[aria-pressed='true'] svg { fill: currentColor; fill-opacity: 0.2; }
-@media (prefers-reduced-motion: reduce) { .dish-save { transition: none; } }
+/* The save-for-later toggle beside a dish: a round white button with the bookmark in the brand colour; it grows and glows under the pointer, and when the dish is saved it fills with the brand colour and the bookmark turns white. */
+.dish-save { display: inline-grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; min-inline-size: var(--target-min); min-block-size: var(--target-min); margin-block: calc(var(--space-2) * -1); margin-inline-start: var(--space-2); padding: 0; background: transparent; border: 0; border-radius: 50%; color: var(--primary); cursor: pointer; vertical-align: middle; position: relative; }
+.dish-save::before { content: ''; position: absolute; inset: 50% auto auto 50%; inline-size: 2rem; block-size: 2rem; transform: translate(-50%, -50%); border-radius: 50%; background: var(--bg, #fff); border: 2px solid var(--primary); box-shadow: 0 1px 3px color-mix(in srgb, var(--primary) 25%, transparent); transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease; }
+.dish-save svg { position: relative; inline-size: 1.375rem; block-size: 1.375rem; stroke-width: 2.5; fill: var(--bg, #fff); transition: transform 0.18s ease; }
+.dish-save:hover:not(:disabled)::before { transform: translate(-50%, -50%) scale(1.18); background: var(--brand-tint, var(--sky-tint)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-bright, var(--primary)) 22%, transparent), 0 0 16px 4px color-mix(in srgb, var(--primary-bright, var(--primary)) 55%, transparent); }
+.dish-save:hover:not(:disabled) svg { transform: scale(1.12); }
+.dish-save:active:not(:disabled)::before { transform: translate(-50%, -50%) scale(1.05); }
+.dish-save:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.dish-save[aria-pressed='true']::before { background: var(--primary); }
+.dish-save[aria-pressed='true'] { color: var(--on-primary, #fff); }
+.dish-save[aria-pressed='true'] svg { fill: var(--primary); stroke: var(--on-primary, #fff); }
+.dish-save[aria-pressed='true']:hover:not(:disabled)::before { background: var(--primary-bright, var(--primary)); }
+.dish-save:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .dish-save::before, .dish-save svg { transition: none; } .dish-save:hover:not(:disabled)::before, .dish-save:hover:not(:disabled) svg, .dish-save:active:not(:disabled)::before { transform: translate(-50%, -50%); } .dish-save:hover:not(:disabled) svg { transform: none; } }
+@media (forced-colors: active) { .dish-save::before { border-color: CanvasText; background: Canvas; } .dish-save:hover:not(:disabled)::before { outline: 2px solid Highlight; } .dish-save[aria-pressed='true'] svg { stroke: CanvasText; fill: Canvas; } }
 
 /* Saved dishes under a dining line of the day plan. */
 .event__dishes { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-1) 0; }

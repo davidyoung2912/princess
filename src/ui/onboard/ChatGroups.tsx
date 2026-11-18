@@ -1,3 +1,4 @@
+import { Trash2 } from '../icons'
 import { useState } from 'react'
 import type { ChatConnections, ChatGroup, ChatGroupInvite } from '../../api/chatTypes'
 import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, MIN_INVITED, placesLeft, togglePicked } from '../../domain/chatGroups'
@@ -92,8 +93,8 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
               {g.members.map((m) => (
                 <li key={m.id}>
                   <span className="person-line"><ChatAvatar avatar={m.avatar} name={m.name} small /><strong>{m.you ? t('conv.you') : m.name}</strong>{m.creator && <> <span className="muted">{t('cgroup.creator')}</span></>}{m.admin && <> <span className="muted">{t('cgroup.admin')}</span></>}</span>
-                  {g.isCreator && !m.you && !m.creator && <Button variant="tertiary" disabled={admin.busy} onClick={() => void admin.run(m.id, !m.admin)}>{t(m.admin ? 'cgroup.admin.remove' : 'cgroup.admin.make')}<span className="visually-hidden"> {m.name}</span></Button>}
-                  {g.isCreator && !m.you && <Button variant="tertiary" disabled={remove.busy} onClick={() => void remove.run(m.id, m.name)}>{t('cgroup.remove')}<span className="visually-hidden"> {m.name}</span></Button>}
+                  {g.isCreator && !m.you && !m.creator && <Button variant="secondary" disabled={admin.busy} onClick={() => void admin.run(m.id, !m.admin)}>{t(m.admin ? 'cgroup.admin.remove' : 'cgroup.admin.make')}<span className="visually-hidden"> {m.name}</span></Button>}
+                  {g.isCreator && !m.you && <Button variant="secondary" icon={Trash2} disabled={remove.busy} onClick={() => void remove.run(m.id, m.name)}>{t('cgroup.remove')}<span className="visually-hidden"> {m.name}</span></Button>}
                 </li>
               ))}
             </ul>

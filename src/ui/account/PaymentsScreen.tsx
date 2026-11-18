@@ -1,3 +1,4 @@
+import { Trash2 } from '../icons'
 import { useState, type FormEvent } from 'react'
 import { BRAND_NAMES, CARD_BRANDS, validateCard, type Card as SavedCard, type CardBrand, type CardProblem } from '../../domain/account'
 import { formatDate } from '../../domain/cruise'
@@ -118,7 +119,7 @@ function CardRow({ card, expired, canEdit, onRemove }: { card: SavedCard; expire
   return (
     <li>
       <span>{name} <span className="muted">· {t('pay.expires', { date: card.expiry })}</span> {expired && <span className="tag tag--alert">{t('pay.expired')}</span>}</span>
-      <Button variant="tertiary" disabled={!canEdit} onClick={() => void onRemove()}>{t('pay.remove')}<span className="visually-hidden"> {name}</span></Button>
+      <Button variant="secondary" icon={Trash2} disabled={!canEdit} onClick={() => void onRemove()}>{t('pay.remove')}<span className="visually-hidden"> {name}</span></Button>
     </li>
   )
 }

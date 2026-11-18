@@ -4,7 +4,8 @@ import { DietNas, DietVegan, DietVegetarian, FlagAlcohol, FlagRaw, FlagSpicy } f
 
 const ICON = { vegan: DietVegan, vegetarian: DietVegetarian, nas: DietNas } as const
 const LABEL: Record<DietMark, StringKey> = { vegan: 'exp.diet.vegan', vegetarian: 'exp.diet.vegetarian', nas: 'exp.diet.nas' }
-const WHAT: Record<DietMark, StringKey> = { vegan: 'exp.diet.vegan.what', vegetarian: 'exp.diet.vegetarian.what', nas: 'exp.diet.nas.what' }
+/** What a mark means, where its name does not already say it (No added sugar needs no explanation). */
+const WHAT: Record<DietMark, StringKey | null> = { vegan: 'exp.diet.vegan.what', vegetarian: 'exp.diet.vegetarian.what', nas: null }
 const ORDER: readonly DietMark[] = ['vegan', 'vegetarian', 'nas']
 
 /** One mark beside a dish: an icon that says what it is to the eye and to a screen reader (the colour is never the only sign). */
@@ -24,7 +25,7 @@ export function DietMarks({ marks }: { marks?: readonly DietMark[] }) {
 export function DietLegend() {
   return (
     <ul className="diet-legend" aria-label={t('exp.diet.legend')}>
-      {ORDER.map((m) => <li key={m}><DietMarkIcon mark={m} /> <span>{t(LABEL[m])}</span> <small className="muted">{t(WHAT[m])}</small></li>)}
+      {ORDER.map((m) => <li key={m}><DietMarkIcon mark={m} /> <span>{t(LABEL[m])}</span>{WHAT[m] && <> <small className="muted">{t(WHAT[m])}</small></>}</li>)}
     </ul>
   )
 }

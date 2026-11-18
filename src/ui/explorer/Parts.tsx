@@ -130,7 +130,7 @@ function MealCard({ shipId, venueId, m, over, suits, avoid }: { shipId: string; 
         <h3 className="card__title ship-section__title">{headingCase(title)}</h3>
         {over && <StatusBadge kind="soldOut" label={t('exp.menu.served')} />}
       </summary>
-      <p className="muted">{formatTime(m.from)} {t('exp.menu.to')} {formatTime(m.to)}{m.formal && <> · <StatusBadge kind="ready" label={t('exp.menu.formal')} /></>}</p>
+      <p className="muted"><TimeOfDayIcon time={m.from} />{formatTime(m.from)} {t('exp.menu.to')} {formatTime(m.to)}{m.formal && <> · <StatusBadge kind="ready" label={t('exp.menu.formal')} /></>}</p>
       <SendToChat shareRef={`menu:${venueId}:${m.meal}`} title={title} />
       {m.courses.map((c) => {
         const shown = c.dishes.filter((d) => suits(d.name, d.contains))

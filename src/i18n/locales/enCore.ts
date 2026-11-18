@@ -415,7 +415,6 @@ export const enCore = {
   'exp.diet.vegetarian': 'Vegetarian',
   'exp.diet.vegetarian.what': '(no meat or fish; may have egg or dairy)',
   'exp.diet.nas': 'No added sugar',
-  'exp.diet.nas.what': '(no added sugar)',
   'exp.flag.avoid': 'You asked to be told about: {list}',
   'exp.flag.legend': 'What the dish heads-ups mean',
   'exp.flag.alcohol': 'Contains alcohol',

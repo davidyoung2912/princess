@@ -86,6 +86,7 @@ export {
   Martini,
   CalendarClock,
   CalendarCheck,
+  Trash2,
   CalendarPlus,
   CalendarX,
   CalendarDays,

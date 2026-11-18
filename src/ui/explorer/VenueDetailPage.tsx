@@ -22,7 +22,7 @@ import { DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
 import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
 import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
-import { Clock } from '../icons'
+import { TimeOfDayIcon } from '../TimeOfDay'
 import { PinButton } from './Pins'
 import { SendToChat } from '../onboard/SendToChat'
 import { eventKey } from '../../domain/explorer/shortlist'
@@ -119,7 +119,7 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
         <ShipDayInfo state={state} />
         {(venue.hours.windows.length > 0 || staffedText(venue.hours)) && (
           <div className="venue-hours">
-            {venue.hours.windows.length > 0 && <p><Clock aria-hidden="true" focusable="false" /> <span>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</span></p>}
+            {venue.hours.windows.length > 0 && <p><TimeOfDayIcon time={venue.hours.windows[0][0]} /> <span>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</span></p>}
             {staffedText(venue.hours) && <p className="muted">{t('exp.venue.staffed', { hours: staffedText(venue.hours) })}</p>}
             <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
           </div>

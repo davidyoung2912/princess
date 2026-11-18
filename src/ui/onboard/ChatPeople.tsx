@@ -1,3 +1,4 @@
+import { X } from '../icons'
 import { ChatLooks } from './ChatLooks'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
@@ -125,7 +126,7 @@ function Outgoing({ row, onDone }: { row: ChatConnection; onDone: (note: string)
     <>
       <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{row.name}</strong> <span className="muted">{t('people.waitingForReply')}</span></p>
       <StanleyNote text={row.note} />
-      <Button variant="tertiary" disabled={cancel.busy} onClick={() => void cancel.run()}>{t('people.cancel')}<span className="visually-hidden"> {row.name}</span></Button>
+      <Button variant="secondary" icon={X} disabled={cancel.busy} onClick={() => void cancel.run()}>{t('people.cancel')}<span className="visually-hidden"> {row.name}</span></Button>
       <ActionError error={cancel.error} />
     </>
   )
