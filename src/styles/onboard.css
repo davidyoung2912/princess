@@ -304,6 +304,7 @@ button.chat-quote { cursor: pointer; }
 .conv__avatar--small { width: 1.75rem; height: 1.75rem; font-size: 0.7rem; }
 .conv__avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .avatar-picker { display: grid; gap: var(--space-3); }
+.avatar-picker__reset { justify-self: start; }
 .avatar-picker__group { border: 0; padding: 0; margin: 0; }
 .avatar-picker__group legend { font-weight: 600; padding: 0; margin-bottom: var(--space-2); }
 .avatar-picker__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr)); gap: var(--space-2); }
@@ -312,6 +313,12 @@ button.chat-quote { cursor: pointer; }
 .avatar-picker__option input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .avatar-picker__option:focus-within { outline: 3px solid var(--focus, var(--primary)); outline-offset: 2px; }
 .avatar-picker__option--on { border-color: var(--primary); }
+/* Each picture grows a little and glows on hover or keyboard focus. Reduced motion keeps the glow and drops the grow. */
+.avatar-picker__option { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), border-color var(--t-fast) var(--ease); }
+.avatar-picker__option:is(:hover, :focus-within) { transform: scale(1.1); border-color: var(--primary-bright, var(--primary)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-bright, var(--primary)) 25%, transparent), 0 0 18px color-mix(in srgb, var(--primary-bright, var(--primary)) 60%, transparent); }
+.avatar-picker__option:active { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) { .avatar-picker__option { transition: none; } .avatar-picker__option:is(:hover, :focus-within, :active) { transform: none; } }
+:root[data-motion='reduced'] .avatar-picker__option:is(:hover, :focus-within, :active) { transform: none; }
 .avatar-picker__tick { position: absolute; inset-inline-end: 0; bottom: 0; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--primary); color: var(--on-primary, #fff); font-weight: 700; }
 .emoji-picker { border: var(--border-width) solid var(--border); border-radius: var(--radius-card); padding: var(--space-2); background: var(--bg); }
 .emoji-picker__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.75rem, 1fr)); gap: var(--space-1); }
@@ -321,15 +328,21 @@ button.chat-quote { cursor: pointer; }
 /* A small picture beside a person's name (people, group members, thread header). It is decorative: the name is always next to it. */
 .person-line { display: flex; align-items: center; gap: var(--space-2); }
 .person-line > .conv__avatar { flex: none; }
-.avatar-picker__pager { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
-.avatar-picker__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 24rem; }
+.avatar-picker__row > .avatar-picker__grid { grid-column: 2; }
+.avatar-picker__filter { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-3); }
+.avatar-picker__filter-item { min-height: 0; }
+.avatar-picker__row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-2); }
+.avatar-picker__arrow { display: inline-flex; align-items: center; justify-content: center; align-self: stretch; min-width: 2rem; min-height: 3rem; padding: 0; border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); background: var(--bg); color: var(--primary); cursor: pointer; }
+.avatar-picker__arrow:hover { background: var(--brand-tint); border-color: var(--primary-dark); }
+.avatar-picker__arrow .lucide { width: 1.25rem; height: 1.25rem; }
+.app-welcome__hint { margin-top: var(--space-4); color: var(--text); }
 
 /* Stanley on tap in a thread (chat phase 10) */
 .cst-list { margin: 0 0 var(--space-3); padding-inline-start: var(--space-4); }
 .cst-list li { margin-bottom: var(--space-2); overflow-wrap: anywhere; }
 .cco-text { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-inline-start: 3px solid currentColor; overflow-wrap: anywhere; }
 .chat-act__problem { flex-basis: 100%; }
-.chat-msg__stanley { border-radius: 50%; vertical-align: middle; margin-inline-end: var(--space-2); object-fit: cover; }
+.chat-msg__stanley { border-radius: 50%; vertical-align: middle; margin-inline-end: var(--space-2); object-fit: cover; width: 1.75rem; height: 1.75rem; }
 
 /* Stanley's friendly chat help: a line from him with his picture, and the icebreaker list. */
 .cw-note { display: flex; align-items: flex-start; gap: var(--space-2); margin: var(--space-2) 0; }

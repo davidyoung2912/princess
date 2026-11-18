@@ -69,7 +69,7 @@ import { ChatSearch, SaveChat } from './ChatSearch'
 import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWrite, PolishDraft, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
 import { askBefore, showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
-import { ChatAvatar } from './ChatLooks'
+import { ChatAvatar, MyChatAvatar } from './ChatLooks'
 import { EmojiPicker } from './ChatEmoji'
 import { insertEmoji, wantsEmojiPicker } from '../../domain/chatEmoji'
 import { chatFeedback } from '../../domain/chatFeedback'
@@ -900,7 +900,7 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
   const waiting = useStanleyBusy()
   // The server's "I'm now speaking for ..." lines are left out: the cards no longer name the ship, so a change of voice needs no marker.
   const items = threadItems(messages.filter((m) => !m.system), device)
-  const dots = waiting ? <li key="waiting" className="chat-msg chat-msg--answer"><p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.reply')}</strong></p><p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p></li> : null
+  const dots = waiting ? <li key="waiting" className="chat-msg chat-msg--answer"><p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.reply')}</strong></p><p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p></li> : null
   const rows = items.map((item, i) => {
     const heading = startsDay(items, i) ? <li key={`h:${item.key}`} className="chat-day"><h3>{new Date(item.at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h3></li> : null
     const row = ((): ReactNode => {
@@ -908,7 +908,7 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
     const asked = item.kind === 'question'
     return (
       <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg chat-msg--answer'}>
-        <p className="chat-msg__meta">{!asked && <img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} />}<strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.reply')}</strong> <span className="muted">{shipTime(item.at)}</span></p>
+        <p className="chat-msg__meta">{asked ? <MyChatAvatar small /> : <img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} />}<strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.reply')}</strong> <span className="muted">{shipTime(item.at)}</span></p>
         {asked ? <p>{item.text}</p> : <StanleyReply m={item.turn} />}
       </li>
     )
@@ -1023,7 +1023,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
   return (
     <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}${m.acked === true ? ' chat-msg--seen' : ''}`}>
       {m.acked !== true && <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>}
-      <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+      <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
       <p><strong>{noticeHeadline(m.text)}</strong></p>
       {body && <p>{body}</p>}
       {state !== 'active' && <p className="muted">{t(state === 'superseded' ? (n.lane === 'suggestion' ? 'stanley.moment.putAway' : 'stanley.notice.superseded') : 'stanley.notice.expired')}</p>}
@@ -1044,7 +1044,7 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     if (!n) {
       return (
         <li className="chat-msg chat-msg--stanley">
-          <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+          <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
           <p>{m.text}</p>
           {ask && <GroupStanleyPills question={ask} />}
         </li>
@@ -1082,7 +1082,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
     <li id={`msg-${m.id}`} tabIndex={-1} {...press} className={['chat-msg', own && 'chat-msg--mine', m.mentionsYou && 'chat-msg--mention', m.pinned && 'chat-msg--pinned', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
       {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} onJump={onJump} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
-      <p className="chat-msg__meta">{!own && <ChatAvatar avatar={m.avatar} name={m.fromName ?? ''} small />}<strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
+      <p className="chat-msg__meta">{own ? <MyChatAvatar small /> : <ChatAvatar avatar={m.avatar} name={m.fromName ?? ''} small />}<strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
       {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} held={held} onHold={onHold} />
         : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}

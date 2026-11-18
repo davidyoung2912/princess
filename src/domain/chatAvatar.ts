@@ -3,7 +3,7 @@ import type { AvatarChoice, AvatarGroup } from '../api/chatTypes'
 export type { AvatarChoice, AvatarGroup }
 
 /**
- * Chat avatars (phase 9c): a guest picks one of about 50 cartoon pictures (people, sketch people, robots, critters) in their welcome, and can change it in Settings.
+ * Chat avatars (phase 9c): a guest picks one of a couple of hundred cartoon pictures (people, sketch people, robots, critters) in their welcome, and can change it in Settings.
  * The pictures are drawn once by DiceBear, stored in the database (`dbo.ChatAvatars`, by `scripts/seed_avatars.py`) and served by the API; the app never calls DiceBear.
  * The choice is the picture's id, for example `bottts-31`. A guest who has not chosen shows their initials.
  */

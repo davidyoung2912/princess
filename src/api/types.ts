@@ -782,7 +782,7 @@ export interface Api {
     /** Whether the signed-in person shows and sees read receipts. */
     receipts(): Promise<boolean>
     setReceipts(on: boolean): Promise<boolean>
-    /** The avatars to choose from (about 50, stored in the database). */
+    /** The avatars to choose from (about 200, stored in the database). */
     avatars(): Promise<AvatarChoice[]>
     /** The id of the person's chosen avatar, or null when they have not chosen one. */
     avatar(): Promise<string | null>

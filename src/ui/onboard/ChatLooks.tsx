@@ -2,6 +2,9 @@ import { avatarImageUrl, isAvatarId } from '../../domain/chatAvatar'
 import { initials } from '../../domain/chatThread'
 import { API_URL } from '../../runtime'
 import { useSettings } from '../../hooks/useSettings'
+import { useMyAvatar } from '../../hooks/useMyAvatar'
+import { useSyncExternalStore } from 'react'
+import { getContext, subscribeContext } from '../../account/context'
 import { t, th as heading } from '../../i18n'
 import { Chip } from '../Chip'
 
@@ -13,6 +16,13 @@ export function ChatAvatar({ avatar, name, small = false }: { avatar: string | u
       {src ? <img className="conv__avatar-img" src={src} alt="" width={small ? 28 : 44} height={small ? 28 : 44} loading="lazy" decoding="async" /> : initials(name)}
     </span>
   )
+}
+
+/** The signed-in guest's own round picture (their chosen avatar, or their initials), for the line above their own words. */
+export function MyChatAvatar({ small = false }: { small?: boolean }) {
+  const avatar = useMyAvatar()
+  const name = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.name ?? ''
+  return <ChatAvatar avatar={avatar} name={name} small={small} />
 }
 
 /** The chat sound and buzz: off until turned on, chosen per device. (The avatar is chosen in Settings and in the welcome.) */

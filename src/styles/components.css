@@ -180,6 +180,16 @@ main.signin { margin-inline: auto; }
 }
 :root[data-motion='reduced'] :is(.btn, .topbar__help, .topbar__search, .tabs__search, .chip, .icon-btn, .page-header__back):is(:hover, :active) { transform: none; }
 
+/* The guest's own picture where the logo was: a round frame in the app's blue that grows and glows on hover or focus. Reduced motion keeps the glow and drops the grow. */
+.me-avatar { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+.me-avatar__pic { display: grid; place-items: center; box-sizing: border-box; width: 2.75rem; height: 2.75rem; border: 3px solid var(--primary); border-radius: 50%; background: var(--brand-tint) center / cover no-repeat; color: var(--primary); font-weight: 700; font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(10, 20, 60, 0.3); transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease), border-color var(--t-fast) var(--ease); }
+.tabs__logo .me-avatar__pic { width: 5.5rem; height: 5.5rem; font-size: 1.75rem; border-width: 4px; }
+.me-avatar:is(:hover, :focus-visible) .me-avatar__pic { transform: scale(1.1); border-color: var(--primary-bright, var(--primary)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-bright, var(--primary)) 25%, transparent), 0 0 18px color-mix(in srgb, var(--primary-bright, var(--primary)) 60%, transparent); }
+.me-avatar:active .me-avatar__pic { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) { .me-avatar__pic { transition: none; } .me-avatar:is(:hover, :focus-visible, :active) .me-avatar__pic { transform: none; } }
+:root[data-motion='reduced'] .me-avatar:is(:hover, :focus-visible, :active) .me-avatar__pic { transform: none; }
+
 /* The logo in the nav: one soft glow and a small grow and tilt on hover or focus. Reduced motion keeps the glow and drops the movement. */
 .tabs__logo img, .topbar__logo img { filter: drop-shadow(0 3px 4px rgba(10, 20, 60, 0.35)) drop-shadow(0 0 0 transparent); transition: transform var(--t-mid) var(--ease), filter var(--t-mid) var(--ease); }
 .tabs__logo:is(:hover, :focus-visible) img, .topbar__logo:is(:hover, :focus-visible) img {

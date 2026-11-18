@@ -31,6 +31,37 @@ SHORT = ["shortFlat", "shortWaved", "shortCurly", "theCaesar", "theCaesarAndSide
 LONG = ["longButNotTooLong", "straight01", "straight02", "bob", "curly", "bigHair", "bun", "curvy"]
 BEARD = ["beardLight", "beardMedium", "moustacheFancy", "beardMajestic"]
 
+# More people, added after the first fifty so every id a guest has already chosen stays the same (an id is its style and its place in this list).
+# Skin and hair colours are DiceBear's own avataaars palette; the other looks (clothes, faces) come from the seed.
+SKIN = ["ffdbb4", "edb98a", "d08b5b", "ae5d29", "614335", "fd9841", "f8d25c"]
+HAIR = ["2c1b18", "4a312c", "724133", "a55728", "b58143", "d6b370", "c93305", "e8e1e1", "ecdcbf", "f59797"]
+LOOKS = [
+    ("shortFlat", "short hair"), ("longButNotTooLong", "long hair"), ("shortCurly", "short curly hair"), ("bob", "a bob"), ("frizzle", "frizzy hair"), ("bun", "hair in a bun"),
+    ("shortWaved", "wavy hair"), ("curly", "long curly hair"), ("theCaesar", "a neat crop"), ("straight01", "long straight hair"), ("sides", "hair at the sides"), ("curvy", "long wavy hair"),
+    ("dreads01", "dreadlocks"), ("fro", "an afro"), ("shortRound", "round short hair"), ("bigHair", "big hair"), ("shaggyMullet", "a shaggy mullet"), ("miaWallace", "a sleek bob"),
+    ("hijab", "a headscarf"), ("turban", "a turban"), ("hat", "a hat"), ("winterHat1", "a woolly hat"), ("winterHat03", "a bobble hat"), ("froBand", "an afro with a headband"),
+]
+GLASSES = [None, None, None, "prescription01", None, "round", None, "sunglasses", None, "prescription02", None, "kurt"]
+
+
+def more_people():
+    rows = []
+    for i in range(60):
+        top, words = LOOKS[i % len(LOOKS)]
+        glasses = GLASSES[i % len(GLASSES)]
+        options = {"top": top, "skinColor": SKIN[(i * 3) % len(SKIN)], "hairColor": HAIR[(i * 7) % len(HAIR)], "facialHairProbability": "0"}
+        label = f"Person {i + 21}, {words}"
+        if glasses:
+            options.update({"accessories": glasses, "accessoriesProbability": "100"})
+            label += ", sunglasses" if glasses == "sunglasses" else ", glasses"
+        else:
+            options["accessoriesProbability"] = "0"
+        if i % 5 == 4 and top not in ("hijab", "turban", "hat", "winterHat1", "winterHat03"):
+            options.update({"facialHairProbability": "100", "facialHair": BEARD[(i // 5) % len(BEARD)]})
+            label += ", beard"
+        rows.append(("people", "avataaars", f"princess-more-{i + 1}", label, options))
+    return rows
+
 
 def build():
     """(group, style, seed, label, options) for every avatar, in the order they are shown."""
@@ -48,6 +79,20 @@ def build():
     for i in range(1, 13):
         rows.append(("robots", "bottts", f"princess-bot-{i}", f"Robot {i}", {}))
     for i in range(1, 9):
+        rows.append(("critters", "thumbs", f"princess-critter-{i}", f"Critter {i}", {}))
+    # Everything below is new: it goes after the first fifty so their ids do not move.
+    rows.extend(more_people())
+    for i in range(7, 27):
+        rows.append(("sketch", "open-peeps", f"princess-peep-{i}", f"Sketch person {i}", {}))
+    for i in range(5, 19):
+        rows.append(("sketch", "notionists", f"princess-doodle-{i}", f"Doodle person {i}", {}))
+    for i in range(1, 17):
+        rows.append(("sketch", "lorelei", f"princess-portrait-{i}", f"Portrait {i}", {}))
+    for i in range(13, 29):
+        rows.append(("robots", "bottts", f"princess-bot-{i}", f"Robot {i}", {}))
+    for i in range(1, 13):
+        rows.append(("robots", "bottts-neutral", f"princess-botface-{i}", f"Robot face {i}", {}))
+    for i in range(9, 31):
         rows.append(("critters", "thumbs", f"princess-critter-{i}", f"Critter {i}", {}))
     return rows
 

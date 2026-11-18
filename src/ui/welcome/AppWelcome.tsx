@@ -19,10 +19,6 @@ export function AppWelcome() {
   const to = back((state as { from?: unknown } | null)?.from)
   return (
     <div className="page welcome app-welcome">
-      <header className="welcome__head">
-        <p className="welcome__eyebrow">{t('appWelcome.eyebrow')}</p>
-        <h2 className="welcome__title">{th('appWelcome.title')}</h2>
-      </header>
       <Card hero labelledBy="app-welcome-hello-h">
         <h2 id="app-welcome-hello-h">{t('appWelcome.h.hello')}</h2>
         <p>{t('appWelcome.hello')}</p>
@@ -31,7 +27,7 @@ export function AppWelcome() {
         <h2 id="app-welcome-avatar-h">{th('avatar.title')}</h2>
         <p>{t('avatar.intro')}</p>
         <AvatarPicker onCurrent={setAvatar} />
-        <p className="muted">{t(avatar ? 'appWelcome.avatar.chosen' : 'appWelcome.avatar.needed')}</p>
+        <p className="app-welcome__hint">{t(avatar ? 'appWelcome.avatar.chosen' : 'appWelcome.avatar.needed')}</p>
       </Card>
       <div className="button-row">{avatar ? <LinkButton to={to} replace>{t('appWelcome.go')}</LinkButton> : <Button disabled>{t('appWelcome.go')}</Button>}</div>
       <section aria-labelledby="app-welcome-settings-h">

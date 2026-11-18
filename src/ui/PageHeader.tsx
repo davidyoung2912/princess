@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentType } from 'react'
+import { useRef, useState, type ComponentType, Fragment } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { canGoBack } from '../routes/trail'
 import { th, t } from '../i18n'
@@ -37,7 +37,7 @@ export function PageHeader(words: Words) {
           <h1 className="page-header__title">{title}</h1>
           {words.art && <span className="page-header__art calm-hide"><StanleyPose pose={words.art.pose} head={words.art.head} size={76} /></span>}
         </div>
-        {subtext && <p className="page-header__subtext">{subtext}</p>}
+        {subtext && <p className="page-header__subtext">{subtext.split('\n').map((line, i) => (i === 0 ? line : <Fragment key={i}><br />{line}</Fragment>))}</p>}
         {words.back && (
           <button type="button" className="page-header__back no-print" onClick={() => (canGoBack() ? navigate(-1) : navigate('/'))}>
             <ArrowLeft aria-hidden="true" />

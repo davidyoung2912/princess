@@ -4,6 +4,7 @@
 .ai-msg { padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); max-width: 40rem; }
 .ai-msg--user { justify-self: end; border-color: var(--primary); }
 .ai-msg__who { margin: 0 0 var(--space-1); font-weight: 700; font-size: var(--fs-caption); }
+.ai-msg__who .conv__avatar--small { display: inline-grid; vertical-align: middle; margin-inline-end: var(--space-2); }
 .ai-msg__text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ai-msg__cites { margin: var(--space-2) 0 0; font-size: var(--fs-caption); }
 

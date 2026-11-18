@@ -1,6 +1,6 @@
 import { Suspense, useMemo, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties } from 'react'
-import logo from '../assets/princess.webp'
+import { MyAvatarLink } from './MyAvatarLink'
 import stanley from '../assets/stanley-small.png'
 import { artUrl } from '../art/urls'
 import { Link, Navigate, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router'
@@ -229,16 +229,12 @@ export function Shell() {
             <Help aria-hidden="true" />
             <span>{th('help.button')}</span>
           </button>
-          <Link to="/account" className="topbar__logo" aria-label={t('account.logo')}>
-            <img src={logo} alt="" width="512" height="512" />
-          </Link>
+          <MyAvatarLink className="topbar__logo" />
         </header>
         <TestBar menu={<PhoneMenu chatCount={chatCount} stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
       </div>
       <nav className="tabs no-print" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
-        <Link to="/account" className="tabs__logo" aria-label={t('account.logo')}>
-          <img src={logo} alt="" width="512" height="512" />
-        </Link>
+        <MyAvatarLink className="tabs__logo" />
         {tabs.map((tab) => {
           const Icon = TAB_ICONS[tab.key] ?? FALLBACK_ICON
           const active = activeKey === tab.key

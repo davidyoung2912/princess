@@ -5,6 +5,7 @@ import { MAX_MESSAGE } from '../../ai/guard'
 import { AWAY_CHIPS } from '../../ai/stanleyAway'
 import { LIBRARY, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import { followUps } from '../../ai/stanleyFollow'
+import { MyChatAvatar } from '../onboard/ChatLooks'
 import { StanleyReply } from './StanleyReply'
 import { HandoffCard } from './HandoffCard'
 import { HandoffCases } from './HandoffCases'
@@ -82,7 +83,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
           <ol className="ai-log stanley__log" role="log" aria-live="polite" aria-label={t('stanley.log')}>
             {messages.map((m) => (
               <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
-                <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
+                <p className="ai-msg__who">{m.role === 'user' ? <MyChatAvatar small /> : <img className="chat-msg__stanley" src={stanley} alt="" width={28} height={28} />}{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
                 {m.role === 'user' ? <p className="ai-msg__text">{m.text}</p> : <StanleyReply m={m} text={reveal?.id === m.id ? reveal.steps[reveal.i] : undefined} onNavigate={onClose} />}
                 {m.id === lastAnswer?.id && !busy && follow.length > 0 && (
                   <FollowChips items={follow} onPick={pick} />
