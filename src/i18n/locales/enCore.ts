@@ -10768,7 +10768,7 @@ export const enCore = {
   'appWelcome.eyebrow': 'Welcome',
   'appWelcome.subtext': 'A warm welcome, and a minute to make the app yours.',
   'appWelcome.title': 'Welcome aboard Princess',
-  'appWelcome.h.hello': 'We are so glad you are here',
+  'appWelcome.h.hello': 'We Are So Glad You Are Here',
   'appWelcome.hello': 'This is your home for the whole journey: dreaming, booking, getting ready, life on board and the memories after. Everything is here when you want it, and nothing is rushed.',
   'appWelcome.h.settings': 'Make it comfortable',
   'appWelcome.settings.intro': 'Choose what is easiest to read and look at. Each choice takes effect at once, and you can change any of them later in Settings.',

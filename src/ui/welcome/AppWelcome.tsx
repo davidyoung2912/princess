@@ -4,6 +4,7 @@ import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { AvatarPicker } from '../AvatarPicker'
 import { DisplaySettings } from '../DisplaySettings'
+import { StanleyPose } from '../StanleyPose'
 
 /** Where "Continue" goes: the screen the guest was opening (Stanley's introduction, then the stage welcome, take over from there), otherwise Home. */
 const back = (from: unknown): string => (typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && !from.startsWith('/welcome') ? from : '/')
@@ -14,6 +15,7 @@ const back = (from: unknown): string => (typeof from === 'string' && from.starts
  */
 export function AppWelcome() {
   const { state } = useLocation()
+  const to = back((state as { from?: unknown } | null)?.from)
   return (
     <div className="page welcome app-welcome">
       <header className="welcome__head">
@@ -21,22 +23,24 @@ export function AppWelcome() {
         <h2 className="welcome__title">{th('appWelcome.title')}</h2>
       </header>
       <Card hero labelledBy="app-welcome-hello-h">
-        <h2 id="app-welcome-hello-h">{th('appWelcome.h.hello')}</h2>
+        <div className="stanley-intro__hero"><StanleyPose pose="wave" size={180} /></div>
+        <h2 id="app-welcome-hello-h">{t('appWelcome.h.hello')}</h2>
         <p>{t('appWelcome.hello')}</p>
       </Card>
-      <section aria-labelledby="app-welcome-settings-h">
-        <h2 id="app-welcome-settings-h">{th('appWelcome.h.settings')}</h2>
-        <p>{t('appWelcome.settings.intro')}</p>
-        <DisplaySettings />
-      </section>
       <Card labelledBy="app-welcome-avatar-h">
         <h2 id="app-welcome-avatar-h">{th('avatar.title')}</h2>
         <p>{t('avatar.intro')}</p>
         <AvatarPicker />
         <p className="muted">{t('avatar.skip')}</p>
       </Card>
+      <div className="button-row"><LinkButton to={to} replace>{t('appWelcome.go')}</LinkButton></div>
+      <section aria-labelledby="app-welcome-settings-h">
+        <h2 id="app-welcome-settings-h">{th('appWelcome.h.settings')}</h2>
+        <p>{t('appWelcome.settings.intro')}</p>
+        <DisplaySettings />
+      </section>
       <p className="muted">{t('appWelcome.next')}</p>
-      <div className="button-row"><LinkButton to={back((state as { from?: unknown } | null)?.from)} replace>{t('appWelcome.go')}</LinkButton></div>
+      <div className="button-row"><LinkButton to={to} replace>{t('appWelcome.go')}</LinkButton></div>
     </div>
   )
 }
