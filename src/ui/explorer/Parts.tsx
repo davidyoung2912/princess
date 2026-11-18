@@ -18,7 +18,7 @@ import { EXPLORER_LEADS, REMINDER_DEFAULT } from '../../domain/notifications'
 import { StatusBadge } from '../StatusBadge'
 import { SendToChat } from '../onboard/SendToChat'
 import { TimeOfDayIcon } from '../TimeOfDay'
-import { CalendarClock, X } from '../icons'
+import { CalendarClock, CalendarPlus, CalendarX, X } from '../icons'
 import { DishSaveButton } from './DishSave'
 import { AvoidNote, DietLegend, DietMarks, DishFlags, FlagLegend } from './DietMarks'
 
@@ -90,7 +90,7 @@ export function EventRow({ event, now, plan, clash, compact, share }: { event: E
       </p>
       {clash && clash.length > 0 && !(plan?.planned) && <p className="exp-event__clash" role="note">{t('exp.event.clash', { title: clash[0].title })}</p>}
       {plan && !cancelled && (
-        <Button variant={plan.planned ? 'secondary' : 'primary'} disabled={plan.busy || (full && !plan.planned)} onClick={plan.onToggle}>
+        <Button variant={plan.planned ? 'secondary' : 'primary'} icon={plan.planned ? CalendarX : CalendarPlus} disabled={plan.busy || (full && !plan.planned)} onClick={plan.onToggle}>
           {plan.planned ? t('exp.plan.remove') : t('exp.plan.add')}<span className="visually-hidden"> {event.title}</span>
         </Button>
       )}
@@ -156,13 +156,15 @@ export function MenuPanel({ shipId, venueId, menus, diets, avoid = [], day, curr
   const suits = (name: string, contains: readonly string[]): boolean => !filtering || diets.every((d) => dishSuits({ name, contains: contains as Dish['contains'] }, d))
   const ask = diets.filter((d) => NEEDS_ASKING.includes(d))
   const flagsUsed = usedFlags(menus)
+  const hasMarks = menus.some((m) => m.courses.some((c) => c.dishes.some((d) => (d.marks?.length ?? 0) > 0)))
   return (
     <section aria-labelledby="exp-menu-h">
       <h2 id="exp-menu-h">{headingCase(t('exp.menu.title'))}</h2>
       {diets.length > 0 && <div className="chip-row"><Chip pressed={onlyMine} onToggle={() => setOnlyMine(!onlyMine)}>{t('exp.menu.suits')}</Chip></div>}
       {ask.length > 0 && <p className="muted">{t('exp.menu.ask')}</p>}
-      {menus.some((m) => m.courses.some((c) => c.dishes.some((d) => (d.marks?.length ?? 0) > 0))) && <><DietLegend /><p className="muted">{t('exp.diet.ask')}</p></>}
+      {hasMarks && <DietLegend />}
       {flagsUsed.length > 0 && <FlagLegend used={flagsUsed} />}
+      {(hasMarks || flagsUsed.length > 0) && <p className="muted">{t('exp.diet.ask')}</p>}
       {menus.map((m) => <MealCard key={`${m.meal}-${m.from}`} shipId={shipId} venueId={venueId} m={m} over={mealOver(m, day, currentDay, now)} suits={suits} avoid={avoid} />)}
     </section>
   )

@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import type { StringKey } from '../../../i18n'
 import { t } from '../../../i18n'
 import type { SpaView } from '../../../api/spaTypes'
@@ -35,7 +35,7 @@ export function SpaExplorerScreen() {
             <>
               <SpaBooking view={v} />
               <ReservationScope scope={scope} onChange={setScope} />
-              <SpaReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} scope={scope} />
+              <SpaReservations venues={data.venues} day={state.day} view={v} scope={scope} />
             </>
           )}
         </Saved>
@@ -62,7 +62,7 @@ export function SpaVenueScreen() {
       busy={({ state }) => appointmentSpans(view.data, state.day)}
       above={({ venue, explorerDay, state }) => {
         if (venue.venue.bookable !== 'spa' || !view.data) return null
-        return <SpaReservations venues={explorerDay?.venues ?? [venue]} day={state.day} venueId={venueId} view={view.data} reload={view.retry} />
+        return <SpaReservations venues={explorerDay?.venues ?? [venue]} day={state.day} venueId={venueId} view={view.data} />
       }}
     />
   )
@@ -76,7 +76,9 @@ function BookPage({ venueId }: { venueId?: string }) {
   const view = useSpaView()
   const data = useExplorerData('spa', state.day)
   const book = params.get('book') ?? 'new'
-  const back = `${venueId ? `${BASE}/${venueId}` : BASE}?day=${state.day}`
+  const from = (useLocation().state as { from?: unknown } | null)?.from
+  const origin = typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : null
+  const back = origin ?? `${venueId ? `${BASE}/${venueId}` : BASE}?day=${state.day}`
   const changing = book === 'new' ? undefined : view.data?.appointments.find((a) => a.id === book)
   return (
     <div className="page">
@@ -84,7 +86,7 @@ function BookPage({ venueId }: { venueId?: string }) {
         {(v) => (
           <SpaEditor
             view={v} day={state.day} venues={(data.data?.venues ?? []).filter((x) => x.venue.bookable === 'spa').map((x) => ({ id: x.venue.id, title: x.venue.title }))}
-            venueId={venueId} treatmentId={params.get('treatment') ?? undefined} appointment={changing} backTo={back} backLabel={t('route.spaExplorer')}
+            venueId={venueId} treatmentId={params.get('treatment') ?? undefined} appointment={changing} backTo={back} backLabel={origin ? t('route.reservations') : t('route.spaExplorer')}
             onClose={() => { void navigate(back) }} onDone={() => { view.retry() }}
           />
         )}

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { ExplorerDay } from '../../../api/explorerTypes'
 import type { SpaAppointment, SpaView } from '../../../api/spaTypes'
@@ -8,101 +7,93 @@ import { shortDate } from '../../../domain/explorer/presentation'
 import { formatMoney } from '../../../domain/money'
 import { dinnerDays } from '../../../domain/dining'
 import { spaBookingCard } from '../../../domain/explorer/bookingState'
-import { groupByDay, type ReservationScope } from '../../../domain/explorer/reservationsByDay'
+import type { ReservationScope } from '../../../domain/explorer/reservationsByDay'
 import { itinerary, PORTS } from '../../../domain/sailings'
-import { useAheadInput, useExplorerStage } from '../../../hooks/useExplorerStage'
-import { aheadOnly } from '../../../domain/explorer/finished'
+import { useExplorerStage } from '../../../hooks/useExplorerStage'
 import { lineWords } from '../lineWords'
-import { useAction } from '../../../hooks/useAction'
 import { useSailing } from '../../../hooks/useDemo'
 import { t, headingCase } from '../../../i18n'
-import { api } from '../../../runtime'
-import { Button } from '../../Button'
-import { CalendarCheck } from '../../icons'
-import { Dialog } from '../../Dialog'
-import { PlanError } from '../../plan/common'
-import { names } from '../../plan/people'
+import { Button, LinkButton } from '../../Button'
+import { CalendarCheck, CalendarDays } from '../../icons'
+import { StatusBadge } from '../../StatusBadge'
 import { SaveButton } from '../SaveButton'
-import { ReservationList, type ReservationItem } from '../Parts'
 
 interface Props {
   venues: ExplorerDay['venues']
   day: number
-  /** Only appointments at this venue (a venue's own page); all of the day's when absent. */
+  /** On a venue's own page: the treatments there, and a link to My reservations. */
   venueId?: string
   view: SpaView
-  reload: () => void
-  /** Where a venue's page is; absent on the venue's own page. */
-  basePath?: string
   /** This day (the default) or every day of the trip. */
   scope?: ReservationScope
 }
 
 const BASE = '/spa-explorer'
 
-/** The guest's spa appointments for the chosen day, with Change, Cancel and a button to book, wired to the spa service. On a venue's page it also lists the treatments there. */
-export function SpaReservations({ venues, day, venueId, view, reload, basePath, scope = 'day' }: Props) {
+/**
+ * Where the Spa Explorer stands on appointments: a short line about the chosen day (or a line for every day, with a Book a Treatment button where nothing is booked), a button to book and a link to
+ * My reservations, where the appointments are listed and changed or cancelled. On a venue's page it lists the treatments there to book or save.
+ */
+export function SpaReservations({ venues, day, venueId, view, scope = 'day' }: Props) {
   const sailing = useSailing()
   const { stage } = useExplorerStage()
-  const ahead = useAheadInput(day)
   const card = spaBookingCard(view, stage)
   const days = itinerary(sailing)
   const navigate = useNavigate()
-  // Booking and changing are their own page: `book=new` (with `treatment=<id>`) or `book=<appointment id>` on this screen's address (see SpaScreens).
-  const openEditor = (book: string, treatment?: string, on = day) => { void navigate(`${venueId ? `${BASE}/${venueId}` : BASE}?day=${on}&book=${encodeURIComponent(book)}${treatment ? `&treatment=${encodeURIComponent(treatment)}` : ''}`) }
-  const [cancelling, setCancelling] = useState<SpaAppointment | null>(null)
+  // Booking is its own page: `book=new` (with `treatment=<id>`) on this screen's address (see SpaScreens).
+  const openEditor = (treatment?: string, on = day) => { void navigate(`${venueId ? `${BASE}/${venueId}` : BASE}?day=${on}&book=new${treatment ? `&treatment=${encodeURIComponent(treatment)}` : ''}`) }
   const title = (id: string) => venues.find((v) => v.venue.id === id)?.venue.title ?? id
-  const whole = scope === 'trip' && !venueId
-  const all = view.appointments.filter((a) => (whole || a.day === day) && (!venueId || a.venueId === venueId)).sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
-  const { shown: mine, earlier } = whole ? { shown: all, earlier: 0 } : aheadOnly(all, ahead)
-  const item = (a: SpaAppointment): ReservationItem => ({
-    id: a.id, title: a.title, name: `${a.title}, ${formatTime(a.time)}`, to: basePath && !venueId ? `${basePath}/${a.venueId}?day=${a.day}` : undefined,
-    when: `${shortDate(days[a.day - 1]?.date ?? days[0].date)}, ${formatTime(a.time)}`, time: a.time,
-    facts: [title(a.venueId), t('spa.minutes', { n: a.minutes }), names(a.guests), t('spa.total', { amount: formatMoney(a.price) }), ...(a.note ? [a.note] : [])],
-  })
-  const items: ReservationItem[] = mine.map(item)
-  const readOnly = !view.canBook || stage === 'after'
-  const change = (id: string) => { const a = mine.find((x) => x.id === id); if (a) openEditor(a.id, undefined, a.day) }
-  const dialog = cancelling && <CancelDialog a={cancelling} hours={view.cancelFreeHours} onClose={() => setCancelling(null)} onDone={() => { setCancelling(null); reload() }} />
+  const line = (a: SpaAppointment) => `${a.title}, ${formatTime(a.time)}`
   const reason = !card.canReserve && (view.canBook || stage === 'after') ? <p className="muted">{lineWords(card.detail ?? card.headline)}</p> : null
-  if (whole) {
-    const booked = new Map(groupByDay(mine.map((a) => ({ ...a, date: days[a.day - 1]?.date ?? '', startAt: 0, endAt: 0 }))).map((g) => [g.day, g.items]))
-    const allDays = [...new Set([...dinnerDays(days.length), ...booked.keys()])].sort((a, b) => a - b)
+  const all = [...view.appointments].sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
+  const seeAll = <LinkButton to="/plan/reservations" variant="secondary" icon={CalendarDays}>{t('exp.res.seeAll')}</LinkButton>
+
+  if (scope === 'trip' && !venueId) {
+    const nights = [...new Set([...dinnerDays(days.length), ...all.map((a) => a.day)])].sort((a, b) => a - b)
     return (
       <section aria-labelledby="exp-trip-h">
-        <h2 id="exp-trip-h">{t('exp.trip.title')}</h2>
-        {allDays.map((n) => {
+        <h2 id="exp-trip-h">{headingCase(t('exp.trip.title'))}</h2>
+        {nights.map((n) => {
           const d = days[n - 1]
-          const here = (booked.get(n) ?? []).map(item)
           const heading = `${t('plan.day', { n })} · ${shortDate(d?.date ?? days[0].date)} · ${!d || d.port === 'sea' ? t('plan.atSea') : PORTS[d.port].name}`
+          const here = all.filter((a) => a.day === n)
           return (
             <div key={n} className="exp-trip__day">
+              <h3 id={`exp-trip-${n}`}>{heading}</h3>
               {here.length > 0 ? (
-                <ReservationList id={`exp-trip-${n}`} level={3} heading={heading} items={here} empty="" readOnly={readOnly} onChange={change} onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)} />
+                <p className="exp-trip__none"><StatusBadge kind="booked" label={t('exp.res.confirmed')} /> <span>{here.map((a) => `${line(a)} (${title(a.venueId)})`).join(' · ')}</span></p>
               ) : (
-                <>
-                  <h3 id={`exp-trip-${n}`}>{heading}</h3>
-                  <p className="exp-trip__none"><span className="muted">{t('exp.trip.none')}</span>{card.canReserve && <Button variant="secondary" icon={CalendarCheck} onClick={() => openEditor('new', undefined, n)}>{t('exp.trip.bookSpa')}<span className="visually-hidden"> {heading}</span></Button>}</p>
-                </>
+                <p className="exp-trip__none"><span className="muted">{t('exp.trip.none')}</span>{card.canReserve && <Button variant="secondary" icon={CalendarCheck} onClick={() => openEditor(undefined, n)}>{t('exp.trip.bookSpa')}<span className="visually-hidden"> {heading}</span></Button>}</p>
               )}
             </div>
           )
         })}
         {reason}
-        {dialog}
+        <p>{seeAll}</p>
       </section>
     )
   }
-  const here = venueId ? view.treatments.filter((x) => x.venueId === venueId) : []
+
+  if (!venueId) {
+    const mine = all.filter((a) => a.day === day)
+    return (
+      <section aria-labelledby="exp-res-h">
+        <h2 id="exp-res-h">{headingCase(t('spa.mine'))}</h2>
+        <p>{mine.length > 0 ? t('spa.summary', { count: mine.length, list: mine.map((a) => `${line(a)} (${title(a.venueId)})`).join(' · ') }) : t('spa.none')}</p>
+        <div className="button-row">
+          {card.canReserve && <Button icon={CalendarCheck} onClick={() => openEditor()}>{t('spa.new')}</Button>}
+          {seeAll}
+        </div>
+        {reason}
+      </section>
+    )
+  }
+
+  const here = view.treatments.filter((x) => x.venueId === venueId)
   return (
     <>
-      <ReservationList
-        heading={venueId ? t('spa.mineHere') : t('spa.mine')} items={items} empty={venueId ? t('spa.noneHere') : t('spa.none')} readOnly={readOnly}
-        onChange={change}
-        onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
-        action={card.canReserve ? <Button icon={CalendarCheck} onClick={() => openEditor('new')}>{t('spa.new')}</Button> : reason}
-      />
-      {earlier > 0 && <p className="muted">{t('exp.earlier', { count: earlier })}</p>}
+      <p className="button-row">{seeAll}</p>
+      {reason}
       {here.length > 0 && (
         <section aria-labelledby="spa-here-h">
           <h2 id="spa-here-h">{headingCase(t('spa.treatmentsHere'))}</h2>
@@ -113,7 +104,7 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
                 <p>{x.detail}</p>
                 <p className="muted">{t('spa.minutes', { n: x.minutes })} · {formatMoney(x.price)}{x.minAge ? ` · ${t('exp.venue.minAge', { age: x.minAge })}` : ''}</p>
                 <div className="button-row">
-                  {card.canReserve && <Button variant="secondary" icon={CalendarCheck} onClick={() => openEditor('new', x.id)}>{t('spa.bookThis')}<span className="visually-hidden"> {x.title}</span></Button>}
+                  {card.canReserve && <Button variant="secondary" icon={CalendarCheck} onClick={() => openEditor(x.id)}>{t('spa.bookThis')}<span className="visually-hidden"> {x.title}</span></Button>}
                   <SaveButton itemKey={treatmentKey(venues[0]?.venue.shipId ?? '', x.id)} title={x.title} />
                 </div>
               </li>
@@ -121,25 +112,6 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath, 
           </ul>
         </section>
       )}
-      {dialog}
     </>
-  )
-}
-
-/** Cancelling says first whether it is free or what the ship keeps. */
-function CancelDialog({ a, hours, onClose, onDone }: { a: SpaAppointment; hours: number; onClose: () => void; onDone: () => void }) {
-  const cancel = useAction(async () => { await api.plan.spa.cancel(a.id); onDone() })
-  const body = a.cancel.free
-    ? t('spa.cancelFree', { name: a.title, time: formatTime(a.time) })
-    : t('spa.cancelFee', { name: a.title, time: formatTime(a.time), hours, amount: formatMoney(a.cancel.fee) })
-  return (
-    <Dialog title={t('spa.cancelTitle')} onClose={onClose}>
-      <p>{body}</p>
-      <PlanError error={cancel.error} />
-      <div className="exp-actions">
-        <Button variant="danger" disabled={cancel.busy} onClick={() => void cancel.run()}>{t('spa.cancelYes')}</Button>
-        <Button variant="secondary" onClick={onClose}>{t('spa.cancelNo')}</Button>
-      </div>
-    </Dialog>
   )
 }

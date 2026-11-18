@@ -1,7 +1,7 @@
 import { carryOverVenue } from '../../../domain/explorer/shortlist'
 import { usePins } from '../../../hooks/usePins'
 import type { DiningView } from '../../../api/types'
-import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import type { StringKey } from '../../../i18n'
 import { zonedToEpoch } from '../../../domain/timezones'
 import { shipZoneOnDate } from '../../../domain/sailings'
@@ -12,7 +12,7 @@ import { diningBookingCard } from '../../../domain/explorer/bookingState'
 import { useExplorerStage } from '../../../hooks/useExplorerStage'
 import { BookingCard } from '../BookingCard'
 import { LinkButton } from '../../Button'
-import { CalendarCheck } from '../../icons'
+import { CalendarCheck, CalendarDays } from '../../icons'
 import { ReservationScope } from '../ReservationScope'
 import { useReservationScope } from '../../../hooks/useReservationScope'
 import { ExplorerPage } from '../ExplorerPage'
@@ -23,6 +23,9 @@ import { ReservationEditor } from './ReservationEditor'
 import { useExplorerData, useExplorerDay } from '../../../hooks/useExplorer'
 
 const BASE = '/dining-today'
+
+/** Where the guest started, when a page sent them to the editor (`state.from`): Back and Close lead there. Only an address inside the app counts. */
+const originOf = (state: unknown): string | null => { const from = (state as { from?: unknown } | null)?.from; return typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : null }
 
 const KINDS: Record<string, StringKey> = { main: 'exp.dining.kind.main', specialty: 'exp.dining.kind.specialty', casual: 'exp.dining.kind.casual', bar: 'exp.dining.kind.bar' }
 const kindLabels = (): Record<string, string> => Object.fromEntries(Object.entries(KINDS).map(([k, v]) => [k, t(v)]))
@@ -42,7 +45,7 @@ export function DiningExplorerScreen() {
             <>
               <DiningBooking view={v} />
               <ReservationScope scope={scope} onChange={setScope} />
-              <DiningReservations venues={data.venues} day={state.day} view={v} reload={view.retry} basePath={BASE} scope={scope} />
+              <DiningReservations venues={data.venues} day={state.day} view={v} scope={scope} />
             </>
           )}
         </Saved>
@@ -79,8 +82,11 @@ export function DiningVenueScreen() {
         const canReserve = diningBookingCard(view.data, stage).canReserve
         return (
           <>
-            <DiningReservations venues={explorerDay?.venues ?? [venue]} day={state.day} venueId={venueId} view={view.data} reload={view.retry} />
-            {canReserve && <p className="exp-reserve-cta"><LinkButton to={`${BASE}/${venueId}?day=${state.day}&reserve=new`} icon={CalendarCheck}>{t('exp.res.make')}<span className="visually-hidden"> {venue.venue.title}</span></LinkButton></p>}
+            <DiningReservations venues={explorerDay?.venues ?? [venue]} day={state.day} venueId={venueId} view={view.data} />
+            <p className="exp-reserve-cta button-row">
+              {canReserve && <LinkButton to={`${BASE}/${venueId}?day=${state.day}&reserve=new`} icon={CalendarCheck}>{t('exp.res.make')}<span className="visually-hidden"> {venue.venue.title}</span></LinkButton>}
+              <LinkButton to="/plan/reservations" variant="secondary" icon={CalendarDays}>{t('exp.res.seeAll')}</LinkButton>
+            </p>
           </>
         )
       }}
@@ -96,7 +102,8 @@ function ReservePage({ venueId }: { venueId?: string }) {
   const view = useDiningView()
   const data = useExplorerData('dining', state.day)
   const reserve = params.get('reserve') ?? 'new'
-  const back = `${venueId ? `${BASE}/${venueId}` : BASE}?day=${state.day}`
+  const origin = originOf(useLocation().state)
+  const back = origin ?? `${venueId ? `${BASE}/${venueId}` : BASE}?day=${state.day}`
   const moving = reserve === 'new' ? undefined : view.data?.reservations.find((r) => r.id === reserve)
   const pins = usePins()
   const tables = (data.data?.venues ?? []).filter((x) => x.venue.bookable === 'dining')
@@ -109,7 +116,7 @@ function ReservePage({ venueId }: { venueId?: string }) {
         {(v) => (
           <ReservationEditor
             view={v} day={state.day} venues={choices}
-            venueId={venueId} reservation={moving} backTo={back} backLabel={t('route.diningToday')}
+            venueId={venueId} reservation={moving} backTo={back} backLabel={origin ? t('route.reservations') : t('route.diningToday')}
             onClose={() => { void navigate(back) }} onDone={() => { view.retry() }}
           />
         )}
