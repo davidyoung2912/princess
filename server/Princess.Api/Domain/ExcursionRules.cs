@@ -111,6 +111,25 @@ public static class ExcursionRules
         return [.. clash];
     }
 
+    // ---- What Stanley can plan (G8) ----
+
+    /// <summary>A tour on offer as far as choosing one for today is concerned: the tour, how many days away its port day is, places left, and whether the timing is a problem.</summary>
+    public sealed record TodayOffer(Excursion Item, int DaysToTour, int Spots, string? Timing);
+
+    /// <summary>
+    /// The one tour Stanley would put in the cart for today's port: it must run today, fit between arrival and all aboard (<c>Timing</c> is none, which already allows the landing buffer),
+    /// and have a place left. Best rated first, then most reviewed, then by id so the choice is the same every time. There is nothing to plan when the guest already holds a tour today
+    /// (booked or in the cart), so Stanley never stacks a second tour on a day the guest has planned.
+    /// </summary>
+    public static Excursion? PickForToday(IEnumerable<TodayOffer> offers, IReadOnlyCollection<string> heldIds)
+    {
+        var today = offers.Where(o => o.DaysToTour == 0).ToList();
+        if (today.Any(o => heldIds.Contains(o.Item.Id))) return null;
+        return today.Where(o => o.Timing is null && o.Spots >= 1)
+            .OrderByDescending(o => o.Item.Rating).ThenByDescending(o => o.Item.Reviews).ThenBy(o => o.Item.Id, StringComparer.Ordinal)
+            .Select(o => o.Item).FirstOrDefault();
+    }
+
     public static TourRefund Refund(long paid, int daysToTour) => daysToTour >= FreeCancelDays ? new(0, paid, true) : new(paid, 0, false);
 
     public static int DaysToTour(DateOnly today, Timeline timeline, Excursion x) => DayOf(timeline, x).Date.DayNumber - today.DayNumber;

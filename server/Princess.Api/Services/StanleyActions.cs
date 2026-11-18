@@ -474,6 +474,23 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return new StanleyPreviewFacts("Draft your customs declaration from your ship purchases", lines, ["You"], null,
                     "Nothing is filed with any authority; the official form stays official. You can change or delete the draft on the declaration page, or ask me to take it back.", $"customs|{booking.Number}|{plan.GoodsUsd}");
             }
+            case StanleyActionKinds.ExcursionPlan:
+            {
+                var offer = await planService.ExcursionPlanAsync(user, booking.Number, ct) ?? throw ApiException.Conflict("nothing");
+                var x = offer.Item;
+                var me = WhoFor(user, booking, scope, "me");
+                var total = me.Sum(p => ExcursionRules.GuestPrice(x, p.Age));
+                var lines = new List<string>
+                {
+                    x.Name, x.Summary, $"{x.Hours:0.#} hours, starting {x.Start}. {x.Meeting}",
+                    $"Fits today: be back at the landing by {offer.BackBy}, before all aboard.",
+                    $"{offer.Spots} place{(offer.Spots == 1 ? "" : "s")} left. Rated {x.Rating:0.0} by {x.Reviews} guests.",
+                };
+                lines.AddRange(me.Select(p => $"{p.First}: {Money(ExcursionRules.GuestPrice(x, p.Age))}"));
+                lines.Add("This puts it in your cart for you only. Nothing is charged until you check out on the Excursions screen, and nobody else is added.");
+                return new StanleyPreviewFacts($"Plan today in port: add {x.Name} to your cart", lines, [.. me.Select(p => p.First)], total,
+                    $"Free to cancel until {ExcursionRules.FreeCancelDays} days before the port day, then no refund.", $"plan|{x.Id}|{string.Join(",", me.Select(p => p.Id))}|{total}");
+            }
             case StanleyActionKinds.DraftCase:
             {
                 var kind = intent.Arg("caseKind");
@@ -592,6 +609,13 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return new StanleyEffectResult(await checkin.PrefillApplyAsync(user, booking.Number, ct));
             case StanleyActionKinds.CustomsDraft:
                 return new StanleyEffectResult(await disembark.CustomsDraftApplyAsync(user, booking.Number, ct));
+            case StanleyActionKinds.ExcursionPlan:
+            {
+                var scope = await scopes.LoadAsync(user, booking.Number, write: true, ct);
+                var offer = await planService.ExcursionPlanAsync(user, booking.Number, ct) ?? throw ApiException.Conflict("nothing");
+                await planService.AddToCartAsync(user, booking.Number, offer.Item.Id, new CartRequest([.. WhoFor(user, booking, scope, "me").Select(p => p.Id)]), ct);
+                return new StanleyEffectResult(offer.Item.Id);
+            }
             case StanleyActionKinds.DraftCase:
             {
                 var view = await cases.OpenAsync(user, booking.Number, new OpenCaseRequest(intent.Arg("caseKind"), intent.Arg("summary"), intent.Arg("place"), null, 0), ct);
@@ -626,6 +650,8 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return (await checkin.PrefillPlanAsync(user, booking.Number, ct)).Count == 0;
             case StanleyActionKinds.CustomsDraft:
                 return await disembark.CustomsDraftPlanAsync(user, booking.Number, ct) is null;
+            case StanleyActionKinds.ExcursionPlan:
+                return await planService.ExcursionPlanAsync(user, booking.Number, ct) is null;
             default:
                 return (await cases.ListAsync(user, booking.Number, ct)).Cases.Any(c => c.Kind == intent.Arg("caseKind") && c.Summary == intent.Arg("summary") && c.CanWithdraw);
         }
@@ -645,6 +671,7 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 await requests.CancelAsync(user, booking.Number, Guid.Parse(effectRef), ct);
                 break;
             case StanleyActionKinds.AddExcursion:
+            case StanleyActionKinds.ExcursionPlan:
                 await planService.RemoveFromCartAsync(user, booking.Number, effectRef, ct);
                 break;
             case StanleyActionKinds.MoveDinner:

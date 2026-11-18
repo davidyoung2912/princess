@@ -193,6 +193,19 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     public async Task<ExcursionsViewDto> ExcursionsAsync(UserRecord actor, string? number, CancellationToken ct) =>
         await ExcursionsViewAsync(await LoadAsync(actor, number, false, ct), ct);
 
+    /// <summary>
+    /// The tour Stanley would put in the cart for today's port, or none: not an adult guest who can book, no tour that fits today, or a tour already booked or in the cart for today. Used to
+    /// preview, to offer the button and to check an unsure outcome.
+    /// </summary>
+    public async Task<ExcursionOfferDto?> ExcursionPlanAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var view = await ExcursionsViewAsync(await LoadAsync(actor, number, false, ct), ct);
+        if (!view.CanBook) return null;
+        var held = view.Booked.Where(b => b.Status == "booked").Select(b => b.ExcursionId).Concat(view.Cart.Select(l => l.ExcursionId)).ToList();
+        var pick = ExcursionRules.PickForToday(view.Offers.Select(o => new ExcursionRules.TodayOffer(o.Item, o.DaysToTour, o.Spots, o.Timing)), held);
+        return pick is null ? null : view.Offers.First(o => o.Item.Id == pick.Id);
+    }
+
     /// <summary>Checks one tour for a set of guests against what is booked or in the cart. Throws a conflict that names the problem.</summary>
     private async Task CheckTourAsync(Ctx c, Excursion x, List<Person> guests, IEnumerable<BookedTour> others, long? ignoreTourId, CancellationToken ct)
     {

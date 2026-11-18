@@ -59,6 +59,13 @@ describe('doItFor', () => {
     expect(doItFor({ ...open, state: 'done' }, 'chatty', 'home')).toBeNull()
     expect(doItFor({ ...open, doIt: 'pay_bill' as never }, 'chatty', 'home')).toBeNull()
   })
+  it('offers the excursion plan by the same level rules', () => {
+    const tour = task('port.excursion', { doIt: 'excursion_plan' })
+    expect(doItFor(tour, 'chatty', 'home')).toBe('excursion_plan')
+    expect(doItFor(tour, 'asked', 'home')).toBeNull()
+    expect(doItFor(tour, 'asked', 'asked')).toBe('excursion_plan')
+    expect(doItFor(tour, 'off', 'asked')).toBeNull()
+  })
   it('offers the customs draft by the same level rules', () => {
     const customs = task('disembark.customs', { doIt: 'customs_draft' })
     expect(doItFor(customs, 'helpful', 'home')).toBe('customs_draft')

@@ -35,7 +35,7 @@ describe('Do it for me: check-in', () => {
     const kinds = server('Domain/StanleyActions.cs')
     expect(kinds).toContain('CheckinPrefill = "checkin_prefill"')
     expect(kinds).not.toMatch(/OnDevice = \[[^\]]*CheckinPrefill/)
-    expect(GUIDE_DO_IT).toEqual(['checkin_prefill', 'customs_draft'])
+    expect(GUIDE_DO_IT).toEqual(['checkin_prefill', 'customs_draft', 'excursion_plan'])
     for (const k of ['guide.doIt', 'guide.doIt.aria', 'guide.doIt.failed', 'action.go.checkin', 'action.reason.nothing']) expect(k in en, k).toBe(true)
   })
 })
@@ -73,5 +73,40 @@ describe('Do it for me: customs draft', () => {
     expect(server('Domain/StanleyActions.cs')).not.toMatch(/OnDevice = \[[^\]]*CustomsDraft/)
     expect(server('Domain/GuideRules.cs')).toMatch(/"disembark\.customs"[^\n]*Agent: false, CanDraftCustoms: true/)
     expect('action.go.customs' in en).toBe(true)
+  })
+})
+
+describe('Do it for me: excursion plan', () => {
+  const rules = server('Domain/ExcursionRules.cs')
+  const pick = rules.slice(rules.indexOf('PickForToday('), rules.indexOf('public static TourRefund Refund('))
+  const plan = server('Services/PlanService.cs')
+  const effects = server('Services/StanleyActions.cs')
+
+  it('picks only a tour that runs today, fits all aboard and has a place, and never stacks a second tour on a planned day', () => {
+    expect(pick).toContain('o.DaysToTour == 0')
+    expect(pick).toContain('o.Timing is null')
+    expect(pick).toContain('o.Spots >= 1')
+    expect(pick).toContain('heldIds.Contains(o.Item.Id))) return null')
+  })
+
+  it('offers the plan only to an adult guest who can book, and never books or charges', () => {
+    const fn = plan.slice(plan.indexOf('ExcursionPlanAsync('), plan.indexOf('private async Task CheckTourAsync('))
+    expect(fn).toContain('view.CanBook')
+    expect(fn).not.toMatch(/CheckoutAsync|ChargeAsync/)
+  })
+
+  it('puts the tour in the cart for the guest alone, through the cart service, and undoes it by removing it', () => {
+    const apply = effects.slice(effects.indexOf('case StanleyActionKinds.ExcursionPlan:\n            {\n                var scope'))
+    expect(apply.slice(0, 600)).toContain('AddToCartAsync(')
+    expect(apply.slice(0, 600)).toContain('WhoFor(user, booking, scope, "me")')
+    expect(effects).toMatch(/case StanleyActionKinds\.AddExcursion:\s*case StanleyActionKinds\.ExcursionPlan:\s*await planService\.RemoveFromCartAsync/)
+    expect(effects).not.toMatch(/ExcursionPlan:[^]{0,700}CheckoutAsync/)
+  })
+
+  it('is a confirmed server action offered on the port excursion task only when there is something to plan', () => {
+    expect(server('Domain/StanleyActions.cs')).toContain('ExcursionPlan = "excursion_plan"')
+    expect(server('Domain/StanleyActions.cs')).not.toMatch(/OnDevice = \[[^\]]*ExcursionPlan/)
+    expect(server('Domain/GuideRules.cs')).toMatch(/"port\.excursion"[^\n]*Agent: false, CanPlanExcursion: true/)
+    expect('action.go.excursions' in en).toBe(true)
   })
 })

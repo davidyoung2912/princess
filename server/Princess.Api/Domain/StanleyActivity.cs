@@ -45,6 +45,7 @@ public static class StanleyActivityRules
         StanleyActionKinds.CreatePoll => "Delete the poll.",
         StanleyActionKinds.CheckinPrefill => "Clear what I filled in, while check-in is still open and not finished.",
         StanleyActionKinds.CustomsDraft => "Delete the draft, as long as you have not changed it since.",
+        StanleyActionKinds.ExcursionPlan => "Take the tour out of your cart. Nothing is charged until you check out.",
         StanleyActionKinds.ChangeSeating => "Put your old seating back.",
         StanleyActionKinds.PlanChange => "Undo it from your plan on the device where you made the change.",
         StanleyActionKinds.RemindMe => "Remove the reminder from your reminders.",
@@ -61,6 +62,7 @@ public static class StanleyActivityRules
         StanleyActionKinds.DraftCase => "Only what you chose to send. Nothing was added.",
         StanleyActionKinds.CheckinPrefill => "Your details and emergency contact as they were on file when you said yes.",
         StanleyActionKinds.CustomsDraft => "Your ship bill purchases as they stood when you said yes. Nothing was filed.",
+        StanleyActionKinds.ExcursionPlan => "Today's tours, places left and your all-aboard time as they stood when you said yes. Nothing was charged.",
         _ => "The price and availability shown to you, checked again when you said yes.",
     };
 

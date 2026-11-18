@@ -404,9 +404,9 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
       expect(server('StanleyTools.cs')).not.toMatch(/\bConfirmAsync\b|\bExecuteAsync\b|\bApplyAsync\b|\bInsertAsync\b|\bDeleteAsync\b/)
     })
 
-    it('the action kinds are the eleven named kinds (seven from phase 5, then polls, seating, the check-in prefill and the customs draft), so nothing outside the confirm flow can be requested', () => {
+    it('the action kinds are the twelve named kinds (seven from phase 5, then polls, seating, the check-in prefill, the customs draft and the excursion plan), so nothing outside the confirm flow can be requested', () => {
       const kinds = read('src/ai/stanleyAction.ts').match(/const KINDS[^=]*=\s*\[([^\]]+)\]/)?.[1] ?? ''
-      expect(kinds.split(',').map((k) => k.trim().replace(/'/g, '')).sort()).toEqual(['add_excursion', 'change_seating', 'checkin_prefill', 'create_poll', 'customs_draft', 'draft_case', 'move_dinner', 'order_item', 'plan_change', 'remind_me', 'reserve_dinner'])
+      expect(kinds.split(',').map((k) => k.trim().replace(/'/g, '')).sort()).toEqual(['add_excursion', 'change_seating', 'checkin_prefill', 'create_poll', 'customs_draft', 'draft_case', 'excursion_plan', 'move_dinner', 'order_item', 'plan_change', 'remind_me', 'reserve_dinner'])
     })
   })
 

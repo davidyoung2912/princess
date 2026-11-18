@@ -10,7 +10,7 @@ public sealed record GuideDraft(string Id, bool CategoryChosen);
 /// The confirmed trip. <c>Checklist</c> is the checklist by item id (the same facts the checklist screen shows); it is empty for a trip the guest cannot plan on (a linked agent booking).
 /// <c>CheckinState</c> is <c>notOpen</c>, <c>open</c>, <c>closed</c> or <c>done</c>.
 /// </summary>
-public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0, bool CanPrefill = false, bool CanDraftCustoms = false);
+public sealed record GuideTrip(string Number, DateOnly Departure, bool Agent, bool Paid, DateOnly FinalDue, bool DocumentsOk, string CheckinState, DateOnly CheckinOpens, bool MusterDone, IReadOnlyDictionary<string, GuideCheck> Checklist, int Guests = 0, int Ready = 0, int Children = 0, bool CanPrefill = false, bool CanDraftCustoms = false, bool CanPlanExcursion = false);
 
 /// <summary>What the guest has put aside: tasks they said are not for them (<c>Skipped</c>) and tasks they will do later (<c>Later</c>, by the day each returns). A task with a real deadline is never put aside.</summary>
 public sealed record GuideChoices(IReadOnlySet<string> Skipped, IReadOnlyDictionary<string, DateOnly> Later)
@@ -263,7 +263,7 @@ public static class GuideRules
                 return
                 [
                     new("port.leaveby", "/ship/port", 2, false, ByVisit),
-                    new("port.excursion", "/excursions-explorer", 10, false, ByVisit),
+                    new("port.excursion", "/excursions-explorer", 10, false, ByVisit, DoIt: t is { Agent: false, CanPlanExcursion: true } ? "excursion_plan" : null),
                     new("port.safe", "/ship/safe-ashore", 3, false, ByVisit, Optional: true),
                     new("port.late", "/home/delayed", 1, false, ByVisit, Optional: true),
                 ];
