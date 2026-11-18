@@ -168,8 +168,14 @@ section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-
 .chat-msg--stanley { border-inline-start: 4px solid var(--primary); }
 .chat-msg--lane-critical { border-inline-start-color: var(--danger); border-inline-start-width: 6px; }
 .chat-msg--spent { border-style: dashed; }
-.chat-needs { border: 2px solid var(--danger); border-radius: var(--radius, 8px); padding: var(--space-2); margin-block: var(--space-2); }
-.chat-needs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+.chat-needs { border: 2px solid var(--danger); border-radius: var(--radius-card); background: var(--surface, #fff); padding: var(--space-4); margin-block: var(--space-3); }
+.chat-needs__title { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); color: var(--danger); }
+.chat-needs__title svg { flex: none; width: 1.5rem; height: 1.5rem; }
+.chat-needs > p { margin: 0 0 var(--space-3); color: var(--text); }
+.chat-needs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.chat-needs li { display: grid; gap: var(--space-2); padding-top: var(--space-3); border-top: var(--border-width) solid var(--border); }
+.chat-needs__what { margin: 0; font-weight: 600; color: var(--text); }
+.chat-needs .button-row { margin: 0; }
 .conv__avatar { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--brand-tint); font-weight: 700; }
 .conv__body { flex: 1; min-width: 0; display: grid; gap: 0.125rem; }
 .conv__top { display: flex; justify-content: space-between; gap: var(--space-2); }
@@ -304,7 +310,8 @@ button.chat-quote { cursor: pointer; }
 .conv__avatar--small { width: 1.75rem; height: 1.75rem; font-size: 0.7rem; }
 .conv__avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 /* A thin blue ring around every chat picture, the person's and Stanley's alike. */
-.conv__avatar { border: 1px solid var(--primary); box-sizing: border-box; }
+.conv__avatar { border: 1px solid var(--primary); box-sizing: border-box; box-shadow: 0 2px 4px rgb(0 0 0 / 0.28); }
+.chat-msg__stanley { box-shadow: 0 2px 4px rgb(0 0 0 / 0.28); }
 .avatar-picker { display: grid; gap: var(--space-3); }
 .avatar-picker__reset { justify-self: start; }
 .avatar-picker__group { border: 0; padding: 0; margin: 0; }
@@ -782,3 +789,17 @@ button.chat-quote { cursor: pointer; }
 
 /* The reserve button on a restaurant's page, directly above its menu. */
 .exp-reserve-cta { margin: var(--space-4) 0; }
+
+/* A picture in a chat message that starts a message to that person when tapped: no button chrome. */
+.greet-face { display: inline-grid; padding: 0; margin: 0; margin-inline-end: var(--space-2); border: 0; border-radius: 50%; background: none; cursor: pointer; vertical-align: middle; font: inherit; }
+.greet-face :is(.conv__avatar, .chat-msg__stanley) { margin-inline-end: 0 !important; }
+.greet-face:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Every picture in a chat message (yours, other people's and Stanley's) tilts, grows and glows when hovered, or when its button has the focus. */
+.chat-msg__meta :is(.conv__avatar, .chat-msg__stanley), .ai-msg__who :is(.conv__avatar, .chat-msg__stanley) { transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease); }
+:is(.chat-msg__meta, .ai-msg__who) :is(.conv__avatar, .chat-msg__stanley):hover,
+:is(.chat-msg__meta, .ai-msg__who) .greet-face:is(:hover, :focus-visible) :is(.conv__avatar, .chat-msg__stanley) { transform: scale(1.12) rotate(-6deg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent), 0 0 12px color-mix(in srgb, var(--primary) 60%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+  :is(.chat-msg__meta, .ai-msg__who) :is(.conv__avatar, .chat-msg__stanley) { transition: none; }
+  :is(.chat-msg__meta, .ai-msg__who) :is(.conv__avatar, .chat-msg__stanley):hover, :is(.chat-msg__meta, .ai-msg__who) .greet-face:is(:hover, :focus-visible) :is(.conv__avatar, .chat-msg__stanley) { transform: none; }
+}
+:root[data-motion='reduced'] :is(.chat-msg__meta, .ai-msg__who) :is(.conv__avatar, .chat-msg__stanley):hover, :root[data-motion='reduced'] :is(.chat-msg__meta, .ai-msg__who) .greet-face:is(:hover, :focus-visible) :is(.conv__avatar, .chat-msg__stanley) { transform: none; }

@@ -415,3 +415,6 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .shell__main:has(.page--wide) > .guide-next-wrap { max-width: 90rem; }
 .guide-crumb-wrap { padding-block: 0; }
 .shell__main:has(.page--wide) > .guide-crumb-wrap { max-width: 90rem; }
+
+/* Stanley's tongue-in-cheek full name, set apart from the plain introduction above it. */
+.stanley-intro__full-name { font-style: italic; }

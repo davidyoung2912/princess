@@ -63,6 +63,7 @@ export function StanleyIntro() {
       <Card labelledBy="stanley-intro-who-h">
         <h2 id="stanley-intro-who-h" className="stanley-intro__card-title"><img className="stanley-intro__who-head" src={artUrl({ kind: 'head', id: 'stanley' })} alt="" width="64" height="64" decoding="async" />{th('stanleyIntro.h.who')}</h2>
         <p>{t('stanleyIntro.who')}</p>
+        <p className="stanley-intro__full-name">{t('stanleyIntro.fullName')}</p>
       </Card>
       <section aria-labelledby="stanley-intro-can-h" className="stanley-intro__cards">
         <h2 id="stanley-intro-can-h">{th('stanleyIntro.h.can')}</h2>

@@ -48,7 +48,7 @@ import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { OctagonAlert, TriangleAlert } from '../icons'
-import { Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, X, Footprints, type LucideIcon } from 'lucide-react'
+import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, X, Footprints, type LucideIcon } from 'lucide-react'
 
 /** A small icon for each quick reply; the words are its label. */
 const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
@@ -69,7 +69,8 @@ import { ChatSearch, SaveChat } from './ChatSearch'
 import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWrite, PolishDraft, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
 import { askBefore, showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
-import { ChatAvatar, MyChatAvatar } from './ChatLooks'
+import { ChatAvatar, GreetFace, MyChatAvatar } from './ChatLooks'
+import { subscribeGreeting, withGreeting } from '../../chat/greet'
 import { EmojiPicker } from './ChatEmoji'
 import { insertEmoji, wantsEmojiPicker } from '../../domain/chatEmoji'
 import { chatFeedback } from '../../domain/chatFeedback'
@@ -654,6 +655,16 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
   }
   const runUse = useLatest((draft: string) => putInBox(draft))
+  // Tapping someone else's picture: "Hey Name, " goes in an empty box, which scrolls into view and takes the focus.
+  const runGreet = useLatest((name: string) => {
+    const box = form.current?.querySelector('textarea')
+    if (!box) return
+    const next = withGreeting(text, name).slice(0, MAX_TEXT)
+    if (next !== text) { setText(next); setCaret(next.length) }
+    box.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+    requestAnimationFrame(() => { box.focus({ preventScroll: true }); box.setSelectionRange(next.length, next.length) })
+  })
+  useEffect(() => subscribeGreeting(runGreet), [runGreet])
   // Photos attached to the draft go out together with its words when the guest presses Send.
   const sendDraftPhotos = useAction(async () => {
     const [first, ...more] = draftPhotos
@@ -908,7 +919,7 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
     const asked = item.kind === 'question'
     return (
       <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg chat-msg--answer'}>
-        <p className="chat-msg__meta">{asked ? <MyChatAvatar small /> : <img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} />}<strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.reply')}</strong> <span className="muted">{shipTime(item.at)}</span></p>
+        <p className="chat-msg__meta">{asked ? <MyChatAvatar small /> : <GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace>}<strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.reply')}</strong> <span className="muted">{shipTime(item.at)}</span></p>
         {asked ? <p>{item.text}</p> : <StanleyReply m={item.turn} />}
       </li>
     )
@@ -927,12 +938,13 @@ function NeedsYouStrip({ messages, ackBusy, onAck }: { messages: ChatMessage[]; 
   if (waiting.length === 0) return null
   return (
     <section className="chat-needs" aria-labelledby="needs-h">
-      <h3 id="needs-h">{headingCase(t('stanley.notice.needsTitle'))}</h3>
-      <p className="muted">{t('stanley.notice.needsBody')}</p>
+      <h3 id="needs-h" className="chat-needs__title"><BellRing aria-hidden="true" strokeWidth={2.5} />{headingCase(t('stanley.notice.needsTitle'))}</h3>
+      <p>{t('stanley.notice.needsBody')}</p>
       <ul>
         {waiting.map((m) => (
           <li key={m.id}>
-            <span>{noticeHeadline(m.text)}</span> <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>
+            <p className="chat-needs__what">{noticeHeadline(m.text)}</p>
+            <div className="button-row"><Button icon={ThumbsUp} disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button></div>
           </li>
         ))}
       </ul>
@@ -953,9 +965,19 @@ function AskStanley() {
   const [text, setText] = useState('')
   const { submit, busy, problem, cooldown } = useStanleyAsk()
   const ask = questionFrom(text)
+  const form = useRef<HTMLFormElement>(null)
+  const greet = useLatest((name: string) => {
+    const box = form.current?.querySelector('textarea')
+    if (!box) return
+    const next = withGreeting(text, name)
+    if (next !== text) setText(next)
+    box.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+    requestAnimationFrame(() => { box.focus({ preventScroll: true }); box.setSelectionRange(next.length, next.length) })
+  })
+  useEffect(() => subscribeGreeting(greet), [greet])
   return (
     <div className="composer composer--ask">
-      <form className="composer composer--chat" onSubmit={(e) => { e.preventDefault(); if (ask) void submit(ask, () => setText('')) }}>
+      <form ref={form} className="composer composer--chat" onSubmit={(e) => { e.preventDefault(); if (ask) void submit(ask, () => setText('')) }}>
         <TextArea clear={false} label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
         {problem && <p role="alert" className="field__error">{problem}</p>}
         {cooldown > 0 && <p role="status" className="muted">{t('stanley.cooldown', { seconds: cooldown })}</p>}
@@ -1023,7 +1045,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
   return (
     <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}${m.acked === true ? ' chat-msg--seen' : ''}`}>
       {m.acked !== true && <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>}
-      <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+      <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
       <p><strong>{noticeHeadline(m.text)}</strong></p>
       {body && <p>{body}</p>}
       {state !== 'active' && <p className="muted">{t(state === 'superseded' ? (n.lane === 'suggestion' ? 'stanley.moment.putAway' : 'stanley.notice.superseded') : 'stanley.notice.expired')}</p>}
@@ -1044,7 +1066,7 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     if (!n) {
       return (
         <li className="chat-msg chat-msg--stanley">
-          <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+          <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
           <p>{m.text}</p>
           {ask && <GroupStanleyPills question={ask} />}
         </li>
@@ -1082,7 +1104,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
     <li id={`msg-${m.id}`} tabIndex={-1} {...press} className={['chat-msg', own && 'chat-msg--mine', m.mentionsYou && 'chat-msg--mention', m.pinned && 'chat-msg--pinned', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
       {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} onJump={onJump} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
-      <p className="chat-msg__meta">{own ? <MyChatAvatar small /> : <ChatAvatar avatar={m.avatar} name={m.fromName ?? ''} small />}<strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
+      <p className="chat-msg__meta">{own ? <MyChatAvatar small /> : <GreetFace name={m.fromName ?? ''}><ChatAvatar avatar={m.avatar} name={m.fromName ?? ''} small /></GreetFace>}<strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
       {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} held={held} onHold={onHold} />
         : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}

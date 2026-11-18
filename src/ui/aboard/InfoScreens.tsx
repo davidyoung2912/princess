@@ -140,7 +140,6 @@ export function SearchScreen() {
           <p><button type="button" className="link-button" onClick={forget}>{t('search.clearRecent')}</button></p>
         </section>
       )}
-      {enough && <SearchAnswers query={query} />}
       {cards.map((c) => (
         <Card key={c.id} labelledBy={`answer-${c.id}`}>
           <p id={`answer-${c.id}`}><strong>{c.id === 'wifi' ? (c.value ? t('search.answer.wifi', { value: c.value }) : t('search.answer.wifiNoPrice')) : c.id === 'dinner' ? (c.value ? t('search.answer.dinner', { value: c.value }) : t('search.answer.dinnerNone')) : t('search.answer.late')}</strong></p>
@@ -161,6 +160,7 @@ export function SearchScreen() {
         })}
       </ul>
       {enough && hits.length > 0 && <p className="muted">{t('search.source.ship', { time: asOf })}</p>}
+      {enough && <SearchAnswers query={query} />}
     </div>
   )
 }

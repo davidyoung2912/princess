@@ -27,3 +27,13 @@ describe('searching written answers', () => {
     expect(searchAnswers('zzz qqq', docs)).toEqual([])
   })
 })
+
+describe('search answers for one page', () => {
+  it('includes Stanley\'s per-page answers, each tied to a real screen', async () => {
+    const { pageQaEntries } = await import('../ai/stanleyLibrary')
+    const { SCREEN_BY_ID } = await import('../routes/screens')
+    const entries = pageQaEntries()
+    expect(entries.length).toBeGreaterThan(0)
+    expect(entries.filter((e) => e.screens[0] && !e.screens[0].startsWith('tab.') && !SCREEN_BY_ID.has(e.screens[0])).map((e) => e.id)).toEqual([])
+  })
+})

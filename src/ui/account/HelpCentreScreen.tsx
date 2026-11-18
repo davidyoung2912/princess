@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { LifeBuoy } from 'lucide-react'
 import { searchFaqs } from '../../domain/help'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { t } from '../../i18n'
@@ -32,7 +33,7 @@ export function HelpCentreScreen() {
           {results.map((f) => (
             <li key={f.id}>
               <details>
-                <summary>{f.question}</summary>
+                <summary><LifeBuoy className="faq-list__icon" size={20} aria-hidden="true" /><span>{f.question}</span></summary>
                 <p>{f.answer}</p>
                 {f.link && <p><Link to={f.link.to}>{f.link.label}</Link></p>}
               </details>

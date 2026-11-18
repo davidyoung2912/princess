@@ -118,3 +118,10 @@
 .search-results a { padding-inline-end: 0; }
 .search-results li { padding-bottom: var(--space-3); }
 .search-results .screen-list__subtext strong { color: var(--text); }
+
+/* Answers under the results: the icon sits apart from the question, and a page-specific answer says which page it was written for. */
+.search-answers { margin-top: var(--space-5); }
+.faq-list summary { align-items: flex-start; gap: var(--space-1); }
+.faq-list__icon, .search-answers .search-answers__icon { flex: none; margin-top: 0.1rem; color: var(--trip); }
+.search-answers .search-answers__icon { flex: none; margin-top: 0.1rem; margin-inline-end: 0; color: var(--trip); }
+.search-answers__page { font-weight: 400; color: var(--text-muted); }
