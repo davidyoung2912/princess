@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from 'react'
 import { getContext, subscribeContext } from '../account/context'
 import { t, th } from '../i18n'
+import { resetTour } from '../settings/tour'
 import { resetTips } from '../settings/tips'
 import { resetSeen } from '../settings/stanleySeen'
 import { resetWelcomes } from '../stageWelcome/store'
@@ -12,6 +13,7 @@ import { Button } from './Button'
 export function TipsSettings() {
   const [done, setDone] = useState(false)
   const [welcomeDone, setWelcomeDone] = useState(false)
+  const [tourDone, setTourDone] = useState(false)
   const personId = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.id ?? null
   return (
     <>
@@ -20,6 +22,12 @@ export function TipsSettings() {
         <p>{t('settings.tips.intro')}</p>
         <Button variant="secondary" onClick={() => { resetTips(); resetSeen(); setDone(true) }}>{t('settings.tips.reset')}</Button>
         {done && <p role="status">{t('settings.tips.done')}</p>}
+      </section>
+      <section aria-labelledby="tour-settings-h" className="settings-tips">
+        <h2 id="tour-settings-h">{th('settings.tour.title')}</h2>
+        <p>{t('settings.tour.intro')}</p>
+        <Button variant="secondary" onClick={() => { resetTour(); setTourDone(true) }}>{t('settings.tour.reset')}</Button>
+        {tourDone && <p role="status">{t('settings.tour.done')}</p>}
       </section>
       <section aria-labelledby="welcome-settings-h" className="settings-tips">
         <h2 id="welcome-settings-h">{th('settings.welcome.title')}</h2>

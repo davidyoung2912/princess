@@ -48,6 +48,7 @@ import { pageArt } from './pageArt'
 import { DeepLinkNote } from './DeepLinkNote'
 import { useActiveDeck } from '../hooks/useShipCatalogue'
 import { TipCard } from './TipCard'
+import { Tour } from './Tour'
 import { StageOverviewCta } from './home/StageOverviewCta'
 import { GuideCrumb, WhatNext } from './GuideFlow'
 
@@ -233,7 +234,7 @@ export function Shell() {
         </header>
         <TestBar menu={<PhoneMenu chatCount={chatCount} stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
       </div>
-      <nav className="tabs no-print" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
+      <nav className="tabs no-print" data-tour="nav" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
         <MyAvatarLink className="tabs__logo" />
         {tabs.map((tab) => {
           const Icon = TAB_ICONS[tab.key] ?? FALLBACK_ICON
@@ -246,18 +247,18 @@ export function Shell() {
             </Link>
           )
         })}
-        <Link to="/ship/search" className="tabs__search">
+        <Link to="/ship/search" className="tabs__search" data-tour="search">
           <Search aria-hidden="true" />
           <span>{t('shell.search')}</span>
         </Link>
         {!stanleyOff && (
-          <button type="button" className="tabs__stanley" onClick={() => { dismissDot(); setStanleyOpen(true) }}>
+          <button type="button" className="tabs__stanley" data-tour="stanley" onClick={() => { dismissDot(); setStanleyOpen(true) }}>
             <img src={artUrl({ kind: 'head', id: 'sherlock' }) ?? stanley} alt="" width="192" height="192" />
             {dot && <span className="stanley-dot" aria-hidden="true" />}
             <span>{th('stanley.button')}{dot && <span className="visually-hidden">. {t('stanley.dot')}</span>}</span>
           </button>
         )}
-        <button type="button" className="tabs__help" onClick={() => setHelpOpen(true)}>
+        <button type="button" className="tabs__help" data-tour="help" onClick={() => setHelpOpen(true)}>
           <Help aria-hidden="true" />
           <span>{th('help.button')}</span>
         </button>
@@ -283,6 +284,7 @@ export function Shell() {
         {route && !route.public && <StanleyChips screenId={landing ? (landing.key === 'home' ? undefined : `tab.${landing.key}`) : screen?.id ?? 'none'} stage={stage} onAsk={() => setStanleyOpen(true)} />}
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
+      <Tour paused={appWelcomePage || stanleyIntroPage || !route || route.public || helpOpen || stanleyOpen || keysOpen} />
       {keysOpen && <ShortcutsSheet onClose={() => setKeysOpen(false)} />}
       {helpOpen && <HelpSheet screenId={screen?.id} onAskStanley={() => setStanleyOpen(true)} onClose={() => setHelpOpen(false)} />}
       {stanleyOpen && <StanleyDialog prefill={prefill} onClose={() => { setStanleyOpen(false); setPrefill('') }} />}

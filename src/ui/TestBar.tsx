@@ -96,7 +96,7 @@ function TestBarBody({ isDemo, menu }: { isDemo: boolean; menu?: ReactNode }) {
     </>
   )
   return (
-    <div className="testbar no-print" role="group" aria-label={t('testbar.label')}>
+    <div className="testbar no-print" data-tour="date" role="group" aria-label={t('testbar.label')}>
       <div className="testbar__item testbar__item--date">
         {isDemo
           ? <button type="button" className="testbar__main testbar__pick" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabelLong(now, position.zone)}`}>{dateWords}</button>

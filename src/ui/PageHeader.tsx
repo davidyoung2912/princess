@@ -26,7 +26,7 @@ export function PageHeader(words: Words) {
   const wiggled = useRef<string | null>(null)
   const [wiggling, setWiggling] = useState(false)
   return (
-    <div className="page page--head">
+    <div className="page page--head" data-tour="header">
       <header
         className={`page-header${words.art ? ' page-header--art' : ''}${wiggling ? ' page-header--wiggle' : ''}`}
         onMouseEnter={() => { if (wiggled.current !== key) { wiggled.current = key; setWiggling(true) } }}

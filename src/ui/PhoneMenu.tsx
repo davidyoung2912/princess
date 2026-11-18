@@ -17,7 +17,7 @@ export function PhoneMenu({ chatCount = 0, stanleyOff, dot, onStanley, onHelp }:
   const close = () => setOpen(false)
   return (
     <>
-      <button type="button" className="phone-menu__button no-print" aria-label={dot ? `${t('shell.menu')}. ${t('stanley.dot')}` : t('shell.menu')} aria-haspopup="dialog" onClick={() => setOpen(true)}>
+      <button type="button" className="phone-menu__button no-print" data-tour="menu" aria-label={dot ? `${t('shell.menu')}. ${t('stanley.dot')}` : t('shell.menu')} aria-haspopup="dialog" onClick={() => setOpen(true)}>
         <Menu aria-hidden="true" />
         {dot && <span className="stanley-dot" aria-hidden="true" />}
       </button>

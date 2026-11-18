@@ -22,7 +22,7 @@ export function TipCard({ id }: { id: string | null }) {
   const total = tipCount(id)
   return (
     <div className="page page--tip no-print">
-      <aside className="tip" aria-label={t('stanley.note.label')}>
+      <aside className="tip" data-tour="tip" aria-label={t('stanley.note.label')}>
         <img className="tip__icon" src={artUrl({ kind: 'head', id: 'sailor-salute' }) ?? stanley} alt="" width="192" height="192" />
         <p className="tip__text">
           {t(`tip.${n === 1 ? id : `${id}.${n}`}` as StringKey)}
