@@ -41,6 +41,15 @@ export function rangeOf(s: Pick<BrowseSailing, 'departure' | 'returnDate'>): str
   return `${formatDayMonth(s.departure)} to ${end}`
 }
 
+/**
+ * A sailing's catalogue title can run its details together ("Western Caribbean, 7 nights from Fort Lauderdale, 2026-11-08"). This splits it into the name a guest reads as the heading
+ * ("Western Caribbean") and where it sails from ("Fort Lauderdale"); a title that is already just a name comes back as it is, with no port.
+ */
+export function sailingHeading(title: string): { name: string; from: string | null } {
+  const m = /^(.*?),\s*\d+\s+nights?\s+from\s+([^,]+?)(?:,\s*\d{4}-\d{2}-\d{2})?$/i.exec(title.trim())
+  return m ? { name: m[1]!.trim(), from: m[2]!.trim() } : { name: title, from: null }
+}
+
 // ---- length ------------------------------------------------------------------
 
 export type NightsBand = 'short' | 'week' | 'long' | 'grand'

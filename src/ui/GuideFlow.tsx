@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router'
 import { flowAt } from '../guide/flow'
 import { moveOnWords, taskWords } from '../guide/words'
 import { useGuideView } from '../hooks/useGuideView'
-import { t, type StringKey } from '../i18n'
+import { t, th, type StringKey } from '../i18n'
 import { openedFrom } from '../routes/screens'
 import { LinkButton } from './Button'
 
@@ -53,12 +53,12 @@ export function WhatNext() {
   return (
     <div className="page guide-next-wrap">
       <section className="card guide-next" aria-labelledby="guide-next-h">
-        <h2 id="guide-next-h">{t('guide.next.title')}</h2>
+        <h2 id="guide-next-h">{th('guide.next.title')}</h2>
         <p className="muted">{left > 0 ? t('guide.next.left', { count: left, stage }) : t('guide.next.none', { stage })}</p>
         {left === 0 && <p className="muted">{t('guide.next.then', { moveOn: moveOnWords(view.moveOn) })}</p>}
-        <div className="button-row">
+        <div className="guide-next__actions">
           {next && <LinkButton to={next.to} state={openedFrom('blue', next.id)}>{t('guide.next.go', { task: taskWords(next).title })}</LinkButton>}
-          <LinkButton to="/" variant={next ? 'tertiary' : 'primary'} state={openedFrom('blue')}>{t('guide.next.home')}</LinkButton>
+          <LinkButton to="/" variant={next ? 'secondary' : 'primary'} state={openedFrom('blue')}>{t('guide.next.home')}</LinkButton>
         </div>
       </section>
       <div className="visually-hidden" role="status" aria-live="polite">{said}</div>

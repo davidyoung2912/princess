@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BellRing, HandHelping, MessageCircleQuestion, Sparkles } from 'lucide-react'
+import { BellRing, CircleX, HandHelping, MessageCircleQuestion, Sparkles } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
 import { STANLEY_LEVELS } from '../../settings/settings'
 import { levelOfProactivity, PROACTIVITY, proactivityOfLevel } from '../../ai/stanleyMemory'
@@ -61,7 +61,7 @@ export function StanleyIntro() {
         <h2 className="welcome__title">{headingCase(t('stanleyIntro.title'))}</h2>
       </header>
       <Card labelledBy="stanley-intro-who-h">
-        <h2 id="stanley-intro-who-h">{th('stanleyIntro.h.who')}</h2>
+        <h2 id="stanley-intro-who-h" className="stanley-intro__card-title"><img className="stanley-intro__who-head" src={artUrl({ kind: 'head', id: 'stanley' })} alt="" width="64" height="64" decoding="async" />{th('stanleyIntro.h.who')}</h2>
         <p>{t('stanleyIntro.who')}</p>
       </Card>
       <section aria-labelledby="stanley-intro-can-h" className="stanley-intro__cards">
@@ -78,7 +78,7 @@ export function StanleyIntro() {
         })}
       </section>
       <Card info labelledBy="stanley-intro-never-h">
-        <h2 id="stanley-intro-never-h">{th('stanleyIntro.never.title')}</h2>
+        <h2 id="stanley-intro-never-h" className="stanley-intro__card-title"><CircleX className="stanley-intro__never-icon" aria-hidden="true" strokeWidth={2.75} />{th('stanleyIntro.never.title')}</h2>
         <p>{t('stanleyIntro.never.body')}</p>
       </Card>
       <div className="button-row"><LinkButton to={to} replace>{t('stanleyIntro.go')}</LinkButton></div>

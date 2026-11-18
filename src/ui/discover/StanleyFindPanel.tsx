@@ -84,7 +84,7 @@ export function StanleyFindPanel() {
         <label htmlFor={textId}>{t('find8.label')}</label>
         <textarea id={textId} rows={3} maxLength={TEXT_MAX} value={text} placeholder={t('find8.example')} onChange={(e) => setText(e.target.value)} />
       </div>
-      <Button onClick={() => void read()} disabled={busy !== '' || text.trim() === ''}>{t('find8.read')}</Button>
+      <div className="button-row"><Button onClick={() => void read()} disabled={busy !== '' || text.trim() === ''}>{t('find8.read')}</Button></div>
       {failed && <p role="alert">{t('find8.failed')}</p>}
       {notice && <p role="status">{notice}</p>}
 
@@ -153,8 +153,10 @@ export function StanleyFindPanel() {
       <section aria-labelledby="find8-brief-h">
         <h3 id="find8-brief-h">{headingCase(t('find8.brief'))}</h3>
         <p>{t('find8.briefBody')}</p>
-        <Button onClick={() => void save()} disabled={busy !== '' || (text.trim() === '' && shortlist.length === 0)}>{t('find8.save')}</Button>{' '}
-        <Button variant="secondary" onClick={() => void share()} disabled={busy !== ''}>{t('find8.share')}</Button>
+        <div className="button-row">
+          <Button onClick={() => void save()} disabled={busy !== '' || (text.trim() === '' && shortlist.length === 0)}>{t('find8.save')}</Button>
+          <Button variant="secondary" onClick={() => void share()} disabled={busy !== ''}>{t('find8.share')}</Button>
+        </div>
         {offeredNeeds.length > 0 && (
           <label className="choice">
             <input type="checkbox" checked={keepNeeds} onChange={(e) => setKeepNeeds(e.target.checked)} />

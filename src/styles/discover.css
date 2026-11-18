@@ -119,3 +119,11 @@ textarea.field__input { resize: vertical; }
 
 .flag { display: inline-block; width: 2rem; height: auto; aspect-ratio: 320 / 220; vertical-align: -0.2em; margin-inline-end: var(--space-2); object-fit: contain; }
 .flag--lg { width: 3.5rem; vertical-align: -0.35em; margin-inline-end: var(--space-3); }
+
+/* The cruise-wish card: a wide text box, and the same space above every section so nothing sits hard against the button above it. */
+section[aria-labelledby='find8-h'] .field { max-width: none; margin-bottom: var(--space-3); }
+section[aria-labelledby='find8-h'] textarea { display: block; box-sizing: border-box; width: 100%; max-width: none; }
+section[aria-labelledby='find8-h'] > section { margin-top: var(--space-5); }
+section[aria-labelledby='find8-h'] > [role='status'], section[aria-labelledby='find8-h'] > [role='alert'] { margin-top: 0; }
+section[aria-labelledby='find8-h'] .button-row { gap: var(--space-3) var(--space-4); margin-bottom: var(--space-4); }
+section[aria-labelledby='find8-h'] section > .button-row:last-child { margin-bottom: 0; }

@@ -252,19 +252,24 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .stanley-intro__hero .stanley-pose { width: min(14rem, 60vw); height: auto; }
 /* Stanley's other faces curve round the waving pose, three each side, in the same round blue frame as the guest's own picture at the top of the screen. */
 .stanley-intro__stage { align-items: center; gap: clamp(0.75rem, 6vw, 2.5rem); }
-.stanley-intro__stage .stanley-pose { width: min(14rem, 36vw); }
+.stanley-intro__stage .stanley-pose { width: min(14rem, 36vw); translate: clamp(-0.45rem, -1vw, 0rem) 0; }  /* a little to the left, so his feet sit under the middle of the caption */
 .stanley-arc { --head: clamp(3.25rem, 10.5vw, 5.75rem); display: flex; flex-direction: column; gap: clamp(0.75rem, 3vw, 1.75rem); }
 .stanley-arc__head { box-sizing: border-box; display: block; width: var(--head); height: var(--head); padding: 0; overflow: hidden; cursor: pointer; border: 3px solid var(--primary); border-radius: 50%; background: var(--brand-tint); box-shadow: 0 2px 6px rgba(10, 20, 60, 0.3); }
 .stanley-arc__head img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: top; }
 .stanley-arc__caption { min-height: 5.5rem; max-width: 36rem; margin: 0 auto var(--space-3); text-align: center; }
 .stanley-arc__caption p { margin: 0; }
 .stanley-intro__card-title { display: flex; align-items: center; gap: var(--space-2); }
+.shell__main .page .stanley-intro__card-title::after { content: none; display: none; }  /* the picture stands in for the coloured underline */
+.shell__main .page .stanley-intro__card-title .stanley-intro__never-icon { width: 2rem; height: 2rem; color: var(--danger); }
+.stanley-intro__who-head { flex: none; box-sizing: border-box; width: 4rem; height: 4rem; border: 3px solid var(--primary); border-radius: 50%; background: var(--brand-tint); object-fit: cover; object-position: top; box-shadow: 0 2px 6px rgba(10, 20, 60, 0.3); }
 .stanley-intro__card-title .lucide { flex: none; width: 1.5rem; height: 1.5rem; }
-.stanley-arc--left { margin-inline-end: clamp(0rem, 3vw, 2.5rem); }  /* Stanley's raised hand reaches out on this side, so it needs more room */
+.stanley-arc--left { margin-inline-end: clamp(0rem, 3vw, 2.5rem); }
+.stanley-arc--right { margin-inline-start: clamp(0rem, 3vw, 2.5rem); }  /* the same room on this side, so Stanley sits in the middle of the page */  /* Stanley's raised hand reaches out on this side, so it needs more room */
 .stanley-arc--left .stanley-arc__head:nth-child(odd) { translate: calc(var(--head) * 0.15) 0; }
 .stanley-arc--right .stanley-arc__head:nth-child(odd) { translate: calc(var(--head) * -0.4) 0; }
 @media (max-width: 599px) {
   .stanley-arc--left { margin-inline-end: 0; }
+  .stanley-arc--right { margin-inline-start: 0; }
   .stanley-arc--left .stanley-arc__head:nth-child(odd) { translate: calc(var(--head) * 0.05) 0; }
   .stanley-arc--right .stanley-arc__head:nth-child(odd) { translate: calc(var(--head) * -0.15) 0; }
 }
@@ -393,6 +398,7 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .guide-next { margin-top: var(--space-4, 1rem); }
 .guide-next h2 { margin: 0 0 0.25rem; font-size: 1.125rem; }
 .guide-next p { margin: 0 0 0.5rem; }
+.guide-next__actions { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
 .screen-list__start { display: inline-block; margin-inline-start: var(--space-2, 0.5rem); padding: 0 0.5rem; border-radius: 999px; border: 1px solid currentColor; font-size: 0.75rem; font-weight: 600; }
 
 /* The what-is-next card sits in its own .page block so it lines up with the screen above it (same max width, centred, same gutters). */

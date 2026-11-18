@@ -2,7 +2,7 @@ import { Link, useSearchParams } from 'react-router'
 import { t, th, type StringKey } from '../../i18n'
 import { favouriteKey } from '../../domain/favourites'
 import {
-  BROWSE_SORTS, NIGHTS_BANDS, OCCASIONS, browseSailings, filterSailings, groupByMonth, legBadge, monthLabel, monthsOf, portOptions, portsOf, rangeOf, sortSailings,
+  BROWSE_SORTS, NIGHTS_BANDS, OCCASIONS, browseSailings, filterSailings, groupByMonth, legBadge, monthLabel, monthsOf, portOptions, portsOf, rangeOf, sailingHeading, sortSailings,
   type BrowseFilter, type BrowseSort, type NightsBand, type OccasionId,
 } from '../../domain/catalogueBrowse'
 import { portById } from '../../domain/sailings'
@@ -13,7 +13,7 @@ import { useCatalogue } from '../../hooks/useCatalogue'
 import { useFavourites } from '../../hooks/useFavourites'
 import { Card } from '../Card'
 import { Button, LinkButton } from '../Button'
-import { Bookmark, BookmarkCheck } from '../icons'
+import { Bookmark, BookmarkCheck, CalendarCheck } from '../icons'
 import { wantMatches } from '../../domain/rememberDelights'
 import { useMemory } from '../../hooks/useMemory'
 import { FromPriceBlock } from './parts'
@@ -87,7 +87,7 @@ export function SailingsScreen() {
           <input type="checkbox" checked={!!filter.bookable} onChange={(e) => set('bookable', e.target.checked ? '1' : '')} />
           {t('cat.bookableOnly')}
         </label>
-        <fieldset className="field">
+        <fieldset className="filters__view">
           <legend>{t('pcal.view')}</legend>
           {(['list', 'calendar'] as const).map((v) => (
             <label key={v} className="choice"><input type="radio" name="view" checked={(v === 'calendar') === calendar} onChange={() => set('view', v === 'calendar' ? 'calendar' : '')} />{t(`pcal.view.${v}` as StringKey)}</label>
@@ -110,13 +110,14 @@ export function SailingsScreen() {
               const saved = favourites.has(key)
               const Icon = saved ? BookmarkCheck : Bookmark
               const badge = legBadge(s, all)
+              const heading = sailingHeading(s.title)
               const hits = state.remember.wants.length > 0 ? wantMatches(state.remember.wants, portsOf(s).map((p) => portById(p)?.name ?? p)) : null
               return (
                 <li key={s.id}>
                   <Card>
-                    <h3 className="card__title"><Link to={`/home/sailings/${s.id}`}>{s.title}<span className="visually-hidden">, {rangeOf(s)}</span></Link></h3>
+                    <h3 className="card__title"><Link to={`/home/sailings/${s.id}`}>{heading.name}<span className="visually-hidden">, {rangeOf(s)}</span></Link></h3>
                     <p>{rangeOf(s)} · {t('cat.nightsCount', { count: s.nights })}</p>
-                    <p className="muted">{shipName(s.ship)}{s.region ? ` · ${regionName(s.region)}` : ''}</p>
+                    <p className="muted">{shipName(s.ship)}{s.region ? ` · ${regionName(s.region)}` : ''}{heading.from ? ` · ${t('cat.fromPort', { port: heading.from })}` : ''}</p>
                     <p>
                       {s.holiday && <span className="tag">{t('discover.holiday')}</span>}
                       {badge?.kind === 'joined' && <span className="tag">{t('cat.legs', { count: badge.legs })}</span>}
@@ -128,7 +129,7 @@ export function SailingsScreen() {
                       : <p className="muted">{t('dl9.want.off')}</p>)}
                     {offer ? <FromPriceBlock price={offer.from} /> : <CataloguePrice sailing={s} />}
                     {s.dataStatus === 'sample' && <DataStatusNote sailing={s} />}
-                    {s.bookingOpen && <LinkButton to={`/book?sailing=${s.id}`} variant="secondary">{t('discover.bookDate')}<span className="visually-hidden"> {rangeOf(s)}</span></LinkButton>}
+                    {s.bookingOpen && <LinkButton to={`/book?sailing=${s.id}`} variant="secondary" icon={CalendarCheck}>{t('discover.bookDate')}<span className="visually-hidden"> {rangeOf(s)}</span></LinkButton>}
                     <Button variant="tertiary" aria-pressed={saved} disabled={!favourites.ready} onClick={() => void favourites.toggle(key)}>
                       <Icon aria-hidden="true" />
                       <span>{t('discover.save')}<span className="visually-hidden"> {s.title}, {rangeOf(s)}</span></span>
