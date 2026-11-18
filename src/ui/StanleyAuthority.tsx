@@ -36,10 +36,10 @@ export function StanleyAuthority({ source, full = false }: { source: 'welcome' |
         <p>{t('stanleyAuthority.intro')}</p>
         <fieldset disabled={p.busy || perms.childLimited}>
           <legend>{t('stanleyAuthority.legend')}</legend>
-          {perms.levels.map((l) => (
+          {[...perms.levels].reverse().map((l) => (
             <label key={l.id} className="choice">
               <input type="radio" name={`stanley-authority-${source}`} checked={perms.level === l.id} disabled={!l.available && perms.level !== l.id} onChange={() => { void p.setLevel(l.id) }} />
-              <span><strong>{l.name}</strong>{l.id === 4 ? ` (${t('stanleyAuthority.recommended')})` : ''}. {l.line}{l.available ? '' : ` ${t('stanleyAuthority.later')}`}</span>
+              <span><strong>{l.name}</strong>{l.id === 4 ? ` (${t('stanleyAuthority.recommended')})` : ''}. {l.line}</span>
             </label>
           ))}
         </fieldset>
@@ -78,7 +78,6 @@ export function StanleyAuthority({ source, full = false }: { source: 'welcome' |
                       <span>{r.wording}</span>
                     </label>
                     <p className="muted">{t('stanleyAuthority.example', { example: r.example })} {r.never}</p>
-                    {r.state === 'soon' ? <p className="muted">{t('stanleyAuthority.later')}</p> : null}
                     {r.state === 'needsLevel' ? <p className="muted">{t('stanleyAuthority.needsLevel', { level: r.needsLevel })}</p> : null}
                   </li>
                 ))}

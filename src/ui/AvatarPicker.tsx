@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AVATAR_PAGE_SIZE, avatarImageUrl, avatarPage, avatarPageCount, avatarPageOf, groupAvatars, stepAvatarPage } from '../domain/chatAvatar'
 import { optimistic } from '../data/optimistic'
 import { useAction } from '../hooks/useAction'
@@ -12,13 +12,14 @@ import { Button } from './Button'
  * The picture a guest chooses for chat: about 50 cartoon avatars, shown four at a time with Previous and More buttons that wrap round (people, then sketches, robots and critters), each a labelled radio button with a tick on the chosen one.
  * The choice is saved as it is made (and follows the guest between devices). Used in the welcome and in Settings. Photos are never uploaded.
  */
-export function AvatarPicker() {
+export function AvatarPicker({ onCurrent }: { onCurrent?: (id: string | null) => void } = {}) {
   const catalogue = useMine(() => api.messages.avatars())
   const stored = useMine(() => api.messages.avatar())
   const [shown, setShown] = useState<string | null | undefined>(undefined)
   const [announce, setAnnounce] = useState('')
   const [at, setAt] = useState<number | null>(null)
   const current = shown === undefined ? (stored.data ?? null) : shown
+  useEffect(() => { onCurrent?.(current) }, [current, onCurrent])
   const choose = useAction(async (id: string | null) => {
     await optimistic(() => setShown(id), () => api.messages.setAvatar(id), () => setShown(undefined))
     stored.retry()

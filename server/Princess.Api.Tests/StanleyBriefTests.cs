@@ -96,11 +96,11 @@ public class StanleyBriefTests
     }
 
     [Fact]
-    public void TheBriefRowIsBuiltAndStillNeverPreTicked()
+    public void TheBriefRowIsBuiltAndOnByDefaultWhileTheGuestCanSwitchItOff()
     {
         var row = StanleyPermissionRules.Row("CL-04")!;
         Assert.True(row.Built);
-        Assert.False(StanleyPermissionRules.IsOn(new(), row, 2, false));
-        Assert.True(StanleyPermissionRules.IsOn(StanleyPermissionRules.WithRow(new(), "CL-04", true), row, 2, false));
+        Assert.True(StanleyPermissionRules.IsOn(new(), row, 2, false));
+        Assert.False(StanleyPermissionRules.IsOn(StanleyPermissionRules.WithRow(new(), "CL-04", false), row, 2, false));
     }
 }

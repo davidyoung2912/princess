@@ -67,16 +67,17 @@ public class StanleyPermissionTests
     {
         var doc = new StanleyPermissionDoc(4, new() { ["CL-01"] = true });
         var v = StanleyPermissionRules.View(doc, false, false, true, 0);
-        Assert.Equal("soon", v.Rows.Single(r => r.Id == "CL-01").State);
+        Assert.All(StanleyPermissionRules.Rows.Where(r => !r.Built), r => Assert.Equal("soon", v.Rows.Single(x => x.Id == r.Id).State));
         Assert.All(StanleyPermissionRules.Rows.Where(r => !r.Built), r => Assert.False(StanleyPermissionRules.IsOn(doc, r, 4, false)));
     }
 
     [Fact]
-    public void TheBriefIsNeverOnUntilTheGuestTurnsItOn()
+    public void TheBriefPermissionFollowsTheLevelLikeTheOtherRows()
     {
         var brief = StanleyPermissionRules.Row("CL-04")!;
-        Assert.True(brief.NeverPreTicked);
-        Assert.False(StanleyPermissionRules.IsOn(new(), brief, 2, false));
+        Assert.False(brief.NeverPreTicked);
+        Assert.True(StanleyPermissionRules.IsOn(new(), brief, 4, false));
+        Assert.False(StanleyPermissionRules.IsOn(new(), brief, 1, false));
     }
 
     [Fact]
@@ -270,7 +271,6 @@ public class StanleyPermissionTests
     public async Task ARowThatIsNotBuiltCannotBeSwitchedOnAndOneAboveTheLevelNeedsTheLevel()
     {
         var w = Build(authority: true);
-        Assert.Equal("notYet", (await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-01", Row(true), default))).Title);
         await Assert.ThrowsAsync<ApiException>(() => w.Svc.SetRowAsync(Me, "CL-77", Row(true), default));
         await w.Svc.SetRowAsync(Me, "CL-01", Row(false), default);
     }

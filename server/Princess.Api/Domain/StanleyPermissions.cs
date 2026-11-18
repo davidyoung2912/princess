@@ -39,7 +39,7 @@ public sealed record StanleyStepUpDto(bool Sent, string? Token = null);
 public static class StanleyPermissionRules
 {
     /// <summary>The version of the consent wording below. Change it whenever a row's wording or the level lines change, so the history shows what the guest agreed to.</summary>
-    public const int WordingVersion = 2;
+    public const int WordingVersion = 3;
     public const int DefaultLevel = 4;
     public const string StateKey = "stanleyPermissions", ConsentKey = "stanleyConsent", StepUpKey = "stanleyStepUp";
     public static readonly string[] Sources = ["welcome", "settings", "stage"];
@@ -48,17 +48,17 @@ public static class StanleyPermissionRules
     public static StanleyLevelDto[] Levels(bool authority) =>
     [
         new(1, "Just answer", "I answer when you ask, and nothing else.", true),
-        new(2, "Keep watch", "I check your trip, warn you about problems and tell you what changed. You decide everything.", true),
+        new(2, "Give you heads-ups", "I check your trip, tell you about problems and let you know what changed. You decide everything.", true),
         new(3, "Do the legwork", "When something happens, I line up the fix and ask for your yes.", authority),
         new(4, "Handle the small stuff", "For small free things you can undo, I just do them and tell you. I never pay or cancel.", authority),
     ];
 
     public static readonly IReadOnlyList<StanleyPermissionRow> Rows =
     [
-        new("CL-01", "watching", "Check my trip for problems", "Your passport expires within 6 months of the return date.", "Never blocks anything or says a document is official.", 2, false),
+        new("CL-01", "watching", "Check my trip for problems", "Your passport expires within 6 months of the return date.", "Never blocks anything or says a document is official.", 2, true),
         new("CL-02", "watching", "Tell me when something changes and what it means", "Your tour moved to 9:30. You now have 20 minutes less in port.", "Never changes your plans by itself. Safety alerts always reach you.", 2, true),
-        new("CL-03", "watching", "Watch my spending", "Your spending is running ahead of the budget you set.", "Never blocks a purchase and never pays for anything.", 2, true),
-        new("CL-04", "watching", "Morning brief and evening look-ahead (you choose the times)", "Today at a glance, and tomorrow's early start.", "Only at the times you choose.", 2, true, true),
+        new("CL-03", "watching", "Tell me how my spending is going", "Your spending is running ahead of the budget you set.", "Never blocks a purchase and never pays for anything.", 2, true),
+        new("CL-04", "watching", "Morning brief and evening look-ahead (you choose the times)", "Today at a glance, and tomorrow's early start.", "Only at the times you choose.", 2, true),
         new("CL-05", "preparing", "Line up a fix when a plan breaks, for my yes", "Your tour is cancelled. Here is the best replacement today.", "Never books it until you say yes.", 3, true),
         new("CL-06", "preparing", "Fill in forms and drafts for me to check", "Check-in is open. I filled it in; please check and send.", "Never sends or signs anything for you.", 3, true),
         new("CL-07", "preparing", "Tell me when a table or space opens, with a ready booking", "A table for four opened on Thursday at 7:30.", "Never holds a table or books it without your yes.", 3, true),
@@ -93,7 +93,7 @@ public static class StanleyPermissionRules
 
     /// <summary>
     /// Whether a row is on for this guest: its ability exists, no pause is in force, the level in force reaches it, and the guest has not switched it off. A row follows the level unless the guest changed it by hand;
-    /// CL-04 (briefs) is never on until the guest turns it on. This is the one check every unprompted act uses.
+    /// CL-04 (briefs) follows the level like the rest; a brief is still only sent once the guest has chosen its times. This is the one check every unprompted act uses.
     /// </summary>
     public static bool IsOn(StanleyPermissionDoc doc, StanleyPermissionRow row, int effectiveLevel, bool paused)
     {

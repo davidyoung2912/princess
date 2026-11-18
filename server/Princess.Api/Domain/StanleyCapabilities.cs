@@ -27,7 +27,7 @@ public static class StanleyCapabilityCatalogue
     [
         new(Answer, "I answer", "Ask me about your ship, the ports, your plans and your bill, in plain words."),
         new(Do, "I do things for you, with your OK", "I always show you first, and nothing happens until you say yes. You can undo most things."),
-        new(Watch, "I keep watch", "I tell you when something changes and what it means, and nudge you before a deadline."),
+        new(Watch, "I give you heads-ups", "I tell you when something changes and what it means, and remind you before a deadline."),
         new(Value, "I help you get more from your trip", "I find what you have already paid for and help you plan what you will enjoy."),
     ];
 

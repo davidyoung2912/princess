@@ -3175,7 +3175,7 @@ export const enLate = {
   'stanley.a.pg.M44.2': 'Yes, for two hours after I did it. Tap Undo on a line, or undo everything that is still free in one go. After that, the receipt says how to change it yourself.',
   'stanley.r.pg.M44.2': 'M35',
   'stanley.q.pg.M44.3': 'How do I stop Stanley doing something?',
-  'stanley.a.pg.M44.3': 'Each thing I watch has a Stop this button here, and Pause everything stops all I do on my own. Answers, notices and safety alerts carry on.',
+  'stanley.a.pg.M44.3': 'Each thing I look out for has a Stop this button here, and Pause everything stops all I do on my own. Answers, notices and safety alerts carry on.',
   'stanley.r.pg.M44.3': 'M35',
   'stanley.q.pg.M44.4': 'What does Stanley remember about me?',
   'stanley.a.pg.M44.4': 'Only preferences you told me or chose, each with the reason I have it. Tap Forget this to remove one, and I stop using it straight away.',

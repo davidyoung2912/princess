@@ -13,7 +13,7 @@ export function StanleySettings() {
       <p>{t('stanley.level.intro')}</p>
       <fieldset>
         <legend>{t('stanley.level.label')}</legend>
-        {PROACTIVITY.map((p) => (
+        {[...PROACTIVITY].reverse().map((p) => (
           <label key={p} className="choice">
             <input type="radio" name="stanley-level" checked={current === p} onChange={() => update({ stanleyLevel: levelOfProactivity(p) })} />
             <span>{t(`stanley.proactive.${p}` as StringKey)}</span>
