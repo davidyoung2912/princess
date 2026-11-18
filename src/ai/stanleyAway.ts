@@ -3,6 +3,9 @@
  * back. It never guesses: every answer is picked from what the app already holds for the port day, and anything else gets a plain "I can only help with
  * the port and getting back". The safety screen (`guard.ts`) runs before this, so an emergency never reaches it.
  */
+import type { Act } from './understand/lexicon'
+import { conceptsOf, understand } from './understand/understand'
+
 export type AwayTopic = 'back' | 'late' | 'taxi' | 'money' | 'say' | 'near' | 'safe' | 'help'
 
 export interface AwayFacts {
@@ -27,19 +30,27 @@ export interface AwayFacts {
   firstPhrase: { say: string; means: string } | null
 }
 
-const RULES: readonly { topic: AwayTopic; re: RegExp }[] = [
-  { topic: 'late', re: /\b(late|miss(ed|ing)?|left behind|too late|running out of time|not going to make|won'?t make|sailed|sailing without)\b/i },
-  { topic: 'taxi', re: /\b(taxi|cab|uber|driver|ride|bus|shuttle|transport)\b/i },
-  { topic: 'money', re: /\b(money|cash|price|prices|pay|paying|fare|cost|cheat|overcharg\w*|currency|tip)\b/i },
-  { topic: 'say', re: /\b(say|phrase|language|speak|word|words|translate|hello|thank)\b/i },
-  { topic: 'near', re: /\b(near|nearby|walk|walking|toilet|restroom|bathroom|sit|bench|lunch|eat|food|what (can|should) i (do|see)|where (can|should) i)\b/i },
-  { topic: 'safe', re: /\b(safe|safety|scam|scams|danger\w*|avoid|steal|theft|pickpocket\w*)\b/i },
-  { topic: 'back', re: /\b(back|return|time|when|how long|deadline|all aboard|gangway|tender|ship|leave|head)\b/i },
+/**
+ * What each away topic listens for, as concepts of the engine's own lexicon (`understand/lexicon.ts`), so Stanley has one vocabulary on and off the ship. Order matters: being late wins over everything else,
+ * then what the guest wants to do about getting around or paying, and the return time is the answer when nothing more specific was asked.
+ */
+const LISTEN: readonly { topic: AwayTopic; concepts: readonly string[]; acts?: readonly Act[] }[] = [
+  { topic: 'late', concepts: ['n.missedship'] },
+  { topic: 'taxi', concepts: ['n.taxi'] },
+  { topic: 'money', concepts: ['n.currency', 'n.price', 'n.tip', 'n.credit'], acts: ['PRICE'] },
+  { topic: 'say', concepts: ['n.language'] },
+  { topic: 'near', concepts: ['n.nearby', 'n.restaurant', 'n.meal', 'n.lunch', 'n.dinner', 'n.breakfast', 'n.coffee', 'n.drink', 'n.dessert', 'n.activity', 'n.shop', 'n.sun'] },
+  { topic: 'safe', concepts: ['n.scam'] },
+  { topic: 'back', concepts: ['n.allaboard', 'n.tender', 'n.embark', 'n.disembark', 'n.nextport', 'a.WHEN'] },
 ]
 
-/** The topic a question is about, or null when it is about none of them. Order matters: being late wins over everything else. */
+/** The topic a question is about, or null when it is about none of them. A problem or loss at the all-aboard time is being late. */
 export function awayTopic(text: string): AwayTopic | null {
-  return RULES.find((r) => r.re.test(text))?.topic ?? null
+  const concepts = new Set(conceptsOf(text))
+  const acts = new Set(understand(text, {}, (d) => d).acts)
+  const lateAtTheShip = concepts.has('n.allaboard') && (acts.has('PROBLEM') || acts.has('LOST'))
+  if (lateAtTheShip) return 'late'
+  return LISTEN.find((r) => r.concepts.some((c) => concepts.has(c)) || r.acts?.some((a) => acts.has(a)))?.topic ?? null
 }
 
 /** The topics offered as buttons, in the order a guest is likely to need them. */

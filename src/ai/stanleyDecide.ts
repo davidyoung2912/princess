@@ -1,6 +1,7 @@
 import { isMuster, screen, type Handoff } from './guard'
 import { matchQuestion, questionOf, type LibraryEntry } from './stanleyLibrary'
 import { isLiveOrPersonal, liveLibrary, mentionsRiskTopic, riskOf } from './stanleyLibrary/governance'
+import { matchByTopic } from './stanleyLibrary/byTopic'
 import { routeQuestion } from './stanleyRoute'
 import type { ShipFact } from '../domain/finishMore'
 import type { JourneyStage } from '../routes/hubs'
@@ -38,7 +39,7 @@ export function decideStanley(text: string, o: DecideOptions): StanleyDecision {
   const live = o.libraryOn === false ? [] : liveLibrary(o.now ?? Date.now())
   // The authored question itself (a tapped chip) is always answered by its own entry; a typed question that only resembles one is checked against the risk topics.
   const exact = live.find((e) => plain(questionOf(e)) === plain(text))
-  const matched = exact ?? matchQuestion(text, o.stage, live)
+  const matched = exact ?? matchQuestion(text, o.stage, live) ?? matchByTopic(text, o.stage, live)
   const entry = matched && matched !== exact && mentionsRiskTopic(text) && (riskOf(matched) !== 'high' || isLiveOrPersonal(text)) ? null : matched
   if (entry) return { kind: 'library', entry }
   return routeQuestion(text)

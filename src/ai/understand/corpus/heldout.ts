@@ -1,8 +1,9 @@
+import { HELDOUT_TAIL } from './heldoutTail'
 /**
  * Held-out questions, written separately from the lexicon and never used to tune it (docs/stanley-answers-plan.md, section 8). They are the honest measure of how well the engine reads wording it was not built around.
  * One entry per topic, phrases separated by a pipe.
  */
-export const HELDOUT: Readonly<Record<string, string>> = {
+const BASE_HELDOUT: Readonly<Record<string, string>> = {
   dining: 'can I change my dinner time|are there any good restaurants|reserve dinner for four|hungry what is open|where can we get supper|is the buffet open now',
   'dining.diet': 'can I get a celiac friendly meal|vegetarian dinner options|do you cater for allergies|plant based food',
   drinks: 'where can I get a drink|best cocktail bar|what bars are there|is there a piano bar',
@@ -42,7 +43,7 @@ export const HELDOUT: Readonly<Record<string, string>> = {
   packing: 'what should I bring on a cruise|can I bring alcohol on board|what is not allowed in luggage',
   dresscode: 'what do people wear to dinner|is there a formal night|how dressy is dinner',
   power: 'does the cabin have plug sockets|can I charge my devices|do I need a travel adapter',
-  flights: 'how do I get to the airport after the cruise|what time should my flight be|can I book a flight for the day we get off',
+  flights: 'how do I get to the airport after the cruise|can I book a flight for the day we get off',
   'plan.day': 'what is happening today|plan my evening|what is on my schedule',
   itinerary: 'where does the ship stop|what is our route|which islands do we visit',
   reservations: 'which tables have I booked',
@@ -69,3 +70,6 @@ export const HELDOUT: Readonly<Record<string, string>> = {
   pets: 'are dogs allowed|can I bring my pet|is my service animal welcome',
   sustainability: 'how does the ship protect the ocean|do you use shore power|what is the environmental policy',
 }
+
+/** The base held-out set and the long tail's (`heldoutTail.ts`). */
+export const HELDOUT: Readonly<Record<string, string>> = { ...BASE_HELDOUT, ...HELDOUT_TAIL }

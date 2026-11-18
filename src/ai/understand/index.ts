@@ -1,5 +1,8 @@
 /** The understanding engine, joined to the app's words (docs/stanley-answers-plan.md). Everything else in this folder is pure and has no idea what a locale is. */
-import { t, type StringKey } from '../../i18n'
+import { hasText, t, type StringKey } from '../../i18n'
+import { SCREEN_BY_ID } from '../../routes/screens'
+import { DESTINATIONS } from './destinations'
+import { SCREEN_SPECS } from './screenSpec'
 import { STAGE_ACTION, type JourneyStage } from '../../routes/hubs'
 import type { Pill } from './understand'
 import { compose, type Composed, type ReplyFacts, type Words } from './reply'
@@ -17,7 +20,15 @@ export { EMPTY_THREAD, choiceOf, previousOf, remember, type Choice, type Thread 
 export interface Where { stage?: JourneyStage; hasBooking?: boolean; screenId?: string; portDays?: Readonly<Record<string, number>>; previous?: Previous }
 
 /** The words on a pill. */
-export const pillLabel = (destination: string): string => t(`understand.pill.${destination}` as StringKey)
+const SCREEN_OF: ReadonlyMap<string, string> = new Map(SCREEN_SPECS.flatMap((x) => x.dests.split(' ').map((d) => d.split('=') as [string, string])))
+const NAME_OF: ReadonlyMap<string, string> = new Map(SCREEN_SPECS.map((x) => [x.id, x.name]))
+/** The words on a pill: its own, or for a long tail screen (`screenSpec.ts`) the screen's title. */
+export const pillLabel = (destination: string): string => {
+  const screen = SCREEN_OF.get(destination)
+  return !hasText(`understand.pill.${destination}`) && screen && DESTINATIONS[destination] ? t(SCREEN_BY_ID.get(screen)!.titleKey) : t(`understand.pill.${destination}` as StringKey)
+}
+/** What a topic is called in a sentence. */
+export const topicName = (id: string): string => (hasText(`understand.topic.${id}`) ? t(`understand.topic.${id}` as StringKey) : NAME_OF.get(id) ?? id)
 
 /** The words on the pill for a named thing. */
 export const entityLabel = (kind: EntityKind, name: string, variant: 'open' | 'tours'): string => t(`understand.entity.${variant === 'tours' ? 'tours' : kind}` as StringKey, { name })
@@ -31,7 +42,7 @@ export interface Asked { text: string; stage?: JourneyStage }
 const SEARCH_WORDS = 40
 
 const words = (asked: Asked): Words => ({
-  topic: (id) => t(`understand.topic.${id}` as StringKey),
+  topic: topicName,
   say: (act, topic) => t(`understand.say.${act}` as StringKey, { topic }),
   named: (name) => t('understand.named', { name }),
   clarify: (topics) => t('understand.clarify', { options: topics.length === 2 ? t('understand.clarify.two', { a: topics[0]!, b: topics[1]! }) : t('understand.clarify.three', { a: topics[0]!, b: topics[1]!, c: topics[2] ?? '' }) }),

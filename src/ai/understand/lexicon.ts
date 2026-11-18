@@ -3,6 +3,8 @@
  * people say them; the engine stems both sides, so "booking", "booked" and "books" need not all be listed. A phrase may be several words. A word may sit under more than one concept ("class").
  * `n.` is a thing, `q.` a qualifier (when, who) and `a.` what the guest wants to do (the acts at the end).
  */
+import { SCREEN_SPECS } from './screenSpec'
+
 export interface Concept { id: string; words: readonly string[] }
 
 const c = (id: string, words: string): Concept => ({ id, words: words.split(',').map((w) => w.trim()).filter(Boolean) })
@@ -10,7 +12,7 @@ const c = (id: string, words: string): Concept => ({ id, words: words.split(',')
 export const ACTS = ['LOST', 'PROBLEM', 'CANCEL', 'CHANGE', 'BOOK', 'ORDER', 'REMIND', 'PRICE', 'WHEN', 'FIND', 'ALLOWED', 'REQUIRE', 'COMPARE', 'RECOMMEND', 'STATUS', 'CONTACT', 'PLAN', 'LIST', 'WHAT_IS', 'HOW'] as const
 export type Act = (typeof ACTS)[number]
 
-export const CONCEPTS: readonly Concept[] = [
+const BASE_CONCEPTS: readonly Concept[] = [
   // ---- eating and drinking ----
   c('n.restaurant', 'restaurant, eatery, place to eat, places to eat, somewhere to eat, dining room, bistro, cafe, grill, steakhouse, trattoria, diner, specialty, specialty restaurant, fine dining, sit down, sit-down, where to eat, venue, venues'),
   c('n.dinner', 'dinner, supper, evening meal, dine, dining, main dining, dinner time, tonights dinner, eat out, formal dinner'),
@@ -81,14 +83,16 @@ export const CONCEPTS: readonly Concept[] = [
   c('n.excursion', 'excursion, excursions, tour, tours, shore excursion, shore excursions, shore trip, trip, trips, guided tour, sightseeing, snorkel, snorkeling, scuba, dive, diving, zipline, catamaran, kayak, beach day, beach, beaches, ruins, mayan, dolphin, swim with dolphins, bus tour, cave, jungle, hike, hiking, waterfall, rum tasting, tequila tasting, city tour, walking tour, boat tour, sightsee, what to do in port, things to do in port, port activities, private tour, tour guide, book a tour'),
   c('n.tender', 'tender, tenders, tender boat, tendering, tender ticket, tender port, anchor, anchored, shuttle boat'),
   c('n.allaboard', 'need to be back, be back, time to be back, all aboard, allaboard, back on the ship, back on board, last call, ship leaves, departure time, sail time, sailing time, what time do we leave, leave port, when does the ship leave, curfew, be back by, back by, get back to the ship, return to the ship'),
-  c('n.missedship', 'missed the ship, miss the ship, ship left, ship left without me, stranded, late back, cannot get back to the ship, running late, late for the ship, ship sailed'),
+  c('n.missedship', 'i am late, we are late, im late, going to be late, missed the ship, miss the ship, ship left, ship left without me, stranded, late back, cannot get back to the ship, running late, late for the ship, ship sailed'),
   c('n.currency', 'currency, exchange, exchange rate, cash, dollars, pesos, atm, us dollars, euro, euros, local money, local currency, change money, money exchange, small bills, coins'),
-  c('n.language', 'language, translate, translation, phrases, say hello, speak spanish, speak english, what language, useful words, local words, interpreter'),
+  c('n.language', 'how do i say, how to say, say thank you, say please, language, translate, translation, phrases, say hello, speak spanish, speak english, what language, useful words, local words, interpreter'),
   c('n.taxi', 'taxi, taxis, uber, cab, ride, transfer, shuttle, bus, rental car, car hire, transport, transportation, getting around, public transport, walk, walking, distance, how far, how far is it, get to town, get into town, golf cart, water taxi, ferry'),
   c('n.weather', 'weather, forecast, rain, raining, sunny, hot, cold, temperature, humid, storm, storms, hurricane, wind, windy, umbrella, what to wear in port, how hot, how cold, climate, forecast for port, rainy season'),
   c('n.seas', 'rough seas, choppy, waves, swell, motion, rocking, rocky, bumpy, sea conditions, stabilizers, how rough, will it be rough, sea state, high seas'),
   c('n.nextport', 'next port, next stop, next destination, next island, port tomorrow, the next one'),
   c('n.itinerary', 'which islands, what islands, islands do we visit, which countries, what countries, where does the ship stop, where do we stop, where are we stopping, itinerary, route, ports of call, where are we going, where does the ship go, where are we stopping, what ports, which ports, destinations list, our route, voyage plan, cruise route, stops on the cruise, port order, ports list, ports on this cruise'),
+  c('n.scam', 'scam, scams, scammed, pickpocket, pickpockets, theft, rip off, ripped off, tout, touts, is it safe ashore, safe to walk, safety ashore, dangerous, danger, avoid'),
+  c('n.nearby', 'toilet, toilets, restroom, restrooms, bathroom, bench, somewhere to sit, a place to sit, nearby, near here, close by, around here, nearest'),
   // ---- travel and paperwork ----
   c('n.checkin', 'checkin, online checkin, web checkin, prepare to sail, pre boarding, preboarding, complete checkin, check in online, check in opens, check in window, ready to sail, express checkin, terminal checkin, health questionnaire, arrival time slot, choose arrival time, arrival appointment'),
   c('n.boardingpass', 'boarding pass, boarding passes, ticket, tickets, eticket, qr code, boarding document, sea pass, seapass, cruise ticket, boarding card, booking pass, print my boarding pass, show my pass'),
@@ -168,6 +172,9 @@ export const CONCEPTS: readonly Concept[] = [
   c('a.PLAN', 'plan, planning, what should we do, what should i do, organize, spend the day, how should i spend, schedule my day, plan my day, make a plan, itinerary for, agenda, ideas for the day, plan our day, help me plan, plan my evening, plan an evening, how do i spend'),
   c('a.HOW', 'how, how do i, how can i, how to, how does, steps, process, instructions, guide me, walk me through, show me how, how do we, how can we, how would i'),
 ]
+
+/** The base concepts and one concept for each long tail topic (`screenSpec.ts`). */
+export const CONCEPTS: readonly Concept[] = [...BASE_CONCEPTS, ...SCREEN_SPECS.map((x) => c(`n.${x.id}`, x.words))]
 
 /** Words that are ordinary English or question furniture. They are never "corrected", never count as evidence, and are dropped before phrases are matched. */
 export const STOP_WORDS: ReadonlySet<string> = new Set(

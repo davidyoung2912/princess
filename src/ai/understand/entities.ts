@@ -12,12 +12,14 @@ import { DIRECTORY } from '../../domain/menus'
 import { catalogueShips } from '../../domain/shipCatalogue'
 import { EVENTS } from '../../domain/program'
 import { CATALOGUE_PORTS, PORTS } from '../../domain/sailings'
+import { t } from '../../i18n'
+import { SCREEN_LIST } from '../../routes/screens'
 import { CONCEPTS, COMMON_WORDS, STOP_WORDS } from './lexicon'
 import { wordsOf } from './normalise'
 import { distance } from './spell'
 import { stem } from './stem'
 
-export type EntityKind = 'venue' | 'show' | 'tour' | 'port' | 'country' | 'service' | 'place' | 'ship'
+export type EntityKind = 'venue' | 'show' | 'tour' | 'port' | 'country' | 'service' | 'place' | 'ship' | 'game'
 
 export interface Entity {
   id: string
@@ -73,6 +75,7 @@ function collect(): Entity[] {
   }
   for (const sh of catalogueShips()) add(sh.id, 'ship', sh.name, `/home/ships/${sh.id}`)
   for (const i of ITEMS) add(i.id, 'service', i.title, serviceRoute(i.group))
+  for (const s of SCREEN_LIST) if (s.path.startsWith('/games-explorer/')) add(s.id, 'game', t(s.titleKey), s.path)
   const named = new Set(DIRECTORY.map((v) => v.placeId))
   for (const p of PLACES) if (!named.has(p.id)) add(p.id, 'place', p.name, '/ship/map')
   return out
@@ -118,7 +121,7 @@ export function findEntities(text: string): EntityMatch[] {
     const whole = hit.length === e.tokens.length
     // A name that has only ordinary words ("Main Pool") must match completely, and a name with a mix needs its distinctive word.
     const distinctive = hit.some((tok) => !ordinary(tok) && (spread.get(tok) ?? 0) === 1)
-    if (whole ? e.tokens.length === 1 && ordinary(e.tokens[0]!) : !distinctive) continue
+    if (whole ? e.tokens.length === 1 && ordinary(e.tokens[0]!) && e.kind !== 'game' : !distinctive) continue
     found.push({ entity: e, found: hit.length, of: e.tokens.length })
   }
   const share = (m: EntityMatch) => m.found / m.of

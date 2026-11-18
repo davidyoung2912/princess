@@ -12,6 +12,11 @@ describe('Stanley away topics', () => {
     ['How do I say thank you', 'say'],
     ['Where can I sit and eat lunch near here', 'near'],
     ['Any scams to avoid?', 'safe'],
+    ['where is the nearest restroom', 'near'],
+    ['are there pickpockets here', 'safe'],
+    ['how do I say hello', 'say'],
+    ['how much is a cab back to the pier', 'taxi'],
+    ['I am going to be late', 'late'],
   ])('reads "%s" as %s', (text, topic) => expect(awayTopic(text)).toBe(topic))
 
   it('puts being late ahead of the return time, and returns null for anything else', () => {

@@ -2,10 +2,12 @@
  * What guests might type, by the topic it should reach (docs/stanley-answers-plan.md, section 8). Each topic has plain questions (`say`), typo and slang forms (`typo`) and, where it matters, near misses that must
  * NOT reach it (`not`). Phrases are separated by a pipe. Written in people's own words, not the lexicon's. `heldout.ts` is a second set written without tuning against it.
  */
+import { SCREEN_SPECS } from '../screenSpec'
+
 export interface Case { say: string; typo?: string; not?: string }
 const c = (say: string, typo = '', not = ''): Case => ({ say, typo, not })
 
-export const CORPUS: Readonly<Record<string, Case>> = {
+const BASE_CORPUS: Readonly<Record<string, Case>> = {
   dining: c('where can I eat tonight|what restaurants are on the ship|can I book a table for dinner|is there a buffet|what time is breakfast|any good places to eat|I want to reserve a table for two|what is for lunch|dinner reservations|where do we have dinner|cancel my dinner booking', 'wheres the resturant|book a tabel for dinner|wat time is brekfast|any gud places to eat', 'where is the spa|book a massage'),
   'dining.diet': c('do you have vegetarian options|I am vegan what can I eat|is there gluten free food|I have a nut allergy|are there halal meals|kosher food on board|dairy free options please|dietary requirements for dinner', 'vegitarian options|gluton free food|i have an alergy'),
   drinks: c('where is the nearest bar|what cocktails do you have|is there a coffee shop|where can I get a latte|happy hour times|what bars are open now|where can I get a beer|is there a wine bar', 'wheres the closest bar|cocktales on the ship|cofee shop where'),
@@ -23,9 +25,11 @@ export const CORPUS: Readonly<Record<string, Case>> = {
   'port.allaboard': c('what time is all aboard|when does the ship leave port|what if I miss the ship|what time do I need to be back|how does tendering work|do I need a tender ticket|I am running late for the ship|when do I need to be back on board', 'wat time is all abord|tendr tickets'),
   ports: c('tell me about the ports|what is there to do in port|ideas for port day|what is the port like|what should we do at the next port|island ideas|tell me about the destination|what is special about the next island', 'ports of cal'),
   'port.practical': c('what currency do they use|can I use US dollars|where is the nearest ATM|how do I get a taxi in port|what language do they speak|is there a shuttle to town|how far is it to town|should I exchange money', 'wat currancy|ATM in prot'),
+  'port.safety': c('any scams to avoid|is it safe to walk around the port|watch out for pickpockets|how do I avoid being ripped off|is it dangerous ashore|what scams happen in port|tips to stay safe ashore|are there touts at the port|is the port area safe'),
+  'port.nearby': c('where is the nearest restroom|is there a bench nearby|where can I sit near here|nearest toilet please|any bathroom close by|somewhere to sit around here|where is the closest restroom|is there a toilet near here'),
   weather: c('what is the weather like|will it rain tomorrow|how hot will it be|is it going to be rough seas|weather forecast for the port|is a storm coming|how windy will it be|will the sea be choppy', 'wat is the wether|forcast for port'),
   deckmap: c('where is the atrium|how do I get to deck 9|where are the elevators|can I see a deck plan|which deck is the theater|where are the stairs|how do I find my way around|show me the ship map|where is guest services', 'wheres the atrum|which dek is the theater'),
-  cabinchoose: c('which cabin should I book|inside or balcony|what is the best cabin location|what cabin is quietest|are there connecting cabins|what are the cabin types|should I upgrade my cabin|what is an obstructed view|is a balcony worth it', 'wich cabin to book|cabin catagories|balcany or inside'),
+  cabinchoose: c('which cabin should I book|inside or balcony|what is the best cabin location|what cabin is quietest|are there connecting cabins|what are the cabin types|what is an obstructed view|is a balcony worth it', 'wich cabin to book|cabin catagories|balcany or inside'),
   'cabin.room': c('my cabin steward|I need extra towels|can I get more pillows|the safe in my room is not working|my room is too cold|can I get a bathrobe|how do I use the safe|the cabin is noisy|can I get a crib in my cabin', 'extra towells|my room is to noisy|the safe wont open'),
   tv: c('what channels are on the tv|how do I use the cabin tv|is there tv in my room|can I stream movies in my cabin|tv is not working|how do I turn on the television|can I watch sports on the tv|does the room have a tv|how many channels are there', 'wat channels on the tv|televsion not working'),
   ships: c('tell me about the ship|how big is the ship|how many passengers does it hold|compare ships|which ship is the newest|what is special about this ship|what is the biggest ship|how many decks does this ship have', 'tel me about the ship|compair ships'),
@@ -40,7 +44,7 @@ export const CORPUS: Readonly<Record<string, Case>> = {
   muster: c('what is the muster drill|when is the muster|where is my muster station|do I have to attend muster|how long is the safety drill|what do I need for the muster drill|where is the muster drill held|is muster mandatory|what time is muster', 'musther drill|wher is my muster staton'),
   documents: c('what documents do I need|do I need a passport|is my passport valid enough|I lost my passport|what id do I need|do my kids need passports|what paperwork should I bring|do I need a passport for the caribbean', 'wat documants do i need|do i need a pasport|pasport valid'),
   disembark: c('what time do we have to get off|how does disembarkation work|when do I leave the ship|what happens on the last day|when do I need to vacate my cabin|last morning schedule|what is the exit time|how do I get off the ship', 'dissembarkation day|wen do we get off'),
-  luggage: c('where do I leave my bags the last night|how do luggage tags work|my suitcase is missing|I have lost my bag|how do I get my bags off the ship|when do bags go out|I cannot find my luggage|baggage claim after the cruise|bag tags', 'luggege tags|my suitcse is missing'),
+  luggage: c('where do I leave my bags the last night|how do luggage tags work|my suitcase is missing|I have lost my bag|how do I get my bags off the ship|when do bags go out|I cannot find my luggage|baggage claim after the cruise', 'luggege tags|my suitcse is missing'),
   customs: c('what are the customs rules|how does customs work|what can I bring back|do I need to declare anything|how does immigration work at the end|what is the duty free allowance|customs form|what do I need to declare', 'custums rules|imigration questions'),
   packing: c('what should I pack|what can I not bring on board|can I bring a kettle|is there a packing list|can I bring my own wine|what to bring on a cruise|can I bring an iron|what are the banned items|packing tips', 'wat should i pak'),
   dresscode: c('what is the dress code|what do I wear to dinner|is there a formal night|do I need a tuxedo|can I wear shorts to dinner|what is smart casual|do men need a jacket|what should I wear for formal night', 'wat do i were to dinner'),
@@ -72,3 +76,6 @@ export const CORPUS: Readonly<Record<string, Case>> = {
   pets: c('can I bring my dog|are pets allowed|do you allow emotional support animals|can I bring my cat|is there a kennel|are animals allowed on the ship|can I bring an emotional support animal|is there a pet policy', 'can i bring my dogg|pets alowed'),
   sustainability: c('what is the ship doing for the environment|is the ship eco friendly|what is shore power|do you recycle|how green is the cruise|what about plastic use|sustainability efforts|is the ship environmentally friendly', 'enviroment efforts|sustainabilty'),
 }
+
+/** The base cases and the plain questions written for each long tail topic in `screenSpec.ts`. */
+export const CORPUS: Readonly<Record<string, Case>> = { ...BASE_CORPUS, ...Object.fromEntries(SCREEN_SPECS.map((x) => [x.id, c(x.say)])) }

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DESTINATIONS } from './destinations'
+import { BASE_DESTINATION_NAMES, DESTINATIONS } from './destinations'
+import { SCREEN_SPECS } from './screenSpec'
 import { CONCEPTS } from './lexicon'
 import { normalise } from './normalise'
 import { CORPUS } from './corpus/topics'
-import { composeReply, readQuestion } from './index'
+import { composeReply, pillLabel, readQuestion, topicName } from './index'
 import { correctWord, understand } from './understand'
 import { stem } from './stem'
 import { distance } from './spell'
@@ -11,7 +12,7 @@ import { TOPICS } from './topics'
 import { hasText } from '../../i18n'
 import { routeForPath } from '../../routes/nav'
 import { mentionsAI } from '../../domain/stanleyThread'
-import { t, type StringKey } from '../../i18n'
+import { t } from '../../i18n'
 
 const id = (d: string) => d
 
@@ -65,9 +66,18 @@ describe('the data', () => {
     }
   })
   it('has words for every pill, topic and sentence, and none say "AI"', () => {
-    for (const name of Object.keys(DESTINATIONS)) { expect(hasText(`understand.pill.${name}`), name).toBe(true); expect(mentionsAI(t(`understand.pill.${name}` as StringKey))).toBe(false) }
-    for (const tp of TOPICS) expect(hasText(`understand.topic.${tp.id}`), tp.id).toBe(true)
+    for (const name of Object.keys(DESTINATIONS)) { expect(pillLabel(name).startsWith('understand.'), name).toBe(false); expect(mentionsAI(pillLabel(name))).toBe(false) }
+    for (const tp of TOPICS) { expect(topicName(tp.id).length, tp.id).toBeGreaterThan(0); expect(topicName(tp.id).startsWith('understand.'), tp.id).toBe(false) }
     for (const a of ['BOOK', 'CHANGE', 'CANCEL', 'FIND', 'WHEN', 'PRICE', 'PROBLEM', 'LOST', 'ALLOWED', 'REQUIRE', 'ORDER', 'REMIND', 'COMPARE', 'default']) expect(hasText(`understand.say.${a}`), a).toBe(true)
+  })
+  it('gives every long tail destination a name of its own, one that no base destination uses', () => {
+    const seen = new Map<string, string>()
+    for (const x of SCREEN_SPECS) for (const d of x.dests.split(' ')) {
+      const [name, id] = d.split('=')
+      expect(BASE_DESTINATION_NAMES.has(name!), `${name} is already a base destination`).toBe(false)
+      expect(seen.get(name!) ?? id, `${name} names two screens`).toBe(id)
+      seen.set(name!, id!)
+    }
   })
   it('uses only concepts that exist, and every concept is used', () => {
     const known = new Set(CONCEPTS.map((c) => c.id))

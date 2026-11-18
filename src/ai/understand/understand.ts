@@ -9,6 +9,7 @@ import { findEntities, type EntityKind } from './entities'
 import { normalise, wordsOf } from './normalise'
 import { makeSpeller, type Speller } from './spell'
 import { stem } from './stem'
+import { SCREEN_SPECS } from './screenSpec'
 import { TOPICS, type TopicDef } from './topics'
 
 /** Where the guest is and what they have, as far as the device knows. Hints, never facts about anyone else. */
@@ -107,7 +108,8 @@ function build(): Engine {
   // How many topics lean on each concept: a concept only one topic uses says more than one every topic uses.
   const df = new Map<string, number>()
   for (const t of TOPICS) for (const c of Object.keys(t.evidence)) df.set(c, (df.get(c) ?? 0) + 1)
-  const n = TOPICS.length
+  // Weighted over the base topics only, so adding long tail screens (screenSpec.ts) never shifts how an ordinary word is weighed.
+  const n = TOPICS.length - SCREEN_SPECS.length
   const mult = new Map<string, number>()
   for (const [c, d] of df) mult.set(c, 0.8 + 0.4 * (1 - (d - 1) / Math.max(1, n - 1)))
   return { phrases, longest, surface: makeSpeller(surfaceWords, new Set([...STOP_WORDS, ...COMMON_WORDS]), NEVER_WORDS), speller: makeSpeller(vocabulary, known, never), mult, topics: TOPICS }

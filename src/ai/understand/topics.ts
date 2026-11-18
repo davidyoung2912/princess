@@ -9,6 +9,7 @@
  */
 import type { JourneyStage } from '../../routes/hubs'
 import type { Act } from './lexicon'
+import { SCREEN_SPECS } from './screenSpec'
 
 export interface TopicDef {
   id: string
@@ -36,7 +37,7 @@ const lean = (groups: readonly (readonly JourneyStage[])[], v: number, ...more: 
 const T = (id: string, ev: string, acts: string, pills: readonly string[], opts: { stages?: Partial<Record<JourneyStage, number>>; risk?: 'low' | 'high' } = {}): TopicDef =>
   ({ id, evidence: nums(ev), acts: nums(acts) as TopicDef['acts'], stages: opts.stages ?? {}, risk: opts.risk ?? 'low', pills: pills.map(rule) })
 
-export const TOPICS: readonly TopicDef[] = [
+const BASE_TOPICS: readonly TopicDef[] = [
   // ---- the explorers ----
   T('dining', 'n.restaurant:3 n.dinner:3 n.lunch:3 n.breakfast:3 n.meal:2.5 n.buffet:3 n.table:2 n.reservation:1.5 n.casualfood:2 n.dessert:2 n.cover:1.5 n.bar:0.5', 'BOOK:2 FIND:1 WHEN:1.5 LIST:1 RECOMMEND:1.5 CHANGE:1 CANCEL:1 PRICE:0.5 STATUS:1',
     ['BOOK>dining.book', 'CHANGE|CANCEL>dining.mine', 'dining', 'venues', 'dining.mine']),
@@ -56,6 +57,8 @@ export const TOPICS: readonly TopicDef[] = [
   T('port.allaboard', 'n.allaboard:4 n.missedship:4.5 n.tender:3', 'WHEN:1.5 PROBLEM:2 LOST:2 STATUS:1', ['PROBLEM|LOST>helpnow', 'portday', 'safeashore']),
   T('ports', 'n.port:3 n.region:1.5 n.itinerary:1 n.nextport:2.5', 'LIST:1.5 WHAT_IS:1 RECOMMEND:1 FIND:0.5 PLAN:1', ['portguide', 'ports', 'excursions']),
   T('port.practical', 'n.currency:3.5 n.language:3.5 n.taxi:3.5', 'WHAT_IS:1 HOW:1 PRICE:1 FIND:1', ['portguide', 'safeashore']),
+  T('port.safety', 'n.scam:4 n.port:0.5', 'FIND:0.5 HOW:0.5 ALLOWED:1 RECOMMEND:0.5 WHAT_IS:1', ['safeashore', 'portguide']),
+  T('port.nearby', 'n.nearby:4 n.port:0.5', 'FIND:2 WHEN:0.5 LIST:0.5', ['portguide', 'map']),
   T('weather', 'n.weather:4 n.seas:3 n.cabin:-2.5', 'WHAT_IS:1 STATUS:1 WHEN:0.5 REQUIRE:1', ['weather', 'weatherplan']),
   T('deckmap', 'n.deck:3.5 n.map:3.5 n.elevator:2.5 n.place:3 n.guestservices:2.5', 'FIND:3 LIST:0.5', ['map', 'deckplans']),
   T('cabinchoose', 'n.cabinchoice:4 n.cabin:0.8 n.compare:0.5', 'RECOMMEND:2 COMPARE:1.5 LIST:1 WHAT_IS:1', ['cabins', 'decide'], { stages: lean([BEFORE], 1.5, [ABOARD, -1.5]) }),
@@ -108,3 +111,6 @@ export const TOPICS: readonly TopicDef[] = [
   T('pets', 'n.pet:4.5', 'ALLOWED:1.5 HOW:1', ['help', 'contact']),
   T('sustainability', 'n.sustain:4.5', 'WHAT_IS:1', ['sustain', 'help']),
 ]
+/** The base topics and one topic for each long tail screen (`screenSpec.ts`): its own noun is strong evidence, so an ordinary word never reaches it. */
+export const TOPICS: readonly TopicDef[] = [...BASE_TOPICS, ...SCREEN_SPECS.map((x) => T(x.id, `n.${x.id}:5`, '', x.dests.split(' ').map((d) => d.split('=')[0]!), { risk: x.high ? 'high' : 'low' }))]
+

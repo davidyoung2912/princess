@@ -2,11 +2,14 @@
  * Where a pill can send a guest (docs/stanley-answers-plan.md, 5.10): every screen the engine may offer, with its path, its generic label and when it makes sense. One table, so a path is written once and a test
  * can check that each one is a real route and each label exists. `needs` says what must be true for the guest; `instead` is the screen offered when it is not.
  */
+import { SCREEN_BY_ID } from '../../routes/screens'
+import { SCREEN_SPECS } from './screenSpec'
+
 export type Need = 'booking' | 'aboard' | 'ashore' | 'beforeSailing'
 
 export interface Destination { path: string; needs?: Need; instead?: string }
 
-export const DESTINATIONS: Readonly<Record<string, Destination>> = {
+const BASE_DESTINATIONS: Readonly<Record<string, Destination>> = {
   // explorers and the ship
   dining: { path: '/dining-today' }, 'dining.book': { path: '/dining-today?reserve=new', needs: 'booking', instead: 'dining' }, 'dining.mine': { path: '/dining-today?view=trip', needs: 'booking' },
   venues: { path: '/ship/venues' }, drinks: { path: '/ship/drinks' }, order: { path: '/ship/order', needs: 'aboard', instead: 'dining' },
@@ -32,6 +35,15 @@ export const DESTINATIONS: Readonly<Record<string, Destination>> = {
   weather: { path: '/weather' }, settings: { path: '/me/settings' }, notifications: { path: '/me/notifications' }, privacy: { path: '/me/privacy' }, help: { path: '/me/help' }, feedback: { path: '/me/feedback' }, reportproblem: { path: '/me/report-problem' },
   allergy: { path: '/plan/allergy' }, medallion: { path: '/home/medallion' }, gettingthere: { path: '/plan/getting-there' }, sustain: { path: '/me/sustainability' },
   family: { path: '/ship/family' }, teen: { path: '/ship/teen' }, solo: { path: '/ship/solo' }, itinerary: { path: '/itinerary' }, today: { path: '/today' }, search: { path: '/ship/search' },
+}
+
+/** The names the base table uses, so a long tail screen can be checked against them. */
+export const BASE_DESTINATION_NAMES: ReadonlySet<string> = new Set(Object.keys(BASE_DESTINATIONS))
+
+/** The base destinations and the screens of the long tail topics, by their path in the screen list. */
+export const DESTINATIONS: Readonly<Record<string, Destination>> = {
+  ...BASE_DESTINATIONS,
+  ...Object.fromEntries(SCREEN_SPECS.flatMap((x) => x.dests.split(' ').map((d) => { const [name, id] = d.split('='); return [name!, { path: SCREEN_BY_ID.get(id!)!.path }] as const }))),
 }
 
 export type DestinationId = keyof typeof DESTINATIONS & string
