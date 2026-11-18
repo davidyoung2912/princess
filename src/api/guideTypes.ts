@@ -37,6 +37,8 @@ export interface GuideTask {
   who?: { done: number; total: number } | null
   /** The Stanley action the server can do for this task once the guest confirms its preview (`checkin_prefill`, `customs_draft`, `excursion_plan`, `packing_start`, `reserve_dinner`, `travel_plan`), set only when there is something to do. Absent on a copy kept before it existed. */
   doIt?: GuideDoIt | null
+  /** Set when a change on the trip (a late tender, a skipped port, a venue moved) put this task at the front: what changed and why it matters, in the change card's words. */
+  changed?: { what: string; why: string } | null
 }
 
 /** The things Stanley can do for a guide task. Each is a kind of Stanley action; the server decides when one is on offer. */

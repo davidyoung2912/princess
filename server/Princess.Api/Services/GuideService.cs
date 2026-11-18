@@ -9,7 +9,7 @@ namespace Princess.Api.Services;
 /// The Journey Guide for the signed-in guest (docs/next-steps-guidance-plan.md): gathers the facts the stage, the trip, the checklist and the booking draft already hold and hands them to
 /// <see cref="GuideRules"/>. It holds no rules of its own and stores nothing.
 /// </summary>
-public sealed class GuideService(ContextService context, ICurrentUser me, TripService trips, PlanService plan, ITripStore tripStore, IOnboardStore onboard, IInboxStore inbox, IBookingStore bookings, IUserClock clock, IStateStore state, CheckinService checkin, DisembarkService disembark)
+public sealed class GuideService(ContextService context, ICurrentUser me, TripService trips, PlanService plan, ITripStore tripStore, IOnboardStore onboard, IInboxStore inbox, IBookingStore bookings, IUserClock clock, IStateStore state, CheckinService checkin, DisembarkService disembark, StanleyChangeService changes)
 {
     public async Task<GuideView> GetAsync(CancellationToken ct)
     {
@@ -27,8 +27,21 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
         if (ctx.Booking is not null || ctx.Stage is not (StageRules.Dream or StageRules.Discover or StageRules.Book))
             (trip, lastFullDay) = await TripFactsAsync(user, ctx, now, today, ct);
 
-        var facts = new GuideFacts(ctx.Stage, today, saved, draft is null ? null : new GuideDraft(draft.Id, !string.IsNullOrEmpty(draft.CategoryId)), trip, lastFullDay, feedback, await ChoicesAsync(user.Id, ct), await FitAsync(user.Id, ct));
+        var facts = new GuideFacts(ctx.Stage, today, saved, draft is null ? null : new GuideDraft(draft.Id, !string.IsNullOrEmpty(draft.CategoryId)), trip, lastFullDay, feedback, await ChoicesAsync(user.Id, ct), await FitAsync(user.Id, ct), trip is null ? null : await ChangesAsync(user, ct));
         return GuideRules.Build(facts);
+    }
+
+    /// <summary>
+    /// The changes on the trip that matter enough to move the guide: verified or provisional (never a forecast), at least a conflict with the plan, not dismissed. A source that cannot be read is no change.
+    /// </summary>
+    private async Task<IReadOnlyList<GuideChange>> ChangesAsync(UserRecord user, CancellationToken ct)
+    {
+        try
+        {
+            var list = await changes.ListAsync(user, null, null, ct);
+            return [.. list.Cards.Where(c => !c.Tip && c.Status != ChangeStatus.Forecast && ChangeConsequence.Rank(c.Consequence) <= ChangeConsequence.Rank(ChangeConsequence.Conflict)).Select(c => new GuideChange(c.Kind, c.What, c.Why))];
+        }
+        catch (ApiException) { return []; }
     }
 
     /// <summary>The guest's own put-aside choices (the <c>guideChoices</c> document); an unreadable one counts as none.</summary>

@@ -12124,6 +12124,7 @@ export const enCore = {
   'action.go.packing': 'See your packing list',
   'action.go.travel': 'See your travel plan',
   'action.reason.nothing': 'There is nothing left that I can do here. Open the screen to finish it yourself.',
+  'guide.changed': 'This moved:',
   'guide.doIt': 'Do it for me',
   'guide.doIt.aria': 'Do it for me: {task}',
   'guide.doIt.failed': 'I could not get that ready just now. You can do it yourself on its own screen.',

@@ -72,6 +72,7 @@ function DoNow({ task, aside, view }: { task: GuideTask; aside: Aside; view: Gui
     <Card hero labelledBy="guide-now-h">
       <h2 id="guide-now-h" className="card__title">{th('guide.now')}</h2>
       <p className="guide__task">{w.title}</p>
+      {task.changed && <p className="guide__changed" role="status"><strong>{t('guide.changed')}</strong> {task.changed.what} {task.changed.why}</p>}
       <p>{w.why}</p>
       {task.urgency === 'now' && <p className="guide__urgent"><Clock size={16} aria-hidden="true" /> {t('guide.urgent')}</p>}
       <Meta task={task} />

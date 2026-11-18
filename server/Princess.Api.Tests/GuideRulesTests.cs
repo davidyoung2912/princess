@@ -308,4 +308,16 @@ public class GuideRulesTests
             Assert.StartsWith("/", primary.To);
         }
     }
+
+    [Fact]
+    public void AChangeOnThePortDayMovesItsTaskToTheFrontWithItsWords()
+    {
+        var today = Departure.AddDays(3);
+        var facts = new GuideFacts(StageRules.Port, today, 0, null, Trip(today), false, false, null, null, [new GuideChange(ChangeKinds.Tender, "Tender service is delayed.", "It cuts your tour close.")]);
+        var g = GuideRules.Build(facts);
+        Assert.Equal("port.leaveby", g.PrimaryId);
+        Assert.Equal("It cuts your tour close.", g.Tasks.Single(t => t.Id == "port.leaveby").Changed?.Why);
+        Assert.All(g.Tasks.Where(t => t.Id != "port.leaveby"), t => Assert.Null(t.Changed));
+        Assert.Null(GuideRules.Build(facts with { Changes = null }).Tasks.Single(t => t.Id == "port.leaveby").Changed);
+    }
 }

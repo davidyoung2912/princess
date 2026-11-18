@@ -194,3 +194,23 @@ describe('Do it for me: excursion plan', () => {
     })
   })
 })
+
+/** G10e, say what changed: the guide moves a task only for a real change, in the change card's own words. */
+describe('Say what changed', () => {
+  it('uses verified or provisional changes that conflict with the plan, never a forecast or a tip', () => {
+    const svc = server('Services/GuideService.cs')
+    expect(svc).toContain('c.Status != ChangeStatus.Forecast')
+    expect(svc).toContain('!c.Tip')
+    expect(svc).toContain('ChangeConsequence.Conflict')
+  })
+
+  it('puts a changed open task first and leaves done, waiting and blocked tasks alone', () => {
+    const rules = server('Domain/GuideRules.cs')
+    expect(rules).toContain('t.Changed is not null ? 0 : 1')
+    expect(rules).toContain('if (t.State != Todo) return t;')
+  })
+
+  it('has the words the client shows', () => {
+    expect('guide.changed' in en).toBe(true)
+  })
+})

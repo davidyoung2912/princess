@@ -381,7 +381,14 @@ Five ideas: more "Do it for me", say what changed, hand off at stage changes, gr
 - Preview names the time and says nothing is booked or paid. Confirm saves through the same travel store as the screen (`TravelStartApplyAsync`); undo clears the window only while it is still the one Stanley set (`TravelStartUndoAsync`).
 - Guide: `GuideTrip.CanPlanTravel` (Prebook, not an agent booking, a window can be set) puts `doIt: "travel_plan"` on `prebook.travel`; the task is done by the window, so the button goes once one is set. Receipt link "See your travel plan".
 - Tests: `doit.test.ts` (source gates), `stanley.test.ts` (levels), release gate's kind list; C# `TravelStartTests`. Not run or compiled (no `dotnet`).
-- **Next:** G10e to G10h.
+- **Next:** G10e (built, below), then G10f to G10h.
+
+**G10e, say what changed (built).**
+- The change engine (`StanleyChangeService`) already finds late tenders, skipped ports, moved venues, rain and flight changes. The guide now reads its cards (`GuideService.ChangesAsync`): only verified or provisional ones, never a forecast or a tip, and only those that conflict with the plan or worse; dismissed cards are already left out. An unreadable source is no change.
+- `GuideRules.TaskFor(kind, stage)` names the task a kind of change is about (port call and tender to `port.leaveby`, weather to `port.excursion` or `sea.today`, venue to `sea.today`, itinerary to the stage's first task, flight to `disembark.onward`). That task, when still open, gets `changed { what, why }` (the card's own words) and goes to the front of the open tasks, so it becomes "Do this now". Done, waiting, blocked and put-aside tasks are left alone, and nothing is added or made urgent beyond the order.
+- Home shows "This moved:" with the card's words above the task's own why (`role="status"`).
+- Tests: `GuideRulesTests` (C#, not run), `doit.test.ts` source gates.
+- **Next:** G10f to G10h.
 
 **G10 backlog (the full list, so nothing is lost between phases).**
 - Do it for me, best candidates (most effort saved, safe undo): dinner on sea days (G10a, done); excursion booking in Prebook, not just port day (G10b); packing list started from the sailing, the weather and the party (G10c); arrival-time and getting-there plan from flight or drive time (G10d).

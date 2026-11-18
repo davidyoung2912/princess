@@ -25,7 +25,13 @@ public sealed record GuideFit(bool FirstCruise, bool Solo, bool Quiet)
 }
 
 /// <summary>Everything the guide is worked out from.</summary>
-public sealed record GuideFacts(string Stage, DateOnly Today, int SavedSailings, GuideDraft? Draft, GuideTrip? Trip, bool LastFullDay, bool FeedbackSent, GuideChoices? Choices = null, GuideFit? Fit = null);
+public sealed record GuideFacts(string Stage, DateOnly Today, int SavedSailings, GuideDraft? Draft, GuideTrip? Trip, bool LastFullDay, bool FeedbackSent, GuideChoices? Choices = null, GuideFit? Fit = null, IReadOnlyList<GuideChange>? Changes = null);
+
+/// <summary>A change on the guest's trip (a late tender, a skipped port, rain on a tour day) that matters enough to reorder the guide: what kind it is, what changed and why it matters to them. The words are the change card's own.</summary>
+public sealed record GuideChange(string Kind, string What, string Why);
+
+/// <summary>Why a task moved up the guide: the change, in the change card's own words.</summary>
+public sealed record GuideChanged(string What, string Why);
 
 /// <summary>How many of the travellers a task is done for ("2 of 4 ready").</summary>
 public sealed record GuideWho(int Done, int Total);
@@ -38,7 +44,7 @@ public sealed record GuideWho(int Done, int Total);
 /// </summary>
 public sealed record GuideTask(
     string Id, string Stage, string To, string State, string Urgency, string? UrgencyReason, string? Due, string? DueSource, string? OpensAt,
-    int Minutes, bool Hard, bool Optional, string DoneBy, string? BlockedBy, string? CarriedFrom, GuideWho? Who = null, string? DoIt = null);
+    int Minutes, bool Hard, bool Optional, string DoneBy, string? BlockedBy, string? CarriedFrom, GuideWho? Who = null, string? DoIt = null, GuideChanged? Changed = null);
 
 /// <summary>What really moves the guest to the next stage (the words are the client's, by stage), and the date when there is one.</summary>
 public sealed record GuideMoveOn(string Stage, string? Date);
@@ -98,6 +104,7 @@ public static class GuideRules
         var raws = Catalogue(f);
         var order = raws.Select((r, i) => (r, i)).ToDictionary(x => x.r.Id, x => x.i);
         var tasks = raws.Select(r => ToTask(f, r)).ToList();
+        tasks = MarkChanged(tasks, f.Changes);
         var choices = f.Choices ?? GuideChoices.None;
         var hidden = new List<string>();
         var deferred = new List<GuideDeferred>();
@@ -108,11 +115,39 @@ public static class GuideRules
             if (choices.Later.TryGetValue(t.Id, out var until) && until > f.Today) { deferred.Add(new GuideDeferred(t.Id, Iso(until))); return false; }
             return true;
         })];
-        tasks = [.. tasks.OrderBy(t => StateRank(t.State)).ThenBy(t => t.State == Todo ? UrgencyRank(t.Urgency) : 0).ThenBy(t => t.State == Todo && t.Optional ? 1 : 0)
+        tasks = [.. tasks.OrderBy(t => StateRank(t.State)).ThenBy(t => t.State == Todo && t.Changed is not null ? 0 : 1).ThenBy(t => t.State == Todo ? UrgencyRank(t.Urgency) : 0).ThenBy(t => t.State == Todo && t.Optional ? 1 : 0)
             .ThenBy(t => t.State == Waiting ? t.OpensAt : null, StringComparer.Ordinal).ThenBy(t => order[t.Id])];
         var own = tasks.Where(t => t.CarriedFrom is null).ToList();
         var counts = new GuideCounts(own.Count(t => t.State == Done), own.Count, tasks.Count(t => t.State != Done));
         return new GuideView(f.Stage, tasks.FirstOrDefault(t => t.State == Todo)?.Id, tasks, MoveOn(f), counts, hidden, deferred);
+    }
+
+    /// <summary>The first open task a kind of change is about, by stage; none when that stage has no such task.</summary>
+    public static string? TaskFor(string kind, string stage) => (kind, stage) switch
+    {
+        (ChangeKinds.PortCall or ChangeKinds.Tender, "port") => "port.leaveby",
+        (ChangeKinds.Weather, "port") => "port.excursion",
+        (ChangeKinds.Weather or ChangeKinds.Venue, "sea") => "sea.today",
+        (ChangeKinds.Itinerary, "port") => "port.leaveby",
+        (ChangeKinds.Itinerary, "sea") => "sea.today",
+        (ChangeKinds.Itinerary, "embark") => "embark.steps",
+        (ChangeKinds.Flight, "disembark") => "disembark.onward",
+        _ => null,
+    };
+
+    /// <summary>
+    /// Says why a task moved: a change on the trip (never a forecast alone, see the caller) puts the task it is about at the front of the open ones, with the change's words. One change a task, the first;
+    /// a task already done, waiting or blocked is left alone, and a task the guest put aside is not brought back here (that is dropped afterwards, as ever).
+    /// </summary>
+    private static List<GuideTask> MarkChanged(List<GuideTask> tasks, IReadOnlyList<GuideChange>? changes)
+    {
+        if (changes is null || changes.Count == 0) return tasks;
+        return [.. tasks.Select(t =>
+        {
+            if (t.State != Todo) return t;
+            var c = changes.FirstOrDefault(x => TaskFor(x.Kind, t.Stage) == t.Id);
+            return c is null ? t : t with { Changed = new GuideChanged(c.What, c.Why) };
+        })];
     }
 
     private static int StateRank(string s) => s switch { Todo => 0, Blocked => 1, Waiting => 2, _ => 3 };
