@@ -3,6 +3,7 @@ import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useSta
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
 import { useStanleyAsk, useStanleyBusy } from '../ai/useStanleyAsk'
+import { GroupStanleyPills } from '../ai/GroupStanleyPills'
 import { StanleyReply } from '../ai/StanleyReply'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, threadItems } from '../../domain/stanleyThread'
@@ -66,7 +67,7 @@ import { RoomDetails, RulesDialog } from './ChatRooms'
 import { FlagToStaff, HostPanel } from './ChatHost'
 import { ChatSearch, SaveChat } from './ChatSearch'
 import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWrite, PolishDraft, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
-import { showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
+import { askBefore, showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
 import { ChatAvatar } from './ChatLooks'
 import { EmojiPicker } from './ChatEmoji'
@@ -756,11 +757,11 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {permanent
           ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onChanged={runChanged} onBlocked={onBlocked} />
-          : shownMessages.map((m) => (
+          : shownMessages.map((m, at) => (
             <Fragment key={m.id}>
               {m.id === dividerId && <li id="chat-unread" className="chat-divider" tabIndex={-1} aria-label={t('conv.newMessagesDivider')}><span>{t('conv.newMessagesDivider')}</span></li>}
               <MessageRow m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked}
-                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} canPin={conversation?.canPin === true} pinned={pins.length} onPin={runPin} held={heldAnswers.get(m.id)} onHold={holdAnswer} onUse={runUse} />
+                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} canPin={conversation?.canPin === true} pinned={pins.length} onPin={runPin} held={heldAnswers.get(m.id)} onHold={holdAnswer} onUse={runUse} ask={askBefore(shownMessages, at)} />
             </Fragment>
           ))}
         {bubbles.map((b) => (
@@ -1008,6 +1009,8 @@ interface MessageRowProps {
   onHold?: (job: Record<string, string>) => boolean
   /** Phase 4 of the Stanley plan: a polite reply from "Ask Stanley about this message" goes in the message box (nothing is sent). */
   onUse?: (text: string) => void
+  /** For one of Stanley's answers in a shared conversation: the question it answers, so this device can suggest screens that fit this guest. */
+  ask?: string | null
 }
 
 /** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
@@ -1033,7 +1036,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
 }
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
-const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete, canPin, pinned, onPin, held, onHold, onUse }: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete, canPin, pinned, onPin, held, onHold, onUse, ask }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
@@ -1043,6 +1046,7 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
         <li className="chat-msg chat-msg--stanley">
           <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
           <p>{m.text}</p>
+          {ask && <GroupStanleyPills question={ask} />}
         </li>
       )
     }

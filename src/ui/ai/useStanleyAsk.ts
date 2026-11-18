@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router'
 import { MAX_MESSAGE, screen } from '../../ai/guard'
 import { awayAnswer, awayTopic } from '../../ai/stanleyAway'
@@ -13,11 +13,12 @@ import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
 import { countUnderstood } from '../../diagnostics/stanleyUnderstood'
 import { composeReply, readQuestion } from '../../ai/understand'
+import { portDays } from '../../ai/understand/portDays'
 import { getContext, subscribeContext } from '../../account/context'
 import { useSailing } from '../../hooks/useDemo'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
-import { shipZoneAt } from '../../domain/sailings'
+import { itinerary, shipZoneAt } from '../../domain/sailings'
 import { useSettings } from '../../hooks/useSettings'
 import { stanleyLevelFor } from '../../settings/settings'
 import { screenForPath } from '../../routes/screens'
@@ -55,6 +56,7 @@ export function useStanleyAsk() {
   const hasBooking = !!useSyncExternalStore(subscribeContext, getContext, getContext)?.booking
   const sailing = useSailing()
   const dayPlan = useDayPlan(useCurrentDay())
+  const ports = useMemo(() => portDays(itinerary(sailing)), [sailing])
   const allAboardAt = useOnboardToday(hasBooking).data?.portDay?.state.at ?? null
   const [settings] = useSettings()
   // While the guest is off the ship Stanley answers on the phone, about the port and getting back, and never calls the server.
@@ -90,7 +92,7 @@ export function useStanleyAsk() {
     // Away from the ship: the safety screen still comes first (an emergency goes to the handoff below); anything else is answered here, from what the app holds.
     if (awayFacts && !screen(asked.text)) {
       const topic = awayTopic(asked.text)
-      const away = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId }), { kind: 'answer', source: 'library', existing: [] })
+      const away = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports }), { kind: 'answer', source: 'library', existing: [] })
       setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: awayAnswer(topic, awayFacts, t as (k: string, p?: Record<string, string | number>) => string), at: Date.now(), kind: 'answer', actions: away.actions }])
       countUnderstood([`outcome:${away.outcome}`])
       countTier('library', `away:${topic ?? 'none'}`)
@@ -122,7 +124,7 @@ export function useStanleyAsk() {
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
     const own = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
     // Understand the question with no model: pills for the likeliest screens under the answer, and where there was no answer at all, words and pills of its own.
-    const composed = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId }), { kind: turn.kind, source, scripted: turn.tier === 'model' && turn.source === 'scripted', existing: own })
+    const composed = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports }), { kind: turn.kind, source, scripted: turn.tier === 'model' && turn.source === 'scripted', existing: own })
     const actions = composed.actions
     const shown: StanleyTurn = composed.replaced ? { kind: 'answer', text: composed.text ?? '', handoff: null, fallback: null } : turn
     countUnderstood([`outcome:${composed.replaced ? 'replaced' : composed.outcome}`, ...(composed.topic ? [`topic:${composed.topic}`] : [])])

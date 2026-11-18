@@ -2,22 +2,27 @@
 import { t, type StringKey } from '../../i18n'
 import type { JourneyStage } from '../../routes/hubs'
 import { compose, type Composed, type ReplyFacts, type Words } from './reply'
+import type { EntityKind } from './entities'
 import { understand, type Understood } from './understand'
 
 export type { Composed, ReplyFacts } from './reply'
-export type { Understood, Pill, Outcome } from './understand'
+export type { Understood, Pill, Outcome, Named } from './understand'
 
-export interface Where { stage?: JourneyStage; hasBooking?: boolean; screenId?: string }
+export interface Where { stage?: JourneyStage; hasBooking?: boolean; screenId?: string; portDays?: Readonly<Record<string, number>> }
 
 /** The words on a pill. */
 export const pillLabel = (destination: string): string => t(`understand.pill.${destination}` as StringKey)
 
+/** The words on the pill for a named thing. */
+export const entityLabel = (kind: EntityKind, name: string, variant: 'open' | 'tours'): string => t(`understand.entity.${variant === 'tours' ? 'tours' : kind}` as StringKey, { name })
+
 /** Reads a question as this guest, right now. */
-export const readQuestion = (text: string, where: Where): Understood => understand(text, where, pillLabel)
+export const readQuestion = (text: string, where: Where): Understood => understand(text, where, pillLabel, entityLabel)
 
 const words = (): Words => ({
   topic: (id) => t(`understand.topic.${id}` as StringKey),
   say: (act, topic) => t(`understand.say.${act}` as StringKey, { topic }),
+  named: (name) => t('understand.named', { name }),
   ambiguous: t('understand.ambiguous'),
   miss: t('understand.miss'),
   fallback: ['search', 'help', 'contact'].map((id) => ({ id, label: pillLabel(id), path: ({ search: '/ship/search', help: '/me/help', contact: '/me/contact' } as const)[id as 'search'] })),

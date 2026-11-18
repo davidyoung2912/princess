@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
+import { readUrlFilter } from '../../../domain/explorer/urlFilter'
 import { tourKey } from '../../../domain/explorer/shortlist'
 import { SaveButton } from '../SaveButton'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../../api/types'
@@ -202,7 +203,9 @@ export function ExcursionsExplorerScreen() {
 }
 
 function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDayState; reload: () => void }) {
-  const [filter, setFilter] = useState<DayFilter>(NO_DAY_FILTER)
+  const [params] = useSearchParams()
+  const [start] = useState(() => readUrlFilter(params))
+  const [filter, setFilter] = useState<DayFilter>(() => ({ ...NO_DAY_FILTER, interest: (INTERESTS as readonly string[]).includes(start.type ?? '') ? (start.type as Interest) : null }))
   const [suits, setSuits] = useState(false)
   const { state: mem } = useMemory()
   const { stage } = useExplorerStage()

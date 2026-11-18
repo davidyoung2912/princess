@@ -35,6 +35,8 @@ const ACT_FOR_LINE: readonly Act[] = ['LOST', 'PROBLEM', 'CANCEL', 'CHANGE', 'BO
 export interface Words {
   topic: (id: string) => string
   say: (act: string, topic: string) => string
+  /** One sentence for a question that named a thing the app holds: "Here is {name}." */
+  named: (name: string) => string
   ambiguous: string
   miss: string
   /** The pills for a guest who got no answer and no topic: search, help, a person. */
@@ -57,6 +59,9 @@ export function compose(u: Understood, facts: ReplyFacts, words: Words): Compose
     // An answer stands. Add the likeliest screens only when the engine is sure.
     const more = u.outcome === 'confident' ? u.pills : []
     return { text: null, actions: merge(facts.existing, more), outcome: u.outcome, replaced: false, topic }
+  }
+  if (u.outcome === 'confident' && u.entities.length > 0 && (!topic || u.acts.length === 0)) {
+    return { text: words.named(u.entities.map((n) => n.name).join(' / ')), actions: merge([], u.pills), outcome: 'confident', replaced: true, topic }
   }
   if (u.outcome === 'confident' && topic) {
     const act = ACT_FOR_LINE.find((a) => u.acts.includes(a)) ?? 'default'

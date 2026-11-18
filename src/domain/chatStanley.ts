@@ -17,6 +17,24 @@ export function withAsk(text: string): string {
   return rest.length === 0 ? `${STANLEY_HANDLE} ` : `${STANLEY_HANDLE} ${rest}`
 }
 
+/** How many messages back Stanley reads for the question an answer belongs to (the server's `ContextSize`). */
+export const ASK_REACH = 5
+
+/**
+ * The question behind one of Stanley's plain answers in a shared conversation: the nearest earlier message from a person that starts with his name, within the last few messages, with his name taken off.
+ * Everyone sees the same answer; each device uses this to make suggestions that fit that guest's own trip. Null when the message is not a plain answer or no question is near.
+ */
+export function askBefore(messages: readonly Pick<ChatMessage, 'text' | 'system' | 'stanley' | 'notice' | 'deleted'>[], index: number): string | null {
+  const m = messages[index]
+  if (!m || !m.stanley || m.system || m.notice) return null
+  for (let i = index - 1; i >= 0 && index - i <= ASK_REACH; i--) {
+    const x = messages[i]!
+    if (x.stanley || x.system || x.deleted) continue
+    if (isAskStanley(x.text)) { const q = x.text.replace(ASK, '').trim(); return q.length > 0 ? q : null }
+  }
+  return null
+}
+
 export const LATE_MIN = 5
 export const LATE_MAX = 180
 export const PLACE_MAX = 40

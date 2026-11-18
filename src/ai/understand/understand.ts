@@ -5,6 +5,7 @@
 import type { JourneyStage } from '../../routes/hubs'
 import { COMMON_WORDS, CONCEPTS, DROP_WORDS, NEVER_WORDS, STOP_WORDS, ACTS, type Act } from './lexicon'
 import { DESTINATIONS, type Need } from './destinations'
+import { findEntities, type EntityKind } from './entities'
 import { normalise, wordsOf } from './normalise'
 import { makeSpeller, type Speller } from './spell'
 import { stem } from './stem'
@@ -16,7 +17,12 @@ export interface UnderstandContext {
   hasBooking?: boolean
   /** The screen id the guest is on, for a small lean towards that screen's topic. */
   screenId?: string
+  /** The cruise day each port is visited, so "tours in Cozumel" can open the tours of that day. */
+  portDays?: Readonly<Record<string, number>>
 }
+
+/** A thing the guest named that the app holds. */
+export interface Named { id: string; kind: EntityKind; name: string; path: string }
 
 export interface Pill { id: string; label: string; path: string }
 
@@ -32,6 +38,8 @@ export interface Understood {
   pills: Pill[]
   /** Whether the words say it is about the guest's own trip ("my", "our"). */
   personal: boolean
+  /** The venues, tours, ports and so on the question names, best first (at most two). */
+  entities: Named[]
 }
 
 /** At most this many pills are ever offered under one reply. */
@@ -161,14 +169,20 @@ function pillsFor(topic: TopicDef, acts: readonly Act[], ctx: UnderstandContext)
 /** Turns a destination id into the words on its pill. The UI passes the locale file; tests pass the English table. */
 export type Labeller = (destination: string) => string
 
+/** The words on the pill for a named thing: `tours` is for a port's tours of the day, `open` for its own page. */
+export type EntityLabeller = (kind: EntityKind, name: string, variant: 'open' | 'tours') => string
+const plainEntity: EntityLabeller = (_kind, name) => name
+
 /** Reads a question. `label` turns a destination id into the words on its pill (the locale file). */
-export function understand(text: string, ctx: UnderstandContext, label: Labeller): Understood {
-  const empty: Understood = { outcome: 'empty', topics: [], acts: [], pills: [], personal: false }
+export function understand(text: string, ctx: UnderstandContext, label: Labeller, entityLabel: EntityLabeller = plainEntity): Understood {
+  const empty: Understood = { outcome: 'empty', topics: [], acts: [], pills: [], personal: false, entities: [] }
   const raw = wordsOf(text)
   if (raw.length === 0) return empty
   const e = get()
   const personal = raw.some((w) => w === 'my' || w === 'mine' || w === 'our' || w === 'ours')
   const hits = hitsOf(raw, e)
+  const matches = findEntities(text)
+  const entities: Named[] = matches.map(({ entity: x }) => ({ id: x.id, kind: x.kind, name: x.name, path: x.path }))
 
   const present = new Set<string>()
   const actSet = new Set<Act>()
@@ -199,16 +213,41 @@ export function understand(text: string, ctx: UnderstandContext, label: Labeller
   }
   scored.sort((a, b) => b.score - a.score || (a.topic.risk === b.topic.risk ? 0 : a.topic.risk === 'low' ? -1 : 1) || (a.id < b.id ? -1 : 1))
   const top = scored[0]
-  if (!top) return { outcome: 'miss', topics: [], acts, pills: [], personal }
+  const ports = new Map(matches.map((m) => [m.entity.id, m.entity.port]))
+  const toursAsked = top?.id === 'excursions' || top?.id === 'excursions.mine'
+  /** One pill per thing named: a port asked about with tours goes to that day's tours, anything else to its own page. */
+  const entityPills = (): Pill[] => {
+    const out: Pill[] = []
+    for (const n of entities) {
+      const port = ports.get(n.id)
+      const day = n.kind === 'port' && port ? ctx.portDays?.[port] : undefined
+      const tours = toursAsked && day !== undefined
+      out.push({ id: `entity.${n.id}`, label: entityLabel(n.kind, n.name, tours ? 'tours' : 'open'), path: tours ? `/excursions-explorer?day=${day}` : n.path })
+    }
+    return out
+  }
+  const withEntities = (topicPills: Pill[]): Pill[] => {
+    const out: Pill[] = []
+    for (const p of [...entityPills(), ...topicPills]) if (out.length < MAX_PILLS && !out.some((o) => o.path === p.path)) out.push(p)
+    return out
+  }
+  if (!top) {
+    // Nothing but a name: the thing itself is the answer.
+    if (entities.length > 0) return { outcome: 'confident', topics: [], acts, pills: withEntities([]), personal, entities }
+    return { outcome: 'miss', topics: [], acts, pills: [], personal, entities }
+  }
   const second = scored[1]
   // A long ramble needs a stronger match than a short, direct question.
   const stretch = raw.length > 14 ? 1.25 : 1
   const confident = top.score >= T_HIGH * stretch && (!second || top.score - second.score >= MARGIN)
   const ranked = scored.slice(0, 3).map(({ id, score }) => ({ id, score }))
-  if (!confident && top.score < T_LOW * stretch) return { outcome: 'miss', topics: ranked, acts, pills: [], personal }
+  if (!confident && top.score < T_LOW * stretch) {
+    if (entities.length > 0) return { outcome: 'confident', topics: ranked, acts, pills: withEntities([]), personal, entities }
+    return { outcome: 'miss', topics: ranked, acts, pills: [], personal, entities }
+  }
 
-  const pills: Pill[] = []
-  const add = (dest: string) => { const d = DESTINATIONS[dest]!; if (pills.length < MAX_PILLS && !pills.some((p) => p.path === d.path)) pills.push({ id: dest, label: label(dest), path: d.path }) }
+  const topicPills: Pill[] = []
+  const add = (dest: string) => { const d = DESTINATIONS[dest]!; if (!topicPills.some((p) => p.path === d.path)) topicPills.push({ id: dest, label: label(dest), path: d.path }) }
   if (confident) for (const dest of pillsFor(top.topic, acts, ctx)) add(dest)
   else {
     // Not sure: one screen from each of the likeliest topics, so the guest can pick.
@@ -216,7 +255,9 @@ export function understand(text: string, ctx: UnderstandContext, label: Labeller
     for (const s of close) { const [first] = pillsFor(s.topic, acts, ctx); if (first) add(first) }
     for (const s of close) for (const dest of pillsFor(s.topic, acts, ctx)) add(dest)
   }
-  return { outcome: confident ? 'confident' : 'ambiguous', topics: ranked, acts, pills, personal }
+  // A thing the guest named settles which topic was meant, so the question is understood even when the topic alone was a toss-up.
+  const sure = confident || entities.length > 0
+  return { outcome: sure ? 'confident' : 'ambiguous', topics: ranked, acts, pills: withEntities(topicPills), personal, entities }
 }
 
 /** For tests and tools: the concepts a question was read as. */

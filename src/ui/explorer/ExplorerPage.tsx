@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
+import { readUrlFilter } from '../../domain/explorer/urlFilter'
 import { Link } from 'react-router'
 import type { ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import { cancelledListed, filterVenues, kindsOf, SEARCH_FROM } from '../../domain/explorer/presentation'
@@ -58,11 +60,16 @@ export function ExplorerPage({ kind, basePath, kindLabels, above }: ExplorerPage
 }
 
 function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: ExplorerDay; state: ExplorerDayState; basePath: string; kindLabels: Record<string, string>; onChanged: () => void }) {
-  const [kind, setKind] = useState<string | null>(null)
-  const [query, setQuery] = useState('')
+  // An address may arrive with `?q=` and `?type=` (a suggestion from Stanley); they only start the filters, which the guest can change or clear.
+  const [params] = useSearchParams()
+  const [start] = useState(() => readUrlFilter(params))
+  const kinds = kindsOf(data.venues.map((v) => v.venue))
+  const startKind = start.type !== null && kinds.includes(start.type) ? start.type : null
+  const [kind, setKind] = useState<string | null>(startKind)
+  const [query, setQuery] = useState(start.q)
   const pins = useVenuePins(data.venues.map((v) => v.venue))
   const dining = data.explorer === 'dining'
-  const [filter, setFilter] = useState<DiningFilter>(NO_DINING_FILTER)
+  const [filter, setFilter] = useState<DiningFilter>({ ...NO_DINING_FILTER, kind: startKind, query: start.q })
   const [sort, setSort] = useState<DiningSort>('suggested')
   const { profile: taste } = useTaste()
   const pinnedIds = data.venues.filter((v) => pins.isPinned(v.venue)).map((v) => v.venue.id)
@@ -80,7 +87,7 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
       <h2 id="exp-list-h">{headingCase(t('exp.list.title'))}</h2>
       {dining && <DiningControls kinds={kindsOf(data.venues.map((v) => v.venue))} kindLabels={kindLabels} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} anyKidsMenu={data.venues.some((v) => hasKidsMenu(v.venue))} />}
       {!dining && <FilterChips kinds={kindsOf(data.venues.map((v) => v.venue))} label={t('exp.filter.label')} value={kind} onChange={setKind} labels={kindLabels} />}
-      {!dining && data.venues.length > SEARCH_FROM && (
+      {!dining && (data.venues.length > SEARCH_FROM || start.q !== '') && (
         <div className="field">
           <label htmlFor="exp-search">{t('exp.search.label')}</label>
           <input id="exp-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
