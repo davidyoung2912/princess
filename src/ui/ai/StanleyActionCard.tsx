@@ -35,6 +35,7 @@ const WHERE: Partial<Record<StanleyAction['kind'], { path: string; label: String
   checkin_prefill: { path: '/home/check-in', label: 'action.go.checkin' },
   excursion_plan: { path: '/excursions-explorer', label: 'action.go.excursions' },
   packing_start: { path: '/plan/packing', label: 'action.go.packing' },
+  travel_plan: { path: '/plan/travel', label: 'action.go.travel' },
   customs_draft: { path: '/home/disembark/customs', label: 'action.go.customs' },
 }
 

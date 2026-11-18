@@ -123,6 +123,13 @@ public static class PlanRules
     public static TravelPlan Normalize(TravelPlan? raw, bool priority) =>
         new(IsWindow(raw?.Window, priority) ? raw!.Window : null, IsMode(raw?.Mode) ? raw!.Mode : null, IsHotel(raw?.Hotel) ? raw!.Hotel : null);
 
+    /// <summary>
+    /// The arrival window Stanley would set for a guest who has not chosen one: the quietest the guest may use (10:30 with priority, otherwise 11:00). Null when a window is already chosen or the sailing has left, so a choice of
+    /// the guest's own is never replaced. The mode and the hotel are never guessed.
+    /// </summary>
+    public static string? TravelStart(TravelPlan current, bool priority, DateOnly today, DateOnly departure) =>
+        current.Window is not null || today >= departure ? null : SuggestedWindow(priority);
+
     /// <summary>The window ids in <c>ref.TravelWindows</c> are "w-" and the start time without the colon.</summary>
     public static string WindowId(string start) => "w-" + start.Replace(":", "");
 

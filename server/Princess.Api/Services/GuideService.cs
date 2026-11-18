@@ -82,7 +82,7 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
         var departure = DateOnly.ParseExact(view.Departure[..10], "yyyy-MM-dd");
         var docsOk = view.Documents is null || (view.Documents.Missing == 0 && view.Documents.PassportProblems == 0);
         var opens = departure.AddDays(-TripRules.CheckinOpenDaysBefore);
-        return (new GuideTrip(view.Number, departure, view.Kind == "linked", view.Payment == "paid", DateOnly.ParseExact(view.Plan.FinalDue, "yyyy-MM-dd"), docsOk, view.Checkin.State, opens, musterDone, checklist, view.Documents?.Guests ?? 0, view.Documents?.Ready ?? 0, view.Documents?.Children ?? 0, await CanPrefillAsync(user, view, ct), await CanDraftCustomsAsync(user, view, ctx.Stage, ct), await CanPlanExcursionAsync(user, view, ctx.Stage, ct), await CanBookDinnerAsync(user, view, ctx.Stage, ct), await CanPlanToursAsync(user, view, ctx.Stage, ct), await CanStartPackingAsync(user, view, ctx.Stage, ct)), lastFull);
+        return (new GuideTrip(view.Number, departure, view.Kind == "linked", view.Payment == "paid", DateOnly.ParseExact(view.Plan.FinalDue, "yyyy-MM-dd"), docsOk, view.Checkin.State, opens, musterDone, checklist, view.Documents?.Guests ?? 0, view.Documents?.Ready ?? 0, view.Documents?.Children ?? 0, await CanPrefillAsync(user, view, ct), await CanDraftCustomsAsync(user, view, ctx.Stage, ct), await CanPlanExcursionAsync(user, view, ctx.Stage, ct), await CanBookDinnerAsync(user, view, ctx.Stage, ct), await CanPlanToursAsync(user, view, ctx.Stage, ct), await CanStartPackingAsync(user, view, ctx.Stage, ct), await CanPlanTravelAsync(user, view, ctx.Stage, ct)), lastFull);
     }
 
     /// <summary>True when check-in is open and there is something Stanley could fill in. Any refusal (not open, not an adult guest, an agent booking) is simply no.</summary>
@@ -122,6 +122,14 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
     {
         if (view.Kind == "linked" || stage != StageRules.Prebook) return false;
         try { return await plan.PackingStartPlanAsync(user, view.Number, ct) is not null; }
+        catch (ApiException) { return false; }
+    }
+
+    /// <summary>True in Prebook when the guest has not chosen an arrival time and Stanley could set one. Any refusal is simply no.</summary>
+    private async Task<bool> CanPlanTravelAsync(UserRecord user, TripViewDto view, string stage, CancellationToken ct)
+    {
+        if (view.Kind == "linked" || stage != StageRules.Prebook) return false;
+        try { return await plan.TravelStartPlanAsync(user, view.Number, ct) is not null; }
         catch (ApiException) { return false; }
     }
 

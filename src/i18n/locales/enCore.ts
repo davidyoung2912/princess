@@ -12122,6 +12122,7 @@ export const enCore = {
   'action.go.checkin': 'Finish check-in',
   'action.go.customs': 'Check the declaration',
   'action.go.packing': 'See your packing list',
+  'action.go.travel': 'See your travel plan',
   'action.reason.nothing': 'There is nothing left that I can do here. Open the screen to finish it yourself.',
   'guide.doIt': 'Do it for me',
   'guide.doIt.aria': 'Do it for me: {task}',

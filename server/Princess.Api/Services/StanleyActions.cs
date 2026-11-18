@@ -499,6 +499,18 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return new StanleyPreviewFacts("Add to your packing list from your bookings", lines, ["You"], null,
                     "Nothing is bought or booked. You can remove any item on the packing screen, or ask me to take them all back until you tick one.", $"packing|{booking.Number}|{string.Join(";", labels)}");
             }
+            case StanleyActionKinds.TravelPlan:
+            {
+                var window = await planService.TravelStartPlanAsync(user, booking.Number, ct) ?? throw ApiException.Conflict("nothing");
+                var lines = new List<string>
+                {
+                    $"Arrive at the port at {window}",
+                    "This is the quietest arrival time open to you. Arriving in your window keeps the terminal queue short.",
+                    "How you get there and where you stay are not changed. You choose those yourself.",
+                };
+                return new StanleyPreviewFacts("Set your arrival time at the port", lines, ["You"], null,
+                    "Nothing is booked or paid. You can change the time on the travel screen, or ask me to take it back until you do.", $"travel|{booking.Number}|{window}");
+            }
             case StanleyActionKinds.ExcursionPlan:
             {
                 var wishes = await WishesAsync(user, intent, ct);
@@ -656,6 +668,8 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return new StanleyEffectResult(await disembark.CustomsDraftApplyAsync(user, booking.Number, ct));
             case StanleyActionKinds.PackingStart:
                 return new StanleyEffectResult(await planService.PackingStartApplyAsync(user, booking.Number, ct));
+            case StanleyActionKinds.TravelPlan:
+                return new StanleyEffectResult(await planService.TravelStartApplyAsync(user, booking.Number, ct));
             case StanleyActionKinds.ExcursionPlan:
             {
                 var scope = await scopes.LoadAsync(user, booking.Number, write: true, ct);
@@ -701,6 +715,8 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 return await disembark.CustomsDraftPlanAsync(user, booking.Number, ct) is null;
             case StanleyActionKinds.PackingStart:
                 return await planService.PackingStartPlanAsync(user, booking.Number, ct) is null;
+            case StanleyActionKinds.TravelPlan:
+                return await planService.TravelStartPlanAsync(user, booking.Number, ct) is null;
             case StanleyActionKinds.ExcursionPlan:
                 return (intent.Arg("ahead") == "1" ? await planService.ExcursionAheadAsync(user, booking.Number, ct) : await planService.ExcursionPlanAsync(user, booking.Number, ct)) is null;
             default:
@@ -749,6 +765,9 @@ public sealed class StanleyEffects(CheckinService checkin, DisembarkService dise
                 break;
             case StanleyActionKinds.PackingStart:
                 await planService.PackingStartUndoAsync(user, booking.Number, effectRef, ct);
+                break;
+            case StanleyActionKinds.TravelPlan:
+                await planService.TravelStartUndoAsync(user, booking.Number, effectRef, ct);
                 break;
             case StanleyActionKinds.CustomsDraft:
                 await disembark.CustomsDraftUndoAsync(user, booking.Number, effectRef, ct);

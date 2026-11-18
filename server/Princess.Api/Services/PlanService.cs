@@ -737,6 +737,34 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         return await TravelViewAsync(c, true, ct);
     }
 
+    /// <summary>The arrival window Stanley would set when the guest has not chosen one, or null. Used to preview, to offer the button and to check an unsure outcome.</summary>
+    public async Task<string?> TravelStartPlanAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        var view = await TravelViewAsync(c, true, ct);
+        return PlanRules.TravelStart(view.Plan, view.Priority, c.Today, c.Departure);
+    }
+
+    /// <summary>Sets the arrival window and keeps the mode and hotel as they were. Answers the window it set, for the undo.</summary>
+    public async Task<string> TravelStartApplyAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var window = await TravelStartPlanAsync(actor, number, ct) ?? throw ApiException.Conflict("nothing");
+        var c = await LoadAsync(actor, number, true, ct);
+        var view = await TravelViewAsync(c, true, ct);
+        await plan.SaveTravelAsync(c.Booking.BookingId, new TravelRow { Window = window, Mode = view.Plan.Mode, Hotel = view.Plan.Hotel }, ct);
+        await accounts.AddHistoryAsync(actor.Id, actor.Id, "travel", $"Arrive {window}", c.Now, ct);
+        return window;
+    }
+
+    /// <summary>Clears the window Stanley set, only while it is still that window (a window the guest has since changed is theirs).</summary>
+    public async Task TravelStartUndoAsync(UserRecord actor, string? number, string effectRef, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        var view = await TravelViewAsync(c, true, ct);
+        if (view.Plan.Window != effectRef) return;
+        await plan.SaveTravelAsync(c.Booking.BookingId, new TravelRow { Window = null, Mode = view.Plan.Mode, Hotel = view.Plan.Hotel }, ct);
+    }
+
     private async Task<ChecklistViewDto> ChecklistViewAsync(Ctx c, CancellationToken ct)
     {
         var trip = await tripService.BuildAsync(c.Booking, true, c.Now, ct);

@@ -47,6 +47,7 @@ public static class StanleyActivityRules
         StanleyActionKinds.CustomsDraft => "Delete the draft, as long as you have not changed it since.",
         StanleyActionKinds.ExcursionPlan => "Take the tour out of your cart. Nothing is charged until you check out.",
         StanleyActionKinds.PackingStart => "Remove the items I added, unless you have already ticked them.",
+        StanleyActionKinds.TravelPlan => "Clear the arrival time I set, unless you have changed it since.",
         StanleyActionKinds.ChangeSeating => "Put your old seating back.",
         StanleyActionKinds.PlanChange => "Undo it from your plan on the device where you made the change.",
         StanleyActionKinds.RemindMe => "Remove the reminder from your reminders.",
@@ -65,6 +66,7 @@ public static class StanleyActivityRules
         StanleyActionKinds.CustomsDraft => "Your ship bill purchases as they stood when you said yes. Nothing was filed.",
         StanleyActionKinds.ExcursionPlan => "Today's tours, places left and your all-aboard time as they stood when you said yes. Nothing was charged.",
         StanleyActionKinds.PackingStart => "Your booked tours and dinners as they stood when you said yes.",
+        StanleyActionKinds.TravelPlan => "The arrival times open to you as they stood when you said yes.",
         _ => "The price and availability shown to you, checked again when you said yes.",
     };
 

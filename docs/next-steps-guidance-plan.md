@@ -374,7 +374,14 @@ Five ideas: more "Do it for me", say what changed, hand off at stage changes, gr
 - They go in as the guest's own items, unticked, through the same edit store as typing one. The preview lists each; Confirm adds them; undo removes only those items, only while not ticked. Nothing is bought or booked.
 - Guide: `GuideTrip.CanStartPacking` (Prebook, not an agent booking, something to add) puts `doIt: "packing_start"` on `prebook.packing`. Client: `GuideDoIt` has five kinds, receipt link "See your packing list".
 - Tests: `doit.test.ts` (source gates), `stanley.test.ts` (levels), release gate's kind list; C# `PackingStartTests`. Not run or compiled (no `dotnet`).
-- **Next:** G10d getting-there plan, then G10e to G10h.
+- **Next:** G10d (built, below), then G10e to G10h.
+
+**G10d, arrival time (built).**
+- New action kind `travel_plan` (the kind count is now fourteen). The booking holds no flight or drive time, so Stanley does not invent a route: he sets only the arrival window at the port to the quietest one the guest may use (`PlanRules.TravelStart`: 10:30 with priority embarkation, otherwise 11:00), and only when none is chosen and the ship has not sailed. The mode and the hotel are never guessed and are kept as they were.
+- Preview names the time and says nothing is booked or paid. Confirm saves through the same travel store as the screen (`TravelStartApplyAsync`); undo clears the window only while it is still the one Stanley set (`TravelStartUndoAsync`).
+- Guide: `GuideTrip.CanPlanTravel` (Prebook, not an agent booking, a window can be set) puts `doIt: "travel_plan"` on `prebook.travel`; the task is done by the window, so the button goes once one is set. Receipt link "See your travel plan".
+- Tests: `doit.test.ts` (source gates), `stanley.test.ts` (levels), release gate's kind list; C# `TravelStartTests`. Not run or compiled (no `dotnet`).
+- **Next:** G10e to G10h.
 
 **G10 backlog (the full list, so nothing is lost between phases).**
 - Do it for me, best candidates (most effort saved, safe undo): dinner on sea days (G10a, done); excursion booking in Prebook, not just port day (G10b); packing list started from the sailing, the weather and the party (G10c); arrival-time and getting-there plan from flight or drive time (G10d).

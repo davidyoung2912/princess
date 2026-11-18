@@ -35,7 +35,7 @@ describe('Do it for me: check-in', () => {
     const kinds = server('Domain/StanleyActions.cs')
     expect(kinds).toContain('CheckinPrefill = "checkin_prefill"')
     expect(kinds).not.toMatch(/OnDevice = \[[^\]]*CheckinPrefill/)
-    expect(GUIDE_DO_IT).toEqual(['checkin_prefill', 'customs_draft', 'excursion_plan', 'packing_start', 'reserve_dinner'])
+    expect(GUIDE_DO_IT).toEqual(['checkin_prefill', 'customs_draft', 'excursion_plan', 'packing_start', 'reserve_dinner', 'travel_plan'])
     for (const k of ['guide.doIt', 'guide.doIt.aria', 'guide.doIt.failed', 'action.go.checkin', 'action.reason.nothing']) expect(k in en, k).toBe(true)
   })
 })
@@ -146,6 +146,26 @@ describe('Do it for me: excursion plan', () => {
       const undo = plan.slice(plan.indexOf('PackingStartUndoAsync('), plan.indexOf('Removes an item the guest added'))
       expect(undo).toContain('!e.Done')
       expect(undo).toContain('made.Contains(e.ItemId)')
+    })
+  })
+
+  describe('arrival time (travel_plan on prebook.travel)', () => {
+    it('sets only the arrival window, never the mode or hotel, never replaces a chosen window, and is offered only when one can be set', () => {
+      const rules = server('Domain/PlanRules.cs')
+      const start = rules.slice(rules.indexOf('TravelStart('), rules.indexOf('The window ids in'))
+      expect(start).toContain('current.Window is not null')
+      expect(start).toContain('SuggestedWindow(priority)')
+      const plan = server('Services/PlanService.cs')
+      const apply = plan.slice(plan.indexOf('TravelStartApplyAsync('), plan.indexOf('TravelStartUndoAsync('))
+      expect(apply).toContain('Mode = view.Plan.Mode, Hotel = view.Plan.Hotel')
+      expect(server('Domain/GuideRules.cs')).toMatch(/"prebook\.travel"[^\n]*Agent: false, CanPlanTravel: true[^\n]*"travel_plan"/)
+      expect('action.go.travel' in en).toBe(true)
+    })
+    it('is a confirmed server action whose undo clears only the window it set', () => {
+      expect(server('Domain/StanleyActions.cs')).toContain('TravelPlan = "travel_plan"')
+      const plan = server('Services/PlanService.cs')
+      const undo = plan.slice(plan.indexOf('TravelStartUndoAsync('), plan.indexOf('private async Task<ChecklistViewDto>'))
+      expect(undo).toContain('view.Plan.Window != effectRef')
     })
   })
 

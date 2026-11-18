@@ -38,6 +38,7 @@ public static class StanleyTripSoFarRules
         StanleyActionKinds.CustomsDraft => "the customs draft I made",
         StanleyActionKinds.ExcursionPlan => "the tour I chose for you",
         StanleyActionKinds.PackingStart => "the packing items I added",
+        StanleyActionKinds.TravelPlan => "the arrival time I set",
         _ => "",
     };
 
