@@ -34,11 +34,11 @@ export const SMALL_THINGS: readonly SmallThing[] = [
   { id: 'insurance', weeksBefore: 12, to: '/plan/health-prep' },
   { id: 'copies', weeksBefore: 8, to: '/me/documents' },
   { id: 'medicine', weeksBefore: 6, to: '/plan/health-prep' },
-  { id: 'phone', weeksBefore: 5, to: null },
+  { id: 'phone', weeksBefore: 5, to: '/plan/phone' },
   { id: 'home', weeksBefore: 4, to: '/plan/away' },
   { id: 'packing', weeksBefore: 3, to: '/plan/packing' },
   { id: 'money', weeksBefore: 2, to: '/home/clearance' },
-  { id: 'charge', weeksBefore: 1, to: null },
+  { id: 'charge', weeksBefore: 1, to: '/plan/packing' },
 ]
 
 /** Whole weeks left before sailing, rounded up: 7 days is one week, 8 days is two. */

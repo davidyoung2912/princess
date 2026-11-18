@@ -47,6 +47,7 @@ import { DeepLinkNote } from './DeepLinkNote'
 import { useActiveDeck } from '../hooks/useShipCatalogue'
 import { TipCard } from './TipCard'
 import { StageOverviewCta } from './home/StageOverviewCta'
+import { GuideCrumb, WhatNext } from './GuideFlow'
 
 /** Pages that take no tip card: the chat list and a conversation, where the room is needed for the messages. */
 const NO_TIP_SCREENS: readonly string[] = ['C01', 'C07']
@@ -245,6 +246,7 @@ export function Shell() {
       <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
         {action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
+        {route && !route.public && !landing && <GuideCrumb />}
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}
         {route && !route.public && <LocalReminders />}
@@ -257,6 +259,7 @@ export function Shell() {
         <Suspense fallback={<PageSkeleton />}>
           <Outlet />
         </Suspense>
+        {route && !route.public && !landing && <WhatNext />}
         {route && !route.public && <StanleyChips screenId={landing ? (landing.key === 'home' ? undefined : `tab.${landing.key}`) : screen?.id ?? 'none'} stage={stage} onAsk={() => setStanleyOpen(true)} />}
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>

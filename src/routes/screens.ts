@@ -481,4 +481,4 @@ export function areaFor(id: string, stage: JourneyStage, openedFrom: unknown, pr
 }
 
 /** Navigation state a link to a screen carries so the screen keeps the colour of the tab it was opened from. */
-export const openedFrom = (colour: TabColour): { area: TabColour } => ({ area: colour })
+export const openedFrom = (colour: TabColour, guide?: string): { area: TabColour; guide?: string } => (guide ? { area: colour, guide } : { area: colour })

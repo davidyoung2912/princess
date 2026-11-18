@@ -23,13 +23,13 @@ export const CHECKLIST: readonly ChecklistItem[] = [
   { id: 'tours', daysBefore: 60, auto: 'tours', to: '/excursions-explorer' },
   { id: 'assistance', daysBefore: 30, auto: 'assistance', to: '/plan/assistance' },
   { id: 'dining', daysBefore: 30, auto: 'dining', to: '/dining-today' },
-  { id: 'insurance', daysBefore: 30, auto: null, to: null },
+  { id: 'insurance', daysBefore: 30, auto: null, to: '/plan/health-prep' },
   { id: 'travel', daysBefore: 14, auto: 'travel', to: '/plan/travel' },
   { id: 'packages', daysBefore: 14, auto: null, to: '/me/packages' },
   { id: 'checkin', daysBefore: 7, auto: 'checkin', to: '/' },
   { id: 'packing', daysBefore: 7, auto: null, to: '/plan/packing' },
-  { id: 'phone', daysBefore: 7, auto: null, to: null },
-  { id: 'bags', daysBefore: 1, auto: null, to: null },
+  { id: 'phone', daysBefore: 7, auto: null, to: '/plan/phone' },
+  { id: 'bags', daysBefore: 1, auto: null, to: '/home/luggage' },
   { id: 'pass', daysBefore: 1, auto: null, to: '/' },
 ]
 

@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) are built; G4 (in-flow guidance) is next.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine), G2 (Home rebuilt on the guide) and G3 (skip and later, counts, personal fit, all done) and G3b (the fit prompt) and G4 (in-flow guidance, first part) are built; the rest of G4 and G5 are next.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -221,3 +221,10 @@ Found while reading the code. None are built; each is small.
 - Rules (`GuideRules`): first cruise adds `prebook.firstTime` (Occasion Starter, `/plan/starter`); quiet drops `prebook.packages`; solo, or a booking with one guest, adds the optional `prebook.solo` (the solo safety timer, `/ship/solo`).
 - Tests: `fit.test.ts`; C# `GuideRulesTests` and `StateTests` written, not run or compiled.
 - **Still open:** an insurance task (G4, with the other missing screens), and a "meet people" task for solo guests (no suitable screen yet).
+
+**G4, in-flow guidance (built, first part).**
+- `src/guide/flow.ts` (pure, tested): which guide task a screen belongs to, its place ("step n of m"), the next task to do and how many remain.
+- `src/ui/GuideFlow.tsx`, mounted once in the Shell (so every task screen gets it, not 25 edits): `GuideCrumb` (only when the screen was opened from a guide task; the guide's links now carry the task id in `openedFrom`) and `WhatNext` (on any screen that is a guide task's destination: what is left, the next task as a button, the stage's move-on line when nothing is left, a way back to the plan) with a polite live message when the step on screen becomes done.
+- Dead ends fixed by pointing at screens that exist: checklist insurance to `/plan/health-prep`, phone to `/plan/phone`, bags to `/home/luggage`; Prepare delights phone to `/plan/phone`, charge to `/plan/packing`. No new screens were written.
+- The Help sheet leads with "What should I do now?" (opens Home, which shows the guide).
+- **Not done yet:** tab dots and "Start here", Search putting the primary task first, the printable plan, and a dedicated insurance task and meet-people screen.

@@ -30,6 +30,7 @@ export function HelpSheet({ onClose, screenId, onAskStanley }: { onClose: () => 
         </section>
         <section aria-labelledby="help-page-h" className="stack">
           <h3 id="help-page-h">{th('help.page')}</h3>
+          <LinkButton to="/" variant="primary" block onClick={onClose}>{t('help.now')}</LinkButton>
           {visibleAt(stage, '/ship/read-aloud') && <LinkButton to="/ship/read-aloud" variant="secondary" block onClick={onClose}>{t('help.readAloud')}</LinkButton>}
           {visibleAt(stage, '/home/summary') && <LinkButton to="/home/summary" variant="secondary" block onClick={onClose}>{t('help.plain')}</LinkButton>}
           {onAskStanley && <Button variant="secondary" block onClick={() => { onClose(); onAskStanley() }}>{t('help.askStanley')}</Button>}

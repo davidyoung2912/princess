@@ -73,7 +73,7 @@ function DoNow({ task, aside }: { task: GuideTask; aside: Aside }) {
       <p>{w.why}</p>
       {task.urgency === 'now' && <p className="guide__urgent"><Clock size={16} aria-hidden="true" /> {t('guide.urgent')}</p>}
       <Meta task={task} />
-      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue')} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><PutAside task={task} aside={aside} /></div>
+      <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><PutAside task={task} aside={aside} /></div>
     </Card>
   )
 }
@@ -83,7 +83,7 @@ function Row({ task, aside }: { task: GuideTask; aside: Aside }) {
   return (
     <li className="stage-step">
       <span className="stage-step__body">
-        <Link to={task.to} state={openedFrom('blue')}>{w.title}</Link>
+        <Link to={task.to} state={openedFrom('blue', task.id)}>{w.title}</Link>
         <Meta task={task} />
       </span>
       <PutAside task={task} aside={aside} />
@@ -117,7 +117,7 @@ export function StageGuide() {
         <Card info>
           <p>{t('guide.ahead')}</p>
           <p className="muted">{t('guide.aheadNext', { moveOn: moveOnWords(view.moveOn) })}</p>
-          {rest[0] && <p><Link to={rest[0].to} state={openedFrom('blue')}>{t('guide.lookAhead')}: {taskWords(rest[0]).title}</Link></p>}
+          {rest[0] && <p><Link to={rest[0].to} state={openedFrom('blue', rest[0].id)}>{t('guide.lookAhead')}: {taskWords(rest[0]).title}</Link></p>}
         </Card>
       )}
       {rest.length > 0 && (
