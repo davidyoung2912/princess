@@ -29,7 +29,7 @@ internal static class FinishStages
 /// Getting off the ship: the choice, luggage tags, customs, onward travel, the final night and the final bill (DEB-01 to DEB-07). Ports the <c>disembark</c> group of <c>src/api/finishMock.ts</c>.
 /// Any guest reads; an adult guest writes. Choices belong to the booking, not to a person.
 /// </summary>
-public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAccountStore accounts, ITripStore trips, PlanService plan)
+public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAccountStore accounts, ITripStore trips, PlanService plan, OnboardService onboard)
 {
     private static long Ms(DateTime utc) => TripRules.ToMs(utc);
 
@@ -132,6 +132,38 @@ public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAc
         declaration = declaration with { Note = declaration.Note.Trim() };
         await store.SaveCustomsAsync(c.Booking.BookingId, JsonSerializer.Serialize(new { declaration.Food, declaration.Cash, declaration.GoodsUsd, declaration.Note }, Web), c.Now, ct);
         return await CustomsViewAsync(c, ct);
+    }
+
+    // ---- What Stanley drafts for the guest (G8) ----
+
+    /// <summary>The customs draft Stanley could save now, or none: not aboard, not an adult guest, a declaration already saved, or no shop purchases on the bill. Used to preview, to offer the button and to check an unsure outcome.</summary>
+    public async Task<DisembarkRules.CustomsDraftPlan?> CustomsDraftPlanAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var c = await scopes.LoadAsync(actor, number, write: false, ct);
+        if (!Shipboard.IsAboard(c) || !c.Confirmed || c.Actor.IsSupervised) return null;
+        if (await store.GetCustomsAsync(c.Booking.BookingId, ct) is not null) return null;
+        return DisembarkRules.CustomsDraftFrom((await onboard.FolioAsync(actor, number, ct)).Lines);
+    }
+
+    /// <summary>Saves the draft through the same path as the screen, so its checks apply. Returns the total saved, so the undo only removes this draft.</summary>
+    public async Task<string> CustomsDraftApplyAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var plan = await CustomsDraftPlanAsync(actor, number, ct) ?? throw ApiException.Conflict("nothing");
+        var d = plan.Declaration;
+        await SaveCustomsAsync(actor, number, new CustomsRequest(d.Food, d.Cash, d.GoodsUsd, d.Note), ct);
+        return plan.GoodsUsd.ToString();
+    }
+
+    /// <summary>Deletes the saved declaration only while it is still the draft Stanley saved (same total, same note). A declaration the guest has changed since is theirs and stays.</summary>
+    public async Task CustomsDraftUndoAsync(UserRecord actor, string? number, string made, CancellationToken ct)
+    {
+        var c = await scopes.LoadAsync(actor, number, write: true, ct);
+        Shipboard.RequireAboard(c);
+        var stored = await store.GetCustomsAsync(c.Booking.BookingId, ct);
+        if (stored is null) return;
+        var d = ParseDeclaration(stored.Json);
+        if (!int.TryParse(made, out var usd) || d.GoodsUsd != usd || d.Food || d.Cash || !d.Note.StartsWith("Draft from my ship shop purchases", StringComparison.Ordinal)) throw ApiException.Conflict("changed");
+        await store.DeleteCustomsAsync(c.Booking.BookingId, ct);
     }
 
     // ---- Onward travel (DEB-05) ----

@@ -117,6 +117,23 @@ public static class DisembarkRules
         return new CustomsSummary(declare, over, allowance);
     }
 
+    // ---- What Stanley can draft (G8) ----
+
+    /// <summary>The draft Stanley would save: the whole-dollar total of the shop purchases on the ship bill, and how many purchases make it up.</summary>
+    public sealed record CustomsDraftPlan(int GoodsUsd, int Purchases, CustomsDeclaration Declaration);
+
+    /// <summary>
+    /// A customs draft from the ship bill: shop purchases only (goods, not drinks, spa, photos or tips), charges that are not refunded, rounded up to a whole dollar. Food, plants and cash are the
+    /// guest's to say, so the draft leaves them at no and the preview says so. There is nothing to draft when no goods were bought. Nothing is filed with an authority.
+    /// </summary>
+    public static CustomsDraftPlan? CustomsDraftFrom(IEnumerable<FolioLine> lines)
+    {
+        var goods = lines.Where(l => l.Category == "shops" && l.Cents > 0 && l.State != FolioStates.Refunded).ToList();
+        var usd = (int)Math.Min(GoodsMax, (goods.Sum(l => l.Cents) + 99) / 100);
+        if (goods.Count == 0 || usd <= 0) return null;
+        return new CustomsDraftPlan(usd, goods.Count, new CustomsDeclaration(false, false, usd, "Draft from my ship shop purchases. Food, plants and cash still to check."));
+    }
+
     // ---- Onward travel (DEB-05) ----
 
     public static readonly IReadOnlyList<OnwardModeDef> OnwardModes =

@@ -8,7 +8,7 @@ namespace Princess.Api.Services;
 /// The Journey Guide for the signed-in guest (docs/next-steps-guidance-plan.md): gathers the facts the stage, the trip, the checklist and the booking draft already hold and hands them to
 /// <see cref="GuideRules"/>. It holds no rules of its own and stores nothing.
 /// </summary>
-public sealed class GuideService(ContextService context, ICurrentUser me, TripService trips, PlanService plan, ITripStore tripStore, IOnboardStore onboard, IInboxStore inbox, IBookingStore bookings, IUserClock clock, IStateStore state, CheckinService checkin)
+public sealed class GuideService(ContextService context, ICurrentUser me, TripService trips, PlanService plan, ITripStore tripStore, IOnboardStore onboard, IInboxStore inbox, IBookingStore bookings, IUserClock clock, IStateStore state, CheckinService checkin, DisembarkService disembark)
 {
     public async Task<GuideView> GetAsync(CancellationToken ct)
     {
@@ -81,7 +81,7 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
         var departure = DateOnly.ParseExact(view.Departure[..10], "yyyy-MM-dd");
         var docsOk = view.Documents is null || (view.Documents.Missing == 0 && view.Documents.PassportProblems == 0);
         var opens = departure.AddDays(-TripRules.CheckinOpenDaysBefore);
-        return (new GuideTrip(view.Number, departure, view.Kind == "linked", view.Payment == "paid", DateOnly.ParseExact(view.Plan.FinalDue, "yyyy-MM-dd"), docsOk, view.Checkin.State, opens, musterDone, checklist, view.Documents?.Guests ?? 0, view.Documents?.Ready ?? 0, view.Documents?.Children ?? 0, await CanPrefillAsync(user, view, ct)), lastFull);
+        return (new GuideTrip(view.Number, departure, view.Kind == "linked", view.Payment == "paid", DateOnly.ParseExact(view.Plan.FinalDue, "yyyy-MM-dd"), docsOk, view.Checkin.State, opens, musterDone, checklist, view.Documents?.Guests ?? 0, view.Documents?.Ready ?? 0, view.Documents?.Children ?? 0, await CanPrefillAsync(user, view, ct), await CanDraftCustomsAsync(user, view, ctx.Stage, ct)), lastFull);
     }
 
     /// <summary>True when check-in is open and there is something Stanley could fill in. Any refusal (not open, not an adult guest, an agent booking) is simply no.</summary>
@@ -89,6 +89,14 @@ public sealed class GuideService(ContextService context, ICurrentUser me, TripSe
     {
         if (view.Kind == "linked" || view.Checkin.State != "open") return false;
         try { return (await checkin.PrefillPlanAsync(user, view.Number, ct)).Count > 0; }
+        catch (ApiException) { return false; }
+    }
+
+    /// <summary>True on the disembark stage when there are shop purchases to draft a customs declaration from. Any refusal is simply no.</summary>
+    private async Task<bool> CanDraftCustomsAsync(UserRecord user, TripViewDto view, string stage, CancellationToken ct)
+    {
+        if (view.Kind == "linked" || stage != StageRules.Disembark) return false;
+        try { return await disembark.CustomsDraftPlanAsync(user, view.Number, ct) is not null; }
         catch (ApiException) { return false; }
     }
 }

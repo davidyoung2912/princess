@@ -98,6 +98,12 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
             """, new { bookingId, json, at }, null, ct));
     }
 
+    public async Task DeleteCustomsAsync(long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.Customs WHERE BookingId = @bookingId", new { bookingId }, null, ct));
+    }
+
     public async Task<OnwardRow?> GetOnwardAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

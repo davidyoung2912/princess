@@ -176,6 +176,8 @@ public interface IFinishStore
 
     Task<CustomsRow?> GetCustomsAsync(long bookingId, CancellationToken ct);
     Task SaveCustomsAsync(long bookingId, string json, DateTime at, CancellationToken ct);
+    /// <summary>Removes the saved declaration (Stanley's undo of a draft). Nothing happens when there is none.</summary>
+    Task DeleteCustomsAsync(long bookingId, CancellationToken ct);
 
     Task<OnwardRow?> GetOnwardAsync(long bookingId, CancellationToken ct);
     Task SaveOnwardAsync(long bookingId, OnwardRow plan, CancellationToken ct);

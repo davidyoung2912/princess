@@ -59,4 +59,11 @@ describe('doItFor', () => {
     expect(doItFor({ ...open, state: 'done' }, 'chatty', 'home')).toBeNull()
     expect(doItFor({ ...open, doIt: 'pay_bill' as never }, 'chatty', 'home')).toBeNull()
   })
+  it('offers the customs draft by the same level rules', () => {
+    const customs = task('disembark.customs', { doIt: 'customs_draft' })
+    expect(doItFor(customs, 'helpful', 'home')).toBe('customs_draft')
+    expect(doItFor(customs, 'asked', 'home')).toBeNull()
+    expect(doItFor(customs, 'asked', 'asked')).toBe('customs_draft')
+    expect(doItFor(customs, 'off', 'asked')).toBeNull()
+  })
 })

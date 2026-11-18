@@ -75,6 +75,12 @@ public sealed class InMemoryFinishStore(InMemoryShipboardStore shipboard) : IFin
         return Task.CompletedTask;
     }
 
+    public Task DeleteCustomsAsync(long bookingId, CancellationToken ct)
+    {
+        Customs.Remove(bookingId);
+        return Task.CompletedTask;
+    }
+
     public Task<OnwardRow?> GetOnwardAsync(long bookingId, CancellationToken ct) => Task.FromResult(Onward.GetValueOrDefault(bookingId));
 
     public Task SaveOnwardAsync(long bookingId, OnwardRow plan, CancellationToken ct)
