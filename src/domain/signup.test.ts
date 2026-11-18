@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { cleanCode, isAdult, isCode, isEmail, isPhone, signupProblems } from './signup'
 
-const good = { email: 'a@example.com', password: 'a-long-password', firstName: 'Ana', lastName: 'Lee', dob: '1990-05-01', phone: '+1 555 123 4567' }
+const good = { email: 'a@example.com', password: 'a-long-password', firstName: 'Ana', lastName: 'Lee', dob: '1990-05-01', phone: '+15551234567' }
 
 describe('phone number', () => {
-  it('accepts 7 to 15 digits with the usual punctuation, and nothing else', () => {
-    for (const ok of ['+1 555 123 4567', '(555) 123-4567', '07700 900123', '5551234']) expect(isPhone(ok), ok).toBe(true)
-    for (const bad of ['', '12345', 'call me', '555-CALL-NOW', '1234567890123456', '+']) expect(isPhone(bad), bad).toBe(false)
+  it('accepts a whole international number and nothing else', () => {
+    for (const ok of ['+15551234567', '+447700900123', '+61412345678']) expect(isPhone(ok), ok).toBe(true)
+    for (const bad of ['', '+1555123', '+155512345678', '5551234567', '+', '+44 77']) expect(isPhone(bad), bad).toBe(false)
   })
   it('is needed to sign up', () => {
     expect(signupProblems({ ...good, phone: '' }, '2026-11-01')).toEqual(['phone'])
@@ -21,7 +21,7 @@ describe('signupProblems', () => {
   })
   it('accepts a complete adult sign-up', () => expect(signupProblems(good, '2026-11-01')).toEqual([]))
   it('lists every problem in field order', () => {
-    expect(signupProblems({ email: 'nope', password: 'short', firstName: ' ', lastName: '', dob: 'x', phone: '12' }, '2026-11-01')).toEqual(['email', 'password', 'firstName', 'lastName', 'dob', 'phone'])
+    expect(signupProblems({ email: 'nope', password: 'short', firstName: ' ', lastName: '', dob: 'x', phone: '+12' }, '2026-11-01')).toEqual(['email', 'password', 'firstName', 'lastName', 'dob', 'phone'])
   })
   it('refuses under 18 but allows the 18th birthday', () => {
     expect(signupProblems({ ...good, dob: '2008-11-02' }, '2026-11-01')).toEqual(['tooYoung'])

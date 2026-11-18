@@ -1,5 +1,6 @@
 import type { Registration } from '../auth/provider'
 import { limit } from './limits'
+import { isWholePhone } from './phone'
 
 /** Sign-up rules (ACT-01), mirrored by the server: an adult account holder, an address that looks like one, a password of 10 or more characters. */
 export const MIN_PASSWORD = 10
@@ -9,8 +10,8 @@ export type SignupProblem = 'email' | 'password' | 'firstName' | 'lastName' | 'd
 
 export const isEmail = (s: string): boolean => /^[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+$/.test(s.trim()) && s.trim().length <= 254
 
-/** A phone number people can reach: 7 to 15 digits, optionally with a leading plus, spaces, dashes, dots and brackets. */
-export const isPhone = (s: string): boolean => /^\+?[\d\s().-]+$/.test(s.trim()) && s.replace(/\D/g, '').length >= 7 && s.replace(/\D/g, '').length <= 15
+/** A whole international phone number (`+<code><digits>`, as the phone field gives it): the right length for its country, 7 to 15 digits in all. */
+export const isPhone = (s: string): boolean => isWholePhone(s)
 
 const isRealDate = (dob: string): boolean => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob)

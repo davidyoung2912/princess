@@ -446,3 +446,9 @@ main.signin { margin-inline: auto; }
 @media (max-width: 30rem) { .tour__card { padding: var(--space-3) var(--space-4); } }
 @media (forced-colors: active) { .tour__card, .tour__ring { border: 2px solid CanvasText; box-shadow: none; } .tour__glass { background: Canvas; opacity: 0.8; } }
 @media print { .tour { display: none; } }
+
+/* Phone number entry: the country picker beside the number box (stacked on a narrow phone). */
+.phone-field__row { display: flex; gap: var(--space-2); }
+.phone-field__country { flex: 0 1 12rem; min-width: 0; width: auto; }
+.phone-field__number { flex: 1 1 0; min-width: 0; font-variant-numeric: tabular-nums; }
+@media (max-width: 26rem) { .phone-field__row { flex-direction: column; } .phone-field__country { flex-basis: auto; width: 100%; } }

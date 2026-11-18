@@ -3,6 +3,7 @@ import { AuthError, type AccountActions, type CodePurpose } from '../auth/provid
 import { cleanCode, isCode, isEmail, signupProblems, type SignupProblem } from '../domain/signup'
 import { t, th, headingCase, type StringKey } from '../i18n'
 import { auth } from '../runtime'
+import { PhoneField } from './PhoneField'
 import { Button } from './Button'
 import { Card } from './Card'
 import { KeyRound, Mail, UserPlus } from './icons'
@@ -79,7 +80,7 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
           <Field label={t('signin.signup.first')} help={t('helptip.passportName')} value={v.firstName} onChange={set('firstName')} autoComplete="given-name" error={err('firstName')} />
           <Field label={t('signin.signup.last')} help={t('helptip.passportName')} value={v.lastName} onChange={set('lastName')} autoComplete="family-name" error={err('lastName')} />
           <Field label={t('signin.signup.email')} help={t('helptip.signupEmail')} value={v.email} onChange={set('email')} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} error={err('email')} />
-          <Field label={t('signin.signup.phone')} hint={t('signin.signup.phone.hint')} help={t('helptip.signupPhone')} type="tel" value={v.phone} onChange={set('phone')} autoComplete="tel" inputMode="tel" error={err('phone')} />
+          <PhoneField label={t('signin.signup.phone')} hint={t('signin.signup.phone.hint')} help={t('helptip.signupPhone')} value={v.phone} onChange={(phone) => setV({ ...v, phone })} error={err('phone')} />
           <Field label={t('signin.signup.dob')} hint={t('signin.signup.dob.hint')} type="date" min="1900-01-01" max={today()} value={v.dob} onChange={set('dob')} autoComplete="bday" error={err('dob') ?? err('tooYoung')} />
           <Field label={t('signin.signup.password')} hint={t('signin.signup.password.hint')} type="password" value={v.password} onChange={set('password')} autoComplete="new-password" error={err('password')} />
           <Field label={t('signin.signup.confirm')} type="password" value={v.confirm} onChange={set('confirm')} autoComplete="new-password" error={err('confirm')} />
