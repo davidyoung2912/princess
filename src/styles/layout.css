@@ -114,7 +114,7 @@
   .tabs__search {
     display: flex; align-items: center; gap: var(--space-3);
     margin: var(--space-3) var(--space-3) 0; padding: var(--space-2) var(--space-4); min-height: var(--target-min);
-    border: 2px solid var(--border-strong); border-radius: var(--radius-button);
+    border: 3px solid var(--primary); border-radius: var(--radius-button); background: var(--bg);
     color: var(--primary); font-weight: 600; text-decoration: none;
   }
   .tabs__search:hover { border-color: var(--primary); }

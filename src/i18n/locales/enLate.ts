@@ -6365,7 +6365,6 @@ export const enLate = {
   'guide.print.done': 'Done',
   'guide.print.none': 'Your plan is not ready yet. Try again when you are online.',
   'guide.startHere': 'Start here',
-  'guide.search.title': 'Start with this',
   'help.now': 'What should I do now?',
   'guide.me.title': 'Your next step',
   'guide.me.go': 'Go',

@@ -13,6 +13,17 @@ export type Mood = (typeof MOODS)[number]
 export const isMood = (v: unknown): v is Mood => MOODS.includes(v as Mood)
 
 export const ENTRY_MAX = 280
+
+/**
+ * Choosing a mood writes a short fixed sentence into the diary text, so the entry is never empty and the guest has something to build on. The previous mood's sentence (when it is still the
+ * last thing written) is taken out first; the new one goes after the guest's own words with a blank line between. Nothing is added when it would not fit.
+ */
+export function applyMoodNote(text: string, previous: string | null, next: string | null): string {
+  const kept = previous && text.endsWith(previous) ? text.slice(0, text.length - previous.length).replace(/\s+$/, '') : text
+  if (!next) return kept
+  const joined = kept.trim() === '' ? next : `${kept.replace(/\s+$/, '')}\n\n${next}`
+  return joined.length <= ENTRY_MAX ? joined : text
+}
 export const ENTRIES_MAX = 300
 
 export interface TripEntry {

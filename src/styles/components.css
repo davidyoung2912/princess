@@ -190,6 +190,12 @@ main.signin { margin-inline: auto; }
 @media (prefers-reduced-motion: reduce) { .me-avatar__pic { transition: none; } .me-avatar:is(:hover, :focus-visible, :active) .me-avatar__pic { transform: none; } }
 :root[data-motion='reduced'] .me-avatar:is(:hover, :focus-visible, :active) .me-avatar__pic { transform: none; }
 
+/* The search icon tilts and grows a little when the button is hovered or focused. Reduced motion keeps it still. */
+:is(.tabs__search, .topbar__search) .lucide { transition: transform var(--t-mid) var(--ease); }
+:is(.tabs__search, .topbar__search):is(:hover, :focus-visible) .lucide { transform: rotate(-14deg) scale(1.15); }
+@media (prefers-reduced-motion: reduce) { :is(.tabs__search, .topbar__search) .lucide { transition: none; } :is(.tabs__search, .topbar__search):is(:hover, :focus-visible) .lucide { transform: none; } }
+:root[data-motion='reduced'] :is(.tabs__search, .topbar__search):is(:hover, :focus-visible) .lucide { transform: none; }
+
 /* The logo in the nav: one soft glow and a small grow and tilt on hover or focus. Reduced motion keeps the glow and drops the movement. */
 .tabs__logo img, .topbar__logo img { filter: drop-shadow(0 3px 4px rgba(10, 20, 60, 0.35)) drop-shadow(0 0 0 transparent); transition: transform var(--t-mid) var(--ease), filter var(--t-mid) var(--ease); }
 .tabs__logo:is(:hover, :focus-visible) img, .topbar__logo:is(:hover, :focus-visible) img {

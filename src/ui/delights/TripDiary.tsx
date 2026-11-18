@@ -1,5 +1,6 @@
+import { Heart, Meh, Moon, Smile, type LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { addAuto, addNote, syncAuto, dayFor, editEntry, entriesFor, groupByDay, MOODS, removeEntry, searchEntries, ENTRY_MAX, type Mood, type TripEntry } from '../../domain/tripDiary'
+import { addAuto, addNote, applyMoodNote, syncAuto, dayFor, editEntry, entriesFor, groupByDay, MOODS, removeEntry, searchEntries, ENTRY_MAX, type Mood, type TripEntry } from '../../domain/tripDiary'
 import { formatDate } from '../../domain/cruise'
 import { sourceLines } from '../../domain/diarySources'
 import { itinerary, PORTS } from '../../domain/sailings'
@@ -58,11 +59,22 @@ function useDiaryDays() {
   return { sailing, now, days, today }
 }
 
+/** An icon for each mood, so the choice reads at a glance. */
+const MOOD_ICONS: Record<Mood, LucideIcon> = { great: Heart, good: Smile, ok: Meh, tired: Moon }
+
 /** A line and a mood, added to today in a few seconds. */
 function Composer({ sailingId, today, now, id }: { sailingId: string; today: number; now: number; id: string }) {
   const { update } = useMemory()
   const [text, setText] = useState('')
   const [mood, setMood] = useState<Mood | null>(null)
+  // With the words gone (Clear, or deleted by hand) there is nothing for a mood to go with, so it is let go too.
+  if (text === '' && mood !== null) setMood(null)
+  const note = (m: Mood | null): string | null => (m ? t(`diary.moodNote.${m}` as StringKey) : null)
+  const pick = (m: Mood) => {
+    const next = mood === m ? null : m
+    setText((cur) => applyMoodNote(cur, note(mood), note(next)))
+    setMood(next)
+  }
   const add = () => {
     update((s) => ({ ...s, diary: addNote(s.diary, { id: newMemoryId(), sailingId, day: today, at: now, text, mood }) }))
     setText('')
@@ -70,13 +82,13 @@ function Composer({ sailingId, today, now, id }: { sailingId: string; today: num
   }
   return (
     <div className="diary-composer">
-      <TextArea label={t('diary.add')} hint={t('diary.addHint', { day: today > 0 ? today : 0 })} rows={2} value={text} maxLength={ENTRY_MAX} onChange={(e) => setText(e.target.value)} />
+      <TextArea label={t('diary.add')} rows={2} value={text} maxLength={ENTRY_MAX} onChange={(e) => setText(e.target.value)} />
       <div className="diary-composer__row">
         <div className="stanley-ask__options" role="group" aria-label={t('diary.mood')}>
-          {MOODS.map((m) => <button key={m} type="button" className="chip-q stanley-ask__opt" aria-pressed={mood === m} onClick={() => setMood(mood === m ? null : m)}>{t(`diary.mood.${m}` as StringKey)}</button>)}
+          {MOODS.map((m) => { const Icon = MOOD_ICONS[m]; return <button key={m} type="button" className="chip-q stanley-ask__opt diary-composer__mood" aria-pressed={mood === m} onClick={() => pick(m)}><Icon aria-hidden="true" strokeWidth={2.5} />{t(`diary.mood.${m}` as StringKey)}</button> })}
         </div>
-        <div className="actions"><Button id={id} onClick={add} disabled={text.trim() === ''}>{t('diary.save')}</Button></div>
       </div>
+      <div className="actions"><Button id={id} onClick={add} disabled={text.trim() === ''}>{t('diary.save')}</Button></div>
     </div>
   )
 }

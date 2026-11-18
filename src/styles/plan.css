@@ -105,3 +105,16 @@
 .dl9-map__land { fill: currentColor; fill-opacity: 0.15; stroke: currentColor; stroke-opacity: 0.5; stroke-width: 0.5; }
 .dl9-map__pin { fill: currentColor; stroke: Canvas; stroke-width: 0.5; }
 .dl9-map text { fill: currentColor; paint-order: stroke; stroke: Canvas; stroke-width: 0.6px; }
+
+/* The guidance above the search box reads at normal body size, with the examples as a plain list. */
+.search-guide p, .search-guide li { font-size: var(--fs-body, 1rem); }
+.search-guide ul { margin: 0 0 var(--space-4); padding-inline-start: 1.25rem; }
+.search-guide li { margin-bottom: var(--space-1); }
+
+/* The line above the results: black, a little larger, with the count in bold. */
+.search-count { margin: 0 0 var(--space-3); color: var(--text); font-size: 1.125rem; }
+.search-count:empty { display: none; }
+/* Results borrow the screen lists' look (icon, bold link, line beneath, hover tint and icon tilt) without the pin button's reserved space. */
+.search-results a { padding-inline-end: 0; }
+.search-results li { padding-bottom: var(--space-3); }
+.search-results .screen-list__subtext strong { color: var(--text); }

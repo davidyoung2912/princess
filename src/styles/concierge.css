@@ -192,10 +192,13 @@ img.tip__icon { box-sizing: border-box; width: 3.5rem; height: 3.5rem; padding: 
 
 /* The diary composer: the text box, mood chips and Add button sit in an even column so nothing touches. */
 .diary-composer { display: flex; flex-direction: column; gap: var(--space-2); margin-block: var(--space-2) var(--space-3); }
-.diary-composer .field { margin-bottom: 0; }
+.diary-composer .field { margin-bottom: 0; max-width: none; }
+.diary-composer textarea { box-sizing: border-box; width: 100%; max-width: none; }
 .diary-composer__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--space-2) var(--space-3); }
 .diary-quick__all { margin: 0; }
 .diary-composer .actions { margin: 0; }
+.diary-composer__mood { display: inline-flex; align-items: center; gap: var(--space-1); }
+.diary-composer__mood .lucide { width: 1.125rem; height: 1.125rem; flex: none; }
 
 /* The intro line is easier to read and sits a little lower; the suggested questions are a tight list (the link buttons' tap height was spacing them out). */
 .stanley__empty > p:first-child { font-size: var(--fs-body, 1rem); margin-top: var(--space-2); }

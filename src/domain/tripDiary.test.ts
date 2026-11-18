@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addAuto, addNote, dayFor, editEntry, ENTRY_MAX, ENTRIES_MAX, EMPTY_DIARY, entriesFor, groupByDay, normalizeDiary, removeEntry, searchEntries, syncAuto } from './tripDiary'
+import { addAuto, addNote, dayFor, editEntry, ENTRY_MAX, ENTRIES_MAX, applyMoodNote, EMPTY_DIARY, entriesFor, groupByDay, normalizeDiary, removeEntry, searchEntries, syncAuto } from './tripDiary'
 
 const auto = (id: string, key: string, day = 0, text = 'Booked.') => ({ id, sailingId: 's1', day, at: day * 1000, kind: 'booked' as const, text, key })
 
@@ -74,5 +74,30 @@ describe('trip diary', () => {
     expect(syncAuto(mine, e('d', 'Walked 2000 steps.'))).toBe(mine)
     const gone = removeEntry(up, 'a')
     expect(syncAuto(gone, e('e', 'Walked 2000 steps.'))).toBe(gone)
+  })
+})
+
+describe('applyMoodNote', () => {
+  it('writes the sentence alone into an empty entry', () => {
+    expect(applyMoodNote('', null, 'Loved it.')).toBe('Loved it.')
+    expect(applyMoodNote('  ', null, 'Loved it.')).toBe('Loved it.')
+  })
+
+  it('leaves a blank line after what the guest has written', () => {
+    expect(applyMoodNote('Saw dolphins.', null, 'Loved it.')).toBe('Saw dolphins.\n\nLoved it.')
+  })
+
+  it('swaps the previous sentence for the new one, and takes it out when the mood is cleared', () => {
+    const first = applyMoodNote('Saw dolphins.', null, 'Loved it.')
+    const second = applyMoodNote(first, 'Loved it.', 'Tired.')
+    expect(second).toBe('Saw dolphins.\n\nTired.')
+    expect(applyMoodNote(second, 'Tired.', null)).toBe('Saw dolphins.')
+    expect(applyMoodNote('Loved it.', 'Loved it.', null)).toBe('')
+  })
+
+  it('keeps the guest\'s words when they have changed the sentence, and never goes past the limit', () => {
+    expect(applyMoodNote('Loved it a lot.', 'Loved it.', null)).toBe('Loved it a lot.')
+    const long = 'x'.repeat(ENTRY_MAX - 3)
+    expect(applyMoodNote(long, null, 'Loved it.')).toBe(long)
   })
 })
