@@ -18,8 +18,8 @@ describe('the plan on screen', () => {
   it('tells each task button apart for a screen reader, since several share the same visible words', () => {
     for (const k of ['guide.startTask', 'guide.laterFor', 'guide.skipFor', 'guide.restoreFor']) expect(en[k as keyof typeof en], k).toContain('{task}')
     expect(home).toMatch(/aria-label=\{t\('guide\.startTask'/)
-    expect(home).toMatch(/aria-label=\{t\('guide\.laterFor'/)
-    expect(home).toMatch(/aria-label=\{t\('guide\.skipFor'/)
+    expect(home).toMatch(/(?:aria-label|describedAs)=\{t\('guide\.laterFor'/)
+    expect(home).toMatch(/(?:aria-label|describedAs)=\{t\('guide\.skipFor'/)
   })
 
   it('never shows urgency or done by colour alone', () => {

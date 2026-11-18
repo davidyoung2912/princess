@@ -88,6 +88,7 @@ export {
   CalendarCheck,
   Trash2,
   CalendarPlus,
+  Bell,
   CalendarX,
   CalendarDays,
   Sunrise,

@@ -284,7 +284,7 @@ export function Shell() {
         {route && !route.public && <StanleyChips screenId={landing ? (landing.key === 'home' ? undefined : `tab.${landing.key}`) : screen?.id ?? 'none'} stage={stage} onAsk={() => setStanleyOpen(true)} />}
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
-      <Tour paused={appWelcomePage || stanleyIntroPage || !route || route.public || helpOpen || stanleyOpen || keysOpen} />
+      <Tour paused={pathname.startsWith('/me/settings') || appWelcomePage || stanleyIntroPage || !route || route.public || helpOpen || stanleyOpen || keysOpen} />
       {keysOpen && <ShortcutsSheet onClose={() => setKeysOpen(false)} />}
       {helpOpen && <HelpSheet screenId={screen?.id} onAskStanley={() => setStanleyOpen(true)} onClose={() => setHelpOpen(false)} />}
       {stanleyOpen && <StanleyDialog prefill={prefill} onClose={() => { setStanleyOpen(false); setPrefill('') }} />}

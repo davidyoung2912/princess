@@ -16,6 +16,9 @@ import { t } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
 import { stanleyActions } from '../../runtime'
 import { Button, LinkButton } from '../Button'
+import { GuideIconButton } from '../GuideIconButton'
+import { Bell, CalendarPlus, Help } from '../icons'
+import { downloadText } from '../delights/cardTools'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
 import { StanleyActionCard } from './StanleyActionCard'
@@ -53,7 +56,7 @@ export function NowAnswer({ view, onClose }: { view: GuideView; onClose: () => v
 }
 
 /** "Help me with this" on a task: Stanley's own notes for the screen the task opens, as questions that open their answers. Nothing is drawn when there are none. */
-export function TaskHelp({ task, view, onAsk }: { task: GuideTask; view: GuideView; onAsk?: () => void }) {
+export function TaskHelp({ task, view, onAsk, compact }: { task: GuideTask; view: GuideView; onAsk?: () => void; compact?: boolean }) {
   const [open, setOpen] = useState(false)
   const [entry, setEntry] = useState<LibraryEntry | null>(null)
   const screen = helpScreenId(task)
@@ -63,7 +66,9 @@ export function TaskHelp({ task, view, onAsk }: { task: GuideTask; view: GuideVi
   const close = () => { setOpen(false); setEntry(null) }
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)} aria-label={t('guide.help.for', { task: title })}>{t('guide.help')}</Button>
+      {compact
+        ? <GuideIconButton icon={Help} label={t('guide.help')} describedAs={t('guide.help.for', { task: title })} onClick={() => setOpen(true)} />
+        : <Button variant="secondary" onClick={() => setOpen(true)} aria-label={t('guide.help.for', { task: title })}>{t('guide.help')}</Button>}
       {open && !entry && (
         <Dialog title={t('stanley.sheet.title')} onClose={close} header={(titleId) => <Header titleId={titleId} onClose={close} />}>
           <div className="stanley-answer">
@@ -80,14 +85,16 @@ export function TaskHelp({ task, view, onAsk }: { task: GuideTask; view: GuideVi
 }
 
 /** "Add to calendar" on a task with a date: a calendar file made on the phone for the day it opens or is due. Nothing is sent anywhere, and a task with no date draws nothing. */
-export function TaskCalendar({ task }: { task: GuideTask }) {
+export function TaskCalendar({ task, compact }: { task: GuideTask; compact?: boolean }) {
   const w = taskWords(task)
   if (taskCalendarFile(task, w.title, w.why, 0) === null) return null
-  return <CalendarButton variant="tertiary" name={`${task.id}.ics`} label={t('guide.calendar.for', { task: w.title })} make={() => taskCalendarFile(task, w.title, w.why, Date.now()) ?? ''} />
+  const make = () => taskCalendarFile(task, w.title, w.why, Date.now()) ?? ''
+  if (compact) return <GuideIconButton icon={CalendarPlus} label={t('guide.calendar')} describedAs={t('guide.calendar.for', { task: w.title })} onClick={() => downloadText(`${task.id}.ics`, 'text/calendar', make())} />
+  return <CalendarButton variant="tertiary" name={`${task.id}.ics`} label={t('guide.calendar.for', { task: w.title })} make={make} />
 }
 
 /** "Remind me" on a task with a date: asks the server for a preview of a 09:00 reminder the day before (or the day a waiting task opens). Nothing is set until the card is confirmed. */
-export function TaskRemind({ task }: { task: GuideTask }) {
+export function TaskRemind({ task, compact }: { task: GuideTask; compact?: boolean }) {
   const [prepared, setPrepared] = useState<StanleyAction | null>(null)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -105,7 +112,9 @@ export function TaskRemind({ task }: { task: GuideTask }) {
   }
   return (
     <span className="remind-me">
-      {prepared === null && <Button variant="tertiary" disabled={busy} aria-label={t('remindMe.aria', { title })} onClick={() => { void ask() }}>{t('remindMe.button')}</Button>}
+      {prepared === null && (compact
+        ? <GuideIconButton icon={Bell} label={t('remindMe.button')} describedAs={t('remindMe.aria', { title })} disabled={busy} onClick={() => { void ask() }} />
+        : <Button variant="tertiary" disabled={busy} aria-label={t('remindMe.aria', { title })} onClick={() => { void ask() }}>{t('remindMe.button')}</Button>)}
       {failed && <span role="alert" className="field__error"> {t('remindMe.failed')}</span>}
       {prepared && <span role="status" className="remind-me__card"><StanleyActionCard action={prepared} onChange={setPrepared} /></span>}
     </span>

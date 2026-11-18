@@ -23,6 +23,8 @@ import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { FitPrompt, FitQuestion } from './FitPrompt'
 import { formatDate } from '../../domain/cruise'
 import { Card } from '../Card'
+import { GuideIconButton } from '../GuideIconButton'
+import { Ban, CalendarClock } from '../icons'
 import { TaskCalendar, TaskDoIt, TaskHelp, TaskRemind } from '../ai/GuideStanley'
 
 const Meta = ({ task }: { task: GuideTask }) => <p className="guide__meta muted">{taskMeta(task).join(' · ')}</p>
@@ -63,8 +65,8 @@ function PutAside({ task, aside }: { task: GuideTask; aside: Aside }) {
   const title = taskWords(task).title
   return (
     <span className="guide__aside">
-      <Button variant="secondary" onClick={() => aside.later(task)} aria-label={t('guide.laterFor', { task: title })}>{t('guide.later')}</Button>
-      <Button variant="secondary" onClick={() => aside.skip(task)} aria-label={t('guide.skipFor', { task: title })}>{t('guide.skip')}</Button>
+      <GuideIconButton icon={CalendarClock} label={t('guide.later')} describedAs={t('guide.laterFor', { task: title })} onClick={() => aside.later(task)} />
+      <GuideIconButton icon={Ban} label={t('guide.skip')} describedAs={t('guide.skipFor', { task: title })} onClick={() => aside.skip(task)} />
     </span>
   )
 }
@@ -100,7 +102,7 @@ function DoNow({ task, aside, view }: { task: GuideTask; aside: Aside; view: Gui
       {task.urgency === 'now' && <p className="guide__urgent"><Clock size={16} aria-hidden="true" /> {t('guide.urgent')}</p>}
       <Meta task={task} />
       <div className="button-row"><LinkButton to={task.to} state={openedFrom('blue', task.id)} aria-label={t('guide.startTask', { task: w.title })}>{t('guide.start')}</LinkButton><TaskDoIt task={task} where="home" /></div>
-      <div className="guide__more"><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} /><TaskRemind task={task} /><TaskCalendar task={task} /></div>
+      <div className="guide__more"><PutAside task={task} aside={aside} /><TaskHelp task={task} view={view} compact /><TaskRemind task={task} compact /><TaskCalendar task={task} compact /></div>
     </Card>
   )
 }

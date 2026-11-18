@@ -12173,7 +12173,7 @@ export const enCore = {
   'action.go.travel': 'See your travel plan',
   'action.reason.nothing': 'There is nothing left that I can do here. Open the screen to finish it yourself.',
   'guide.changed': 'This moved:',
-  'guide.handoff.title': 'You are in {stage}.',
+  'guide.handoff.title': 'You are in the {stage} stage.',
   'guide.handoff.first': 'Two things first: {tasks}.',
   'guide.handoff.first1': 'One thing first: {tasks}.',
   'guide.handoff.more': 'Then {count} more.',

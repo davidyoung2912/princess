@@ -270,6 +270,8 @@ main.signin { margin-inline: auto; }
 .tip__got { white-space: nowrap; }
 @media (max-width: 30rem) { .tip { grid-template-columns: auto 1fr; } .tip__got { grid-column: 1 / -1; justify-self: start; } }
 .settings-tips { margin-bottom: var(--space-5); }
+.settings-tips > p { margin-block: 0 var(--space-3); }
+.settings-tips > [role='status'] { margin-block: var(--space-3) 0; font-weight: 600; }
 /* Got It! is as small as the Back button on the header card. */
 .btn.tip__got { min-height: 2rem; padding: 0 var(--space-3); font-size: 0.75em; font-weight: 600; border-width: 2px; background: var(--bg); color: var(--text); border-color: var(--border-strong); }
 .btn.tip__got:hover { background: var(--sky-tint); }

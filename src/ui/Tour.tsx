@@ -45,7 +45,8 @@ export function Tour({ paused = false }: { paused?: boolean }) {
   useEffect(() => {
     if (paused) return
     const look = () => setStep((now) => {
-      if (document.querySelector('.dialog-backdrop')) return now
+      // Another modal (a sheet, or a page's own Stanley tour) has the screen: this tour steps aside until it is gone.
+      if (document.querySelector('.dialog-backdrop, .coach-backdrop')) return null
       if (now && !seen.includes(now.id) && targetBox(now.target)) return now
       return nextStep(seen, (name) => targetBox(name) !== null)
     })

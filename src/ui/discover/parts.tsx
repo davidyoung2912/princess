@@ -8,7 +8,7 @@ import { favouriteKey, shareUrl, type FavouriteKind } from '../../domain/favouri
 import { type FromPrice, type Quote } from '../../domain/priceShapes'
 import { formatMoney } from '../../domain/money'
 import type { ItineraryDay, Sailing } from '../../domain/sailings'
-import { Anchor, Bookmark, BookmarkCheck, Share, Waves } from '../icons'
+import { Anchor, Arrive, Bookmark, BookmarkCheck, Clock, Depart, Share, Waves } from '../icons'
 import { Button } from '../Button'
 import { StanleyExplain } from '../ai/StanleyExplain'
 import { StanleyOops } from '../ai/StanleyEmpty'
@@ -87,10 +87,13 @@ export function ItineraryList({ sailing, dated }: { sailing: Sailing; dated?: bo
             <p className="muted"><Waves aria-hidden="true" /> {t('discover.seaDay')}<StanleyExplain term="seaDay" /></p>
           ) : (
             <>
-              <p className="muted">
-                {[d.arrive && t('discover.arrive', { time: formatTime(d.arrive) }), d.allAboard && t('discover.allAboard', { time: formatTime(d.allAboard) }), d.depart && t('discover.depart', { time: formatTime(d.depart) })].filter(Boolean).join(' · ')}
-                {d.allAboard && <StanleyExplain term="allAboard" />}
-              </p>
+              {(d.arrive || d.allAboard || d.depart) && (
+                <ul className="event__times">
+                  {d.arrive && <li><Arrive aria-hidden="true" focusable="false" />{t('discover.arrive', { time: formatTime(d.arrive) })}</li>}
+                  {d.allAboard && <li><Clock aria-hidden="true" focusable="false" />{t('discover.allAboard', { time: formatTime(d.allAboard) })}<StanleyExplain term="allAboard" /></li>}
+                  {d.depart && <li><Depart aria-hidden="true" focusable="false" />{t('discover.depart', { time: formatTime(d.depart) })}</li>}
+                </ul>
+              )}
               {d.day !== 1 && d.day !== list.length && (
                 <p><span className={`tag${d.tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {d.tender ? t('discover.tender') : t('discover.dock')}</span>{d.tender && <StanleyExplain term="tender" />}</p>
               )}
