@@ -120,7 +120,7 @@ describe('the honest miss', () => {
     expect(pills.map((p) => p.id)).toEqual(['search', 'browse', 'contact'])
     expect(pills[0]!.path).toBe('/ship/search?q=purple%20giraffe%20tango')
     expect(pills[0]!.label).toContain('purple giraffe tango')
-    expect(pills[1]!.path).toBe('/plan/day')
+    expect(pills[1]!.path).toBe('/')
     expect(pills[2]!.path).toBe('/me/contact')
   })
   it('shortens long words on the label and the link, and with no words searches plainly', () => {

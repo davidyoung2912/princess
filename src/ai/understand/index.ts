@@ -3,7 +3,7 @@ import { hasText, t, type StringKey } from '../../i18n'
 import { SCREEN_BY_ID } from '../../routes/screens'
 import { DESTINATIONS } from './destinations'
 import { SCREEN_SPECS } from './screenSpec'
-import { STAGE_ACTION, type JourneyStage } from '../../routes/hubs'
+import type { JourneyStage } from '../../routes/hubs'
 import type { Pill } from './understand'
 import { compose, type Composed, type ReplyFacts, type Words } from './reply'
 import type { EntityKind } from './entities'
@@ -57,7 +57,7 @@ export function missPills(asked: Asked): Pill[] {
   const typed = asked.text.replace(/\s+/g, ' ').trim()
   const short = typed.length > SEARCH_WORDS ? `${typed.slice(0, SEARCH_WORDS - 1).trimEnd()}…` : typed
   const search: Pill = typed ? { id: 'search', label: t('understand.miss.search', { words: short }), path: `/ship/search?q=${encodeURIComponent(typed.slice(0, 80))}` } : { id: 'search', label: pillLabel('search'), path: '/ship/search' }
-  return [search, { id: 'browse', label: t('understand.miss.browse'), path: asked.stage ? STAGE_ACTION[asked.stage] : '/' }, { id: 'contact', label: t('understand.miss.person'), path: '/me/contact' }]
+  return [search, { id: 'browse', label: t('understand.miss.browse'), path: '/' }, { id: 'contact', label: t('understand.miss.person'), path: '/me/contact' }]
 }
 
 /** What to show for a reply once the question is understood: new words if it was no answer, and the pills. */

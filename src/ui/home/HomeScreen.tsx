@@ -24,7 +24,6 @@ import { ShortcutBar } from '../ShortcutBar'
 import { JourneyStrip } from '../JourneyStrip'
 import { Explore } from '../discover/Landing'
 import { countdown } from '../account/format'
-import { NextStep } from '../account/tripParts'
 import { Saved } from '../onboard/common'
 import { OnboardHome } from '../onboard/OnboardHome'
 import { pickTrip } from '../../hooks/useStageFacts'
@@ -33,6 +32,7 @@ import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
 import { StageLanding } from './StageLanding'
 import { StageHome } from './StageHome'
+import { StageGuide } from './StageGuide'
 import { StageHero } from '../StageHero'
 import { RecentCard } from './RecentCard'
 import { ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
@@ -80,8 +80,7 @@ export function HomeScreen() {
             {counts.map((c) => <li key={c.id}>{c.days === 0 ? t(`count.${c.id}.today` as StringKey) : t(`count.${c.id}` as StringKey, { count: c.days })}</li>)}
           </ul>
         )}
-        <NextStep trip={trip} />
-        <StageHome trip={trip} />
+        <StageHome />
         <QuickDiary />
       </div>
     )
@@ -116,9 +115,10 @@ export function HomeScreen() {
         <DayHeader today={today.data} />
         <TodayStrip />
         {!ABOARD_STAGES.includes(stage) && !moment && <StageLanding />}
+        {!ABOARD_STAGES.includes(stage) && <StageGuide />}
         <StanleyChanges screen="home" />
         <NudgeCards aboard />
-        {ABOARD_STAGES.includes(stage) && <StageHome today={today.data} />}
+        {ABOARD_STAGES.includes(stage) && <StageHome />}
         <QuickDiary />
         <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
       </div>
@@ -130,6 +130,7 @@ export function HomeScreen() {
       {trip && <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>}
       <NewTabsNote /><ShortcutBar />
       {moment ? <MomentCard moment={moment} /> : <StageLanding />}
+      <StageGuide />
       {trip && <HeroCount days={trip.daysToDeparture} />}
       <RecentCard />
       {trip && <JourneyStrip />}
@@ -183,7 +184,6 @@ function Journey({ trip }: { trip: TripView }) {
         <Banner kind="warning" title={t('checkin.closed')} action={<LinkButton to="/home/check-in/terminal" variant="secondary">{t('route.terminalCheckin')}</LinkButton>}><p>{t('checkin.closedBody')}</p></Banner>
       ) : (
         <>
-          <NextStep trip={trip} />
           {trip.checkin.state === 'notOpen' && <p>{t('home.checkinOpens', { date: formatDate(dateIn(trip.checkin.opensAt, 'America/New_York')) })} <Link to="/plan/checklist">{t('route.checklist')}</Link></p>}
           {trip.checkin.state === 'open' && trip.next !== 'checkin' && <p><Link to="/home/check-in">{t('route.checkin')}</Link></p>}
         </>

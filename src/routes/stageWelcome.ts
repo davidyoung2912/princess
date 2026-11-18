@@ -1,6 +1,5 @@
 import { hasText } from '../i18n'
 import { JOURNEY_STAGES, type JourneyStage } from './hubs'
-import { nextSteps, type HomeFacts } from './stageHome'
 
 /**
  * The welcome page a guest sees once on entering a stage (docs/stage-welcome-plan.md). Which welcomes are done is one small document on the server
@@ -145,8 +144,23 @@ export interface WelcomeContent {
   needs: WelcomeNeed[]
 }
 
-/** Every step a stage can offer, so the page shows the full list whatever the guest has done. */
-const ALL_STEPS: HomeFacts = { savedSailings: 0, draft: null, aboard: { musterDone: false, lastFullDay: true } }
+/**
+ * Where each step of a stage's welcome page goes, in the order of the step text (`welcome.<stage>.step.N`) and of the visits kept on the server. The plan the guest
+ * works from is the guide (`useGuide`); this is only the stage's overview.
+ */
+const STEP_LINKS: Record<JourneyStage, readonly string[]> = {
+  dream: ['/home/quiz', '/home/sailings', '/plan/group-poll'],
+  discover: ['/home/cabins', '/home/cruise/cost', '/book'],
+  book: ['/book', '/book', '/plan/party'],
+  manage: ['/me/payments', '/me/documents', '/plan/readiness'],
+  prebook: ['/excursions-explorer', '/dining-today', '/plan/packing'],
+  getToShip: ['/home/check-in', '/plan/getting-there', '/me/documents'],
+  embark: ['/home/embarkation/steps', '/home/meeting-point', '/ship/muster'],
+  sea: ['/plan/day', '/dining-today', '/home/disembark/bags'],
+  port: ['/ship/port', '/excursions-explorer', '/ship/safe-ashore'],
+  disembark: ['/home/disembark', '/home/disembark/bags', '/me/bill'],
+  remember: ['/me/recap', '/me/feedback', '/home/sailings'],
+}
 
 export function welcomeContent(stage: JourneyStage): WelcomeContent {
   const at = JOURNEY_STAGES.indexOf(stage)
@@ -164,7 +178,7 @@ export function welcomeContent(stage: JourneyStage): WelcomeContent {
     nextNameKey: at === JOURNEY_STAGES.length - 1 ? null : `welcome.${stage}.nextName`,
     needIntroKey: `welcome.${stage}.needIntro`,
     needs: NEED_LINKS[stage].map((to, i) => ({ key: `welcome.${stage}.need.${i + 1}`, to })),
-    steps: nextSteps(stage, ALL_STEPS).map((s, i) => ({ key: `welcome.${stage}.step.${i + 1}`, to: s.to })),
+    steps: STEP_LINKS[stage].map((to, i) => ({ key: `welcome.${stage}.step.${i + 1}`, to })),
   }
 }
 

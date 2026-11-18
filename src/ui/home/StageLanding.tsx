@@ -1,15 +1,13 @@
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { t, th, type StringKey } from '../../i18n'
-import { STAGE_ACTION } from '../../routes/hubs'
 import { hasWelcomeCopy } from '../../routes/stageWelcome'
 import { Link } from 'react-router'
-import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { StanleyPose } from '../StanleyPose'
 import { poseForStage } from '../../routes/stageMood'
 
 /**
- * The landing card: what matters most to this guest right now, from their journey stage and the day of it, with the one thing to do next.
+ * The landing card: what matters most to this guest right now, from their journey stage and the day of it, The one thing to do next is the guide's "Do this now", just below, so the two never differ.
  * It is the first thing on Home, which is where sign-in and every change of the testing date land.
  */
 export function StageLanding() {
@@ -21,7 +19,6 @@ export function StageLanding() {
       <p className="muted">{t('land.label')}{where && <> · {where}</>}</p>
       <h2 id="landing-h" className="card__title">{th(`land.title.${stage}` as StringKey)}</h2>
       <p>{t(`land.body.${stage}` as StringKey)}</p>
-      <div className="button-row"><LinkButton to={STAGE_ACTION[stage]}>{t(`land.go.${stage}` as StringKey)}</LinkButton></div>
       {hasWelcomeCopy(stage) && <p><Link to="/welcome">{t('welcome.overview')}</Link></p>}
     </Card>
   )

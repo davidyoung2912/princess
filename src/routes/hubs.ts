@@ -16,18 +16,3 @@ export const JOURNEY_OF_STAGE: Record<StageId, JourneyStage> = {
   disembark: 'disembark',
   postCruise: 'remember',
 }
-
-/** The one screen to open for each stage of the trip. */
-export const STAGE_ACTION: Record<JourneyStage, string> = {
-  dream: '/home/quiz',
-  discover: '/home/cruise',
-  book: '/book',
-  manage: '/plan/checklist',
-  prebook: '/plan/checklist',
-  getToShip: '/plan/getting-there',
-  embark: '/home/embarkation',
-  sea: '/plan/day',
-  port: '/ship/port',
-  disembark: '/home/disembark',
-  remember: '/me/recap',
-}

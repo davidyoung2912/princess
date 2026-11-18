@@ -2,21 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { searchContent } from '../domain/searchIndex'
 import { parseRecent, pushRecent } from '../domain/recentSearches'
 import { t } from '../i18n'
-import { JOURNEY_OF_STAGE, JOURNEY_STAGES, STAGE_ACTION } from './hubs'
+import { JOURNEY_OF_STAGE, JOURNEY_STAGES } from './hubs'
 import { ROUTES } from './routes'
 import { FIND_TASKS, SCREEN_WORDS, screenHits } from './screenWords'
 import { STAGE_IDS } from '../domain/sailings'
 
 describe('journey stages (N2.1)', () => {
-  it('maps every point of the sailing to one of the eleven stages and gives each stage an action on a real screen', () => {
+  it('maps every point of the sailing to one of the eleven stages and names each stage', () => {
     expect(JOURNEY_STAGES).toHaveLength(11)
     for (const id of STAGE_IDS) expect(JOURNEY_STAGES).toContain(JOURNEY_OF_STAGE[id])
-    const known = new Set(ROUTES.map((r) => r.path))
-    for (const s of JOURNEY_STAGES) {
-      expect(known.has(STAGE_ACTION[s]), s).toBe(true)
-      expect(t(`journey.stage.${s}`).length).toBeGreaterThan(2)
-      expect(t(`journey.go.${s}`).length).toBeGreaterThan(5)
-    }
+    for (const s of JOURNEY_STAGES) expect(t(`journey.stage.${s}`).length).toBeGreaterThan(2)
   })
 })
 

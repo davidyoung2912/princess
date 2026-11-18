@@ -1,5 +1,5 @@
-import type { JourneyStage } from '../routes/hubs'
-import { nextSteps, urgentStep, type HomeFacts } from '../routes/stageHome'
+import type { GuideView } from '../api/guideTypes'
+import { primaryOf, urgentTask } from '../guide/view'
 
 /** What Stanley says Home should do next: one line, a button, no model call (docs/experience-extension-ideas.md 13.2, component 7). */
 export interface NextAnswer {
@@ -23,15 +23,14 @@ const URGENT_KEYS = {
 export const EVENING_HOUR = 18
 
 /**
- * One answer from the stage, the facts Home already has and the hour: an urgent reason first (payment, check-in, documents, muster, bags),
- * then on board in the evening a look at tomorrow, then the first step not yet done, and "up to date" when every step is done.
+ * One answer from the guest's guide and the hour, so it can never differ from what Home lists: an urgent reason first (payment, check-in, documents, muster, bags),
+ * then on board in the evening a look at tomorrow, then the guide's first task, and "up to date" when nothing is open to do.
  */
-export function stanleyNext(stage: JourneyStage, facts: HomeFacts, hour: number): NextAnswer {
-  const steps = nextSteps(stage, facts)
-  const first = steps.find((s) => !s.done)
-  const urgent = urgentStep(stage, facts)
-  if (urgent && first) return { key: URGENT_KEYS[urgent], to: first.to }
+export function stanleyNext(view: GuideView, hour: number): NextAnswer {
+  const urgent = urgentTask(view)
+  if (urgent?.urgencyReason) return { key: URGENT_KEYS[urgent.urgencyReason], to: urgent.to }
+  const first = primaryOf(view)
   if (!first) return { key: 'stanley.next.allDone', to: null }
-  if (hour >= EVENING_HOUR && (stage === 'sea' || stage === 'port')) return { key: 'stanley.next.evening', to: '/plan/day' }
-  return { key: 'stanley.next.step', stepKey: first.key, to: first.to }
+  if (hour >= EVENING_HOUR && (view.stage === 'sea' || view.stage === 'port')) return { key: 'stanley.next.evening', to: '/plan/day' }
+  return { key: 'stanley.next.step', stepKey: `guide.${first.id}.title`, to: first.to }
 }

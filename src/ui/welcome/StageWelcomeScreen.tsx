@@ -3,11 +3,8 @@ import { Link, useLocation } from 'react-router'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { t, th, type StringKey } from '../../i18n'
 import { needId, welcomeContent } from '../../routes/stageWelcome'
-import { nextSteps } from '../../routes/stageHome'
-import { pickTrip, useStageFacts } from '../../hooks/useStageFacts'
-import { useOnboardToday } from '../../hooks/useOnboardToday'
-import { useMine } from '../../hooks/useMine'
-import { api } from '../../runtime'
+import { useGuide } from '../../hooks/useGuide'
+import { stepDoneInGuide } from '../../guide/view'
 import { Check } from 'lucide-react'
 import { getProgress, subscribeProgress } from '../../stageProgress/store'
 import { getContext, subscribeContext } from '../../account/context'
@@ -45,10 +42,8 @@ function StageWelcomeStage() {
   const c = welcomeContent(stage)
   const first = c.introKey !== null
   const ticks = useSyncExternalStore(subscribeTicks, loadTicks, loadTicks)
-  const trips = useMine(() => api.trips.list())
-  const today = useOnboardToday()
-  const { facts } = useStageFacts(trips.data ? pickTrip(trips.data.upcoming) : null, today.data ?? null)
-  const steps = nextSteps(stage, facts).map((x, i) => ({ ...x, done: x.done || wasVisited(visits, stage, focusSailingId, i + 1) }))
+  const guide = useGuide().data
+  const steps = c.steps.map((x, i) => ({ ...x, done: wasVisited(visits, stage, focusSailingId, i + 1) || (guide?.stage === stage && stepDoneInGuide(guide, i + 1)) }))
   const doneCount = steps.filter((x) => x.done).length
   const remaining = steps.length - doneCount
   const nextUpIndex = steps.findIndex((x) => !x.done)

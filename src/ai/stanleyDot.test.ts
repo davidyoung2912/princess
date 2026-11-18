@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest'
+import { guide, task } from '../guide/fixture'
 import { dotReason, dotShows } from './stanleyDot'
-import type { HomeFacts } from '../routes/stageHome'
 
-const facts: HomeFacts = { savedSailings: 0, draft: null, aboard: { musterDone: false, lastFullDay: false } }
+const muster = guide('embark', [task('embark.muster', { urgency: 'now', urgencyReason: 'muster' })])
 
 describe('stanley speech dot', () => {
   it('needs an urgent reason and a talkative level', () => {
-    expect(dotReason('embark', facts, 'helpful')).toBe('muster')
-    expect(dotReason('embark', facts, 'chatty')).toBe('muster')
-    expect(dotReason('embark', facts, 'asked')).toBeNull()
-    expect(dotReason('embark', facts, 'off')).toBeNull()
-    expect(dotReason('dream', facts, 'chatty')).toBeNull()
+    expect(dotReason(muster, 'helpful')).toBe('muster')
+    expect(dotReason(muster, 'chatty')).toBe('muster')
+    expect(dotReason(muster, 'asked')).toBeNull()
+    expect(dotReason(muster, 'off')).toBeNull()
+    expect(dotReason(guide('dream', [task('dream.quiz')]), 'chatty')).toBeNull()
+    expect(dotReason(null, 'chatty')).toBeNull()
   })
   it('hides once the reason has been seen', () => {
     expect(dotShows('muster', new Set())).toBe(true)

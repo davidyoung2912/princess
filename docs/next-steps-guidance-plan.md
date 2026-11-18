@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine) is built; G2 (Home rebuilt on the guide) is next.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine) and G2 (Home rebuilt on the guide) are built; G3 (real done and carry-over) is next.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -196,3 +196,11 @@ Found while reading the code. None are built; each is small.
 - Tests written, not run: `GuideRulesTests.cs`, and the route in `SwaggerCoverageTests.cs`.
 - **Not changed yet:** Home, the welcome page, Stanley's sentence and the trip banner still use `nextSteps()`, `urgentStep()` and `STAGE_ACTION`. G2 switches them to the guide and retires those.
 - **Left for later phases:** visits are still recorded on the client (`stageProgress`), so G2 overlays them on `visit` tasks. Per-traveller counts, skip and later, personal fit and the "all done" state are G3. Insurance, phone setup and bag preparation are still without a screen (section 8), so they are not in the catalogue yet.
+
+**G2, Home rebuilt on the guide (built).**
+- `src/guide/view.ts` (pure): `applyVisits` lays the guest's recorded visits over the guide (a `visit` task is done once its screen was opened, via `VISIT_STEP`, the welcome step number it counts for, so visits already kept on the server still count; done tasks drop to the end, a task they blocked opens, primary and counts follow), `openTasks` (at most five), `moreCount`, `doneTasks`, `urgentReason`, `urgentTask`, `stepDoneInGuide`. `useGuideView()` is the guide with visits applied; every surface reads it.
+- `StageGuide` (`src/ui/home/StageGuide.tsx`): the stage line with "n of m done" and the real "moves on" sentence with its date, **Do this now** (what, why, "Needs you soon" when urgent, due or opens date, minutes, one button), **Coming up** (up to four more, with a "n more are not shown" link), and **Done** collapsed. When nothing is open it says so and offers "Look ahead" to the first waiting task. It also feeds Stanley's speech dot. It is in `StageHome` (Dream to Book, the trip stages, Remember, on board) and in the two other Home layouts (default, and aboard outside the on-board stages). The essentials home is unchanged.
+- One source now: the landing card has no button of its own (the guide's button is just below it), the journey strip's "Next:" link is the guide's first task, `stanleyNext` and `stanleyDot` take the guide (the same five urgent reasons), the Home trip layout and `Journey` no longer show the trip `NextStep` banner (it stays on Me and the trip page until G3), and the welcome page's checks come from the same guide plus its visits.
+- Retired: `nextSteps`, `urgentStep`, `STAGE_ACTION`, `HomeFacts.trip` and `.aboard`, the `stage.next.*`, `land.go.*` and `journey.go.*` text (English and the matching Spanish keys, removed, not edited). The welcome page keeps its own list of step links (`STEP_LINKS` in `stageWelcome.ts`). The "browse from where you are" pill after a miss now opens Home, which shows the stage's guide and tiles.
+- Tests: `src/guide/view.test.ts` (new), and the Stanley next, Stanley dot, stage Home and hubs tests rewritten on guide fixtures (`src/guide/fixture.ts`). No server change in this phase.
+- **Left for G3:** the facts for excursions, dining, packing and so on, per-traveller counts, skip and later, personal fit, and the trip banner on Me reading the guide.

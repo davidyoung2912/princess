@@ -2,12 +2,16 @@ import { Link } from 'react-router'
 import { useJourneyStage } from '../hooks/useJourneyStage'
 import { t, th } from '../i18n'
 import { voyagePosition } from '../domain/homeLook'
-import { JOURNEY_STAGES, STAGE_ACTION } from '../routes/hubs'
+import { JOURNEY_STAGES } from '../routes/hubs'
+import { useGuideView } from '../hooks/useGuideView'
+import { primaryOf } from '../guide/view'
+import { taskWords } from '../guide/words'
 
-/** The eleven stages of the trip with the current one marked, and the one thing to do for it (N2.1). */
+/** The eleven stages of the trip with the current one marked, and the one thing to do for it, from the guide (N2.1). */
 export function JourneyStrip() {
   const stage = useJourneyStage()
-  const action = STAGE_ACTION[stage]
+  const { data: guide } = useGuideView()
+  const next = guide ? primaryOf(guide) : null
   const pos = voyagePosition(stage)
   return (
     <section aria-labelledby="journey-h" className="journey">
@@ -21,7 +25,7 @@ export function JourneyStrip() {
           </li>
         ))}
       </ol>
-      <p className="journey__next">{t('journey.next')} <Link to={action}>{t(`journey.go.${stage}`)}</Link></p>
+      {next && <p className="journey__next">{t('journey.next')} <Link to={next.to}>{taskWords(next).title}</Link></p>}
     </section>
   )
 }
