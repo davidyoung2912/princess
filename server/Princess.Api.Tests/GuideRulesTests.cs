@@ -1,0 +1,143 @@
+using Princess.Api.Domain;
+using Xunit;
+
+namespace Princess.Api.Tests;
+
+public class GuideRulesTests
+{
+    private static readonly DateOnly Departure = new(2027, 3, 21);
+
+    private static GuideTrip Trip(DateOnly today, bool paid = false, bool docs = false, string checkin = "notOpen", bool muster = false, bool agent = false, Dictionary<string, GuideCheck>? list = null) =>
+        new("PR123", Departure, agent, paid, Departure.AddDays(-75), docs, checkin, Departure.AddDays(-3), muster, list ?? []);
+
+    private static GuideView At(string stage, DateOnly today, GuideTrip? trip = null, int saved = 0, GuideDraft? draft = null, bool lastFull = false, bool feedback = false) =>
+        GuideRules.Build(new GuideFacts(stage, today, saved, draft, trip, lastFull, feedback));
+
+    [Fact]
+    public void EveryStageHasTasksAndEveryTaskHasADestination()
+    {
+        foreach (var stage in StageRules.All)
+        {
+            var today = Departure.AddDays(-20);
+            var g = At(stage, today, stage is StageRules.Dream or StageRules.Discover ? null : Trip(today), draft: new("d1", false));
+            Assert.NotEmpty(g.Tasks);
+            Assert.All(g.Tasks, t => Assert.StartsWith("/", t.To));
+        }
+    }
+
+    [Fact]
+    public void ADreamingGuestIsToldToTakeTheQuizAndASavedSailingIsDoneFromData()
+    {
+        var g = At(StageRules.Dream, Departure.AddDays(-200), saved: 1);
+        Assert.Equal("dream.quiz", g.PrimaryId);
+        Assert.Equal("done", g.Tasks.Single(t => t.Id == "dream.save").State);
+        Assert.Equal("data", g.Tasks.Single(t => t.Id == "dream.save").DoneBy);
+    }
+
+    [Fact]
+    public void AnUnpaidBalanceNearItsDateIsUrgentAndFirst()
+    {
+        var today = Departure.AddDays(-80);
+        var g = At(StageRules.Manage, today, Trip(today));
+        var first = g.Tasks[0];
+        Assert.Equal("manage.pay", first.Id);
+        Assert.Equal(("now", "payment"), (first.Urgency, first.UrgencyReason));
+        Assert.Equal("/book/pay/PR123", first.To);
+        Assert.True(first.Hard);
+    }
+
+    [Fact]
+    public void ADistantBalanceIsNotUrgent()
+    {
+        var today = Departure.AddDays(-150);
+        Assert.NotEqual("now", At(StageRules.Manage, today, Trip(today)).Tasks.Single(t => t.Id == "manage.pay").Urgency);
+    }
+
+    [Fact]
+    public void AnAgentTripPaysAndHasNoDocumentUrgencyHere()
+    {
+        var today = Departure.AddDays(-20);
+        var g = At(StageRules.Manage, today, Trip(today, agent: true));
+        Assert.Equal("/me/payments", g.Tasks.Single(t => t.Id == "manage.pay").To);
+        Assert.Null(g.Tasks.Single(t => t.Id == "manage.documents").UrgencyReason);
+    }
+
+    [Fact]
+    public void OptionalTasksNeverLeadWhileARequiredOneIsOpen()
+    {
+        var today = Departure.AddDays(-100);
+        var g = At(StageRules.Manage, today, Trip(today, paid: true, docs: true));
+        Assert.Equal("manage.readiness", g.PrimaryId);
+    }
+
+    [Fact]
+    public void UnpaidAndUndocumentedTasksAreCarriedIntoPrebook()
+    {
+        var today = Departure.AddDays(-10);
+        var g = At(StageRules.Prebook, today, Trip(today));
+        var pay = g.Tasks.Single(t => t.Id == "manage.pay");
+        Assert.Equal("manage", pay.CarriedFrom);
+        Assert.Equal("manage.pay", g.PrimaryId);
+        Assert.DoesNotContain(g.Tasks.Where(t => t.CarriedFrom is null), t => t.Stage != "prebook");
+        Assert.Equal(5, g.Counts.Total);
+    }
+
+    [Fact]
+    public void ChecklistFactsMarkPrebookTasksDoneAndGiveTheirDates()
+    {
+        var today = Departure.AddDays(-10);
+        var list = new Dictionary<string, GuideCheck> { ["tours"] = new(true, Departure.AddDays(-60)), ["dining"] = new(false, Departure.AddDays(-30)) };
+        var g = At(StageRules.Prebook, today, Trip(today, paid: true, docs: true, list: list));
+        Assert.Equal("done", g.Tasks.Single(t => t.Id == "prebook.tours").State);
+        var dining = g.Tasks.Single(t => t.Id == "prebook.dining");
+        Assert.Equal(("todo", "soon", "2027-02-19"), (dining.State, dining.Urgency, dining.Due));
+    }
+
+    [Fact]
+    public void CheckinWaitsUntilItOpensThenBlocksThePassUntilDone()
+    {
+        var early = Departure.AddDays(-10);
+        var g = At(StageRules.GetToShip, early, Trip(early, paid: true, docs: true));
+        var checkin = g.Tasks.Single(t => t.Id == "getToShip.checkin");
+        Assert.Equal(("waiting", "2027-03-18"), (checkin.State, checkin.OpensAt));
+        Assert.Equal("blocked", g.Tasks.Single(t => t.Id == "getToShip.pass").State);
+
+        var open = Departure.AddDays(-2);
+        var g2 = At(StageRules.GetToShip, open, Trip(open, paid: true, docs: true, checkin: "open"));
+        Assert.Equal("getToShip.checkin", g2.PrimaryId);
+        Assert.Equal("checkin", g2.Tasks[0].UrgencyReason);
+
+        var done = At(StageRules.GetToShip, open, Trip(open, paid: true, docs: true, checkin: "done"));
+        Assert.Equal("todo", done.Tasks.Single(t => t.Id == "getToShip.pass").State);
+    }
+
+    [Fact]
+    public void MusterIsUrgentUntilDoneAndBagsAppearOnlyOnTheLastFullDay()
+    {
+        var today = Departure;
+        Assert.Equal("embark.muster", At(StageRules.Embark, today, Trip(today, paid: true)).PrimaryId);
+        Assert.Equal("done", At(StageRules.Embark, today, Trip(today, paid: true, muster: true)).Tasks.Single(t => t.Id == "embark.muster").State);
+        Assert.DoesNotContain(At(StageRules.Sea, today, Trip(today, paid: true)).Tasks, t => t.Id == "sea.bags");
+        var last = At(StageRules.Sea, today, Trip(today, paid: true), lastFull: true);
+        Assert.Equal(("sea.bags", "bags"), (last.PrimaryId, last.Tasks[0].UrgencyReason));
+    }
+
+    [Fact]
+    public void FeedbackIsDoneFromDataAndTheMoveOnDateIsTheRealOne()
+    {
+        Assert.Equal("done", At(StageRules.Remember, Departure, Trip(Departure), feedback: true).Tasks.Single(t => t.Id == "remember.feedback").State);
+        Assert.Equal("2027-03-07", At(StageRules.Manage, Departure.AddDays(-30), Trip(Departure)).MoveOn.Date);
+        Assert.Equal("2027-03-18", At(StageRules.Prebook, Departure.AddDays(-10), Trip(Departure)).MoveOn.Date);
+        Assert.Null(At(StageRules.Sea, Departure, Trip(Departure)).MoveOn.Date);
+    }
+
+    [Fact]
+    public void AFinishedStageHasNoPrimaryAndCountsEverythingDone()
+    {
+        var g = At(StageRules.Dream, Departure.AddDays(-200), saved: 1);
+        Assert.NotNull(g.PrimaryId);
+        var d = At(StageRules.Discover, Departure.AddDays(-200), draft: new("d1", true));
+        Assert.Equal(1, d.Counts.Done);
+        Assert.Equal(2, d.Counts.Open);
+    }
+}

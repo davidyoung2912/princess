@@ -4,6 +4,7 @@ import type { ExplorerKind } from '../domain/explorer/types'
 import type { AboardApi } from './aboardTypes'
 import type { AvatarChoice, ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi, ChatRoomsApi, ChatRoomsStaffApi } from './chatTypes'
 import type { AheadApi } from './aheadTypes'
+import type { GuideApi } from './guideTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
 import type { BoardedSource } from '../domain/embark'
@@ -806,6 +807,7 @@ export interface Api {
   chatRoomsStaff: ChatRoomsStaffApi
   chatGuardian: ChatGuardianApi
   ahead: AheadApi
+  guide: GuideApi
   disembark: DisembarkApi
   cases: CasesApi
   post: PostApi

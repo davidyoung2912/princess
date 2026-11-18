@@ -169,7 +169,10 @@ main.page > h1 { color: var(--primary); }
 /* Big figures (prices, totals, booking numbers) take the section accent. */
 .price__amount, .fare__total, .booking-number, .trip-count, .bill__big, .help-now__big, .wrapped-card__big { color: var(--sec); }
 progress, meter { accent-color: var(--sec); }
-.page-header__row .page-header__art { margin-inline-start: auto; flex: none; display: grid; place-items: center; width: 6rem; height: 6rem; border-radius: 50%; background: color-mix(in srgb, var(--on-header) 88%, transparent); }
+/* The picture sits at the end of the bar without taking part in the layout, so the title row and the subtext are in the same place on every header, with or without it. */
+.page-header--art { min-height: calc(6rem + 2 * var(--space-5)); }
+.page-header--art :is(.page-header__row, .page-header__subtext) { padding-inline-end: 7rem; }
+.page-header__row .page-header__art { position: absolute; inset-block-start: var(--space-5); inset-inline-end: var(--space-5); display: grid; place-items: center; width: 6rem; height: 6rem; border-radius: 50%; background: color-mix(in srgb, var(--on-header) 88%, transparent); }
 /* Checkbox and radio hover: a soft glow and a small grow, like the buttons, on the control or anywhere on its label row. The stage overview's tick icons do the same. Reduced motion keeps the glow and drops the grow. */
 :is(input[type='checkbox'], input[type='radio']):not(.visually-hidden), .welcome__tick svg { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease); }
 .welcome__tick svg { border-radius: 0.25rem; }

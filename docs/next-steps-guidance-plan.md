@@ -1,6 +1,6 @@
 # "What should I do now?": the next-steps guidance plan
 
-Status: **Proposal v1 (2026-11-17). Nothing here is built. For the product owner's review.**
+Status: **v2 (2026-11-17). Decisions made (section 9). G1 (the guide engine) is built; G2 (Home rebuilt on the guide) is next.**
 
 Goal: at every one of the 11 stages, at any moment, a guest can answer "what should I do now, why, by when, and what comes after?" in one glance, and every screen they land on keeps them oriented. This should be one of the app's two defining strengths, alongside Stanley.
 
@@ -179,10 +179,20 @@ Found while reading the code. None are built; each is small.
 - **Profile fields** (children, access, first cruise) are probably present; the guide must read them without asking again.
 - **"Claim what's owed"** at Remember (refunds, onboard credit) may need a screen or a bill sub-view.
 
-## 9. Decisions I need from you
+## 9. Decisions (made 2026-11-17)
 
-1. **Server-side guide (recommended) or client-side?** Server is consistent with the stage engine and the thin-client rule, and lets push and Stanley share it. It does add C# work in G1 that I won't be running tests for.
-2. **How many tasks on Home?** I propose one primary plus two upcoming, with the rest one tap away. A single task only would be calmer, and the full list is more reassuring.
-3. **Skip and "not for me":** are guests allowed to hide every task, including payment and documents? I suggest tasks with a hard deadline can only be "later", never hidden.
-4. **Carry-over wording** ("Still to do from Manage") and whether carried-over tasks may take the primary slot. I suggest yes, if urgent.
-5. **Which phase first?** I recommend G1 then G2, then stopping for your review.
+1. **Server-side guide: yes.** C# tests are written alongside but not run (CLAUDE.md).
+2. **Home shows up to 5 open tasks at a time** (the first is the "Do this now" card, the rest are "Coming up"), not 1 + 2. The rest are one tap away.
+3. **Tasks with hard deadlines can only be put off, never hidden.** The server marks them `hard` (payment, documents, check-in, muster, bag night).
+4. **An urgent carried-over task may take the top slot.** Built in G1: an unpaid balance or missing documents stay on the list in Prebook and Get to the ship, labelled with the stage they came from.
+5. **Order: G1, then G2**, stopping for review after each.
+
+## 10. Build log
+
+**G1, the guide engine (built).**
+- `server/Princess.Api/Domain/GuideRules.cs`: the pure catalogue and ordering. 36 tasks across the 11 stages, each with a destination, minutes, `hard`, `optional`, how it is known done (`data`, `tick` or `visit`), a due date and where it came from, and an urgency. The five urgent reasons are the old `urgentStep` rules (payment, check-in, documents, muster, bags). Order: open tasks first (urgent, then soon, then later; required before optional), then blocked, then waiting (by the date they open), then done. Check-in waits until it opens; the boarding pass is blocked until check-in is done. `moveOn` carries the real date (14 days out, check-in opens, boarding).
+- `Services/GuideService.cs` gathers the facts (the stage from `ContextService`, the trip, the checklist's data and ticks, the draft, saved sailings, muster, the last full day, feedback). `GET /me/guide` in `Endpoints/GuideEndpoints.cs`. Nothing is stored.
+- Client: `src/api/guideTypes.ts`, `api.guide.get()`, `asGuideView` (guards a kept copy), `useGuide()` (kept on the phone for three days, with `stale`), `src/guide/words.ts` and the `guide.*` text in `enLate.ts`. A test (`src/guide/guide.test.ts`) reads the server catalogue and fails if a task has no words, or words have no task.
+- Tests written, not run: `GuideRulesTests.cs`, and the route in `SwaggerCoverageTests.cs`.
+- **Not changed yet:** Home, the welcome page, Stanley's sentence and the trip banner still use `nextSteps()`, `urgentStep()` and `STAGE_ACTION`. G2 switches them to the guide and retires those.
+- **Left for later phases:** visits are still recorded on the client (`stageProgress`), so G2 overlays them on `visit` tasks. Per-traveller counts, skip and later, personal fit and the "all done" state are G3. Insurance, phone setup and bag preparation are still without a screen (section 8), so they are not in the catalogue yet.

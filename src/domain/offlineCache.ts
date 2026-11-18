@@ -22,7 +22,7 @@ export function cachePut<T>(storage: WriteStore | null, kind: string, id: string
 
 const DAY = 86_400_000
 /** How long a copy may be read after it was saved. Figures that change within a day (a feed's answer) go stale soonest; a boarding pass or a reference table is useful for the whole trip. */
-const MAX_AGE_DAYS: Readonly<Record<string, number>> = { program: 3 }
+const MAX_AGE_DAYS: Readonly<Record<string, number>> = { program: 3, guide: 3 }
 export const DEFAULT_MAX_AGE_DAYS = 30
 export const FEED_MAX_AGE_DAYS = 1
 

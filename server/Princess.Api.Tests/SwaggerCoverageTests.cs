@@ -155,6 +155,7 @@ public class SwaggerCoverageTests : IDisposable
         { "get", "/api/v1/bookings/{number}/port-rows" },
         { "post", "/api/v1/bookings/{number}/port-rows" },
         { "get", "/api/v1/me/context" },
+        { "get", "/api/v1/me/guide" },
         { "post", "/api/v1/me/journey/events" },
         { "get", "/api/v1/auth/demo-accounts" },
         { "get", "/api/v1/demo/state" },

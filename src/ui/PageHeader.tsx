@@ -28,7 +28,7 @@ export function PageHeader(words: Words) {
   return (
     <div className="page page--head">
       <header
-        className={wiggling ? 'page-header page-header--wiggle' : 'page-header'}
+        className={`page-header${words.art ? ' page-header--art' : ''}${wiggling ? ' page-header--wiggle' : ''}`}
         onMouseEnter={() => { if (wiggled.current !== key) { wiggled.current = key; setWiggling(true) } }}
         onAnimationEnd={() => setWiggling(false)}
       >

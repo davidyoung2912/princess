@@ -1,3 +1,4 @@
+import type { GuideView } from './guideTypes'
 import type { ExplorerDay, VenueDay } from './explorerTypes'
 import type { SpaView } from './spaTypes'
 import type { CustomsView, DisembarkView, NightView, OnwardView } from './finishTypes'
@@ -159,4 +160,17 @@ export function asExplorerDay(raw: unknown): ExplorerDay | null {
   const o = obj(raw)
   if (!o || typeof o.explorer !== 'string' || typeof o.day !== 'number' || typeof o.date !== 'string' || !Array.isArray(o.venues) || !Array.isArray(o.mine)) return null
   return o.venues.every((v) => asVenueDay(v) !== null) ? (raw as ExplorerDay) : null
+}
+
+const GUIDE_STATES = ['todo', 'blocked', 'waiting', 'done']
+
+/** The guest's guide, or null for a saved copy that does not have its shape (so an old copy is never trusted). */
+export function asGuideView(raw: unknown): GuideView | null {
+  const o = obj(raw)
+  if (!o || typeof o.stage !== 'string' || !Array.isArray(o.tasks) || !obj(o.moveOn) || !obj(o.counts)) return null
+  const ok = o.tasks.every((x) => {
+    const t = obj(x)
+    return !!t && typeof t.id === 'string' && typeof t.to === 'string' && t.to.startsWith('/') && typeof t.state === 'string' && GUIDE_STATES.includes(t.state) && typeof t.minutes === 'number'
+  })
+  return ok ? (raw as GuideView) : null
 }

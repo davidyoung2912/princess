@@ -1,6 +1,7 @@
 import { ApiError } from './errors'
 import type { Http, RequestOptions } from './http'
 import type { AheadApi } from './aheadTypes'
+import type { GuideApi } from './guideTypes'
 import type { FeedbackApi } from './aboardTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, WaitsApi } from './careTypes'
 import type { AboardApi } from './aboardTypes'
@@ -36,6 +37,7 @@ export interface HttpGroups {
   waits: WaitsApi
   shows: ShowsApi
   ahead: AheadApi
+  guide: GuideApi
   /** Phase 16: check-in and boarding. */
   checkin: Api['checkin']
   boarding: Api['boarding']
@@ -669,6 +671,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       reserve: (eventId, day, guests) => inTrip('post', '/shows/tickets', { eventId, day, guests: guests }),
       cancel: (id) => inTrip('delete', `/shows/tickets/${seg(id)}`),
     },
+    guide: { get: () => get('/me/guide') },
     ahead: {
       advisors: {
         list: () => get('/me/advisor-requests'),
@@ -784,6 +787,7 @@ export function toApi(g: HttpGroups): Api {
     waits: g.waits,
     shows: g.shows,
     ahead: g.ahead,
+    guide: g.guide,
     checkin: g.checkin,
     boarding: g.boarding,
     onboard: g.onboard,
