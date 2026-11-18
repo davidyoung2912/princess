@@ -4,6 +4,10 @@ import type { JourneyStage } from '../../routes/hubs'
 import { compose, type Composed, type ReplyFacts, type Words } from './reply'
 import type { EntityKind } from './entities'
 import { understand, type Understood } from './understand'
+import { directAnswer, type LiveShip } from './answers'
+import { formatTime } from '../../domain/cruise'
+import { formatMoney } from '../../domain/money'
+import type { StanleyCard } from '../stanleyCard'
 
 export type { Composed, ReplyFacts } from './reply'
 export type { Understood, Pill, Outcome, Named } from './understand'
@@ -30,3 +34,9 @@ const words = (): Words => ({
 
 /** What to show for a reply once the question is understood: new words if it was no answer, and the pills. */
 export const composeReply = (understood: Understood, facts: ReplyFacts): Composed => compose(understood, facts, words())
+
+/** A card that answers the question from the app's own data, or null when the pills and the server should (see answers.ts). */
+export const answerFromData = (text: string, understood: Understood, live: LiveShip | null): StanleyCard | null =>
+  directAnswer(text, understood, { time: formatTime, money: formatMoney }, (k, p) => t(k as StringKey, p), live)
+
+export { liveShip } from './liveShip'

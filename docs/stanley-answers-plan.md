@@ -318,6 +318,8 @@ Group `@Stanley` answers get the same pills, made on the viewer's device from th
 Entity recognition over the catalogue (venues, shows, excursions, ports, countries, spa items, ship places, ships) with aliases and fuzzy matching, built from `src/domain` at first use. Explorers accept a uniform `?q=` plus their own filters (`port`, `type`, `diet`, `day`, `age`), so "tours in Cozumel", "vegetarian places" and "the Crown Grill" arrive filtered or on the venue page. Pill labels name the entity ("See the Crown Grill", "Tours in Cozumel"). Tests that every entity alias resolves to a real route.
 
 ### Phase 3: direct answers (section 6)
+
+> **Built 2026-11-17.** `answers.ts` (pure) answers one attribute of one named venue, show, tour, service or place as a card with the source "Ship guide": hours, where, price, what it is, duration, ages, fitness, dress. `liveShip.ts` supplies the ship clock, day kind and next events, so "is it open now" is answered from the venue's own live state (including `unavailableSince`) and "what is on" from the programme; without the clock they go to the server and the pills. Never answered from static data: availability, tables, weather, allergies and diets, anything personal. Wired in `useStanleyAsk` after the safety screen, library and ship facts, before the server. **Live facts beyond this (next port, all-aboard, weather, sea state) stay Phase 3b.**
 Attribute questions answered from data as cards with provenance; the answer-or-pill rule; ship-clock times; tests per attribute and per missing-data case.
 
 ### Phase 3b: short live ship answers, long ones by pill

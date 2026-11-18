@@ -12,7 +12,8 @@ import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
 import { countUnderstood } from '../../diagnostics/stanleyUnderstood'
-import { composeReply, readQuestion } from '../../ai/understand'
+import { answerFromData, composeReply, liveShip, readQuestion } from '../../ai/understand'
+import { cardText } from '../../ai/stanleyCard'
 import { portDays } from '../../ai/understand/portDays'
 import { getContext, subscribeContext } from '../../account/context'
 import { useSailing } from '../../hooks/useDemo'
@@ -28,6 +29,8 @@ import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { t, type StringKey } from '../../i18n'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { fetchStanleyStatus, sendStanley } from '../../runtime'
+
+const ABOARD: readonly string[] = ['embark', 'sea', 'port', 'disembark']
 
 /** Stanley's own wording for a reply; only an answer carries text from the server. */
 function wording(turn: StanleyTurn): string {
@@ -110,7 +113,11 @@ export function useStanleyAsk() {
     let entryId: string | undefined
     let turn: StanleyTurn
     const id = `a-${at}-${withUser.length}`
-    if (known) { source = 'library'; link = known.link; entryId = known.id; turn = { kind: 'answer', text: answerOf(known), handoff: null, fallback: null } }
+    // A plain question about a named thing (hours, where, price, what it is) is answered from the app's own data, as a card; the safety screen and the library have already had their turn, and a question about the guest goes on to the server.
+    const understood = readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports })
+    const direct = !known && !route && decision.kind === 'server' ? answerFromData(asked.text, understood, stage && ABOARD.includes(stage) ? liveShip(sailing, Date.now()) : null) : null
+    if (direct) { source = 'ship'; turn = { kind: 'answer', text: cardText(direct), handoff: null, fallback: null, card: direct } }
+    else if (known) { source = 'library'; link = known.link; entryId = known.id; turn = { kind: 'answer', text: answerOf(known), handoff: null, fallback: null } }
     else if (route?.kind === 'ship') { source = 'ship'; turn = { kind: 'answer', text: route.fact.a, handoff: null, fallback: null } }
     else {
       // The server turns a request to change something into a typed preview; it needs today's plan and the all-aboard time to name an item or a reminder's basis.
@@ -124,7 +131,7 @@ export function useStanleyAsk() {
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
     const own = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
     // Understand the question with no model: pills for the likeliest screens under the answer, and where there was no answer at all, words and pills of its own.
-    const composed = composeReply(readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports }), { kind: turn.kind, source, scripted: turn.tier === 'model' && turn.source === 'scripted', existing: own })
+    const composed = composeReply(understood, { kind: turn.kind, source, scripted: turn.tier === 'model' && turn.source === 'scripted', existing: own })
     const actions = composed.actions
     const shown: StanleyTurn = composed.replaced ? { kind: 'answer', text: composed.text ?? '', handoff: null, fallback: null } : turn
     countUnderstood([`outcome:${composed.replaced ? 'replaced' : composed.outcome}`, ...(composed.topic ? [`topic:${composed.topic}`] : [])])
