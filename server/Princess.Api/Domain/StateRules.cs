@@ -40,6 +40,9 @@ public static class StateRules
     /// <summary>The key under which <c>stageWelcome</c> remembers that the guest has seen Stanley's one-time introduction; it is not a stage.</summary>
     public const string StanleyIntroKey = "stanley";
 
+    /// <summary>The key under which <c>stageWelcome</c> remembers that the guest has seen the app's own first welcome, which comes before Stanley's introduction; it is not a stage.</summary>
+    public const string AppWelcomeKey = "app";
+
     /// <summary>
     /// The problem for a <c>stageWelcome</c> document: <c>{ seen: { "&lt;stage&gt;" or "&lt;stage&gt;:&lt;sailingId&gt;": seenAtMs } }</c>.
     /// The stage must be one of the eleven; the sailing id is plain letters, digits, dot, dash or underscore. The value is the time the welcome was dismissed.
@@ -49,7 +52,7 @@ public static class StateRules
         if (data["seen"] is not JsonObject seen || seen.Count > StageWelcomeMaxEntries) return "badData";
         foreach (var (key, node) in seen)
         {
-            if (key != StanleyIntroKey && !StageKeyOk(key)) return "badData";
+            if (key != StanleyIntroKey && key != AppWelcomeKey && !StageKeyOk(key)) return "badData";
             if (node is not JsonValue at || !at.TryGetValue<double>(out _)) return "badData";
         }
         return null;

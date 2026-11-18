@@ -17,7 +17,7 @@ public sealed record StanleyPermissionsDto(int Level, int EffectiveLevel, bool V
 public sealed record StanleyConsentDto(string Ability, string State, int WordingVersion, string Source, long At);
 
 /// <summary>The guest's choices, kept as one document per account. <c>Rows</c> holds only the rows the guest changed by hand; the rest follow the level. <c>PausedUntil</c> is epoch ms in the guest's own clock (0 none, <see cref="long.MaxValue"/> until resumed).</summary>
-public sealed record StanleyPermissionDoc(int Level = 2, Dictionary<string, bool>? Rows = null, long PausedUntil = 0)
+public sealed record StanleyPermissionDoc(int Level = 4, Dictionary<string, bool>? Rows = null, long PausedUntil = 0)
 {
     [JsonIgnore]
     public Dictionary<string, bool> RowMap => Rows ?? [];
@@ -40,7 +40,7 @@ public static class StanleyPermissionRules
 {
     /// <summary>The version of the consent wording below. Change it whenever a row's wording or the level lines change, so the history shows what the guest agreed to.</summary>
     public const int WordingVersion = 2;
-    public const int DefaultLevel = 2;
+    public const int DefaultLevel = 4;
     public const string StateKey = "stanleyPermissions", ConsentKey = "stanleyConsent", StepUpKey = "stanleyStepUp";
     public static readonly string[] Sources = ["welcome", "settings", "stage"];
     public const int MaxConsent = 200, StepUpTokenMinutes = 10;

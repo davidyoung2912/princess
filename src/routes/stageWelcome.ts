@@ -28,8 +28,11 @@ export function welcomeKey(stage: JourneyStage, sailingId: string | null | undef
 /** The one-time introduction to Stanley, remembered in the same document as the stage welcomes under a key that is not a stage. */
 export const STANLEY_INTRO_KEY = 'stanley'
 
+/** The app's own first welcome (warm greeting, basic settings, avatar), shown before Stanley's introduction and remembered under a key that is not a stage. */
+export const APP_WELCOME_KEY = 'app'
+
 function validKey(key: string): boolean {
-  if (key === STANLEY_INTRO_KEY) return true
+  if (key === STANLEY_INTRO_KEY || key === APP_WELCOME_KEY) return true
   const colon = key.indexOf(':')
   if (colon < 0) return isStage(key)
   const sailing = key.slice(colon + 1)
@@ -82,10 +85,16 @@ export function shouldShowWelcome(stage: JourneyStage | null, sailingId: string 
 }
 
 /**
- * Whether to send the guest to Stanley's introduction: the welcome documents have arrived and nothing has ever been marked seen, which is a first sign-in.
- * A guest who has seen any stage welcome already knows their way about, so they are not shown it.
+ * Whether to send the guest to the app's first welcome: the welcome documents have arrived and nothing has ever been marked seen, which is a first sign-in.
+ * A guest who has seen anything already knows their way about, so they are not shown it.
  */
-export const shouldShowStanleyIntro = (state: StageWelcomeState, loaded: boolean): boolean => loaded && Object.keys(state.seen).length === 0
+export const shouldShowAppWelcome = (state: StageWelcomeState, loaded: boolean): boolean => loaded && Object.keys(state.seen).length === 0
+
+/**
+ * Whether to send the guest to Stanley's introduction: they have been through the app's first welcome and have not met Stanley yet.
+ * A guest who has seen stage welcomes but never the app's own (an account from before it existed) is not shown either.
+ */
+export const shouldShowStanleyIntro = (state: StageWelcomeState, loaded: boolean): boolean => loaded && APP_WELCOME_KEY in state.seen && !(STANLEY_INTRO_KEY in state.seen)
 
 export interface WelcomeStep { key: string; to: string }
 

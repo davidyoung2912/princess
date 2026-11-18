@@ -114,7 +114,7 @@ describe('Stanley page questions', () => {
 
 describe('Quiet Stanley level', () => {
   it('is Helpful by default, and calm or simple mode caps it at Only when asked', () => {
-    expect(stanleyLevelFor(DEFAULT_SETTINGS)).toBe('helpful')
+    expect(stanleyLevelFor(DEFAULT_SETTINGS)).toBe('chatty')
     expect(stanleyLevelFor({ ...DEFAULT_SETTINGS, calm: true })).toBe('asked')
     expect(stanleyLevelFor({ ...DEFAULT_SETTINGS, simple: true, stanleyLevel: 'chatty' })).toBe('asked')
     expect(stanleyLevelFor({ ...DEFAULT_SETTINGS, calm: true, stanleyLevel: 'off' })).toBe('off')

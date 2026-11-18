@@ -39,7 +39,7 @@ export function StanleyAuthority({ source, full = false }: { source: 'welcome' |
           {perms.levels.map((l) => (
             <label key={l.id} className="choice">
               <input type="radio" name={`stanley-authority-${source}`} checked={perms.level === l.id} disabled={!l.available && perms.level !== l.id} onChange={() => { void p.setLevel(l.id) }} />
-              <span><strong>{l.name}</strong>{l.id === 2 ? ` (${t('stanleyAuthority.recommended')})` : ''}. {l.line}{l.available ? '' : ` ${t('stanleyAuthority.later')}`}</span>
+              <span><strong>{l.name}</strong>{l.id === 4 ? ` (${t('stanleyAuthority.recommended')})` : ''}. {l.line}{l.available ? '' : ` ${t('stanleyAuthority.later')}`}</span>
             </label>
           ))}
         </fieldset>

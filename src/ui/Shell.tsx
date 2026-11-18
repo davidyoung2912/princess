@@ -61,7 +61,7 @@ import { UpdateBanner } from './UpdateBanner'
 import { getWelcome, markSeen, subscribeWelcome, unmarkSeen, welcomeLoaded } from '../stageWelcome/store'
 import { recordVisit as recordStepVisit } from '../stageProgress/store'
 import { progressKey, stepsAt } from '../routes/stageProgress'
-import { hasWelcomeCopy, shouldShowStanleyIntro, shouldShowWelcome, STANLEY_INTRO_KEY, welcomeKey } from '../routes/stageWelcome'
+import { APP_WELCOME_KEY, hasWelcomeCopy, shouldShowAppWelcome, shouldShowStanleyIntro, shouldShowWelcome, STANLEY_INTRO_KEY, welcomeKey } from '../routes/stageWelcome'
 
 
 /**
@@ -113,7 +113,11 @@ export function Shell() {
   if (seen?.path !== pathname || seen.area !== area) setSeen({ path: pathname, area, previous })
   const landingWords = landing ? tabText(landing, stage) : null
   const action = actionWords(pathname, search)
-  const title = action ? th(action.title) : landingWords ? landingWords.label : screen ? th(screen.titleKey) : route ? th(route.titleKey) : th('shell.notFound.title')
+  // Stanley's introduction shares the /welcome address with the stage welcome, but it is not the stage overview.
+  const introKind = pathname === '/welcome' ? (state as { intro?: unknown } | null)?.intro : null
+  const stanleyIntroPage = introKind === 'stanley'
+  const appWelcomePage = introKind === 'app'
+  const title = appWelcomePage ? th('appWelcome.eyebrow') : stanleyIntroPage ? th('stanleyIntro.eyebrow') : action ? th(action.title) : landingWords ? landingWords.label : screen ? th(screen.titleKey) : route ? th(route.titleKey) : th('shell.notFound.title')
 
   useEffect(() => { recordVisit(pathname + search, navigationType) }, [pathname, search, navigationType])
   // The header sticks to the top, so tell the page how tall it is: scrolling to an anchor or a focused section then stops below it (see scroll-padding-top in base.css).
@@ -147,8 +151,9 @@ export function Shell() {
     if (!welcomeReady && pathname !== firstPath.current && pathname !== '/welcome') setWentOn(true)
   }, [pathname, welcomeReady, known, route?.public])
   const canWelcome = known && !wentOn && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings'
-  const introDue = canWelcome && shouldShowStanleyIntro(welcomed, welcomeReady)
-  const welcomeDue = canWelcome && !introDue && !stale && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
+  const appDue = canWelcome && shouldShowAppWelcome(welcomed, welcomeReady)
+  const introDue = canWelcome && !appDue && shouldShowStanleyIntro(welcomed, welcomeReady)
+  const welcomeDue = canWelcome && !appDue && !introDue && !stale && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
   // A tester who moves the date back to a stage they have seen sees its welcome again: with a demo account the stage changing is the point of the exercise.
   const isDemo = useSyncExternalStore(subscribeContext, getContext, getContext)?.isDemo === true
   const lastStage = useRef<string | null>(null)
@@ -163,13 +168,23 @@ export function Shell() {
     if (!known || stale || !route || route.public) return
     for (const n of stepsAt(stage, pathname)) recordStepVisit(personId, progressKey(stage, focusSailingId, n), Date.now())
   }, [known, stale, route, stage, focusSailingId, pathname, personId])
+  // Marking the introduction seen makes the stage welcome due a render before the move to /welcome lands; without this it would replace the introduction.
+  const introPending = useRef(false)
+  useEffect(() => { if (pathname === '/welcome') introPending.current = false }, [pathname])
   useEffect(() => {
-    if (!introDue) return
+    if (!appDue || introPending.current) return
+    introPending.current = true
+    markSeen(personId, APP_WELCOME_KEY, Date.now())
+    navigate('/welcome', { replace: true, state: { intro: 'app', from: pathname + search } })
+  }, [appDue, personId, navigate, pathname, search])
+  useEffect(() => {
+    if (!introDue || introPending.current) return
+    introPending.current = true
     markSeen(personId, STANLEY_INTRO_KEY, Date.now())
     navigate('/welcome', { replace: true, state: { intro: 'stanley', from: pathname + search } })
   }, [introDue, personId, navigate, pathname, search])
   useEffect(() => {
-    if (!welcomeDue) return
+    if (!welcomeDue || introPending.current) return
     markSeen(personId, welcomeKey(stage, focusSailingId), Date.now())
     navigate('/welcome', { replace: true, state: { from: pathname + search } })
   }, [welcomeDue, personId, stage, focusSailingId, navigate, pathname, search])
@@ -254,7 +269,7 @@ export function Shell() {
       <UpdateBanner />
       <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        {action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
+        {appWelcomePage ? <PageHeader title={th('appWelcome.eyebrow')} subtext={t('appWelcome.subtext')} icon={headerIcon} back /> : stanleyIntroPage ? <PageHeader title={th('stanleyIntro.eyebrow')} subtext={t('stanleyIntro.subtext')} icon={headerIcon} back /> : action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
         {route && !route.public && !landing && <GuideCrumb />}
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}

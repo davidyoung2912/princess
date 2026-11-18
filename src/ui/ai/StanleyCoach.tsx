@@ -50,7 +50,7 @@ function Spotlight({ screenId, onFinish }: { screenId: CoachScreen; onFinish: ()
 
   useLayoutEffect(() => {
     const el = findCoachTarget(document.getElementById('main') ?? document, COACH_TARGETS[screenId][step])
-    el?.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' })
+    el?.scrollIntoView?.({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' })
     const first = requestAnimationFrame(measure)
     // A smooth scroll takes a moment, so measure again as the page moves.
     window.addEventListener('scroll', measure, true)

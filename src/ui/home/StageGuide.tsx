@@ -105,7 +105,7 @@ function DoNow({ task, aside, view }: { task: GuideTask; aside: Aside; view: Gui
   )
 }
 
-function Row({ task, aside, view }: { task: GuideTask; aside: Aside; view: GuideView }) {
+function Row({ task }: { task: GuideTask }) {
   const w = taskWords(task)
   return (
     <li className="stage-step">
@@ -113,8 +113,6 @@ function Row({ task, aside, view }: { task: GuideTask; aside: Aside; view: Guide
         <LinkButton variant="secondary" icon={ArrowRight} to={task.to} state={openedFrom('blue', task.id)}>{w.title}</LinkButton>
         <Meta task={task} />
       </span>
-      <PutAside task={task} aside={aside} />
-      <TaskHelp task={task} view={view} />
       <TaskRemind task={task} />
       <TaskCalendar task={task} />
     </li>
@@ -156,7 +154,7 @@ export function StageGuide() {
       {rest.length > 0 && (
         <section aria-labelledby="guide-soon-h" className="stage-next">
           <h2 id="guide-soon-h">{th('guide.soon')}</h2>
-          <ol className="stage-steps">{rest.map((x) => <Row key={x.id} task={x} aside={aside} view={view} />)}</ol>
+          <ol className="stage-steps">{rest.map((x) => <Row key={x.id} task={x} />)}</ol>
           {more > 0 && <p className="muted">{t('guide.more', { count: more })} <Link to="/plan">{t('guide.moreLink')}</Link></p>}
         </section>
       )}

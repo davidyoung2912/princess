@@ -13,6 +13,7 @@ import { loadTicks, subscribeTicks, toggleNeed } from '../../settings/welcomeNee
 import { Square, SquareCheck } from '../icons'
 import { LinkButton } from '../Button'
 import { StageHero } from '../StageHero'
+import { AppWelcome } from './AppWelcome'
 import { StanleyIntro } from './StanleyIntro'
 
 /** Where "Get started" goes: back to the screen the guest was on when the welcome came up (if it was an app address), otherwise Home. */
@@ -29,8 +30,10 @@ const stageName = (stage: string): string => t(`journey.stage.${stage}` as Strin
  */
 export function StageWelcomeScreen() {
   const { state } = useLocation()
-  // A first sign-in lands here with `intro: 'stanley'`: Stanley introduces himself before the stage's own welcome.
-  if ((state as { intro?: unknown } | null)?.intro === 'stanley') return <StanleyIntro />
+  // A first sign-in lands here with `intro: 'app'` (the app's own welcome), then `intro: 'stanley'` (Stanley introduces himself), before the stage's own welcome.
+  const intro = (state as { intro?: unknown } | null)?.intro
+  if (intro === 'app') return <AppWelcome />
+  if (intro === 'stanley') return <StanleyIntro />
   return <StageWelcomeStage />
 }
 

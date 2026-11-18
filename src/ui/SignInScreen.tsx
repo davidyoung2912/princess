@@ -70,7 +70,7 @@ function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
         </form>
       </Card>
       <LanguageSwitch />
-      <ul className="plain-list">
+      <ul className="plain-list signin__modes">
         <li><Button variant="secondary" onClick={() => go('forgot')}>{t('signin.mode.forgot')}</Button></li>
         <li><Button variant="secondary" onClick={() => go('magic')}>{t('signin.mode.magic')}</Button></li>
         <li><Button variant="secondary" onClick={() => go('signup')}>{t('signin.mode.signup')}</Button></li>

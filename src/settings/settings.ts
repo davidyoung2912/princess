@@ -85,7 +85,7 @@ const isFunLevel = (v: unknown): v is FunLevel => (FUN_LEVELS as readonly unknow
 /** The fun level that applies: calm mode is always Quiet, whatever was chosen. */
 export const funLevelFor = (s: Pick<Settings, 'fun' | 'calm'>): FunLevel => (s.calm ? 'quiet' : s.fun)
 
-export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, sounds: true, chatPopups: true, chatSounds: false, chatBuzz: false, fun: 'lively', captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'sea', pins: [] }
+export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, sounds: true, chatPopups: true, chatSounds: false, chatBuzz: false, fun: 'lively', captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'chatty', tripColour: 'sea', pins: [] }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'

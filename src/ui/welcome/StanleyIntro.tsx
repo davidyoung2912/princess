@@ -9,7 +9,6 @@ import { useStanleyCapabilities } from '../../hooks/useStanleyCapabilities'
 import { Card } from '../Card'
 import { Button, LinkButton } from '../Button'
 import { StanleyPose } from '../StanleyPose'
-import { AvatarPicker } from '../AvatarPicker'
 import { StanleyAuthority } from '../StanleyAuthority'
 
 /** What Stanley can do, in the order shown: answers, does, watches, helps. The words are `stanleyIntro.card.<n>` and `stanleyIntro.can.<n>`; the Try-it sentence for each comes from the server's catalogue group of the same position. */
@@ -58,13 +57,6 @@ export function StanleyIntro() {
         <h2 id="stanley-intro-never-h">{th('stanleyIntro.never.title')}</h2>
         <p>{t('stanleyIntro.never.body')}</p>
       </Card>
-      <Card labelledBy="stanley-intro-avatar-h">
-        <h2 id="stanley-intro-avatar-h">{th('avatar.title')}</h2>
-        <p>{t('avatar.intro')}</p>
-        <AvatarPicker />
-        <p className="muted">{t('avatar.skip')}</p>
-      </Card>
-      <StanleyAuthority source="welcome" />
       <Card hero labelledBy="stanley-intro-level-h">
         <h2 id="stanley-intro-level-h">{th('stanleyIntro.h.level')}</h2>
         <p>{t('stanleyIntro.level.intro')}</p>
@@ -83,8 +75,9 @@ export function StanleyIntro() {
         </fieldset>
         <p className="muted">{t('stanleyIntro.control.body')}</p>
         <p className="muted">{t('stanleyIntro.level.later')} <Link to="/me/settings">{t('stanleyIntro.level.settings')}</Link></p>
-        <div className="button-row"><LinkButton to={back((state as { from?: unknown } | null)?.from)} replace>{t('stanleyIntro.go')}</LinkButton></div>
       </Card>
+      <StanleyAuthority source="welcome" />
+      <div className="button-row"><LinkButton to={back((state as { from?: unknown } | null)?.from)} replace>{t('stanleyIntro.go')}</LinkButton></div>
     </div>
   )
 }

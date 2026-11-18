@@ -54,10 +54,10 @@ public class StanleyPermissionTests
     // ---- Rules --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     [Fact]
-    public void ANewGuestIsAtLevelTwoWithTheBuiltWatchingRowsOn()
+    public void ANewGuestIsAtLevelFourWithTheBuiltWatchingRowsOn()
     {
-        var v = StanleyPermissionRules.View(new(), false, false, false, 0);
-        Assert.Equal((2, 2), (v.Level, v.EffectiveLevel));
+        var v = StanleyPermissionRules.View(new(), false, false, true, 0);
+        Assert.Equal((4, 4), (v.Level, v.EffectiveLevel));
         Assert.Equal("on", v.Rows.Single(r => r.Id == "CL-02").State);
         Assert.Equal("on", v.Rows.Single(r => r.Id == "CL-03").State);
     }
@@ -125,8 +125,8 @@ public class StanleyPermissionTests
     [Fact]
     public void AGarbledDocumentBecomesTheDefault()
     {
-        Assert.Equal(2, StanleyPermissionRules.Parse("not json").Level);
-        Assert.Equal(2, StanleyPermissionRules.Parse("{\"level\":9}").Level);
+        Assert.Equal(4, StanleyPermissionRules.Parse("not json").Level);
+        Assert.Equal(4, StanleyPermissionRules.Parse("{\"level\":9}").Level);
         Assert.Empty(StanleyPermissionRules.Parse("{\"level\":3,\"rows\":{\"CL-99\":true}}").RowMap);
     }
 
@@ -204,7 +204,7 @@ public class StanleyPermissionTests
         var w = Build();
         await w.Memory.SetLevelAsync(Me.Id, "off", default);
         var v = await w.Svc.GetAsync(Me, default);
-        Assert.Equal((2, 1, true), (v.Level, v.EffectiveLevel, v.VoiceLimited));
+        Assert.Equal((4, 1, true), (v.Level, v.EffectiveLevel, v.VoiceLimited));
         Assert.False(await w.Svc.MayAsync(Me, "CL-02", default));
         await w.Memory.SetLevelAsync(Me.Id, "helpful", default);
         Assert.True(await w.Svc.MayAsync(Me, "CL-02", default));
@@ -229,7 +229,7 @@ public class StanleyPermissionTests
         var w = Build();
         await w.Svc.SetLevelAsync(Me, Lvl(1), default);
         Assert.True(await w.Svc.MayAsync(Other, "CL-02", default));
-        Assert.Equal(2, (await w.Svc.GetAsync(Other, default)).Level);
+        Assert.Equal(4, (await w.Svc.GetAsync(Other, default)).Level);
         Assert.Empty(await w.Svc.HistoryAsync(Other, default));
     }
 

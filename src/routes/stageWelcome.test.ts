@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { JOURNEY_STAGES } from './hubs'
 import { routeForPath } from './nav'
 import { accessAt } from './stageNav'
-import { EMPTY_WELCOME, hasWelcomeCopy, MAX_WELCOME_ENTRIES, needId, normalizeTicks, markWelcomeSeen, mergeWelcome, normalizeWelcome, SAILING_STAGES, shouldShowStanleyIntro, shouldShowWelcome, STANLEY_INTRO_KEY, unmarkWelcome, welcomeContent, welcomeKey, welcomeKeys } from './stageWelcome'
+import { EMPTY_WELCOME, hasWelcomeCopy, MAX_WELCOME_ENTRIES, needId, normalizeTicks, markWelcomeSeen, mergeWelcome, normalizeWelcome, SAILING_STAGES, shouldShowAppWelcome, shouldShowStanleyIntro, shouldShowWelcome, APP_WELCOME_KEY, STANLEY_INTRO_KEY, unmarkWelcome, welcomeContent, welcomeKey, welcomeKeys } from './stageWelcome'
 import { en } from '../i18n/locales/en'
 
 describe('welcome keys', () => {
@@ -138,18 +138,26 @@ describe('welcome content', () => {
   })
 })
 
-describe("Stanley's introduction", () => {
-  it('is due on a first sign-in only, once the documents have arrived', () => {
-    expect(shouldShowStanleyIntro(EMPTY_WELCOME, true)).toBe(true)
-    expect(shouldShowStanleyIntro(EMPTY_WELCOME, false)).toBe(false)
+describe("The app's first welcome and Stanley's introduction", () => {
+  it('the app welcome is due on a first sign-in only, once the documents have arrived', () => {
+    expect(shouldShowAppWelcome(EMPTY_WELCOME, true)).toBe(true)
+    expect(shouldShowAppWelcome(EMPTY_WELCOME, false)).toBe(false)
+    expect(shouldShowAppWelcome({ seen: { dream: 1 } }, true)).toBe(false)
+  })
+
+  it("Stanley's introduction follows the app welcome, and is not shown to a guest who never saw it", () => {
+    expect(shouldShowStanleyIntro(EMPTY_WELCOME, true)).toBe(false)
+    expect(shouldShowStanleyIntro({ seen: { [APP_WELCOME_KEY]: 1 } }, true)).toBe(true)
+    expect(shouldShowStanleyIntro({ seen: { [APP_WELCOME_KEY]: 1 } }, false)).toBe(false)
+    expect(shouldShowStanleyIntro({ seen: { [APP_WELCOME_KEY]: 1, stanley: 2 } }, true)).toBe(false)
     expect(shouldShowStanleyIntro({ seen: { dream: 1 } }, true)).toBe(false)
   })
 
   it('is remembered under its own key, which survives reading and merging', () => {
-    const seen = markWelcomeSeen(EMPTY_WELCOME, STANLEY_INTRO_KEY, 5)
-    expect(seen.seen).toEqual({ stanley: 5 })
+    const seen = markWelcomeSeen({ seen: { app: 4 } }, STANLEY_INTRO_KEY, 5)
+    expect(seen.seen).toEqual({ app: 4, stanley: 5 })
     expect(shouldShowStanleyIntro(seen, true)).toBe(false)
-    expect(normalizeWelcome(seen).seen).toEqual({ stanley: 5 })
-    expect(mergeWelcome({ seen: { stanley: 9 } }, seen).seen).toEqual({ stanley: 5 })
+    expect(normalizeWelcome(seen).seen).toEqual({ app: 4, stanley: 5 })
+    expect(mergeWelcome({ seen: { stanley: 9 } }, seen).seen).toEqual({ app: 4, stanley: 5 })
   })
 })
