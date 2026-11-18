@@ -9,10 +9,16 @@ import { useStanleyCapabilities } from '../../hooks/useStanleyCapabilities'
 import { Card } from '../Card'
 import { Button, LinkButton } from '../Button'
 import { StanleyPose } from '../StanleyPose'
+import { artUrl } from '../../art/urls'
+import type { HeadId } from '../../art/manifest'
 import { StanleyAuthority } from '../StanleyAuthority'
 
 /** What Stanley can do, in the order shown: answers, does, watches, helps. The words are `stanleyIntro.card.<n>` and `stanleyIntro.can.<n>`; the Try-it sentence for each comes from the server's catalogue group of the same position. */
 const CAN = [{ n: 1, group: 'answer' }, { n: 2, group: 'do' }, { n: 3, group: 'watch' }, { n: 4, group: 'value' }] as const
+
+/** Stanley's other faces, three on each side of the waving pose, top to bottom: decorative. */
+const ARC_LEFT: readonly HeadId[] = ['sherlock', 'vacation', 'formal']
+const ARC_RIGHT: readonly HeadId[] = ['navigating', 'lifeguard', 'chef']
 
 /** Where "Continue" goes: the screen the guest was opening (the stage welcome, if due, takes over from there), otherwise Home. */
 const back = (from: unknown): string => (typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && !from.startsWith('/welcome') ? from : '/')
@@ -28,8 +34,10 @@ export function StanleyIntro() {
   const { catalogue } = useStanleyCapabilities()
   return (
     <div className="page welcome stanley-intro">
-      <div className="stanley-intro__hero">
+      <div className="stanley-intro__hero stanley-intro__stage">
+        <div className="stanley-arc stanley-arc--left">{ARC_LEFT.map((h) => <img key={h} className="stanley-arc__head" src={artUrl({ kind: 'head', id: h })} alt="" width="88" height="88" loading="lazy" decoding="async" />)}</div>
         <StanleyPose pose="wave" size={220} />
+        <div className="stanley-arc stanley-arc--right">{ARC_RIGHT.map((h) => <img key={h} className="stanley-arc__head" src={artUrl({ kind: 'head', id: h })} alt="" width="88" height="88" loading="lazy" decoding="async" />)}</div>
       </div>
       <header className="welcome__head">
         <p className="welcome__eyebrow">{t('stanleyIntro.eyebrow')}</p>
