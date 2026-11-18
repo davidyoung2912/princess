@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { t } from '../i18n'
 import type { StringKey } from '../i18n'
-import { dismissTip, hasTip, loadTipProgress, subscribeTips, tipCount } from '../settings/tips'
+import { dismissTip, hasTip, loadTipProgress, subscribeTips, tipCount, tipsReady } from '../settings/tips'
 import { Button } from './Button'
 import stanley from '../assets/stanley-small.png'
 import { artUrl } from '../art/urls'
@@ -9,14 +9,15 @@ import { useSettings } from '../hooks/useSettings'
 import { stanleyLevelFor } from '../settings/settings'
 
 /**
- * A one or two line traveller tip under the page header, with a Got It! button. A page can have several tips: Got It! remembers the dismissal on this device
+ * A one or two line traveller tip under the page header, with a Got It! button. A page can have several tips: Got It! remembers the dismissal on the guest's account
  * and shows the page's next tip, until none are left. "Reset tips" in Me → Settings brings every tip back.
  */
 export function TipCard({ id }: { id: string | null }) {
   const [settings] = useSettings()
   const progress = useSyncExternalStore(subscribeTips, loadTipProgress, loadTipProgress)
+  const ready = useSyncExternalStore(subscribeTips, tipsReady, () => false)
   const level = stanleyLevelFor(settings)
-  if (!id || level === 'asked' || level === 'off') return null
+  if (!ready || !id || level === 'asked' || level === 'off') return null
   const n = (progress[id] ?? 0) + 1
   if (!hasTip(id, n)) return null
   const total = tipCount(id)

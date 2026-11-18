@@ -1,8 +1,6 @@
 import { hasText } from '../i18n'
-
-const KEY = 'princess.dismissedTips'
-const listeners = new Set<() => void>()
-let cache: Readonly<Record<string, number>> | null = null
+import { dismissTipIn, resetTipsIn } from './hintsState'
+import { getHints, hintsLoaded, subscribeHints, updateHints } from './hints'
 
 /** Which page's tips to show: its screen id, or for a tab landing page the tab's key. Null when the page has none. */
 export function tipIdFor(screenId: string | undefined, tabKey: string | undefined): string | null {
@@ -23,33 +21,16 @@ export function tipCount(id: string): number {
   return n
 }
 
-/** How many of each page's tips this device has dismissed (a per-device note, never sent anywhere). An older list of dismissed pages counts as one tip each. */
-export function loadTipProgress(): Readonly<Record<string, number>> {
-  if (cache) return cache
-  const progress: Record<string, number> = {}
-  try {
-    const raw = localStorage.getItem(KEY)
-    const data: unknown = raw === null ? {} : JSON.parse(raw)
-    if (Array.isArray(data)) for (const id of data) { if (typeof id === 'string') progress[id] = 1 }
-    else if (data && typeof data === 'object') for (const [id, n] of Object.entries(data)) { if (typeof n === 'number' && n > 0) progress[id] = Math.floor(n) }
-  } catch { /* unreadable: start again */ }
-  cache = progress
-  return cache
-}
+/** How many of each page's tips the signed-in guest has dismissed. These are kept on their account, so they follow them to every device. */
+export const loadTipProgress = (): Readonly<Record<string, number>> => getHints().tips
 
-function save(progress: Readonly<Record<string, number>>): void {
-  cache = progress
-  try { localStorage.setItem(KEY, JSON.stringify(progress)) } catch { /* private mode: the tips may show again */ }
-  listeners.forEach((l) => l())
-}
+/** True once the account's copy has arrived, so a dismissal made on another device is known before a tip is shown. */
+export const tipsReady = hintsLoaded
 
-export const subscribeTips = (listener: () => void): (() => void) => { listeners.add(listener); return () => { listeners.delete(listener) } }
+export const subscribeTips = subscribeHints
 
 /** Dismisses the tip now showing on a page, so its next one (if any) shows. */
-export function dismissTip(id: string): void {
-  const progress = loadTipProgress()
-  save({ ...progress, [id]: Math.min((progress[id] ?? 0) + 1, tipCount(id)) })
-}
+export function dismissTip(id: string): void { updateHints((h) => dismissTipIn(h, id, tipCount(id))) }
 
 /** Brings every tip back. */
-export function resetTips(): void { save({}) }
+export function resetTips(): void { updateHints(resetTipsIn) }

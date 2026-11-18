@@ -81,6 +81,9 @@ export const splitMe = (ids: readonly string[]): { main: string[]; settings: str
 /** Reference screens a guest can open at any stage, whichever tabs the stage lists: the cruise, sailings, ships, explore, trip cost, ports and countries guides and their lists, and the ship's reference pages (deck map, venues, shops, Wi-Fi, laundry, accessibility, allergy and family information). */
 export const ALWAYS_OPEN_SCREENS: readonly string[] = ['S05', 'M42', 'M43', 'H06', 'H07', 'H08', 'H09', 'H12', 'H47', 'H48', 'H49', 'H50', 'H52', 'H53', 'H54', 'S01', 'S02', 'S03', 'S16', 'S17', 'S20', 'S23', 'S24', 'S31', 'S33', 'S35', 'S41', 'S42']
 
+/** The booking flow (start, steps, resume, confirmed). A guest still dreaming can start booking from a cruise or sailing page ("Book this cruise"), so it opens in that stage too; once booked it is an earlier stage's screen again. */
+export const BOOKING_FLOW_SCREENS: readonly string[] = ['H16', 'H17', 'H18', 'H20']
+
 /** Whether an address is Chat or one of its pages. Chat is global, so it is in no stage and no tab. */
 export const isChatPath = (pathname: string): boolean => pathname === '/chat' || pathname.startsWith('/chat/')
 
@@ -96,7 +99,7 @@ export function accessAt(pattern: string | null, pathname: string, stage: Journe
   if (!screen || screen.family === 'X') return 'show'
   // Chat and its pages (people, rooms, search, children, Guest Services, one conversation) are global: open at every stage, in no tab.
   if (screen.family === 'C') return 'show'
-  return ALWAYS_OPEN_SCREENS.includes(screen.id) || stageUses(screen.id, stage) ? 'show' : 'home'
+  return ALWAYS_OPEN_SCREENS.includes(screen.id) || (stage === 'dream' && BOOKING_FLOW_SCREENS.includes(screen.id)) || stageUses(screen.id, stage) ? 'show' : 'home'
 }
 
 /** The colour the shell wears for a screen, as {@link areaFor} says, or the tab's own colour on a landing page. */

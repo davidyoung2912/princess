@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
 import { en } from '../i18n/locales/en'
+import { getHints } from '../settings/hints'
 import { loadTourSeen, markTourStep, resetTour, skipTour } from '../settings/tour'
 import { placeCard, sideOrder, spotlight } from './placement'
 import { nextStep, TOUR_STEPS } from './steps'
@@ -41,9 +42,10 @@ describe('tour progress', () => {
     expect(nextStep([TOUR_STEPS[0]!.id], (n) => n !== TOUR_STEPS[1]!.target)?.id).toBe(TOUR_STEPS[2]!.id)
     expect(nextStep(TOUR_STEPS.map((s) => s.id), all)).toBeNull()
   })
-  it('remembers dismissed steps on the device, can skip the rest and can be reset', () => {
+  it('remembers dismissed steps on the account, can skip the rest and can be reset', () => {
     markTourStep('date')
-    expect(JSON.parse(localStorage.getItem('princess.tourSeen') ?? '[]')).toEqual(['date'])
+    expect(getHints().tour).toEqual(['date'])
+    expect(localStorage.getItem('princess.tourSeen')).toBeNull()
     skipTour()
     expect(loadTourSeen()).toHaveLength(TOUR_STEPS.length)
     resetTour()

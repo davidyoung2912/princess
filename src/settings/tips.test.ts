@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { SCREEN_LIST } from '../routes/screens'
 import { ALL_TAB_KEYS } from '../routes/stageNav'
 import { en } from '../i18n/locales/en'
+import { getHints } from './hints'
 import { dismissTip, hasTip, loadTipProgress, resetTips, tipCount, tipIdFor, tipKeyAt } from './tips'
 
 describe('traveller tips', () => {
@@ -41,11 +42,12 @@ describe('traveller tips', () => {
     expect(tipIdFor(undefined, undefined)).toBeNull()
   })
 
-  it('remembers each dismissal in the browser, stops at the last tip, and forgets on reset', () => {
+  it('remembers each dismissal on the account, stops at the last tip, and forgets on reset', () => {
     dismissTip('H02')
     dismissTip('H02')
     expect(loadTipProgress()).toEqual({ H02: 2 })
-    expect(JSON.parse(localStorage.getItem('princess.dismissedTips') ?? '{}')).toEqual({ H02: 2 })
+    expect(getHints().tips).toEqual({ H02: 2 })
+    expect(localStorage.getItem('princess.dismissedTips')).toBeNull()
     for (let i = 0; i < 20; i++) dismissTip('H02')
     expect(loadTipProgress().H02).toBe(tipCount('H02'))
     resetTips()

@@ -254,4 +254,13 @@ public class StateApiTests : JourneyWorld
         foreach (var bad in new[] { "{\"access\":true}", "{\"solo\":\"yes\"}", "{\"at\":\"now\"}", "{\"quiet\":{}}" })
             Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "guideFit", JsonNode.Parse(bad)));
     }
+
+    [Fact]
+    public void HintsAcceptDismissedTipsAndTourStepsOnly()
+    {
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "hints", JsonNode.Parse("{\"tips\":{\"H02\":2,\"tab.home\":1},\"tour\":[\"date\",\"chat\"]}")));
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "hints", new JsonObject()));
+        foreach (var bad in new[] { "{\"other\":1}", "{\"tips\":[]}", "{\"tips\":{\"bad id\":1}}", "{\"tips\":{\"H02\":0}}", "{\"tips\":{\"H02\":1.5}}", "{\"tips\":{\"H02\":\"1\"}}", "{\"tour\":{}}", "{\"tour\":[1]}", "{\"tour\":[\"bad id\"]}" })
+            Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "hints", JsonNode.Parse(bad)));
+    }
 }

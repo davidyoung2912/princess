@@ -12,6 +12,7 @@ import { useStanleyLevelSync } from '../hooks/useStanleyLevelSync'
 import { t, th } from '../i18n'
 import { routeForPath } from '../routes/nav'
 import { recordVisit } from '../routes/trail'
+import { markOpenedByLink, openedByLink } from '../routes/openedByLink'
 import { useRecentVisit } from '../hooks/useRecentVisit'
 import { SCREEN_BY_ID, screenForPath, type TabColour } from '../routes/screens'
 import { useGuideView } from '../hooks/useGuideView'
@@ -106,7 +107,8 @@ export function Shell() {
   // Until the server has said which stage the guest is in, the stage is a guess; a stale address is only judged once it is known.
   // A screen of an earlier stage opens when the guest chose it from a search result ("From your trip"); typed or refreshed, it is stale.
   const fromSearch = (state as { earlier?: unknown } | null)?.earlier === true && !!route && earlierAt(route.path, stage)
-  const stale = known && !!route && !route.public && !fromSearch && accessAt(route.path, pathname, stage) === 'home'
+  // A link or button inside the app always opens its screen, whatever the stage; only an address typed, bookmarked or opened from old history is judged stale.
+  const stale = known && !!route && !route.public && !fromSearch && !openedByLink(navigationType, pathname) && accessAt(route.path, pathname, stage) === 'home'
   const fallbackArea: TabColour = 'blue'
   // The area just left carries over to a screen the stage lists under the same colour, so one area keeps its colour while the guest moves about in it.
   const previous = seen?.path === pathname ? seen.previous : (seen?.area ?? null)
@@ -120,7 +122,10 @@ export function Shell() {
   const appWelcomePage = introKind === 'app'
   const title = appWelcomePage ? th('appWelcome.eyebrow') : stanleyIntroPage ? th('stanleyIntro.eyebrow') : action ? th(action.title) : landingWords ? landingWords.label : screen ? th(screen.titleKey) : route ? th(route.titleKey) : th('shell.notFound.title')
 
-  useEffect(() => { recordVisit(pathname + search, navigationType) }, [pathname, search, navigationType])
+  useEffect(() => {
+    recordVisit(pathname + search, navigationType)
+    if (navigationType !== 'POP') markOpenedByLink(pathname)
+  }, [pathname, search, navigationType])
   // The header sticks to the top, so tell the page how tall it is: scrolling to an anchor or a focused section then stops below it (see scroll-padding-top in base.css).
   useEffect(() => {
     const bar = document.querySelector('.shell__top')

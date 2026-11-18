@@ -32,6 +32,7 @@ public static class StateRules
         ["stageProgress"] = 12_000,
         ["guideChoices"] = 8_000,
         ["guideFit"] = 500,
+        ["hints"] = 16_000,
     };
 
     /// <summary>The most stage welcomes <c>stageWelcome</c> remembers, and the longest sailing id in an entry's key.</summary>
@@ -86,6 +87,35 @@ public static class StateRules
             var step = key[(hash + 1)..];
             if (step.Length != 1 || step[0] < '1' || step[0] > '0' + StageProgressMaxStep) return "badData";
             if (node is not JsonValue at || !at.TryGetValue<double>(out _)) return "badData";
+        }
+        return null;
+    }
+
+    /// <summary>The most pages and tour steps <c>hints</c> remembers, and the longest id.</summary>
+    public const int HintsMaxPages = 400, HintsMaxSteps = 40, HintsMaxId = 40;
+
+    /// <summary>
+    /// The problem for a <c>hints</c> document: <c>{ tips: { "&lt;page id&gt;": count }, tour: [ "&lt;step id&gt;" ] }</c>, the page tips and first-visit tour steps the guest has dismissed.
+    /// Ids are letters, digits, dot, dash or underscore; a count is a whole number from 1; both parts are optional.
+    /// </summary>
+    private static string? HintsProblem(JsonObject data)
+    {
+        static bool IdOk(string id) => id.Length is > 0 and <= HintsMaxId && id.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_');
+        foreach (var (part, node) in data)
+        {
+            if (part == "tips")
+            {
+                if (node is not JsonObject tips || tips.Count > HintsMaxPages) return "badData";
+                foreach (var (id, value) in tips)
+                    if (!IdOk(id) || value is not JsonValue n || !n.TryGetValue<double>(out var count) || count < 1 || count > 1000 || count != Math.Floor(count)) return "badData";
+            }
+            else if (part == "tour")
+            {
+                if (node is not JsonArray steps || steps.Count > HintsMaxSteps) return "badData";
+                foreach (var step in steps)
+                    if (step is not JsonValue s || !s.TryGetValue<string>(out var id) || !IdOk(id)) return "badData";
+            }
+            else return "badData";
         }
         return null;
     }
@@ -183,6 +213,7 @@ public static class StateRules
             "stageProgress" => StageProgressProblem(obj),
             "guideChoices" => GuideChoicesProblem(obj),
             "guideFit" => GuideFitProblem(obj),
+            "hints" => HintsProblem(obj),
             _ => null,
         };
     }

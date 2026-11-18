@@ -4,7 +4,7 @@ import { t } from '../i18n'
 import type { StringKey } from '../i18n'
 import { startVisibleInterval } from '../hooks/visibleInterval'
 import { useDialog } from '../hooks/useDialog'
-import { loadTourSeen, markTourStep, skipTour, subscribeTour } from '../settings/tour'
+import { loadTourSeen, markTourStep, skipTour, subscribeTour, tourReady } from '../settings/tour'
 import { nextStep, TOUR_STEPS, type TourStep } from '../tour/steps'
 import { placeCard, spotlight, type Box, type Side } from '../tour/placement'
 import { CalendarClock, CloudSun, Compass, Help, Home, Info, Lightbulb, MapPin, Menu, MessagesSquare, Plan, RouteMap, Search, Sparkles } from './icons'
@@ -40,10 +40,12 @@ const view = () => ({ width: document.documentElement.clientWidth, height: windo
  */
 export function Tour({ paused = false }: { paused?: boolean }) {
   const seen = useSyncExternalStore(subscribeTour, loadTourSeen, loadTourSeen)
+  // Nothing starts until the account's own copy has arrived, so a guest who finished the tour on another device is not shown it again.
+  const ready = useSyncExternalStore(subscribeTour, tourReady, () => false)
   const [step, setStep] = useState<TourStep | null>(null)
   // Look again for a step to show whenever the tour state or the page changes, and now and then in case the page has finished drawing or a sheet has closed.
   useEffect(() => {
-    if (paused) return
+    if (paused || !ready) return
     const look = () => setStep((now) => {
       // Another modal (a sheet, or a page's own Stanley tour) has the screen: this tour steps aside until it is gone.
       if (document.querySelector('.dialog-backdrop, .coach-backdrop')) return null
@@ -52,8 +54,8 @@ export function Tour({ paused = false }: { paused?: boolean }) {
     })
     queueMicrotask(look)
     return startVisibleInterval(look, 700)
-  }, [seen, paused])
-  if (!step || paused) return null
+  }, [seen, paused, ready])
+  if (!step || paused || !ready) return null
   const index = TOUR_STEPS.findIndex((s) => s.id === step.id)
   const left = TOUR_STEPS.filter((s) => !seen.includes(s.id)).length
   return <TourCard key={step.id} step={step} count={`${index + 1}/${TOUR_STEPS.length}`} last={left <= 1} />

@@ -21,6 +21,8 @@ import { EMPTY_CHOICES, mergeChoices } from '../guide/choices'
 import { EMPTY_FIT, mergeFit } from '../guide/fit'
 import { applyRemoteFit, getFit } from '../guide/fitStore'
 import { applyRemoteChoices, getChoices } from '../guide/choicesStore'
+import { applyRemoteHints, getHints, markHintsLoaded } from '../settings/hints'
+import { EMPTY_HINTS, mergeHints } from '../settings/hintsState'
 import { applyRemoteWelcome, getWelcome, markWelcomeLoaded } from '../stageWelcome/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
@@ -233,10 +235,20 @@ const guideFit: Binding = {
   merge: mergeFit,
 }
 
+/** The page tips and first-visit tour steps the guest has dismissed, so a tip dismissed on one device is not shown again on another. */
+const hints: Binding = {
+  key: 'hints',
+  read: (id) => getHints(id),
+  apply: (id, raw) => applyRemoteHints(id, raw),
+  isEmpty: (raw) => raw === EMPTY_HINTS || json(raw) === json(EMPTY_HINTS),
+  merge: mergeHints,
+  pulled: (id) => markHintsLoaded(id),
+}
+
 let registered = false
 /** Connects the stores to the sync module. Safe to call more than once. */
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, recent, stageWelcome, stageProgress, guideChoices, guideFit, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
+  for (const b of [settings, offers, recent, stageWelcome, stageProgress, guideChoices, guideFit, hints, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
 }

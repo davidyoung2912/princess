@@ -4,7 +4,7 @@ import { TOP_TASKS } from './nav'
 import { ROUTES } from './routes'
 import { SCREEN_BY_ID, SCREEN_LIST, STAGE_TABS, stageUses } from './screens'
 import { SCREEN_WORDS, isFromEarlier, screenHits, visibleAt } from './screenWords'
-import { ALL_TAB_KEYS, ALWAYS_OPEN_SCREENS, EXPLORER_PATHS, shellArea, accessAt, earlierAt, groupShip, shipGroupOf, activeTabKey, areaAt, linkFor, listedScreens, navTabs, newTabLabels, tabAtPath, tabKey, tabPathFor, tabScreenIds } from './stageNav'
+import { ALL_TAB_KEYS, ALWAYS_OPEN_SCREENS, BOOKING_FLOW_SCREENS, EXPLORER_PATHS, shellArea, accessAt, earlierAt, groupShip, shipGroupOf, activeTabKey, areaAt, linkFor, listedScreens, navTabs, newTabLabels, tabAtPath, tabKey, tabPathFor, tabScreenIds } from './stageNav'
 import { tabText } from '../ui/tabText'
 import { searchContent } from '../domain/searchIndex'
 
@@ -99,9 +99,9 @@ describe('stale addresses and the active tab', () => {
     expect(accessAt(null, '/nowhere', 'sea')).toBe('show')
   })
 
-  it('judges a screen exactly as the registry does, except the always-open ports and countries screens', () => {
+  it('judges a screen exactly as the registry does, except the always-open screens and the booking flow while dreaming', () => {
     for (const stage of JOURNEY_STAGES) for (const s of SCREEN_LIST) {
-      if (s.family === 'X' || ALWAYS_OPEN_SCREENS.includes(s.id) || s.family === 'C') continue
+      if (s.family === 'X' || ALWAYS_OPEN_SCREENS.includes(s.id) || s.family === 'C' || (stage === 'dream' && BOOKING_FLOW_SCREENS.includes(s.id))) continue
       expect(accessAt(s.path, s.path, stage) === 'show', `${stage} ${s.id}`).toBe(stageUses(s.id, stage))
     }
   })
@@ -150,6 +150,11 @@ describe('Ship groups and earlier screens', () => {
     expect(shipGroupOf('S40')).toBeNull()
   })
 
+  it('lets a guest who is still dreaming start booking from a cruise page, but not return to it after booking', () => {
+    expect(accessAt('/book', '/book', 'dream')).toBe('show')
+    expect(accessAt('/book/:id', '/book/room', 'dream')).toBe('show')
+    expect(accessAt('/book', '/book', 'sea')).toBe('home')
+  })
   it('treats a screen from an earlier stage as "from your trip", never a current one or a later one', () => {
     expect(earlierAt('/book', 'manage')).toBe(true)
     expect(earlierAt('/home/quiz', 'manage')).toBe(true)
