@@ -53,7 +53,7 @@
 .field__top { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-1); }
 .field__top label { margin-bottom: var(--space-2); }
 .helptip { display: contents; }
-.helptip__btn { display: inline-grid; place-items: center; min-width: 1.75rem; min-height: 1.75rem; margin: calc(var(--space-2) * -0.5) 0; padding: 0; background: transparent; border: 0; border-radius: 50%; color: var(--primary); cursor: pointer; transition: background-color 0.15s, box-shadow 0.15s; }
+.helptip__btn { display: inline-grid; place-items: center; min-width: 1.75rem; min-height: 1.75rem; margin: calc(var(--space-2) * -0.5) 0; padding: 0; background: transparent; border: 0; border-radius: 50%; color: var(--primary); cursor: pointer; position: relative; top: calc(var(--space-2) * -0.5); transition: background-color 0.15s, box-shadow 0.15s; }
 .helptip__btn svg { width: 1.25rem; height: 1.25rem; transition: transform 0.15s, stroke-width 0.15s; }
 .helptip__btn:hover, .helptip__btn[aria-expanded='true'] { background: var(--brand-tint); box-shadow: 0 0 0 2px var(--brand-tint); }
 .helptip__btn:hover svg, .helptip__btn:focus-visible svg { transform: scale(1.2); stroke-width: 3; }
