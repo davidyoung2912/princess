@@ -84,8 +84,8 @@ export const rebookQuery = (i?: { category?: string; guests?: number }): string 
 }
 
 /** The query string of an activity page: older than an id, at most this many. */
-const activityQuery = (q?: { before?: number; max?: number }): string => {
-  const parts = [q?.max ? `max=${q.max}` : '', q?.before ? `before=${q.before}` : ''].filter(Boolean)
+const activityQuery = (q?: { before?: string; max?: number }): string => {
+  const parts = [q?.max ? `max=${q.max}` : '', q?.before ? `before=${seg(q.before)}` : ''].filter(Boolean)
   return parts.length ? `?${parts.join('&')}` : ''
 }
 
@@ -271,19 +271,6 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     decideRecapPart: (groupId, messageId, decision) => send('put', `/me/chat/groups/${seg(groupId)}/recap/parts/${seg(messageId)}`, { decision }),
     shareRecap: (groupId) => send('post', `/me/chat/groups/${seg(groupId)}/recap/share`),
     recapPhoto: async (groupId, messageId) => (await get<{ photo: string }>(`/me/chat/groups/${seg(groupId)}/recap/photos/${seg(messageId)}`)).photo,
-    startHuddle: (name) => send('post', '/me/chat/huddles', { name }),
-    huddle: (id) => get(`/me/chat/huddles/${seg(id)}`),
-    huddleLink: (id) => send('post', `/me/chat/huddles/${seg(id)}/link`),
-    revokeHuddleLink: async (id) => { await send('delete', `/me/chat/huddles/${seg(id)}/link`) },
-    previewHuddle: (token) => send('post', '/me/chat/huddles/preview', { token }),
-    joinHuddle: async (token) => (await send<{ id: string }>('post', '/me/chat/huddles/join', { token, adultConfirmed: true })).id,
-    leaveHuddle: async (id) => { await send('post', `/me/chat/huddles/${seg(id)}/leave`) },
-    removeHuddleMember: async (id, personId) => { await send('post', `/me/chat/huddles/${seg(id)}/remove`, { personId }) },
-    deleteHuddle: async (id) => { await send('delete', `/me/chat/huddles/${seg(id)}`) },
-    addHuddleCard: (id, card) => send('post', `/me/chat/huddles/${seg(id)}/shortlist`, card),
-    removeHuddleCard: (id, cardId) => send('delete', `/me/chat/huddles/${seg(id)}/shortlist/${seg(cardId)}`),
-    setHuddleCarry: (id, agree) => send('put', `/me/chat/huddles/${seg(id)}/carry`, { agree }),
-    convertHuddle: (id, bookingNumber) => send('post', `/me/chat/huddles/${seg(id)}/convert`, { bookingNumber }),
     remindersMuted: async (groupId) => (await get<{ muted: boolean }>(`/me/chat/groups/${seg(groupId)}/stanley/reminders`)).muted,
     setRemindersMuted: async (groupId, muted) => (await send<{ muted: boolean }>('put', `/me/chat/groups/${seg(groupId)}/stanley/reminders`, { muted })).muted,
     momentAction: async (id, messageId, action) => { await send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/moment`, { action }) },

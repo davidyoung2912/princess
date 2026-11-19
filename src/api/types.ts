@@ -842,8 +842,8 @@ export interface Api {
     /** A new invitation code for a helper who has not accepted yet; the old one stops working (BM14). */
     renewHelperCode(): Promise<Helper>
     history(): Promise<HistoryEntry[]>
-    /** The signed-in person's own audit trail, newest first. Page back with `before` (the oldest id seen). */
-    activity(query?: { before?: number; max?: number }): Promise<ActivityEvent[]>
+    /** The signed-in person's own audit trail, newest first. Page back with `before` (the id of the last event seen). */
+    activity(query?: { before?: string; max?: number }): Promise<ActivityEvent[]>
     /** Everything the server holds for the signed-in person, as the JSON the privacy export returns. */
     exportData(): Promise<unknown>
   }

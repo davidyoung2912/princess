@@ -1,15 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConnection, ChatConnections } from '../api/chatTypes'
-import { askable, chatBadge, cleanQuery, hasActivity, personAction, relationNote, requestProblem, waitingCount } from './chatConnections'
+import { askable, chatBadge, cleanQuery, hasActivity, isEmail, personAction, relationNote, requestProblem, waitingCount } from './chatConnections'
 
 const row = (kind: ChatConnection['kind']): ChatConnection => ({ id: kind, kind, personId: 'p', name: 'Sam L.', conversationId: null, childId: null, childName: null, isNew: false, at: 0, expiresAt: 0 })
 const empty: ChatConnections = { connected: [], incoming: [], outgoing: [], answers: [], approvals: [] }
 
 describe('chat connections', () => {
-  it('needs 3 to 40 letters to search, and tidies spaces', () => {
-    expect(cleanQuery('  Sa ')).toBeNull()
+  it('needs 2 to 40 letters to search, and tidies spaces', () => {
+    expect(cleanQuery('  S ')).toBeNull()
     expect(cleanQuery('  sam   lee ')).toBe('sam lee')
     expect(cleanQuery('x'.repeat(41))).toBeNull()
+  })
+  it('takes a whole email address, and nothing that only looks like the start of one', () => {
+    expect(cleanQuery('  sam@example.com ')).toBe('sam@example.com')
+    expect(cleanQuery('sam@example')).not.toBe('sam@example.com')
+    expect(isEmail('sam@example.com')).toBe(true)
+    expect(isEmail('sam@')).toBe(false)
+    expect(isEmail('sam lee@example.com')).toBe(false)
   })
   it('offers the right action for each relation, and a note for all but none', () => {
     expect(personAction('none')).toBe('ask')

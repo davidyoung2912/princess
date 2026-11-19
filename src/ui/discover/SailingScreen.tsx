@@ -20,8 +20,6 @@ import { ItineraryList, PriceBreakdown, PriceState, SaveShare } from './parts'
 import { useJourneyEvent } from '../../hooks/useJourneyEvent'
 import { PriceUnitLine } from '../delights/Delights'
 import { DayStrip, LandHolidayCompare, OnThatDate } from '../delights/DiscoverDelights'
-import { AddToHuddle } from '../onboard/AddToHuddle'
-import { sailingOffer } from '../../domain/chatHuddle'
 import { CataloguePrice, DataStatusNote, SailingFactsList } from './catalogueParts'
 
 /** The sample stateroom prices of a sailing that is not open for booking yet: each of the ship's room types with a per-person fare for two sharing. */
@@ -132,7 +130,6 @@ export function SailingScreen() {
       <SailingFactsList sailing={entry} />
       {entry.bookingOpen ? <div className="button-row"><LinkButton to={`/book?sailing=${entry.id}`}>{t('discover.book')}</LinkButton></div> : <Card info><p>{t('cat.notBookable')}</p></Card>}
       <SaveShare kind="sailing" id={entry.id} name={`${entry.title}, ${range}`} favourites={favourites} />
-      <AddToHuddle offer={sailingOffer(entry.title, range, entry.nights, ports.map(portName))} />
       <DataStatusNote sailing={entry} />
 
       {ports.length > 0 && (

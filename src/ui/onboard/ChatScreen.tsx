@@ -21,8 +21,9 @@ import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
 import { RequestsBanner } from './ChatPeople'
+import { GroupInvites } from './ChatGroups'
+import { chatChanged } from '../../hooks/useChatSummary'
 import { Conversations } from './ChatConversations'
-import { HuddleJoin } from './ChatHuddle'
 import { canFindPeople, canUseGuestServices } from '../../domain/chatKeep'
 import { conversationFromSearch } from '../../domain/chatThread'
 
@@ -56,7 +57,7 @@ export function ChatScreen() {
       {!service && <Card info><p>{t('chat.beforeBooking')}</p></Card>}
       {people && <p><LinkButton to="/chat/people?find=1" icon={UserPlus}>{t('chat.invite')}</LinkButton></p>}
       {people && <RequestsBanner onOpen={() => { void nav('/chat/people') }} />}
-      <HuddleJoin />
+      {people && <GroupInvites onDone={() => chatChanged()} />}
       <Conversations />
       <section aria-labelledby="chat-more-h" data-tour="chat-more">
         <h2 id="chat-more-h">{heading('chat.more.title')}</h2>

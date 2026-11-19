@@ -26,13 +26,15 @@ public class ChatGroupRulesTests
     }
 
     [Theory]
-    [InlineData(1, 0, 24, true)]       // the creator and 24 invited make 25
-    [InlineData(1, 0, 25, false)]
-    [InlineData(20, 4, 1, true)]       // waiting invitations count, so they cannot be over-filled by accepting
-    [InlineData(20, 5, 1, false)]
-    [InlineData(25, 0, 0, true)]
-    public void AGroupHoldsTwentyFivePeopleIncludingWaitingInvitations(int members, int waiting, int adding, bool fits) =>
-        Assert.Equal(fits, ChatGroupRules.Fits(members, waiting, adding));
+    [InlineData(1, 0, 24)]
+    [InlineData(1, 0, 25)]
+    [InlineData(20, 5, 1)]
+    [InlineData(500, 100, 400)]
+    public void AGroupHasNoUpperLimit(int members, int waiting, int adding) =>
+        Assert.True(ChatGroupRules.Fits(members, waiting, adding));
+
+    [Fact]
+    public void AGroupCanBeJustTwoPeople() => Assert.Equal(1, ChatGroupRules.MinInvitedAtStart);
 
     [Fact]
     public void AChildsInvitationWaitsForTheirGuardian()

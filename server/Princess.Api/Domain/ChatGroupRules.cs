@@ -8,11 +8,11 @@ public static class ChatGroupRules
 {
     public const string AwaitingGuardian = "awaitingGuardian", Pending = "pending", Accepted = "accepted", Declined = "declined", Cancelled = "cancelled", Expired = "expired";
 
-    /// <summary>The most people in a group, counting the creator.</summary>
-    public const int MaxMembers = 25;
+    /// <summary>A group has no upper limit on people (the number only reaches the screen as a "no limit" value).</summary>
+    public const int MaxMembers = int.MaxValue;
 
-    /// <summary>A group is three or more people: the creator and at least two invited.</summary>
-    public const int MinInvitedAtStart = 2;
+    /// <summary>A group is two or more people: the creator and at least one invited.</summary>
+    public const int MinInvitedAtStart = 1;
 
     public const int MaxName = 40;
 
@@ -29,8 +29,8 @@ public static class ChatGroupRules
         return clean.Length is 0 or > MaxName || clean.Any(char.IsControl) ? null : clean;
     }
 
-    /// <summary>Whether <paramref name="adding"/> more people still fit, counting the people in the group and the invitations still waiting.</summary>
-    public static bool Fits(int activeMembers, int waitingInvites, int adding) => activeMembers + waitingInvites + adding <= MaxMembers;
+    /// <summary>Whether <paramref name="adding"/> more people still fit: always, since a group has no upper limit (kept so every caller still asks).</summary>
+    public static bool Fits(int activeMembers, int waitingInvites, int adding) => (long)activeMembers + waitingInvites + adding <= MaxMembers;
 
     /// <summary>Where an invitation goes first: to the person, or to their guardian when they are a supervised child (the guardian's yes is the acceptance).</summary>
     public static string StatusFor(bool inviteeSupervised) => inviteeSupervised ? AwaitingGuardian : Pending;

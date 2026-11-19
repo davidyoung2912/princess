@@ -21,7 +21,11 @@ public static class AuditOutcome
 /// <summary>One line of the trail: who did what to whom, when, from where, and how it ended. Never holds a request body, password or card number.</summary>
 public sealed class AuditEntry
 {
+    /// <summary>The internal row number: used inside the server only, never sent out.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public long Id { get; set; }
+    /// <summary>The unguessable public id of the event, used by the API for the event and for paging.</summary>
+    public Guid EventId { get; set; }
     public DateTime At { get; set; }
     public string Category { get; set; } = AuditCategory.Request;
     public string Action { get; set; } = "";
@@ -44,7 +48,7 @@ public sealed class AuditEntry
     public string? UserAgent { get; set; }
 }
 
-/// <summary>A search of the trail. Newest first; <see cref="BeforeId"/> pages back from the last row of the previous page.</summary>
+/// <summary>A search of the trail. Newest first; <see cref="BeforeEvent"/> pages back from the last row of the previous page.</summary>
 public sealed class AuditQuery
 {
     /// <summary>Rows where this person is the actor or the subject.</summary>
@@ -56,7 +60,7 @@ public sealed class AuditQuery
     public string? Outcome { get; set; }
     public DateTime? From { get; set; }
     public DateTime? To { get; set; }
-    public long? BeforeId { get; set; }
+    public Guid? BeforeEvent { get; set; }
     public int Max { get; set; } = 100;
 }
 

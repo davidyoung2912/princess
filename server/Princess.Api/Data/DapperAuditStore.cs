@@ -22,7 +22,7 @@ public sealed class DapperAuditStore(IDbConnectionFactory db) : IAuditStore
     {
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<AuditEntry>(Sql.Cmd("""
-            SELECT TOP (@max) Id, [At], Category, Action, Outcome, ActorPublicId, ActorRole, SubjectPublicId, Target, HttpMethod, Route, StatusCode, DurationMs,
+            SELECT TOP (@max) Id, EventId, [At], Category, Action, Outcome, ActorPublicId, ActorRole, SubjectPublicId, Target, HttpMethod, Route, StatusCode, DurationMs,
                    ErrorCode, ErrorType, ErrorMessage, ErrorDetail, Detail, CorrelationId, Ip, UserAgent
             FROM dbo.AuditEvents
             WHERE (@person IS NULL OR ActorPublicId = @person OR SubjectPublicId = @person)
@@ -33,12 +33,12 @@ public sealed class DapperAuditStore(IDbConnectionFactory db) : IAuditStore
               AND (@outcome IS NULL OR Outcome = @outcome)
               AND (@from IS NULL OR [At] >= @from)
               AND (@to IS NULL OR [At] < @to)
-              AND (@beforeId IS NULL OR Id < @beforeId)
+              AND (@beforeEvent IS NULL OR Id < (SELECT b.Id FROM dbo.AuditEvents b WHERE b.EventId = @beforeEvent))
             ORDER BY [At] DESC, Id DESC
             """, new
         {
             max = Math.Clamp(q.Max, 1, 500), person = q.Person, actor = q.Actor, subject = q.Subject, actionPrefix = q.ActionPrefix?.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]"),
-            category = q.Category, outcome = q.Outcome, from = q.From, to = q.To, beforeId = q.BeforeId,
+            category = q.Category, outcome = q.Outcome, from = q.From, to = q.To, beforeEvent = q.BeforeEvent,
         }, null, ct));
         return rows.ToList();
     }

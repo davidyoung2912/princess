@@ -40,9 +40,9 @@ public sealed class ChatHuddleRulesTests
     public void TheSeventhMemberIsRefused()
     {
         Assert.Null(ChatHuddleRules.JoinRefusal(false, 30, false, 5, 0));
-        Assert.Equal(ChatHuddleRules.Full, ChatHuddleRules.JoinRefusal(false, 30, false, 6, 0));
-        Assert.True(ChatHuddleRules.Fits(5, 1));
-        Assert.False(ChatHuddleRules.Fits(6, 1));
+        Assert.Equal(ChatHuddleRules.Full, ChatHuddleRules.JoinRefusal(false, 30, false, 12, 0));
+        Assert.True(ChatHuddleRules.Fits(11, 1));
+        Assert.False(ChatHuddleRules.Fits(12, 1));
     }
 
     [Fact]

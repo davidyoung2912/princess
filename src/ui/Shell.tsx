@@ -120,7 +120,9 @@ export function Shell() {
   const introKind = pathname === '/welcome' ? (state as { intro?: unknown } | null)?.intro : null
   const stanleyIntroPage = introKind === 'stanley'
   const appWelcomePage = introKind === 'app'
-  const title = appWelcomePage ? th('appWelcome.eyebrow') : stanleyIntroPage ? th('stanleyIntro.eyebrow') : action ? th(action.title) : landingWords ? landingWords.label : screen ? th(screen.titleKey) : route ? th(route.titleKey) : th('shell.notFound.title')
+  // A chat's people-and-invites page (`/chat/c/:id?manage=1`) has its own title, not the conversation's.
+  const chatPeoplePage = screen?.id === 'C07' && new URLSearchParams(search).get('manage') === '1'
+  const title = chatPeoplePage ? th('chatPeople.title') : appWelcomePage ? th('appWelcome.eyebrow') : stanleyIntroPage ? th('stanleyIntro.eyebrow') : action ? th(action.title) : landingWords ? landingWords.label : screen ? th(screen.titleKey) : route ? th(route.titleKey) : th('shell.notFound.title')
 
   useEffect(() => {
     recordVisit(pathname + search, navigationType)
@@ -273,7 +275,7 @@ export function Shell() {
       <UpdateBanner />
       <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        {appWelcomePage ? <PageHeader title={th('appWelcome.eyebrow')} subtext={t('appWelcome.subtext')} icon={headerIcon} /> : stanleyIntroPage ? <PageHeader title={th('stanleyIntro.eyebrow')} subtext={t('stanleyIntro.subtext')} icon={headerIcon} /> : action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back={pathname !== '/welcome'} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
+        {chatPeoplePage ? <PageHeader title={t('chatPeople.title')} subtext={t('chatPeople.subtext')} icon={headerIcon} back /> : appWelcomePage ? <PageHeader title={th('appWelcome.eyebrow')} subtext={t('appWelcome.subtext')} icon={headerIcon} /> : stanleyIntroPage ? <PageHeader title={th('stanleyIntro.eyebrow')} subtext={t('stanleyIntro.subtext')} icon={headerIcon} /> : action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back={pathname !== '/welcome'} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
         {route && !route.public && !landing && <GuideCrumb />}
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}

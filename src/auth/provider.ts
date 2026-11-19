@@ -41,7 +41,8 @@ export type CodePurpose = 'reset' | 'magic'
 
 /** Sign-up and recovery (ACT-01). Only the real provider has them; the demo picker has no accounts to create or recover. */
 export interface AccountActions {
-  register(input: Registration): Promise<Session>
+  /** Makes the account. It does not sign the guest in: the sign-in page does that. */
+  register(input: Registration): Promise<void>
   /** Asks for a one-time code by email. Completes the same way whether or not the address has an account. */
   requestCode(purpose: CodePurpose, email: string): Promise<void>
   resetPassword(email: string, code: string, newPassword: string): Promise<void>

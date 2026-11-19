@@ -57,11 +57,10 @@ import { ActionError } from '../account/parts'
 import { ClearDraft } from '../ClearDraft'
 import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
-import { DeleteChat, GroupDetails, NewGroup } from './ChatGroups'
+import { DeleteChat, GroupPage, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { GetPersonButton, RecapCard } from './ChatRelay'
-import { HuddleDetails, StartHuddle } from './ChatHuddle'
 import { CoordinatorButton, CoordinatorProvider, RemainingCard, RemindersSwitch } from './ChatCoordinator'
 import { RoomDetails, RulesDialog } from './ChatRooms'
 import { FlagToStaff, HostPanel } from './ChatHost'
@@ -98,6 +97,8 @@ export function ConversationPage() {
   const nav = useNavigate()
   const open = conversationFromSearch(`c=${encodeURIComponent(id)}`)
   if (!open) return <Navigate to="/chat" replace />
+  // `?manage=1` is a group's people-and-invites page.
+  if (params.get('manage') === '1') return <div className="page"><GroupPage key={open} id={open} onChanged={() => undefined} onLeft={() => { void nav('/chat') }} /></div>
   return <div className="page"><Thread key={open} id={open} jumpTo={messageFromSearch(params.toString())} onBack={() => { void nav('/chat') }} /></div>
 }
 
@@ -140,14 +141,13 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   // The live connection says when something changed; reading on a timer is only the fallback while it is down.
   useVisibleInterval(() => { if (!isChatLive()) load() }, 30_000)
   const [making, setMaking] = useState(false)
-  // The chat whose people the guest is managing (invite, remove), and the one they are about to delete: only chats they started.
-  const [managing, setManaging] = useState<ChatConversation | null>(null)
+  // The chat the guest is about to delete: only a group they started.
   const [deleting, setDeleting] = useState<ChatConversation | null>(null)
+  const nav = useNavigate()
+  // A group is managed (people, invitations, leaving, deleting) on a page of its own.
+  const manage = (c: ChatConversation) => { void nav(`/chat/c/${encodeURIComponent(c.id)}?manage=1`) }
   return (
     <section aria-labelledby="conv-h">
-      {managing && (managing.kind === 'huddle'
-        ? <HuddleDetails id={managing.id} onClose={() => setManaging(null)} onLeft={() => { setManaging(null); load() }} />
-        : <GroupDetails id={managing.id} onClose={() => { setManaging(null); load() }} onChanged={load} onLeft={() => { setManaging(null); load() }} />)}
       {deleting && <DeleteChat chat={deleting} onClose={() => setDeleting(null)} onDeleted={() => { setDeleting(null); load(); chatChanged() }} />}
       <h2 id="conv-h">{heading('conv.title')}</h2>
       {making && <NewGroup onClose={() => setMaking(false)} onCreated={(g) => { setMaking(false); onOpen(g.id) }} />}
@@ -159,13 +159,13 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
         return (
           <>
             <ul className="conv-list" aria-label={t('conv.title')}>
-              {shown.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} onManage={setManaging} onDelete={setDeleting} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
+              {shown.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} onManage={manage} onDelete={setDeleting} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
             </ul>
             {archived.length > 0 && (
               <details className="conv-archived">
                 <summary>{headingCase(t('conv.archivedTitle', { count: archived.length }))}</summary>
                 <ul className="conv-list" aria-label={t('conv.archivedTitle', { count: archived.length })}>
-                  {archived.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} onManage={setManaging} onDelete={setDeleting} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
+                  {archived.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} onManage={manage} onDelete={setDeleting} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
                 </ul>
               </details>
             )}
@@ -174,7 +174,6 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
       })())}
       {rows && <AwayPeople rows={rows} onChange={(id, on) => setRows((cur) => (cur ? cur.map((c) => (c.id === id ? { ...c, notifyAway: on } : c)) : cur))} />}
       <p><Button variant="secondary" onClick={() => setMaking(true)}>{t('cgroup.new')}</Button></p>
-      <StartHuddle />
       <DoNotDisturb />
     </section>
   )
@@ -320,8 +319,7 @@ function GoneFromChat({ id, owner, onBack }: { id: string; owner: string; onBack
 }
 
 function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo?: string | null }) {
-  // A private chat just started opens straight on its invite (`?invite=1`), since inviting people is the next thing to do.
-  const [threadParams] = useSearchParams()
+  const nav = useNavigate()
   const me = usePersona()
   const supervisedChild = me?.child === true
   const now = useNow()
@@ -343,7 +341,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const [mayUrgent, setMayUrgent] = useState(cached?.mayUrgent ?? false)
   const [level, setLevel] = useState<ChatUrgency>('normal')
   const [blockedVersion, setBlockedVersion] = useState(0)
-  const [details, setDetails] = useState(threadParams.get('invite') === '1')
+  const [details, setDetails] = useState(false)
   const [askRules, setAskRules] = useState(false)
   // The first message you had not read when this thread opened: the divider stays where it was even after reading clears it.
   const [firstUnread, setFirstUnread] = useState<string | null>(null)
@@ -773,18 +771,12 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const staleTitle = permanent && age ? `${t('conv.stale')} ${t('stanley.notice.asOf', { time: age })}` : t('conv.stale')
   return (
     <StanleyTapProvider value={tap}>
-    <CoordinatorProvider value={(conversation?.kind === 'group' || conversation?.kind === 'huddle') && groupStanley.data ? { groupId: id, state: groupStanley.data } : null}>
+    <CoordinatorProvider value={conversation?.kind === 'group' && groupStanley.data ? { groupId: id, state: groupStanley.data } : null}>
     <section aria-labelledby="thread-h">
       <h2 id="thread-h"><span className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</span></h2>
       {permanent && <p className="muted" role="note">{t('stanley.chat.permanent')}</p>}
       {conversation && conversation.kind !== 'direct' && !permanent && !room && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
-      )}
-      {conversation?.kind === 'huddle' && (
-        <div className="stack">
-          {conversation.members.length === 0 && <p className="muted">{t('chuddle.alone')}</p>}
-          <p><Button onClick={() => setDetails(true)}>{t('chuddle.invitePeople')}</Button></p>
-        </div>
       )}
       {back && !offline && <p className="muted">{t('conv.backOnShip', { names: back })}</p>}
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
@@ -792,8 +784,6 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {room?.room && <RoomNotes room={room} />}
       {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
       {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
-      {details && conversation?.kind === 'huddle' && <HuddleDetails id={id} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
-      {details && !room && conversation?.kind !== 'huddle' && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
       <p role="status" className="visually-hidden">{announce}</p>
       <p role="alert" className="visually-hidden">{alertText}</p>
       {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
@@ -907,7 +897,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && problem !== 'held' && <p className="muted">{t('chat.kept')}</p>}
           <HelpMeReword problem={problem} text={text} onUse={putInBox} />
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
-          {!room && conversation?.kind !== 'huddle' ? <PhotoAttach photos={draftPhotos} onChange={setDraftPhotos}><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></PhotoAttach> : <div className="composer__actions"><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></div>}
+          {!room ? <PhotoAttach photos={draftPhotos} onChange={setDraftPhotos}><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></PhotoAttach> : <div className="composer__actions"><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></div>}
           <ClearDraft show={text.trim() !== '' || draftPhotos.length > 0} onClear={cancelDraft} />
           <DraftPhotos photos={draftPhotos} onChange={setDraftPhotos} />
           <ActionError error={sendDraftPhotos.error} />
@@ -930,8 +920,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {react.error && <p role="alert" className="field__error">{t('conv.reactFailed')}</p>}
       {!permanent && <details className="chat-more chat-more--tools">
         <summary>{headingCase(t('conv.tools'))}</summary>
-      {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
-      {conversation?.kind === 'huddle' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('chuddle.details')}</Button>}
+      {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => { void nav(`/chat/c/${encodeURIComponent(id)}?manage=1`) }}>{t('cgroup.details')}</Button>}
       {room && <Button variant="secondary" onClick={() => setDetails(true)}>{t(room.kind === 'channel' ? 'room.channelDetails' : 'room.details')}</Button>}
       {conversation && !permanent && phase === 'ready' && (
         <ChatMenu conversation={conversation} messages={messages} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} onFind={goToPin} />
@@ -1433,12 +1422,12 @@ function Options({ conversation, messages, awayBusy, onAway, mentionsBusy, onMen
           <p className="muted">{t('mention.only.hint')}</p>
         </>
       )}
-      {(conversation.kind === 'group' || conversation.kind === 'huddle') && <GroupStanleySwitch groupId={conversation.id} />}
-      {(conversation.kind === 'group' || conversation.kind === 'huddle') && <RemainingCard />}
-      {(conversation.kind === 'group' || conversation.kind === 'huddle') && <RemindersSwitch groupId={conversation.id} />}
+      {conversation.kind === 'group' && <GroupStanleySwitch groupId={conversation.id} />}
+      {conversation.kind === 'group' && <RemainingCard />}
+      {conversation.kind === 'group' && <RemindersSwitch groupId={conversation.id} />}
       {conversation.kind === 'group' && <RecapCard groupId={conversation.id} />}
       {conversation.kind === 'group' && <HostPanel conversation={conversation} />}
-      {conversation.kind !== 'huddle' && (conversation.kind !== 'direct' || !conversation.closed) ? <GetPersonButton conversationId={conversation.id} messages={messages} /> : null}
+      {(conversation.kind !== 'direct' || !conversation.closed) ? <GetPersonButton conversationId={conversation.id} messages={messages} /> : null}
       <div className="chip-row">
         <Chip pressed={on} onToggle={() => void flip.run(!on)}>{t('chat.receipts')}</Chip>
       </div>

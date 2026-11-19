@@ -159,19 +159,18 @@ describe('createHttpAuthProvider', () => {
   })
 
   describe('sign-up and recovery', () => {
-    it('registers and signs in, trimming the email', async () => {
+    it('registers without signing in, trimming the email', async () => {
       const { auth, s, storage } = make(() => reply(200, session(1, 'new@example.com')))
-      const got = await auth.account!.register({ email: ' new@example.com ', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+15551234567' })
-      expect(got.user?.email).toBe('new@example.com')
+      await auth.account!.register({ email: ' new@example.com ', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+15551234567' })
+      expect(auth.current()).toBeNull()
       expect(s.calls[0]).toMatchObject({ url: '/api/v1/auth/register', auth: null })
       expect(JSON.parse(s.calls[0].body!).email).toBe('new@example.com')
-      expect(storage.m.get(REFRESH_KEY)).toBe('r1')
+      expect(storage.m.get(REFRESH_KEY)).toBeUndefined()
     })
-    it('sends confirmedDifferent and keeps the review flag', async () => {
+    it('sends confirmedDifferent', async () => {
       const { auth, s } = make(() => reply(200, { ...session(1), user: { ...user('n@b.co'), needsReview: true } }))
-      const got = await auth.account!.register({ email: 'n@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+15551234567', confirmedDifferent: true })
+      await auth.account!.register({ email: 'n@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+15551234567', confirmedDifferent: true })
       expect(JSON.parse(s.calls.at(-1)!.body!)).toMatchObject({ confirmedDifferent: true })
-      expect(got.user?.needsReview).toBe(true)
     })
     it('maps the named failures', async () => {
       const input = { email: 'a@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+15551234567' }

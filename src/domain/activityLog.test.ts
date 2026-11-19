@@ -2,20 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { applyFilter, describeEvent, detailOf, groupByActivityDay, newestFirst, nextCursor, readablePath, type ActivityEvent } from './activityLog'
 
 const ev = (over: Partial<ActivityEvent>): ActivityEvent => ({
-  id: 1, at: 1000, category: 'request', action: 'POST /api/v1/bookings/{number}/cancel', outcome: 'success', target: 'number=ABC12345', status: 204,
+  id: 'e1', at: 1000, category: 'request', action: 'POST /api/v1/bookings/{number}/cancel', outcome: 'success', target: 'number=ABC12345', status: 204,
   error: null, detail: null, requestId: 'r1', byYou: true, forYou: true, ...over,
 })
 
 describe('activity log', () => {
-  it('lists newest first and breaks ties by id', () => {
-    const list = newestFirst([ev({ id: 1, at: 10 }), ev({ id: 3, at: 30 }), ev({ id: 2, at: 30 })])
-    expect(list.map((e) => e.id)).toEqual([3, 2, 1])
+  it('lists newest first, equal times keeping the server order', () => {
+    const list = newestFirst([ev({ id: 'e1', at: 10 }), ev({ id: 'e3', at: 30 }), ev({ id: 'e2', at: 30 })])
+    expect(list.map((e) => e.id)).toEqual(['e3', 'e2', 'e1'])
   })
 
   it('groups into days, newest day first', () => {
     const day = (at: number) => (at >= 100 ? 'b' : 'a')
-    const days = groupByActivityDay([ev({ id: 1, at: 10 }), ev({ id: 2, at: 120 }), ev({ id: 3, at: 110 }), ev({ id: 4, at: 5 })], day)
-    expect(days.map((d) => [d.day, d.events.map((e) => e.id)])).toEqual([['b', [2, 3]], ['a', [1, 4]]])
+    const days = groupByActivityDay([ev({ id: 'e1', at: 10 }), ev({ id: 'e2', at: 120 }), ev({ id: 'e3', at: 110 }), ev({ id: 'e4', at: 5 })], day)
+    expect(days.map((d) => [d.day, d.events.map((e) => e.id)])).toEqual([['b', ['e2', 'e3']], ['a', ['e1', 'e4']]])
   })
 
   it('tidies a request path to words', () => {
@@ -39,13 +39,13 @@ describe('activity log', () => {
   })
 
   it('filters to problems', () => {
-    const list = [ev({ id: 1 }), ev({ id: 2, outcome: 'failure' }), ev({ id: 3, outcome: 'error' })]
-    expect(applyFilter(list, { outcome: 'problems' }).map((e) => e.id)).toEqual([2, 3])
+    const list = [ev({ id: 'e1' }), ev({ id: 'e2', outcome: 'failure' }), ev({ id: 'e3', outcome: 'error' })]
+    expect(applyFilter(list, { outcome: 'problems' }).map((e) => e.id)).toEqual(['e2', 'e3'])
     expect(applyFilter(list, { outcome: 'all' })).toHaveLength(3)
   })
 
-  it('pages back from the oldest id, and stops on a short page', () => {
-    expect(nextCursor([ev({ id: 9 }), ev({ id: 5 })], 2)).toBe(5)
-    expect(nextCursor([ev({ id: 9 })], 2)).toBeNull()
+  it('pages back from the id of the last event, and stops on a short page', () => {
+    expect(nextCursor([ev({ id: 'e9' }), ev({ id: 'e5' })], 2)).toBe('e5')
+    expect(nextCursor([ev({ id: 'e9' })], 2)).toBeNull()
   })
 })

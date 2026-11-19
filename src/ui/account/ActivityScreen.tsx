@@ -20,11 +20,11 @@ export function ActivityScreen() {
 function Report() {
   const shipTime = useShipTime()
   const [events, setEvents] = useState<ActivityEvent[]>([])
-  const [more, setMore] = useState<number | null>(null)
+  const [more, setMore] = useState<string | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [filter, setFilter] = useState<ActivityFilter>({ outcome: 'all' })
 
-  const fetchPage = useCallback((before?: number) => {
+  const fetchPage = useCallback((before?: string) => {
     api.account.activity({ max: PAGE, before }).then(
       (page) => {
         setEvents((old) => (before ? [...old, ...page] : page))
@@ -34,7 +34,7 @@ function Report() {
       () => setStatus('error'),
     )
   }, [])
-  const load = (before?: number) => {
+  const load = (before?: string) => {
     setStatus('loading')
     fetchPage(before)
   }

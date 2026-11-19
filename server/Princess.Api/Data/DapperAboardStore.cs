@@ -382,7 +382,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     /// <summary>
     /// The travel party chat (docs/chat-features-research.md, phase 5): one conversation per confirmed booking, with everyone on the booking in it, made the first time any of them opens chat after the booking is confirmed.
     /// A guest added to the booking later is added to it on their first read. Someone who left stays out. A guest's earlier solo "My group" (made before this) has its messages moved into the booking's chat and is removed, so the list has one.
-    /// A guest with no confirmed booking still gets a solo "My group", so there is always one conversation to open.
+    /// A guest with no confirmed booking gets no party chat at all (only Stanley's chat, and any group they make or join).
     /// </summary>
     public async Task EnsurePartyAsync(long userId, CancellationToken ct)
     {
@@ -412,11 +412,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             """, new { userId }, tx, ct))).ToList();
         if (bookings.Count == 0)
         {
-            var has = await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.ChatGroupMembers m JOIN dbo.ChatGroups g ON g.Id = m.GroupId WHERE m.UserId = @userId AND g.Kind = 'party'", new { userId }, tx, ct));
-            if (has > 0) return;
-            var solo = await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name, Kind) OUTPUT INSERTED.Id VALUES (N'My group', 'party')", null, tx, ct));
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatGroupMembers (GroupId, UserId) VALUES (@solo, @userId)", new { solo, userId }, tx, ct));
-            return;
+            return;   // no booking, no travel party chat: such a guest has only Stanley's chat until they start or join a group
         }
         long? first = null;
         foreach (var booking in bookings)

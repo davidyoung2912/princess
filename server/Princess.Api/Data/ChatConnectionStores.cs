@@ -48,7 +48,8 @@ public sealed class ChatConnectionRow
 public interface IChatConnectionStore
 {
     /// <summary>Guests on a confirmed booking for the same sailing as the caller whose name contains <paramref name="like"/>, or only the one with <paramref name="personPublicId"/>. Never the caller, anyone who blocked them or whom they blocked, anyone who turned off being found (unless they share a booking), or a child they share no booking with.</summary>
-    Task<List<ChatPersonRow>> FindPeopleAsync(long userId, string? like, Guid? personPublicId, int max, CancellationToken ct);
+    /// <summary>People the caller may find, always by a whole value, never a part: a whole last name or a whole "First Last" in <paramref name="like"/> (compared for equality, any case), or one whole email address in <paramref name="email"/>. A first name alone, or the start of any of these, finds no one.</summary>
+    Task<List<ChatPersonRow>> FindPeopleAsync(long userId, string? like, Guid? personPublicId, int max, CancellationToken ct, string? email = null);
     Task<ChatConnectionRow?> GetAsync(Guid publicId, CancellationToken ct);
     /// <summary>The live (waiting or agreed) connection between two people, whichever way round it was asked.</summary>
     Task<ChatConnectionRow?> FindOpenBetweenAsync(long a, long b, CancellationToken ct);
@@ -100,7 +101,7 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
     // People who share a booking with the caller: a travelling party is not "found", it is already known.
     private const string SharesBooking = "EXISTS (SELECT 1 FROM dbo.BookingGuests a JOIN dbo.BookingGuests b ON b.BookingId = a.BookingId WHERE a.UserId = @userId AND b.UserId = u.Id)";
 
-    public async Task<List<ChatPersonRow>> FindPeopleAsync(long userId, string? like, Guid? personPublicId, int max, CancellationToken ct)
+    public async Task<List<ChatPersonRow>> FindPeopleAsync(long userId, string? like, Guid? personPublicId, int max, CancellationToken ct, string? email = null)
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPersonRow>(Sql.Cmd($"""
@@ -110,14 +111,15 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
             LEFT JOIN dbo.UserPrefs up ON up.UserId = u.Id
             WHERE u.Id <> @userId AND u.Role = 'guest'
               AND (@personPublicId IS NULL OR u.PublicId = @personPublicId)
-              AND (@like IS NULL OR p.FirstName LIKE @like OR p.LastName LIKE @like OR p.FirstName + N' ' + p.LastName LIKE @like)
+              AND (@email IS NULL OR u.Email = @email)
+              AND (@like IS NULL OR p.LastName = @like OR p.FirstName + N' ' + p.LastName = @like)
               AND (
                     {SharesBooking}
                     OR (ISNULL(up.ChatFindable, 1) = 1 AND u.IsSupervised = 0)   // any guest who has not turned finding off, at every stage
                   )
               AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks bl WHERE (bl.UserId = u.Id AND bl.BlockedUserId = @userId) OR (bl.UserId = @userId AND bl.BlockedUserId = u.Id))
             ORDER BY p.FirstName, p.LastName, u.Id
-            """, new { userId, like, personPublicId, max }, null, ct))).ToList();
+            """, new { userId, like, personPublicId, max, email }, null, ct))).ToList();
     }
 
     public async Task<ChatConnectionRow?> GetAsync(Guid publicId, CancellationToken ct)

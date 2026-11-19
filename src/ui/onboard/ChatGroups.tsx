@@ -1,7 +1,8 @@
 import { Trash2, Users } from '../icons'
+import { Link } from 'react-router'
 import { useState } from 'react'
 import type { ChatConnections, ChatGroup, ChatGroupInvite } from '../../api/chatTypes'
-import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, MIN_INVITED, placesLeft, togglePicked } from '../../domain/chatGroups'
+import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, MIN_INVITED, togglePicked } from '../../domain/chatGroups'
 import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -70,8 +71,7 @@ export function NewGroup({ onClose, onCreated }: { onClose: () => void; onCreate
 /** Deleting a whole chat for everyone, by the guest who started it. The others are told at once and it leaves their lists. */
 export function DeleteChat({ chat, onClose, onDeleted }: { chat: { id: string; kind: string; name: string }; onClose: () => void; onDeleted: () => void }) {
   const remove = useAction(async () => {
-    if (chat.kind === 'huddle') await api.chatConversations.deleteHuddle(chat.id)
-    else await api.chatGroups.delete(chat.id)
+    await api.chatGroups.delete(chat.id)
     onDeleted()
   })
   return (
@@ -86,8 +86,8 @@ export function DeleteChat({ chat, onClose, onDeleted }: { chat: { id: string; k
   )
 }
 
-/** The people, the limit, and what the guest can do: leave, and for the creator rename, add and remove. Opened from a group's thread. */
-export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; onClose: () => void; onLeft: () => void; onChanged: () => void }) {
+/** A group on a page of its own: who is in, and what the guest can do: leave, and for the creator rename, invite, remove and delete. */
+export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () => void; onChanged: () => void }) {
   const group = useMine(() => api.chatGroups.get(id), [id])
   const connections = useMine(() => api.chatConnections.list())
   const [leaving, setLeaving] = useState(false)
@@ -103,12 +103,13 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
   const admin = useAction(async (personId: string, on: boolean) => { await api.chatGroups.setAdmin(id, personId, on); done(t(on ? 'cgroup.admin.make' : 'cgroup.admin.remove')) })
   const announce = useAction(async (on: boolean) => { await api.chatGroups.setAnnouncementOnly(id, on); done(t('cgroup.announce')) })
   return (
-    <Dialog title={group.data?.name ?? t('cgroup.details')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={group.data?.name ?? t('cgroup.details')} subtext={group.data ? t('cgroup.details') : undefined} icon={Users} onClose={onClose} />}>
+    <section aria-labelledby="grp-page-h">
+      <h2 id="grp-page-h"><span className="person-line"><Users aria-hidden="true" /> {group.data?.name ?? t('cgroup.details')}</span></h2>
       <p role="status" className="visually-hidden">{note}</p>
       <Load state={group}>
         {(g) => (
           <>
-            <h3>{headingCase(t('cgroup.members', { count: g.members.length, max: g.max }))}</h3>
+            <h3>{headingCase(t('cgroup.members', { count: g.members.length }))}</h3>
             <ul className="plain-list">
               {g.members.map((m) => (
                 <li key={m.id}>
@@ -149,7 +150,7 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
             )}
             <p className="muted">{t('cgroup.history')}</p>
             <Button variant="secondary" onClick={() => setLeaving(true)}>{t('cgroup.leave')}</Button>
-            {g.isCreator && <Button variant="secondary" icon={Trash2} onClick={() => setDeleting(true)}>{t('chuddle.deleteChat')}</Button>}
+            {g.isCreator && <Button variant="secondary" icon={Trash2} onClick={() => setDeleting(true)}>{t('cgroup.deleteChat')}</Button>}
             {deleting && <DeleteChat chat={{ id, kind: 'group', name: g.name }} onClose={() => setDeleting(false)} onDeleted={() => { setDeleting(false); onLeft() }} />}
             {leaving && (
               <Dialog title={t('cgroup.leaveTitle', { name: g.name })} onClose={() => setLeaving(false)} header={(titleId) => <DialogHeader titleId={titleId} title={t('cgroup.leaveTitle', { name: g.name })} icon={Users} onClose={() => setLeaving(false)} />}>
@@ -164,20 +165,19 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
           </>
         )}
       </Load>
-    </Dialog>
+    </section>
   )
 }
 
 function AddPeople({ group, connections, picked, setPicked, busy, onInvite }: {
   group: ChatGroup; connections: ReturnType<typeof useMine<ChatConnections>>; picked: string[]; setPicked: (p: string[]) => void; busy: boolean; onInvite: () => void
 }) {
-  const left = placesLeft(group)
   const people = invitable(connections.data?.connected ?? [], group)
-  if (left === 0) return <p className="muted">{t('cgroup.full')}</p>
   return (
     <div>
-      <PickPeople people={people} picked={picked} onToggle={(id) => setPicked(togglePicked(picked, id))} legend={t('cgroup.add', { count: left })} />
-      {people.length > 0 && <Button variant="secondary" disabled={busy || picked.length === 0 || picked.length > left} onClick={onInvite}>{t('cgroup.addSend')}</Button>}
+      <PickPeople people={people} picked={picked} onToggle={(id) => setPicked(togglePicked(picked, id))} legend={t('cgroup.add')} />
+      {people.length > 0 && <Button variant="secondary" disabled={busy || picked.length === 0} onClick={onInvite}>{t('cgroup.addSend')}</Button>}
+      <p className="muted"><Link to="/chat/people?find=1">{t('cgroup.findMore')}</Link></p>
     </div>
   )
 }

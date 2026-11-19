@@ -11,7 +11,7 @@ public sealed record HuddleConversion(IReadOnlyList<long> Party, IReadOnlyList<l
 
 /// <summary>
 /// The trip huddle's pure rules (docs/chat-features-research.md, phase 15): a small private chat started around a shortlist, before anyone has booked. Adults only (18+, never a supervised account), joined only by an invite
-/// link the creator shares themselves, up to six people, no photos, no money in it, deleted after 60 days of silence. A link is a random token stored only as a hash, lasts seven days, can be revoked or refreshed, and a wrong,
+/// link the creator shares themselves, up to twelve people, no photos, no money in it, deleted after 60 days of silence. A link is a random token stored only as a hash, lasts seven days, can be revoked or refreshed, and a wrong,
 /// expired or revoked one all fail the same way, so nothing can be learned from the error. A link shows who is in (first name and last initial) and nothing else before joining. No release without the privacy review (14.3).
 /// </summary>
 public static class ChatHuddleRules
@@ -19,7 +19,7 @@ public static class ChatHuddleRules
     /// <summary>The conversation kind (<c>ChatGroups.Kind</c>).</summary>
     public const string Kind = "huddle";
 
-    public const int AdultAge = 18, MaxMembers = 6, MaxHuddlesPerGuest = 3, MaxOpenPerCreator = 1, InvitesPerDay = 10, LinkDays = 7, MaxShortlist = 12, MaxShortlistNote = 140;
+    public const int AdultAge = 18, MaxMembers = 12, MaxHuddlesPerGuest = 3, MaxOpenPerCreator = 1, InvitesPerDay = 10, LinkDays = 7, MaxShortlist = 12, MaxShortlistNote = 140;
     public const int DeleteAfterDays = 60, WarnAfterDays = 50;
 
     /// <summary>Refusals. <c>invalidLink</c> is the only answer to a wrong, expired or revoked link.</summary>
@@ -39,7 +39,7 @@ public static class ChatHuddleRules
         supervised ? Supervised : age is null ? NeedAge : age < AdultAge ? Underage : openAsCreator >= MaxOpenPerCreator ? OpenAlready : huddlesIn >= MaxHuddlesPerGuest ? TooMany : null;
 
     /// <summary>
-    /// Whether a person may join: signed in (the caller), an adult who has confirmed their age, not supervised, not already in, room for them (six including the creator) and fewer than three huddles of their own.
+    /// Whether a person may join: signed in (the caller), an adult who has confirmed their age, not supervised, not already in, room for them (twelve including the creator) and fewer than three huddles of their own.
     /// An age that is unknown is a refusal (<c>needAge</c>), never a pass, so nobody joins anonymously or without saying.
     /// </summary>
     public static string? JoinRefusal(bool supervised, int? age, bool alreadyIn, int activeMembers, int huddlesIn) =>

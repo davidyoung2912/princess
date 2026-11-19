@@ -183,7 +183,7 @@ function Search({ onClose, onDone }: { onClose: () => void; onDone: (note: strin
   return (
     <Dialog title={t('people.new')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('people.new')} subtext={t('people.searchHint')} icon={UserPlus} onClose={onClose} />}>
       <form onSubmit={(e) => { e.preventDefault(); if (query) void find.run() }}>
-        <Field label={t('people.search')} hint={t('people.searchHint')} value={text} maxLength={40} autoComplete="off" onChange={(e) => { setText(e.target.value); setResults(null) }} />
+        <Field label={t('people.search')} hint={t('people.searchHint')} value={text} maxLength={254} autoComplete="off" onChange={(e) => { setText(e.target.value); setResults(null) }} />
         <Button type="submit" disabled={find.busy || !query}>{t('people.find')}</Button>
       </form>
       {find.error && (find.error.code === 'offline' || find.error.code === 'network') ? <Banner kind="offline" title={t('people.offline')} /> : <ActionError error={find.error} />}

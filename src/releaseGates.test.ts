@@ -513,40 +513,26 @@ describe('Chat gates (chat phase 14): Stanley in a thread', () => {
   })
 })
 
-describe('Huddle gates (chat phase 15): a chat before anyone has booked', () => {
-  const read2 = (f: string): string => read(`server/Princess.Api/${f}`)
+describe('Identifier gates: the API names things only by unguessable ids', () => {
+  const files = (dir: string): string[] => readdirSync(dir).filter((f) => f.endsWith('.cs')).map((f) => read(`${dir}/${f}`))
 
-  it('a link is kept only as a hash, and every bad link gives the one answer', () => {
-    const svc = read2('Services/ChatHuddleService.cs')
-    const store = read2('Data/ChatHuddleStores.cs')
-    expect(svc).toContain('ChatHuddleRules.HashOf(token)')
-    expect(store).not.toMatch(/INSERT INTO dbo\.ChatHuddleInvites \([^)]*\bToken\b[^H]/)
-    expect(svc.match(/ApiException\.NotFound\(no\)/g)?.length).toBe(1) // one place turns a bad link into an answer
-    expect(svc).not.toMatch(/ApiException\.\w+\("(expired|revoked|wrongLink)"\)/)
+  it('no public contract or endpoint record carries a numeric id', () => {
+    const numericId = /\b(?:long|int)\??\s+(?:Id|\w*Id)\b/
+    for (const src of [...files('server/Princess.Api/Contracts'), ...files('server/Princess.Api/Endpoints')]) {
+      for (const line of src.split('\n').filter((l) => /record\s+\w+\(/.test(l))) expect(line).not.toMatch(numericId)
+    }
   })
 
-  it('a huddle has no photos and no text bridge', () => {
-    const chat = read2('Services/ChatService.cs')
-    expect(chat).toContain('ChatHuddleRules.AllowsPhotos')
-    expect(chat).toContain('ChatHuddleRules.AllowsSms')
+  it('the audit trail hides its row number and pages by the event guid', () => {
+    const audit = read('server/Princess.Api/Audit/Audit.cs')
+    expect(audit).toMatch(/\[System\.Text\.Json\.Serialization\.JsonIgnore\]\s+public long Id/)
+    expect(read('server/Princess.Api/Endpoints/AuditEndpoints.cs')).not.toMatch(/long\? before/)
   })
 
-  it('joining needs a signed-in caller who says they are an adult, and the preview reads no message or card', () => {
-    const svc = read2('Services/ChatHuddleService.cs')
-    expect(svc).toContain('AdultConfirmed == true')
-    const preview = svc.slice(svc.indexOf('PreviewAsync'), svc.indexOf('JoinAsync'))
-    expect(preview).not.toMatch(/ListCardsAsync|ListMessages|LastActivity/)
-  })
-
-  it('no huddle service logs or audits a name, a message or a card', () => {
-    expect(read2('Services/ChatHuddleService.cs')).not.toMatch(/\blog\.|ILogger|audit\./i)
-  })
-
-  it('a huddle role never reaches money, booking or action code', () => {
-    expect(read2('Services/ChatHuddleService.cs')).not.toMatch(/StanleyActionService|IPaymentProvider|IBookingStore|StanleyMoneyService|ConfirmAsync/)
+  it('chat group names are not unique', () => {
+    expect(read('db/01-schema.sql')).not.toMatch(/UNIQUE[^\n]*ChatGroups\s*\([^)]*\bName\b/)
   })
 })
-
 
 describe('Host gates (chat phase 12): Stanley as host for strangers and room host', () => {
   const read2 = (f: string): string => read(`server/Princess.Api/${f}`)

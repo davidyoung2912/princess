@@ -17,7 +17,7 @@ public class ChatConnectionRulesTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    [InlineData("Sa")]
+    [InlineData("S")]
     [InlineData("100%")]
     [InlineData("a_b_c")]
     [InlineData("[abc]")]

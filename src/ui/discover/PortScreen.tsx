@@ -13,8 +13,6 @@ import { LinkButton } from '../Button'
 import { Anchor } from '../icons'
 import { Flag } from '../Flag'
 import { SaveShare } from './parts'
-import { AddToHuddle } from '../onboard/AddToHuddle'
-import { portOffer } from '../../domain/chatHuddle'
 import { StanleyExplain } from '../ai/StanleyExplain'
 import { TenderOutlook } from './TenderOutlook'
 
@@ -46,7 +44,6 @@ export function PortScreen() {
       {guide?.area && <Area guide={guide} />}
       <p><span className={`tag${tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {tender ? t('discover.tender') : t('discover.dock')}</span>{tender && <StanleyExplain term="tender" />}{day && <> <span className="muted">{t('portguide.calls', { date: day.date })}</span></>}</p>
       <SaveShare kind="port" id={id} name={name} favourites={favourites} />
-      <AddToHuddle offer={portOffer(name, day?.date)} />
       {tender && day && <TenderOutlook port={id} date={day.date} />}
 
       {!guide && <FeedWaiting />}

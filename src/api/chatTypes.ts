@@ -295,17 +295,6 @@ export interface ChatRecapPhoto { messageId: string; from?: string; mine: boolea
 /** The group recap as the caller may see it: before it is shared only their own parts and a count; after, only the approved parts. */
 export interface ChatRecap { id: string; shared: boolean; startedAt: number; sharedAt?: number; decided: number; total: number; progress: string; plans: ChatRecapPlan[]; photos: ChatRecapPhoto[]; canShare: boolean; shareRefusal?: string }
 export interface ChatRecapChoice { messageId: string; at: number; chosen: boolean }
-/** Phase 15: the trip huddle, a private chat around a shortlist before anyone has booked. */
-export type HuddleCardKind = 'sailing' | 'cabinType' | 'port' | 'costBreakdown'
-export interface HuddleMember { id: string; name: string; you: boolean; creator: boolean }
-/** A public card with its "as of" time. Fields are plain label and value pairs; the server refuses any about a person's own money or a booking, cabin or document number. */
-export interface HuddleCard { id: string; kind: HuddleCardKind; title: string; fields: Record<string, string>; asOf: number; mine: boolean }
-export interface Huddle { id: string; name: string; members: HuddleMember[]; shortlist: HuddleCard[]; isCreator: boolean; max: number; seatsLeft: number; deleteOn: number; warn: boolean; linkUntil?: number; carry: boolean }
-/** A link just made. The token is shown once. */
-export interface HuddleLink { token: string; expiresAt: number }
-/** What a link shows before joining: who is in and the seats left. */
-export interface HuddlePreview { members: string[]; seatsLeft: number }
-export interface HuddleConverted { partyId: string; moved: number; stayed: number; historyCarried: boolean; groupId?: string }
 export interface ChatReminded { reminded: number; line: string }
 /** One poll or plan still waiting for someone: counts only. */
 export interface ChatRemainingItem { messageId: string; kind: 'poll' | 'plan'; title: string; answered: number; total: number; closed: boolean; closesAt?: number }
@@ -406,27 +395,6 @@ export interface ChatConversationsApi {
   shareRecap(groupId: string): Promise<ChatRecap>
   /** One approved photo of a shared recap as a data URL. */
   recapPhoto(groupId: string, messageId: string): Promise<string>
-  /** Starts a huddle (no booking needed). Rejects `forbidden` (`supervised`, `underage`, `needAge`, `openAlready`, `tooMany`) or `invalid` (`name`, `blocked`). */
-  startHuddle(name: string): Promise<Huddle>
-  huddle(id: string): Promise<Huddle>
-  /** Makes (or refreshes) the invite link. Creator only. The token is shown once. Rejects `forbidden` (`creator`) or `tooMany` (`limit`). */
-  huddleLink(id: string): Promise<HuddleLink>
-  revokeHuddleLink(id: string): Promise<void>
-  /** Who is in, for someone with a link. Rejects `notFound` (`invalidLink`) for any bad link. */
-  previewHuddle(token: string): Promise<HuddlePreview>
-  /** Joins with the guest's statement that they are 18 or over. Returns the conversation id. Rejects `notFound` (`invalidLink`) or `forbidden` (`supervised`, `underage`, `needAge`, `alreadyIn`, `full`, `tooMany`). */
-  joinHuddle(token: string): Promise<string>
-  leaveHuddle(id: string): Promise<void>
-  /** The creator removes a member. */
-  removeHuddleMember(id: string, personId: string): Promise<void>
-  /** The creator deletes the whole chat for everyone. */
-  deleteHuddle(id: string): Promise<void>
-  addHuddleCard(id: string, card: { kind: HuddleCardKind; title: string; fields: Record<string, string>; asOf: number }): Promise<Huddle>
-  removeHuddleCard(id: string, cardId: string): Promise<Huddle>
-  /** Your own OK, or taking it back, to carry the history into the party chat. */
-  setHuddleCarry(id: string, agree: boolean): Promise<Huddle>
-  /** The booker makes the party chat. Rejects `notFound` (`noBooking`). */
-  convertHuddle(id: string, bookingNumber?: string): Promise<HuddleConverted>
   /** Whether you switched Stanley's reminders off in this group. */
   remindersMuted(groupId: string): Promise<boolean>
   setRemindersMuted(groupId: string, muted: boolean): Promise<boolean>

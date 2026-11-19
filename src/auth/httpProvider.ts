@@ -100,10 +100,8 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
     account: {
       async register(input) {
         try {
-          const session = take(await raw.post<WireSession>('/auth/register', { ...input, email: input.email.trim() }, { anonymous: true }))
-          notify()
-          opts.channel?.post({ type: 'session' })
-          return session
+          // The account is made but nobody is signed in: the guest signs in on the sign-in page, with their details filled in.
+          await raw.post<WireSession>('/auth/register', { ...input, email: input.email.trim() }, { anonymous: true })
         } catch (e) { throw failure(e) }
       },
       async requestCode(purpose, email) {

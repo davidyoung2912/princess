@@ -2,14 +2,18 @@
 import type { ChatConnections, ChatPerson, ChatRelation, ChatSummary } from '../api/chatTypes'
 
 /** The shortest name the server will search for. */
-export const MIN_QUERY = 3
+export const MIN_QUERY = 2
 export const MAX_QUERY = 40
 
 /** The search text with spaces tidied, or null when it is too short or too long to search. */
 export function cleanQuery(text: string): string | null {
   const q = text.trim().replace(/\s+/g, ' ')
+  if (isEmail(q)) return q
   return q.length >= MIN_QUERY && q.length <= MAX_QUERY ? q : null
 }
+
+/** An email address typed whole (the server matches one exactly and never in part). */
+export const isEmail = (q: string): boolean => q.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)
 
 /** What the button next to a found person does. */
 export type PersonAction = 'ask' | 'open' | 'none'

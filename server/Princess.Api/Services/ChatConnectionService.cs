@@ -16,7 +16,8 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     {
         await eligibility.RequirePeopleAsync(actor, ct);
         var clean = ChatConnectionRules.CleanQuery(query) ?? throw ApiException.Invalid("query");
-        var people = await store.FindPeopleAsync(actor.Id, $"%{clean}%", null, ChatConnectionRules.MaxResults, ct);
+        var byEmail = ChatConnectionRules.IsEmail(clean);
+        var people = await store.FindPeopleAsync(actor.Id, byEmail ? null : clean, null, ChatConnectionRules.MaxResults, ct, byEmail ? clean : null);
         var list = new List<ChatPersonDto>();
         foreach (var p in people)
         {

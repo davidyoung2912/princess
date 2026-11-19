@@ -1,11 +1,9 @@
 /** Rules for the chat group screens (docs/chat-plan.md, phase 5). Framework-free. */
 import type { ChatConnection, ChatGroup, ChatGroupInvite } from '../api/chatTypes'
 
-/** The most people in a group, the creator included. The server enforces it; the screen uses it to say how many places are left. */
-export const MAX_GROUP = 25
 export const MAX_GROUP_NAME = 40
-/** A group is three or more people: the creator and at least two invited. */
-export const MIN_INVITED = 2
+/** A group is two or more people (the creator and at least one invited), with no upper limit. */
+export const MIN_INVITED = 1
 
 /** The name with spaces tidied, or null when it is empty or too long. */
 export function cleanGroupName(text: string): string | null {
@@ -13,14 +11,9 @@ export function cleanGroupName(text: string): string | null {
   return name.length > 0 && name.length <= MAX_GROUP_NAME ? name : null
 }
 
-/** Whether a new group can be made: a good name and at least two people picked. */
+/** Whether a new group can be made: a good name and at least one person picked. */
 export function canCreateGroup(name: string, picked: number): boolean {
-  return cleanGroupName(name) !== null && picked >= MIN_INVITED && picked + 1 <= MAX_GROUP
-}
-
-/** Places left in a group: the limit less the people in it and the invitations still waiting. Never below zero. */
-export function placesLeft(group: Pick<ChatGroup, 'members' | 'waiting' | 'max'>): number {
-  return Math.max(0, group.max - group.members.length - group.waiting.length)
+  return cleanGroupName(name) !== null && picked >= MIN_INVITED
 }
 
 /** People the guest could add: their connections who are not in the group and have no invitation waiting. */

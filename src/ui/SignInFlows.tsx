@@ -26,7 +26,7 @@ const failText = (err: unknown, taken: StringKey = 'signin.error.invalid'): stri
 const today = () => new Date().toISOString().slice(0, 10)
 
 /** Sign-up (ACT-01). On success the provider signs the person in and the gate swaps this page for the app. */
-export function SignUpForm({ onBack }: { onBack: () => void }) {
+export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreated: (email: string, password: string) => void }) {
   const [v, setV] = useState({ email: '', password: '', confirm: '', firstName: '', lastName: '', dob: '', phone: '' })
   const [problems, setProblems] = useState<SignupProblem[]>([])
   const [error, setError] = useState('')
@@ -45,6 +45,7 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
     setBusy(true)
     try {
       await actions()?.register({ ...form, email: form.email.trim(), firstName: form.firstName.trim(), lastName: form.lastName.trim(), phone: form.phone.trim(), ...(confirmedDifferent ? { confirmedDifferent: true } : {}) })
+      onCreated(form.email.trim(), form.password)
     } catch (err) {
       if (err instanceof AuthError && err.code === 'possibleDuplicate') setTwin(true)
       else setError(failText(err))

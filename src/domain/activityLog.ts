@@ -1,6 +1,6 @@
 /** One line of the guest's own activity report: what they did, what was done for them, and what failed. Comes from the server's audit trail. */
 export interface ActivityEvent {
-  id: number
+  id: string
   /** Epoch ms. */
   at: number
   category: 'auth' | 'request' | 'domain' | 'error' | 'system'
@@ -71,8 +71,8 @@ export function applyFilter(events: readonly ActivityEvent[], f: ActivityFilter)
   return f.outcome === 'problems' ? events.filter(isProblem) : [...events]
 }
 
-/** Newest first, as the report lists them (ties broken by id so the order never flickers). */
-export const newestFirst = (events: readonly ActivityEvent[]): ActivityEvent[] => [...events].sort((a, b) => b.at - a.at || b.id - a.id)
+/** Newest first, as the report lists them (equal times keep the server's order, which is already newest first). */
+export const newestFirst = (events: readonly ActivityEvent[]): ActivityEvent[] => [...events].sort((a, b) => b.at - a.at)
 
 /** The events grouped into calendar days (by the given day-of-event function), newest day first, each day's events newest first. */
 export function groupByActivityDay(events: readonly ActivityEvent[], dayOf: (at: number) => string): { day: string; events: ActivityEvent[] }[] {
@@ -87,6 +87,6 @@ export function groupByActivityDay(events: readonly ActivityEvent[], dayOf: (at:
 }
 
 /** The id to ask the server for the next older page with, or null when the last page was short (nothing older). */
-export function nextCursor(page: readonly ActivityEvent[], pageSize: number): number | null {
-  return page.length < pageSize ? null : Math.min(...page.map((e) => e.id))
+export function nextCursor(page: readonly ActivityEvent[], pageSize: number): string | null {
+  return page.length < pageSize ? null : page[page.length - 1].id
 }

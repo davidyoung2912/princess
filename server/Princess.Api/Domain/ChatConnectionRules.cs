@@ -13,7 +13,7 @@ public static class ChatConnectionRules
 {
     public const string AwaitingGuardian = "awaitingGuardian", Pending = "pending", Accepted = "accepted", Declined = "declined", Cancelled = "cancelled", Expired = "expired", Ended = "ended";
 
-    public const int MinQuery = 3, MaxQuery = 40, MaxResults = 10;
+    public const int MinQuery = 2, MaxQuery = 40, MaxResults = 10;
     /// <summary>Requests a person may have waiting at once, and may send in a day.</summary>
     public const int MaxOpenOutgoing = 10, MaxPerDay = 20;
     public static readonly TimeSpan Lifetime = TimeSpan.FromDays(7);
@@ -30,6 +30,10 @@ public static class ChatConnectionRules
     /// The text to search for, or null when it is too short, too long or has anything but letters, spaces, hyphens, apostrophes and full stops.
     /// Those characters cannot be wildcards, so the value is safe in a LIKE pattern.
     /// </summary>
+    /// <summary>An email address as typed: one @, no spaces, something either side, at most 254 characters. Matched exactly (any case), so the search cannot be used to browse addresses.</summary>
+    public static bool IsEmail(string? text) =>
+        text is { Length: >= 5 and <= 254 } && text.Count(c => c == '@') == 1 && !text.Any(char.IsWhiteSpace) && text.IndexOf('@') is > 0 and var at && at < text.Length - 3 && text[(at + 1)..].Contains('.');
+
     public static string? CleanQuery(string? text)
     {
         if (text is null) return null;
@@ -40,6 +44,7 @@ public static class ChatConnectionRules
             sb.Append(part);
         }
         var clean = sb.ToString();
+        if (IsEmail(clean)) return clean;   // an email address is looked up whole, never in part
         if (clean.Length < MinQuery || clean.Length > MaxQuery) return null;
         return clean.All(c => char.IsLetter(c) || c is ' ' or '-' or '\'' or '.') ? clean : null;
     }
