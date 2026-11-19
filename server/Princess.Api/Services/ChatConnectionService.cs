@@ -14,7 +14,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
 {
     public async Task<List<ChatPersonDto>> SearchAsync(UserRecord actor, string? query, CancellationToken ct)
     {
-        await eligibility.RequirePeopleAsync(actor, ct);   // before a confirmed booking there is nobody on a sailing to find
+        await eligibility.RequirePeopleAsync(actor, ct);
         var clean = ChatConnectionRules.CleanQuery(query) ?? throw ApiException.Invalid("query");
         var people = await store.FindPeopleAsync(actor.Id, $"%{clean}%", null, ChatConnectionRules.MaxResults, ct);
         var list = new List<ChatPersonDto>();
@@ -104,7 +104,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         var now = await clock.NowAsync(actor, ct);
         await store.ExpireAsync(actor.Id, now, ct);
 
-        // Only someone the caller could have found: same sailing, findable, not blocked either way. Anyone else looks like nobody.
+        // Only someone the caller could have found: findable, not blocked either way. Anyone else looks like nobody.
         var person = (await store.FindPeopleAsync(actor.Id, null, body.ToUserId, 1, ct)).FirstOrDefault();
         var target = person is null ? null : await users.FindByIdAsync(person.UserId, ct);
         if (target is null)

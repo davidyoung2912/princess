@@ -3471,6 +3471,7 @@ export const enCore = {
   'tender.assist': 'You have told us you need help with steps. Staff will help at the tender door.',
   'tender.assistAsk': 'Need help with steps? Ask for tender assistance.',
 
+  'chat.invite': 'Invite Someone to Chat',
   'chat.free': 'Messages are free, and so is chatting with Guest Services.',
   'chat.people': 'People',
   'people.title': 'People',
@@ -3636,7 +3637,7 @@ export const enCore = {
   'chat.card.added': 'In my plan',
   'chat.card.full': 'Your plan notes are full. Remove one to add this.',
   'chat.photos': 'Messages are kept for 30 days after the cruise, then removed, unless everyone in a chat agrees to keep it (then for 12 months after the cruise). You can report or hide anyone in the chat.',
-  'chat.beforeBooking': 'Chat with other guests and your travel party opens when your booking is confirmed. Until then Stanley is here to answer questions.',
+  'chat.beforeBooking': 'Your travel party and Guest Services open when your booking is confirmed. Until then you can still chat with other guests, and Stanley is here to answer questions.',
   'keep.title': 'Keep this chat',
   'keep.kept': 'Everyone agreed. Messages in this chat are kept until {date}, then deleted.',
   'keep.waiting': 'You agreed. Waiting for {who}: {agreed} of {total} people have agreed.',

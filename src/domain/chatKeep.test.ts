@@ -58,7 +58,7 @@ describe('hasAgreed', () => {
 
 describe('canFindPeople', () => {
   it('is off before a booking and on otherwise, and on while the answer is unknown', () => {
-    expect(canFindPeople({ stage: 'dream', stanley: true, party: false, people: false, guestServices: false, keep: false, reason: 'beforeBooking' })).toBe(false)
+    expect(canFindPeople({ stage: 'dream', stanley: true, party: false, people: false, guestServices: false, keep: false, reason: 'beforeBooking' })).toBe(false) // the server decides; the screen follows it
     expect(canFindPeople({ stage: 'sea', stanley: true, party: true, people: true, guestServices: true, keep: true })).toBe(true)
     expect(canFindPeople(null)).toBe(true)
     expect(canFindPeople(undefined)).toBe(true)

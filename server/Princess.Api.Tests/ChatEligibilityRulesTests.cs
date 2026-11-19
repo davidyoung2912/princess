@@ -9,16 +9,16 @@ public class ChatEligibilityRulesTests
     [InlineData(StageRules.Dream)]
     [InlineData(StageRules.Discover)]
     [InlineData(StageRules.Book)]
-    public void AGuestWithoutAConfirmedBookingHasOnlyStanley(string stage)
+    public void AGuestWithoutAConfirmedBookingCanChatWithPeopleButHasNoPartyOrGuestServices(string stage)
     {
         var e = ChatEligibilityRules.For(stage, hasConfirmedBooking: false);
         Assert.True(e.Stanley);
         Assert.False(e.Party);
-        Assert.False(e.People);
+        Assert.True(e.People);
         Assert.False(e.GuestServices);
         Assert.False(e.Keep);
         Assert.Equal(ChatEligibilityRules.BeforeBooking, e.Reason);
-        Assert.False(ChatEligibilityRules.MayAsk(stage, false));
+        Assert.True(ChatEligibilityRules.MayAsk(stage, false));
     }
 
     [Theory]

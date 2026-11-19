@@ -1,7 +1,7 @@
-import { X } from '../icons'
+import { UserPlus, X } from '../icons'
 import { ChatLooks } from './ChatLooks'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import type { ChatConnection, ChatPerson, ChatSettings, ChatSms } from '../../api/chatTypes'
 import { needsPhone, smsReason } from '../../domain/chatSms'
 import { cleanQuery, hasActivity, personAction, relationNote, requestProblem, waitingCount } from '../../domain/chatConnections'
@@ -13,6 +13,7 @@ import { api } from '../../runtime'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
+import { DialogHeader } from '../DialogHeader'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
@@ -40,7 +41,9 @@ export function People() {
   const list = useMine(() => api.chatConnections.list())
   const settings = useMine(() => api.chatConnections.settings())
   useChatLive(list.retry)
-  const [searching, setSearching] = useState(false)
+  // `?find=1` (the Invite button on the Chat page) opens the search straight away.
+  const [params] = useSearchParams()
+  const [searching, setSearching] = useState(params.get('find') === '1')
   const [note, setNote] = useState('')
   const refresh = () => { list.retry(); chatChanged() }
   // The answers are on screen, so the sender has seen them: clear the badge once the list has loaded.
@@ -178,7 +181,7 @@ function Search({ onClose, onDone }: { onClose: () => void; onDone: (note: strin
   const status = useStanleyStatus()
   const kind = why ? problemLine(status, why) : undefined
   return (
-    <Dialog title={t('people.new')} onClose={onClose}>
+    <Dialog title={t('people.new')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('people.new')} subtext={t('people.searchHint')} icon={UserPlus} onClose={onClose} />}>
       <form onSubmit={(e) => { e.preventDefault(); if (query) void find.run() }}>
         <Field label={t('people.search')} hint={t('people.searchHint')} value={text} maxLength={40} autoComplete="off" onChange={(e) => { setText(e.target.value); setResults(null) }} />
         <Button type="submit" disabled={find.busy || !query}>{t('people.find')}</Button>

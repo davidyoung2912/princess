@@ -4,7 +4,7 @@ namespace Princess.Api.Domain;
 /// <param name="Stage">The journey stage the answer is for.</param>
 /// <param name="Stanley">The permanent Stanley chat: every account, every stage.</param>
 /// <param name="Party">The travel party chat: from the moment a booking is confirmed.</param>
-/// <param name="People">Asking another guest on the sailing to chat (and so making a group): once a booking is confirmed.</param>
+/// <param name="People">Asking another guest to chat (and so making a group): every stage, with or without a booking.</param>
 /// <param name="GuestServices">Guest Services chat (booking help, travel problems): from a confirmed booking, so before boarding as well as aboard.</param>
 /// <param name="Keep">"Keep this chat" can be offered: the guest has a booking to count the deletion date from.</param>
 /// <param name="Reason">When something is off, why, in words the screen can show; null when everything the stage allows is on.</param>
@@ -22,9 +22,9 @@ public static class ChatEligibilityRules
     public static ChatEligibility For(string stage, bool hasConfirmedBooking)
     {
         var known = StageRules.All.Contains(stage) ? stage : StageRules.Dream;
-        // Dream, Discover and Book have no people to talk to yet. A guest who has a confirmed booking (an earlier cruise, or one made on another device)
-        // is a booked guest whatever their journey is now showing, so the booking decides, not the stage name.
-        if (!hasConfirmedBooking) return new(known, Stanley: true, Party: false, People: false, GuestServices: false, Keep: false, BeforeBooking);
+        // Finding and chatting with other guests is open at every stage. Only the travel party, Guest Services and "keep this chat" wait for a confirmed booking
+        // (an earlier cruise, or one made on another device, counts: the booking decides, not the stage name).
+        if (!hasConfirmedBooking) return new(known, Stanley: true, Party: false, People: true, GuestServices: false, Keep: false, BeforeBooking);
         return new(known, Stanley: true, Party: true, People: true, GuestServices: true, Keep: true, null);
     }
 

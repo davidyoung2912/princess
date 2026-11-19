@@ -1,4 +1,4 @@
-import { Trash2 } from '../icons'
+import { Trash2, Users } from '../icons'
 import { useState } from 'react'
 import type { ChatConnections, ChatGroup, ChatGroupInvite } from '../../api/chatTypes'
 import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, MIN_INVITED, placesLeft, togglePicked } from '../../domain/chatGroups'
@@ -11,6 +11,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
+import { DialogHeader } from '../DialogHeader'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
 import type { ApiError } from '../../api/errors'
@@ -52,8 +53,7 @@ export function NewGroup({ onClose, onCreated }: { onClose: () => void; onCreate
     onCreated(group)
   })
   return (
-    <Dialog title={t('cgroup.new')} onClose={onClose}>
-      <p className="muted">{t('cgroup.newBody', { min: MIN_INVITED })}</p>
+    <Dialog title={t('cgroup.new')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('cgroup.new')} subtext={t('cgroup.newBody', { min: MIN_INVITED })} icon={Users} onClose={onClose} />}>
       <form onSubmit={(e) => { e.preventDefault(); if (canCreateGroup(name, picked.length)) void create.run() }}>
         <Field label={t('cgroup.name')} value={name} maxLength={MAX_GROUP_NAME} autoComplete="off" onChange={(e) => setName(e.target.value)} />
         <Load state={connections}>
@@ -83,7 +83,7 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
   const admin = useAction(async (personId: string, on: boolean) => { await api.chatGroups.setAdmin(id, personId, on); done(t(on ? 'cgroup.admin.make' : 'cgroup.admin.remove')) })
   const announce = useAction(async (on: boolean) => { await api.chatGroups.setAnnouncementOnly(id, on); done(t('cgroup.announce')) })
   return (
-    <Dialog title={group.data?.name ?? t('cgroup.details')} onClose={onClose}>
+    <Dialog title={group.data?.name ?? t('cgroup.details')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={group.data?.name ?? t('cgroup.details')} subtext={group.data ? t('cgroup.details') : undefined} icon={Users} onClose={onClose} />}>
       <p role="status" className="visually-hidden">{note}</p>
       <Load state={group}>
         {(g) => (
@@ -130,7 +130,7 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
             <p className="muted">{t('cgroup.history')}</p>
             <Button variant="secondary" onClick={() => setLeaving(true)}>{t('cgroup.leave')}</Button>
             {leaving && (
-              <Dialog title={t('cgroup.leaveTitle', { name: g.name })} onClose={() => setLeaving(false)}>
+              <Dialog title={t('cgroup.leaveTitle', { name: g.name })} onClose={() => setLeaving(false)} header={(titleId) => <DialogHeader titleId={titleId} title={t('cgroup.leaveTitle', { name: g.name })} icon={Users} onClose={() => setLeaving(false)} />}>
                 <p>{t('cgroup.leaveBody')}</p>
                 <div className="button-row">
                   <Button disabled={leave.busy} onClick={() => void leave.run()}>{t('cgroup.leaveYes')}</Button>
