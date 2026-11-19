@@ -140,4 +140,9 @@ public static class ChatPlanningRules
 
     /// <summary>The creator of a made group is its only admin.</summary>
     public static bool IsAdmin(bool isCreator, bool flagged) => isCreator;
+
+    /// <summary>
+    /// Whether a person may write a message in a conversation. Everyone may, except in an announcement-only group, where only an admin posts. Votes, answers and reactions are not messages and stay open to everyone.
+    /// </summary>
+    public static bool MayPost(string kind, bool announcementOnly, bool isAdmin) => kind != ChatConversationRules.Group || !announcementOnly || isAdmin;
 }

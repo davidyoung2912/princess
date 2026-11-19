@@ -182,7 +182,7 @@ public sealed class InMemoryAuditStore : Princess.Api.Audit.IAuditStore
     public Task AppendAsync(Princess.Api.Audit.AuditEntry entry, CancellationToken ct)
     {
         if (FailWrites) throw new InvalidOperationException("audit store down");
-        lock (gate) { entry.Id = next++; Rows.Add(entry); }
+        lock (gate) { entry.Id = next++; entry.EventId = Guid.NewGuid(); Rows.Add(entry); }
         return Task.CompletedTask;
     }
 
@@ -195,7 +195,7 @@ public sealed class InMemoryAuditStore : Princess.Api.Audit.IAuditStore
                     && (q.Actor is null || r.ActorPublicId == q.Actor) && (q.Subject is null || r.SubjectPublicId == q.Subject)
                     && (q.ActionPrefix is null || r.Action.StartsWith(q.ActionPrefix, StringComparison.Ordinal))
                     && (q.Category is null || r.Category == q.Category) && (q.Outcome is null || r.Outcome == q.Outcome)
-                    && (q.From is null || r.At >= q.From) && (q.To is null || r.At < q.To) && (q.BeforeId is null || r.Id < q.BeforeId))
+                    && (q.From is null || r.At >= q.From) && (q.To is null || r.At < q.To) && (q.BeforeEvent is null || r.Id < (Rows.FirstOrDefault(b => b.EventId == q.BeforeEvent)?.Id ?? long.MaxValue)))
                 .OrderByDescending(r => r.At).ThenByDescending(r => r.Id).Take(Math.Clamp(q.Max, 1, 500)).ToList());
         }
     }

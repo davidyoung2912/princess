@@ -456,3 +456,13 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 
 /* Stanley's tongue-in-cheek full name, set apart from the plain introduction above it. */
 .stanley-intro__full-name { font-style: italic; }
+
+/* The Chat count breathes with a soft gold glow to draw the eye. Reduced motion keeps a still glow. */
+@keyframes chat-count-glow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 0%, transparent), 0 0 3px 0 color-mix(in srgb, var(--gold) 50%, transparent); }
+  50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 35%, transparent), 0 0 10px 3px color-mix(in srgb, var(--gold) 70%, transparent); }
+}
+.topbar__count, .testbar__count { animation: chat-count-glow 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .topbar__count, .testbar__count { animation: none; box-shadow: 0 0 6px 2px color-mix(in srgb, var(--gold) 60%, transparent); }
+}
