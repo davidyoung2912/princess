@@ -56,7 +56,7 @@ export function ItineraryScreen() {
   return (
     <div className="page">
       <p>{t('itin.intro')} {t('itin.select')}</p>
-      <ol className="event-list">
+      <ol className="event-list" data-tour="itin-days">
         {days.map((d) => {
           const isToday = d.day === current
           return (

@@ -83,7 +83,7 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
   return (
     <>
     <ForYou data={data} events={picks.events} venues={picks.venues} venueTitles={Object.fromEntries(data.venues.map((v) => [v.venue.id, v.venue.title]))} basePath={basePath} onChanged={onChanged} />
-    <section aria-labelledby="exp-list-h">
+    <section aria-labelledby="exp-list-h" data-tour="exp-list">
       <h2 id="exp-list-h">{headingCase(t('exp.list.title'))}</h2>
       {dining && <DiningControls kinds={kindsOf(data.venues.map((v) => v.venue))} kindLabels={kindLabels} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} anyKidsMenu={data.venues.some((v) => hasKidsMenu(v.venue))} />}
       {!dining && <FilterChips kinds={kindsOf(data.venues.map((v) => v.venue))} label={t('exp.filter.label')} value={kind} onChange={setKind} labels={kindLabels} />}
@@ -97,7 +97,7 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
       {pins.message && <p className="muted" aria-hidden="true">{pins.message}</p>}
       {shown.length === 0 ? <p className="muted">{t('exp.list.none')}</p> : (
         <ul className="card-grid">
-          {shown.map((v) => <VenueCard key={v.venue.id} day={v} state={state} basePath={basePath} pins={pins} kindLabels={kindLabels} dishQuery={dining ? filter.query : ''} diet={dining ? filter.diet : null} forYou={pickedVenues.includes(v.venue.id)} />)}
+          {shown.map((v, i) => <VenueCard key={v.venue.id} first={i === 0} day={v} state={state} basePath={basePath} pins={pins} kindLabels={kindLabels} dishQuery={dining ? filter.query : ''} diet={dining ? filter.diet : null} forYou={pickedVenues.includes(v.venue.id)} />)}
         </ul>
       )}
     </section>
@@ -106,7 +106,7 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
 }
 
 /** One venue: its pin, its words, whether it is open on the chosen day and the next events there. The whole card links to the venue's page; the pin is a button of its own. */
-function VenueCard({ day, state, basePath, pins, kindLabels, dishQuery, diet, forYou }: { day: VenueDay; state: ExplorerDayState; basePath: string; pins: VenuePins; kindLabels: Record<string, string>; dishQuery: string; diet: DietMark | null; forYou: boolean }) {
+function VenueCard({ day, state, basePath, pins, kindLabels, dishQuery, diet, forYou, first }: { first: boolean; day: VenueDay; state: ExplorerDayState; basePath: string; pins: VenuePins; kindLabels: Record<string, string>; dishQuery: string; diet: DietMark | null; forYou: boolean }) {
   const dishes = dishHits(day.menus, dishQuery).slice(0, 3)
   const marked = diet ? markedDishes(day.menus, diet).slice(0, 3) : []
   const v = day.venue
@@ -114,7 +114,7 @@ function VenueCard({ day, state, basePath, pins, kindLabels, dishQuery, diet, fo
   const cancelled = cancelledListed(day.events, { chosenDay: state.day, currentDay: state.currentDay, now: state.nowAt })
   return (
     <li className="card exp-card">
-      <PinButton venue={v} pins={pins} />
+      <PinButton venue={v} pins={pins} tour={first ? 'exp-pin' : undefined} />
       <h3 className="card__title"><Link className="exp-card__link" to={`${basePath}/${v.id}?day=${state.day}`}>{v.title}</Link></h3>
       <p className="muted">{kindLabels[v.kind] ?? v.kind} · {v.deckLabel}</p>
       {forYou && !pins.isPinned(v) && <StatusBadge kind="ready" label={t('exp.foryou.badge')} />}

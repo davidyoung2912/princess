@@ -56,7 +56,7 @@ export function ChatScreen() {
       {people && <RequestsBanner onOpen={() => { void nav('/chat/people') }} />}
       <HuddleJoin />
       <Conversations />
-      <section aria-labelledby="chat-more-h">
+      <section aria-labelledby="chat-more-h" data-tour="chat-more">
         <h2 id="chat-more-h">{heading('chat.more.title')}</h2>
         <ul className="event-list">
           {more.filter((m) => m.show).map((m) => (

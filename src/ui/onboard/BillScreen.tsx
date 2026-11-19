@@ -45,7 +45,7 @@ function Folio({ f }: { f: FolioView }) {
   return (
     <div className="workspace workspace--bill">
       <div className="workspace__side">
-      <Card hero labelledBy="total-h">
+      <Card hero labelledBy="total-h" tour="bill-total">
         <h2 id="total-h" className="card__title">{th('bill.total')}</h2>
         <p className="bill__big">{total.balance < 0 ? t('bill.credit', { amount: formatMoney(-total.balance) }) : formatMoney(total.balance)}</p>
         <dl className="plain-dl">
@@ -67,7 +67,7 @@ function Folio({ f }: { f: FolioView }) {
       <FeeLedgerCard lines={f.lines} />
       <p><Link to="/me/ledger">{t('route.ledger')}</Link></p>
 
-      <section aria-labelledby="lines-h">
+      <section aria-labelledby="lines-h" data-tour="bill-lines">
         <h2 id="lines-h">{th('bill.lines')}</h2>
         <div className="field">
           <label htmlFor="bill-q">{t('bill.search')}</label>

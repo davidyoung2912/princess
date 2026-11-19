@@ -35,7 +35,7 @@ export function MeScreen() {
       <p role="status" className="muted">{t(`sync.${syncState}` as StringKey)}</p>
       <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>
 
-      <section aria-labelledby="me-trip-h">
+      <section aria-labelledby="me-trip-h" data-tour="me-trip">
         <h2 id="me-trip-h">{th('me.yourTrip')}</h2>
         <Load state={trips}>
           {() => trip ? (

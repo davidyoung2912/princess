@@ -87,7 +87,7 @@ function Tender({ v, tender }: { v: PortDayView; tender: TenderInfo }) {
   const local = (at: number) => clockTime(new Date(at), v.day.portZone)
   const group = TENDER_GROUPS.find((g) => g.id === tender.group.id) ?? tender.group
   return (
-    <Card labelledBy="tender-h">
+    <Card labelledBy="tender-h" tour="port-tender">
       <h2 id="tender-h" className="card__title">{th('tender.title')}</h2>
       {tender.mayTender && !v.day.tender && <Banner kind="warning" title={t('tender.mayTender')}><p>{t('tender.mayTenderBody')}</p></Banner>}
       {tender.delayMinutes > 0 && <Banner kind="warning" title={t('tender.delayed', { time: duration(tender.delayMinutes) })}><p>{t('tender.delayedBody')}</p></Banner>}

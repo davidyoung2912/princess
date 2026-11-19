@@ -35,7 +35,7 @@ export function StageHome() {
       <StanleyNext />
       <StageGuide />
       <hr className="brass-rule" aria-hidden="true" />
-      <nav aria-labelledby="stage-tiles-h">
+      <nav aria-labelledby="stage-tiles-h" data-tour="home-tiles">
         <h2 id="stage-tiles-h">{th('stage.tiles.title')}</h2>
         <ul className="stage-tiles">
           {tiles.map(({ screen, to }) => {

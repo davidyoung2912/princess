@@ -51,12 +51,12 @@ export function DeckMapScreen() {
 
       <div className="workspace workspace--map">
       <div className="workspace__side">
-      <div className="field">
+      <div className="field" data-tour="map-search">
         <label htmlFor="map-search">{t('map.search')}</label>
         <p className="field__hint">{t('map.searchHint')}</p>
         <input id="map-search" type="search" className="field__input" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
-      <div className="chip-row">
+      <div className="chip-row" data-tour="map-filters">
         <Chip pressed={stepFree} onToggle={() => setStepFree(!stepFree)}>{t('map.stepFree')}</Chip>
         <Chip pressed={quiet} onToggle={() => setQuiet(!quiet)}>{t('plan2.quietLayer')}</Chip>
       </div>
@@ -82,7 +82,7 @@ export function DeckMapScreen() {
         </section>
       )}
 
-      <section aria-labelledby="deck-h">
+      <section aria-labelledby="deck-h" data-tour="map-deck">
         <h2 id="deck-h">{th('map.deck', { deck })}</h2>
         <div className="chip-row" role="group" aria-label={t('map.pickDeck')}>
           {DECKS.map((d) => <Chip key={d} pressed={d === deck} onToggle={() => setDeck(d)}>{t('map.deckShort', { deck: d })}</Chip>)}

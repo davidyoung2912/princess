@@ -43,7 +43,7 @@ function Body({ w, units }: { w: ShipWeather; units: Units }) {
   const uv = uvBand(c.uvIndex)
   return (
     <>
-      <Card hero labelledBy="wx-now">
+      <Card hero labelledBy="wx-now" tour="wx-now">
         <h2 id="wx-now" className="card__title">{th('ship.wx.now', { place: placeName(w.place) })}</h2>
         <p className="wx-hero"><Icon className="wx-hero__icon" aria-hidden="true" /> <span className="wx-hero__temp">{tempText(c.tempC, units)}</span></p>
         <p className="wx-big">{conditionWord(c.condition)}</p>
@@ -59,7 +59,7 @@ function Body({ w, units }: { w: ShipWeather; units: Units }) {
         </dl>
       </Card>
 
-      <section aria-labelledby="wx-forecast">
+      <section aria-labelledby="wx-forecast" data-tour="wx-forecast">
         <h2 id="wx-forecast">{th('ship.wx.forecast')}</h2>
         {w.forecast.length === 0 ? <p className="muted">{t('ship.wx.forecast.none')}</p> : (
           <>

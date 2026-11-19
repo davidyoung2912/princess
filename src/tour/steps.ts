@@ -10,6 +10,9 @@ export interface TourStep {
   side: Side
   /** The icon shown beside the title (a key into the tour's icon table). */
   icon: 'nav' | 'search' | 'stanley' | 'help' | 'menu' | 'date' | 'header' | 'tip' | 'chat' | 'today' | 'explorers' | 'weather' | 'navigation' | 'itinerary'
+    | 'pin' | 'pass' | 'bill' | 'clock' | 'ship' | 'anchor' | 'waves' | 'pack'
+  /** True for a step about one page's own content (found by the same `data-tour` mark) rather than the screen's frame: it shows when the guest reaches that page, and is not counted in "n/total". */
+  page?: boolean
 }
 
 /**
@@ -31,7 +34,40 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'stanley', target: 'stanley', side: 'right', icon: 'stanley' },
   { id: 'help', target: 'help', side: 'right', icon: 'help' },
   { id: 'menu', target: 'menu', side: 'bottom', icon: 'menu' },
+  // The steps below are about the content of one page each. They wait until the guest reaches that page, and run top to bottom there.
+  { id: 'homeNext', target: 'home-next', side: 'bottom', icon: 'today', page: true },
+  { id: 'homeShortcuts', target: 'home-shortcuts', side: 'bottom', icon: 'pin', page: true },
+  { id: 'homeTiles', target: 'home-tiles', side: 'top', icon: 'nav', page: true },
+  { id: 'meTrip', target: 'me-trip', side: 'bottom', icon: 'header', page: true },
+  { id: 'chatMore', target: 'chat-more', side: 'top', icon: 'chat', page: true },
+  { id: 'planCard', target: 'plan-card', side: 'bottom', icon: 'today', page: true },
+  { id: 'pickDate', target: 'pick-date', side: 'bottom', icon: 'date', page: true },
+  { id: 'planFirst', target: 'plan-first', side: 'bottom', icon: 'clock', page: true },
+  { id: 'planAdd', target: 'plan-add', side: 'top', icon: 'explorers', page: true },
+  { id: 'expClock', target: 'exp-clock', side: 'bottom', icon: 'clock', page: true },
+  { id: 'expList', target: 'exp-list', side: 'top', icon: 'explorers', page: true },
+  { id: 'expPin', target: 'exp-pin', side: 'left', icon: 'pin', page: true },
+  { id: 'itinDays', target: 'itin-days', side: 'bottom', icon: 'itinerary', page: true },
+  { id: 'wxNow', target: 'wx-now', side: 'bottom', icon: 'weather', page: true },
+  { id: 'wxForecast', target: 'wx-forecast', side: 'top', icon: 'weather', page: true },
+  { id: 'nautJump', target: 'naut-jump', side: 'bottom', icon: 'waves', page: true },
+  { id: 'nautPos', target: 'naut-pos', side: 'top', icon: 'navigation', page: true },
+  { id: 'mapSearch', target: 'map-search', side: 'right', icon: 'search', page: true },
+  { id: 'mapFilters', target: 'map-filters', side: 'right', icon: 'ship', page: true },
+  { id: 'mapDeck', target: 'map-deck', side: 'top', icon: 'ship', page: true },
+  { id: 'shipJump', target: 'ship-jump', side: 'bottom', icon: 'ship', page: true },
+  { id: 'passList', target: 'pass-list', side: 'bottom', icon: 'pass', page: true },
+  { id: 'passKeep', target: 'pass-keep', side: 'top', icon: 'pass', page: true },
+  { id: 'portClocks', target: 'clocks', side: 'bottom', icon: 'clock', page: true },
+  { id: 'portTender', target: 'port-tender', side: 'top', icon: 'anchor', page: true },
+  { id: 'packWeather', target: 'pack-weather', side: 'bottom', icon: 'pack', page: true },
+  { id: 'packAdd', target: 'pack-add', side: 'bottom', icon: 'pack', page: true },
+  { id: 'billTotal', target: 'bill-total', side: 'bottom', icon: 'bill', page: true },
+  { id: 'billLines', target: 'bill-lines', side: 'top', icon: 'bill', page: true },
 ]
+
+/** The steps about the screen's frame, which are counted ("3/14") and can be finished in one go; the page steps are not. */
+export const GENERAL_STEPS: readonly TourStep[] = TOUR_STEPS.filter((s) => !s.page)
 
 /** The first step not yet seen whose target can be shown now (`visible` says so), or null when there is none. */
 export function nextStep(seen: readonly string[], visible: (target: string) => boolean): TourStep | null {

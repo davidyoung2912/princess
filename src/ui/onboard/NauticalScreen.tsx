@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { PillIcon } from '../PillIcon'
 import { Link } from 'react-router'
 import { Anchor, Car, Container, Fish, Fuel, Sailboat, Ship, type LucideIcon } from 'lucide-react'
 import { Card } from '../Card'
@@ -47,9 +48,9 @@ export function NauticalScreen() {
   return (
     <div className="page">
       <p>{t('naut.intro')}</p>
-      <nav aria-label={t('naut.jump')}>
+      <nav aria-label={t('naut.jump')} data-tour="naut-jump">
         <ul className="naut-jump">
-          {SECTIONS.map((id) => <li key={id}><a href={`#naut-${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(`naut-${id}`)?.scrollIntoView({ block: 'start' }); document.getElementById(`naut-${id}`)?.focus() }}>{th(`naut.${id}` as StringKey)}</a></li>)}
+          {SECTIONS.map((id) => <li key={id}><a href={`#naut-${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(`naut-${id}`)?.scrollIntoView({ block: 'start' }); document.getElementById(`naut-${id}`)?.focus() }}><PillIcon label={t(`naut.${id}` as StringKey)} />{th(`naut.${id}` as StringKey)}</a></li>)}
         </ul>
       </nav>
       <p><Link to="/nautical/glossary">{t('route.glossary')}</Link></p>
@@ -58,7 +59,7 @@ export function NauticalScreen() {
       {p && n && <Voyage p={p} n={n} units={units} />}
       {p && (
         <section id="naut-clocks" tabIndex={-1} aria-labelledby="naut-clocks-h">
-          <h2 id="naut-clocks-h">{th('naut.clocks')}</h2>
+          <h2 id="naut-clocks-h"><PillIcon heading label={th('naut.clocks')} />{th('naut.clocks')}</h2>
           <TimeCard clock={p.clock} />
           <Card><dl className="facts"><Row label={t('naut.utc')}>{utcTime(p.now)}</Row></dl></Card>
         </section>
@@ -79,7 +80,7 @@ export function NauticalScreen() {
 function Part({ id, title, children }: { id: (typeof SECTIONS)[number]; title: string; children: ReactNode }) {
   return (
     <section id={`naut-${id}`} tabIndex={-1} aria-labelledby={`naut-${id}-h`}>
-      <h2 id={`naut-${id}-h`}>{th(title as StringKey)}</h2>
+      <h2 id={`naut-${id}-h`}><PillIcon heading label={th(title as StringKey)} />{th(title as StringKey)}</h2>
       {children}
     </section>
   )
@@ -91,7 +92,7 @@ function Position({ p, n, units }: { p: ShipPosition; n: Nautical; units: Units 
   const stw = speedParts(c.speedThroughWaterKnots, units)
   return (
     <Part id="position" title="naut.position">
-      <Card hero labelledBy="naut-pos-line">
+      <Card hero labelledBy="naut-pos-line" tour="naut-pos">
         <h3 id="naut-pos-line" className="nav-hero">{positionLine(p, units)}</h3>
         <Compass degreesTrue={c.headingTrue} />
         <dl className="facts">

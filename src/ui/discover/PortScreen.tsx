@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router'
+import { PillIcon } from '../PillIcon'
 import { t, th, type StringKey } from '../../i18n'
 import { byTier, directionsUrl, mapUrl, type GuideAttraction, type GuideLink, type GuideStats } from '../../domain/portGuide'
 import { PORTS, itinerary, portById } from '../../domain/sailings'
@@ -85,7 +86,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
       {jumps.length > 1 && (
         <nav aria-label={t('portguide.jump')}>
           <ul className="naut-jump">
-            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}>{th(j.label)}</a></li>)}
+            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}><PillIcon label={t(j.label)} />{th(j.label)}</a></li>)}
           </ul>
         </nav>
       )}
@@ -93,7 +94,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
       {(guide.gettingAshore || guide.currencyLanguage || guide.officialLinks.length > 0) && (
         <section aria-labelledby="pd-ashore-h">
           <Card info labelledBy="pd-ashore-h">
-            <h2 id="pd-ashore-h" tabIndex={-1}>{th('discover.gettingAshore')}</h2>
+            <h2 id="pd-ashore-h" tabIndex={-1}><PillIcon heading label={th('discover.gettingAshore')} />{th('discover.gettingAshore')}</h2>
             {guide.gettingAshore && <p>{guide.gettingAshore}</p>}
             {guide.currencyLanguage && <p><strong>{t('portguide.currencyLanguage')}</strong> {guide.currencyLanguage}</p>}
             {guide.officialLinks.length > 0 && <LinkRow label={t('portguide.official')} links={guide.officialLinks} />}
@@ -103,7 +104,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
 
       {tiers.length > 0 && (
         <section aria-labelledby="pd-do-h">
-          <h2 id="pd-do-h" tabIndex={-1}>{th('discover.thingsToDo')}</h2>
+          <h2 id="pd-do-h" tabIndex={-1}><PillIcon heading label={th('discover.thingsToDo')} />{th('discover.thingsToDo')}</h2>
           <p className="muted">{t('portguide.attractionsNote')}</p>
           {tiers.map((g) => (
             <div key={g.tier} role="group" aria-label={g.tier}>
@@ -116,7 +117,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
 
       {guide.tips.length > 0 && (
         <section aria-labelledby="pd-tips-h">
-          <h2 id="pd-tips-h" tabIndex={-1}>{th('portguide.tips')}</h2>
+          <h2 id="pd-tips-h" tabIndex={-1}><PillIcon heading label={th('portguide.tips')} />{th('portguide.tips')}</h2>
           <ul className="port-details__tips">{guide.tips.map((tip) => <li key={tip.title}>{tip.title && <strong>{tip.title}. </strong>}{tip.text}</li>)}</ul>
         </section>
       )}
@@ -165,14 +166,14 @@ function Facts({ stats }: { stats: GuideStats }) {
     <>
       {rows.length > 0 && (
         <section aria-labelledby="pd-facts-h">
-          <h2 id="pd-facts-h" tabIndex={-1}>{th('portguide.facts')}</h2>
+          <h2 id="pd-facts-h" tabIndex={-1}><PillIcon heading label={th('portguide.facts')} />{th('portguide.facts')}</h2>
           {stats.intro && <p>{stats.intro}</p>}
           <dl className="port-details__facts">{rows.map((f) => <div key={f.key}><dt>{t(f.label)}</dt><dd>{stats[f.key] as string}</dd></div>)}</dl>
         </section>
       )}
       {stats.timeline.length > 0 && (
         <section aria-labelledby="pd-history-h">
-          <h2 id="pd-history-h" tabIndex={-1}>{th('portguide.history')}</h2>
+          <h2 id="pd-history-h" tabIndex={-1}><PillIcon heading label={th('portguide.history')} />{th('portguide.history')}</h2>
           <ol className="port-details__timeline">{stats.timeline.map((e) => <li key={`${e.when}${e.text}`}><strong>{e.when}</strong> {e.text}</li>)}</ol>
         </section>
       )}

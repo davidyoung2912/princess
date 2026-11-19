@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { en } from '../i18n/locales/en'
 import { getHints } from '../settings/hints'
 import { loadTourSeen, markTourStep, resetTour, skipTour } from '../settings/tour'
 import { placeCard, sideOrder, spotlight } from './placement'
-import { nextStep, TOUR_STEPS } from './steps'
+import { GENERAL_STEPS, nextStep, TOUR_STEPS } from './steps'
 
 const view = { width: 1000, height: 700 }
 const card = { width: 300, height: 160 }
@@ -56,5 +58,23 @@ describe('tour progress', () => {
       expect(en[`tour.${s.id}.title` as keyof typeof en]).toBeTruthy()
       expect(en[`tour.${s.id}.body` as keyof typeof en]).toBeTruthy()
     }
+  })
+})
+
+const sources = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
+  const p = join(dir, f)
+  return statSync(p).isDirectory() ? sources(p) : /\.tsx$/.test(f) && !f.endsWith('.test.tsx') ? [readFileSync(p, 'utf8')] : []
+})
+
+describe('tour steps', () => {
+  it('has unique ids, and every page step\'s target is marked somewhere in the screens', () => {
+    expect(new Set(TOUR_STEPS.map((s) => s.id)).size).toBe(TOUR_STEPS.length)
+    const code = sources('src/ui').join('\n')
+    const missing = TOUR_STEPS.filter((s) => s.page).filter((s) => !new RegExp(`(data-tour|tour)=(\\{[^}]*)?["']${s.target}["']`).test(code) ).map((s) => s.id)
+    expect(missing).toEqual([])
+  })
+  it('counts only the frame steps, and keeps every id within what the account can store', () => {
+    expect(GENERAL_STEPS.every((s) => !s.page)).toBe(true)
+    expect(TOUR_STEPS.length).toBeLessThanOrEqual(120)
   })
 })

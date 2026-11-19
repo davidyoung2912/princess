@@ -162,7 +162,7 @@ function Journey({ trip }: { trip: TripView }) {
   const near = trip.daysToDeparture <= 3 && trip.daysToDeparture >= 0
   const counts = useCountdowns(trip, useNow())
   return (
-    <section aria-labelledby="next-h">
+    <section aria-labelledby="next-h" data-tour="home-next">
       <h2 id="next-h">{th('home.next')}</h2>
       <p className="muted">{t('trip.booking', { number: trip.number })} <strong className="calm-hide">· {countdown(trip.daysToDeparture)}</strong></p>
       {counts.length > 0 && (

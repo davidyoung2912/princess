@@ -803,3 +803,20 @@ button.chat-quote { cursor: pointer; }
   :is(.chat-msg__meta, .ai-msg__who) :is(.conv__avatar, .chat-msg__stanley):hover, :is(.chat-msg__meta, .ai-msg__who) .greet-face:is(:hover, :focus-visible) :is(.conv__avatar, .chat-msg__stanley) { transform: none; }
 }
 :root[data-motion='reduced'] :is(.chat-msg__meta, .ai-msg__who) :is(.conv__avatar, .chat-msg__stanley):hover, :root[data-motion='reduced'] :is(.chat-msg__meta, .ai-msg__who) .greet-face:is(:hover, :focus-visible) :is(.conv__avatar, .chat-msg__stanley) { transform: none; }
+.naut-jump a { gap: var(--space-1); }
+.naut-jump__icon { flex: none; color: var(--primary); }
+/* The pill's icon again, bold, in front of the section title it jumps to. */
+.sec-icon { display: inline-block; vertical-align: -0.08em; margin-inline-end: 0.4em; }
+/* The pill's icon tilts and grows a little on hover or focus, like the button icons. Off for reduced motion. */
+.naut-jump__icon:not(.sec-icon) { transition: transform var(--t-mid) var(--ease); }
+@media (hover: hover) {
+  .naut-jump a:is(:hover, :focus-visible) .naut-jump__icon:not(.sec-icon) { transform: scale(1.15) rotate(-8deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .naut-jump__icon:not(.sec-icon) { transition: none; }
+  .naut-jump a:is(:hover, :focus-visible) .naut-jump__icon:not(.sec-icon) { transform: none; }
+}
+:root[data-motion='reduced'] .naut-jump a:is(:hover, :focus-visible) .naut-jump__icon:not(.sec-icon) { transform: none; }
+/* Glossary: the term is the bold black heading of its card and the meaning is normal black text (the other fact grids show a quiet label over a bold value). */
+.facts--gloss dt { color: var(--text); font-size: inherit; font-weight: 700; }
+.facts--gloss dd { font-weight: 400; }

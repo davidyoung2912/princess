@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router'
+import { PillIcon } from '../PillIcon'
 import { t, th, type StringKey } from '../../i18n'
 import type { CountryGuideData } from '../../domain/countryGuide'
 import { useCountryGuide } from '../../hooks/useServedFeeds'
@@ -69,20 +70,20 @@ function CountryBody({ guide }: { guide: CountryGuideData }) {
       {jumps.length > 1 && (
         <nav aria-label={t('country.jump')}>
           <ul className="naut-jump">
-            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}>{th(j.label)}</a></li>)}
+            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}><PillIcon label={t(j.label)} />{th(j.label)}</a></li>)}
           </ul>
         </nav>
       )}
 
       {text.map((s, i) => (
         <section key={s.id} aria-labelledby={s.id}>
-          {i === 0 ? <Card info labelledBy={s.id}><h2 id={s.id} tabIndex={-1}>{th(s.label)}</h2><p>{s.body}</p></Card> : <><h2 id={s.id} tabIndex={-1}>{th(s.label)}</h2><p>{s.body}</p></>}
+          {i === 0 ? <Card info labelledBy={s.id}><h2 id={s.id} tabIndex={-1}><PillIcon heading label={th(s.label)} />{th(s.label)}</h2><p>{s.body}</p></Card> : <><h2 id={s.id} tabIndex={-1}><PillIcon heading label={th(s.label)} />{th(s.label)}</h2><p>{s.body}</p></>}
         </section>
       ))}
 
       {guide.ports.length > 0 && (
         <section aria-labelledby="cd-ports-h">
-          <h2 id="cd-ports-h" tabIndex={-1}>{th('country.ports')}</h2>
+          <h2 id="cd-ports-h" tabIndex={-1}><PillIcon heading label={th('country.ports')} />{th('country.ports')}</h2>
           {guide.cruiseCalls && <p className="muted">{guide.cruiseCalls}</p>}
           <ul>{guide.ports.map((p) => <li key={p.id}><Link to={`/home/ports/${p.id}`}>{p.name}</Link></li>)}</ul>
         </section>
@@ -90,7 +91,7 @@ function CountryBody({ guide }: { guide: CountryGuideData }) {
 
       {guide.links.length > 0 && (
         <section aria-labelledby="cd-links-h">
-          <h2 id="cd-links-h" tabIndex={-1}>{th('country.links')}</h2>
+          <h2 id="cd-links-h" tabIndex={-1}><PillIcon heading label={th('country.links')} />{th('country.links')}</h2>
           <ul>{guide.links.map((l) => <li key={l.url}><a href={l.url} target="_blank" rel="noreferrer">{l.label}<span className="visually-hidden"> {t('portguide.newTab')}</span></a></li>)}</ul>
         </section>
       )}

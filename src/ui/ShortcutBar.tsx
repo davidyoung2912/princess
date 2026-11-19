@@ -15,7 +15,7 @@ export function ShortcutBar() {
   const items = listedScreens(pins, { sailingId: context?.focusSailingId ?? context?.sailingId ?? null, tripNumber: context?.booking?.number ?? null })
   if (items.length === 0) return null
   return (
-    <nav aria-label={t('shortcuts.label')}>
+    <nav aria-label={t('shortcuts.label')} data-tour="home-shortcuts">
       <ul className="chip-row shortcut-bar">
         {items.map(({ screen, to }) => {
           const Icon = SCREEN_ICONS[screen.id] ?? CircleDot

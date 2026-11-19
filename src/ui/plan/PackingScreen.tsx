@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PillIcon } from '../PillIcon'
 import { formatTemp } from '../../domain/readiness'
 import { useSettings } from '../../hooks/useSettings'
 import { PACK_GROUPS, packingText } from '../../domain/packing'
@@ -41,7 +42,7 @@ export function PackingScreen() {
           }
           return (
             <>
-              <Card info>
+              <Card info tour="pack-weather">
                 <h2 className="card__title">{th('pack.weather')}</h2>
                 <p>{t('pack.weatherLine', { high: formatTemp(p.weather.highF, settings.units), low: formatTemp(p.weather.lowF, settings.units) })} {p.weather.note}</p>
               </Card>
@@ -49,7 +50,7 @@ export function PackingScreen() {
               <nav aria-label={t('pack.jump')}>
                 <ul className="naut-jump">
                   {[...PACK_GROUPS.filter((g) => p.items.some((i) => i.group === g)).map((g) => ({ id: `pg-${g}`, label: th(`pack.group.${g}` as never) })), ...(p.hidden && p.hidden.length > 0 ? [{ id: 'pg-hidden', label: th('pack.hidden') }] : [])].map((s) => (
-                    <li key={s.id}><a href={`#${s.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ block: 'start' }); document.getElementById(s.id)?.focus() }}>{s.label}</a></li>
+                    <li key={s.id}><a href={`#${s.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ block: 'start' }); document.getElementById(s.id)?.focus() }}><PillIcon label={s.label} />{s.label}</a></li>
                   ))}
                 </ul>
               </nav>
@@ -61,7 +62,7 @@ export function PackingScreen() {
               </div>
               <p className="muted" role="status">{note}</p>
               <PlanError error={tick.error ?? remove.error ?? hide.error} />
-              <form onSubmit={(e) => { e.preventDefault(); if (own.trim()) void add.run(own) }}>
+              <form data-tour="pack-add" onSubmit={(e) => { e.preventDefault(); if (own.trim()) void add.run(own) }}>
                 <div className="field">
                   <label htmlFor="pack-own">{t('pack.add.label')}</label>
                   <input id="pack-own" className="field__input" maxLength={60} value={own} onChange={(e) => setOwn(e.target.value)} />
@@ -74,7 +75,7 @@ export function PackingScreen() {
                 if (items.length === 0) return null
                 return (
                   <section key={g} aria-labelledby={`pg-${g}`}>
-                    <h2 id={`pg-${g}`} tabIndex={-1}>{th(`pack.group.${g}` as never)}</h2>
+                    <h2 id={`pg-${g}`} tabIndex={-1}><PillIcon heading label={th(`pack.group.${g}` as never)} />{th(`pack.group.${g}` as never)}</h2>
                     {items.map((i) => (
                       <div key={i.id} className="check-row">
                         <input type="checkbox" id={`p-${i.id}`} checked={p.ticked.includes(i.id)} disabled={tick.busy} onChange={() => void tick.run(i.id, !p.ticked.includes(i.id))} />
@@ -89,7 +90,7 @@ export function PackingScreen() {
               })}
               {p.hidden && p.hidden.length > 0 && (
                 <section aria-labelledby="pg-hidden">
-                  <h2 id="pg-hidden" tabIndex={-1}>{th('pack.hidden')}</h2>
+                  <h2 id="pg-hidden" tabIndex={-1}><PillIcon heading label={th('pack.hidden')} />{th('pack.hidden')}</h2>
                   {p.hidden.map((i) => (
                     <div key={i.id} className="check-row">
                       <div className="check-row__text"><strong>{i.label}</strong></div>

@@ -1,4 +1,5 @@
 import { CATEGORIES, SUN_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
+import { PillIcon } from '../PillIcon'
 import { SHIP_NAMES, type DeckPlanShip } from '../../deckPlans/deckPlans'
 import { useShip } from '../../hooks/useShipCatalogue'
 import { headingCase, t, th } from '../../i18n'
@@ -33,9 +34,9 @@ export function ShipExplorerScreen() {
           </p>
           <ExplorerTiles />
           <Shortlist />
-          <nav aria-label={t('shipex.jump')}>
+          <nav aria-label={t('shipex.jump')} data-tour="ship-jump">
             <ul className="naut-jump">
-              {parts.map((x) => <li key={x.id}><a href={`#${x.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(x.id)?.scrollIntoView({ block: 'start' }); document.getElementById(x.id)?.focus() }}>{x.title}</a></li>)}
+              {parts.map((x) => <li key={x.id}><a href={`#${x.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(x.id)?.scrollIntoView({ block: 'start' }); document.getElementById(x.id)?.focus() }}><PillIcon label={x.title} />{x.title}</a></li>)}
             </ul>
           </nav>
           <dl className="facts">
@@ -51,7 +52,7 @@ export function ShipExplorerScreen() {
           </dl>
           {highlights.length > 0 && (
             <section id="sx-hl" tabIndex={-1} aria-labelledby="sx-hl-h">
-              <h2 id="sx-hl-h">{th('discover.onboard')}</h2>
+              <h2 id="sx-hl-h"><PillIcon heading label={th('discover.onboard')} />{th('discover.onboard')}</h2>
               <ul className="card-grid">
                 {highlights.map((h) => <li key={h.title} className="card"><h3>{h.title}</h3><p>{h.body}</p></li>)}
               </ul>
@@ -59,7 +60,7 @@ export function ShipExplorerScreen() {
           )}
           {ship.sections.map((sec, i) => (
             <section key={sec.title} id={`sx-s${i}`} tabIndex={-1} aria-labelledby={`sx-s${i}-h`}>
-              <h2 id={`sx-s${i}-h`}>{headingCase(sec.title)}</h2>
+              <h2 id={`sx-s${i}-h`}><PillIcon heading label={headingCase(sec.title)} />{headingCase(sec.title)}</h2>
               <ul className="plain-bullets">
                 {sec.items.map((it) => <li key={`${it.title ?? ''}${it.body}`}>{it.title && <strong>{it.title}. </strong>}{it.body}</li>)}
               </ul>
@@ -67,7 +68,7 @@ export function ShipExplorerScreen() {
           ))}
           {isSun && (
             <section id="sx-rooms" tabIndex={-1} aria-labelledby="sx-rooms-h">
-              <h2 id="sx-rooms-h">{th('discover.rooms')}</h2>
+              <h2 id="sx-rooms-h"><PillIcon heading label={th('discover.rooms')} />{th('discover.rooms')}</h2>
               <ul className="card-grid">
                 {CATEGORIES.map((c) => (
                   <li key={c.id} className="card">
@@ -83,7 +84,7 @@ export function ShipExplorerScreen() {
           {isSun && (
             <div id="sx-acc" tabIndex={-1}>
             <Card info labelledBy="sx-acc-h">
-              <h2 id="sx-acc-h">{th('discover.accessibility')}</h2>
+              <h2 id="sx-acc-h"><PillIcon heading label={th('discover.accessibility')} />{th('discover.accessibility')}</h2>
               <ul>{SHIP_ACCESSIBILITY.map((x) => <li key={x}>{x}</li>)}</ul>
             </Card>
             </div>

@@ -10,10 +10,12 @@ interface CardProps {
   ticket?: boolean
   /** A postcard shape (stamp corner) for memories. */
   postcard?: boolean
+  /** Marks the card as a stop on the first-visit tour (`data-tour`). */
+  tour?: string
   children: ReactNode
 }
 
-export function Card({ labelledBy, hero, info, ticket, postcard, children }: CardProps) {
+export function Card({ labelledBy, hero, info, ticket, postcard, tour, children }: CardProps) {
   const cls = ['card', hero ? 'card--hero' : '', info ? 'card--info' : '', ticket ? 'card--ticket' : '', postcard ? 'card--postcard' : ''].filter(Boolean).join(' ')
-  return labelledBy ? <section className={cls} aria-labelledby={labelledBy}>{children}</section> : <div className={cls}>{children}</div>
+  return labelledBy ? <section className={cls} aria-labelledby={labelledBy} data-tour={tour}>{children}</section> : <div className={cls} data-tour={tour}>{children}</div>
 }

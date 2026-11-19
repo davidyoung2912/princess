@@ -66,7 +66,7 @@ export function PassBody({ pass, offline, reload, signedIn = true }: { pass: Boa
       )}
       <p className="muted">{t('trip.booking', { number: pass.number })} · {formatDate(pass.departure)}</p>
       {pass.checkinDone && <ShowMe id="gangway" />}
-      <ul className="pass-list">
+      <ul className="pass-list" data-tour="pass-list">
         {pass.passes.map((p) => (
           <li key={p.id} className="pass">
             <PassFace pass={pass} p={p} />
@@ -77,7 +77,7 @@ export function PassBody({ pass, offline, reload, signedIn = true }: { pass: Boa
       {pass.arrival && <p>{t('pass.arrive', { start: formatTime(pass.arrival.start), end: formatTime(pass.arrival.end) })} · {t('pass.terminal', { terminal: pass.terminal.name })}</p>}
 
       {pass.checkinDone && signedIn && (
-        <section className="no-print" aria-labelledby="keep-h">
+        <section className="no-print" aria-labelledby="keep-h" data-tour="pass-keep">
           <h2 id="keep-h">{th('pass.keep')}</h2>
           <KeepStub pass={pass} />
           <div className="button-row">

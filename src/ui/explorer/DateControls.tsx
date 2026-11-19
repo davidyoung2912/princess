@@ -20,7 +20,7 @@ export function PickDateButton({ state }: { state: ExplorerDayState }) {
   const [open, setOpen] = useState(false)
   const { stage } = useExplorerStage()
   return (
-    <div className="exp-date">
+    <div className="exp-date" data-tour="pick-date">
       <Button variant="tertiary" className="exp-date__step" onClick={() => state.step(-1)} disabled={state.day <= 1} aria-label={t('exp.date.prev')}><ChevronLeft aria-hidden="true" /></Button>
       <Button variant="secondary" onClick={() => setOpen(true)} aria-haspopup="dialog">{t('exp.date.pick')}</Button>
       <Button variant="tertiary" className="exp-date__step" onClick={() => state.step(1)} disabled={state.day >= state.total} aria-label={t('exp.date.next')}><ChevronRight aria-hidden="true" /></Button>

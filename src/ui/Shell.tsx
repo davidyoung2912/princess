@@ -159,7 +159,9 @@ export function Shell() {
   const canWelcome = known && !wentOn && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings'
   const appDue = canWelcome && shouldShowAppWelcome(welcomed, welcomeReady)
   const introDue = canWelcome && !appDue && shouldShowStanleyIntro(welcomed, welcomeReady)
-  const welcomeDue = canWelcome && !appDue && !introDue && !stale && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
+  // A link the guest followed inside the app (a sailing on Sailing Dates, say) opens the screen it points at; the welcome waits for Home, a typed or refreshed address, or the start of a visit.
+  const followedLink = openedByLink(navigationType, pathname) && pathname !== '/'
+  const welcomeDue = canWelcome && !appDue && !introDue && !stale && !followedLink && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
   // A tester who moves the date back to a stage they have seen sees its welcome again: with a demo account the stage changing is the point of the exercise.
   const isDemo = useSyncExternalStore(subscribeContext, getContext, getContext)?.isDemo === true
   const lastStage = useRef<string | null>(null)

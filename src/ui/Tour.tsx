@@ -5,12 +5,13 @@ import type { StringKey } from '../i18n'
 import { startVisibleInterval } from '../hooks/visibleInterval'
 import { useDialog } from '../hooks/useDialog'
 import { loadTourSeen, markTourStep, skipTour, subscribeTour, tourReady } from '../settings/tour'
-import { nextStep, TOUR_STEPS, type TourStep } from '../tour/steps'
+import { GENERAL_STEPS, nextStep, TOUR_STEPS, type TourStep } from '../tour/steps'
 import { placeCard, spotlight, type Box, type Side } from '../tour/placement'
-import { CalendarClock, CloudSun, Compass, Help, Home, Info, Lightbulb, MapPin, Menu, MessagesSquare, Plan, RouteMap, Search, Sparkles } from './icons'
+import { Anchor, Bookmark, CalendarClock, Clock, CloudSun, Ship, Thermometer, Ticket, Wallet, Waves, Compass, Help, Home, Info, Lightbulb, MapPin, Menu, MessagesSquare, Plan, RouteMap, Search, Sparkles } from './icons'
 import { Button } from './Button'
 
 const ICONS: Record<TourStep['icon'], ComponentType<{ 'aria-hidden'?: boolean | 'true' | 'false'; className?: string }>> = {
+  pin: Bookmark, pass: Ticket, bill: Wallet, clock: Clock, ship: Ship, anchor: Anchor, waves: Waves, pack: Thermometer,
   nav: Home, search: Search, stanley: Sparkles, help: Help, menu: Menu, date: CalendarClock, header: Info, tip: Lightbulb,
   chat: MessagesSquare, today: Plan, explorers: MapPin, weather: CloudSun, navigation: Compass, itinerary: RouteMap,
 }
@@ -56,12 +57,13 @@ export function Tour({ paused = false }: { paused?: boolean }) {
     return startVisibleInterval(look, 700)
   }, [seen, paused, ready])
   if (!step || paused || !ready) return null
-  const index = TOUR_STEPS.findIndex((s) => s.id === step.id)
+  // The frame steps are counted among themselves ("3/14"); a step about one page's content has no count, and always offers Skip.
+  const index = GENERAL_STEPS.findIndex((s) => s.id === step.id)
   const left = TOUR_STEPS.filter((s) => !seen.includes(s.id)).length
-  return <TourCard key={step.id} step={step} count={`${index + 1}/${TOUR_STEPS.length}`} last={left <= 1} />
+  return <TourCard key={step.id} step={step} count={step.page ? null : `${index + 1}/${GENERAL_STEPS.length}`} last={!step.page && left <= 1} />
 }
 
-function TourCard({ step, count, last }: { step: TourStep; count: string; last: boolean }) {
+function TourCard({ step, count, last }: { step: TourStep; count: string | null; last: boolean }) {
   const titleId = useId()
   const bodyId = useId()
   const box = useDialog<HTMLDivElement>(skipTour)
@@ -126,7 +128,7 @@ function TourCard({ step, count, last }: { step: TourStep; count: string; last: 
         </div>
         <p id={bodyId} className="tour__body">{t(`tour.${step.id}.body` as StringKey)}</p>
         <div className="tour__foot">
-          <span className="tour__count" aria-label={t('tour.count.label', { n: count.split('/')[0]!, total: count.split('/')[1]! })}>{count}</span>
+          {count ? <span className="tour__count" aria-label={t('tour.count.label', { n: count.split('/')[0]!, total: count.split('/')[1]! })}>{count}</span> : <span className="tour__count" />}
           {!last && <button type="button" className="tour__skip" onClick={skipTour}>{t('tour.skip')}</button>}
           <Button variant="primary" className="tour__got" onClick={() => markTourStep(step.id)}>{t('tip.gotIt')}</Button>
         </div>

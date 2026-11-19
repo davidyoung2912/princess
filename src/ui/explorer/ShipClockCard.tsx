@@ -27,7 +27,7 @@ export function ShipDayInfo({ state }: { state: ExplorerDayState }) {
 export function ShipClockCard({ state }: { state: ExplorerDayState }) {
   const { stage, sailsIn } = useExplorerStage()
   return (
-    <Card labelledBy="exp-clock-h">
+    <Card labelledBy="exp-clock-h" tour="exp-clock">
       <h2 id="exp-clock-h" className="visually-hidden">{headingCase(t('exp.clock.title'))}</h2>
       {stage === 'ahead' && <p><strong>{t('exp.clock.sailsIn', { count: sailsIn })}</strong></p>}
       {stage === 'after' && <p><strong>{t('exp.clock.finished')}</strong></p>}

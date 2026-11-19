@@ -162,7 +162,7 @@ main.page > h1 { color: var(--primary); }
 .page-header__subtext { margin: var(--space-2) 0 0; color: inherit; font-size: var(--fs-body); }
 .shell__main .page > h2, .shell__main .page > section > h2, .shell__main .exp-split__detail > section > h2 { color: var(--sec); }
 .shell__main .page > h2::after, .shell__main .page > section > h2::after, .shell__main .exp-split__detail > section > h2::after {
-  content: ''; display: block; width: 3rem; height: 4px; margin-top: var(--space-2); border-radius: 2px;
+  content: ''; display: block; width: 6rem; height: 4px; margin-top: var(--space-2); border-radius: 2px;
   background: linear-gradient(90deg, var(--pink), var(--gold));
 }
 

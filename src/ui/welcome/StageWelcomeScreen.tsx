@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { PillIcon } from '../PillIcon'
 import { Link, useLocation } from 'react-router'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { t, th, type StringKey } from '../../i18n'
@@ -75,19 +76,19 @@ function StageWelcomeStage() {
       </nav>
       <nav aria-label={t('welcome.jump')}>
         <ul className="naut-jump">
-          {sections.map((x) => <li key={x.id}><a href={`#${x.id}`}>{x.label}</a></li>)}
+          {sections.map((x) => <li key={x.id}><a href={`#${x.id}`}><PillIcon label={x.label} id={x.id} />{x.label}</a></li>)}
         </ul>
       </nav>
       <section id="welcome-before" aria-labelledby="welcome-before-h">
-        <h2 id="welcome-before-h">{th(first ? 'welcome.eyebrowFirst' : 'welcome.h.transition')}</h2>
+        <h2 id="welcome-before-h"><PillIcon heading label={th(first ? 'welcome.eyebrowFirst' : 'welcome.h.transition')} id="welcome-before" />{th(first ? 'welcome.eyebrowFirst' : 'welcome.h.transition')}</h2>
         <p>{words(stage, first ? 'intro' : 'transition')}</p>
       </section>
       <section id="welcome-focus" aria-labelledby="welcome-focus-h">
-        <h2 id="welcome-focus-h">{th('welcome.h.focus')}</h2>
+        <h2 id="welcome-focus-h"><PillIcon heading label={th('welcome.h.focus')} id="welcome-focus" />{th('welcome.h.focus')}</h2>
         <p>{words(stage, 'focus')}</p>
       </section>
       <section id="welcome-need" aria-labelledby="welcome-need-h">
-        <h2 id="welcome-need-h">{th('welcome.h.need')}</h2>
+        <h2 id="welcome-need-h"><PillIcon heading label={th('welcome.h.need')} id="welcome-need" />{th('welcome.h.need')}</h2>
         <p>{words(stage, 'needIntro')}</p>
         <ul className="welcome__needs">
           {c.needs.map((n, i) => {
@@ -109,11 +110,11 @@ function StageWelcomeStage() {
         <p className="muted">{t('welcome.needNote')}</p>
       </section>
       <section id="welcome-lead" aria-labelledby="welcome-lead-h">
-        <h2 id="welcome-lead-h">{c.next ? th('welcome.h.leadTo', { next: words(stage, 'nextName') }) : th('welcome.h.leadEnd')}</h2>
+        <h2 id="welcome-lead-h"><PillIcon heading label={c.next ? th('welcome.h.leadTo', { next: words(stage, 'nextName') }) : th('welcome.h.leadEnd')} id="welcome-lead" />{c.next ? th('welcome.h.leadTo', { next: words(stage, 'nextName') }) : th('welcome.h.leadEnd')}</h2>
         <p>{words(stage, 'lead')}</p>
       </section>
       <section id="welcome-steps" aria-labelledby="welcome-steps-h">
-        <h2 id="welcome-steps-h">{th('welcome.h.progress')}</h2>
+        <h2 id="welcome-steps-h"><PillIcon heading label={th('welcome.h.progress')} id="welcome-steps" />{th('welcome.h.progress')}</h2>
         <p className="muted">{t('welcome.progress', { done: doneCount, total: steps.length })}</p>
         <ol className="welcome__steps">
           {steps.map((x, i) => {
@@ -127,7 +128,7 @@ function StageWelcomeStage() {
         <div className="button-row"><LinkButton to={back((state as { from?: unknown } | null)?.from)} replace>{t('welcome.go')}</LinkButton></div>
       </section>
       <section id="welcome-moveon" aria-labelledby="welcome-moveon-h">
-        <h2 id="welcome-moveon-h">{c.next ? th('welcome.h.moveOn', { next: words(stage, 'nextName') }) : th('welcome.h.moveOnEnd')}</h2>
+        <h2 id="welcome-moveon-h"><PillIcon heading label={c.next ? th('welcome.h.moveOn', { next: words(stage, 'nextName') }) : th('welcome.h.moveOnEnd')} id="welcome-moveon" />{c.next ? th('welcome.h.moveOn', { next: words(stage, 'nextName') }) : th('welcome.h.moveOnEnd')}</h2>
         <p>{words(stage, 'moveOn')}</p>
         {nextUp ? (
           <>

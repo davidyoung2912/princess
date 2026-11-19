@@ -1,3 +1,4 @@
+import { PillIcon } from '../PillIcon'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { downloadText } from '../delights/cardTools'
@@ -69,7 +70,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
   const dayCard = details || state.day !== state.currentDay
   return (
     <div className="page">
-      <Card hero labelledBy="tp-head">
+      <Card hero labelledBy="tp-head" tour="plan-card">
         <span className="landing-pose calm-hide"><StanleyPose head="scheduler" size={88} /></span>
         <div className="tp-title-row"><h2 id="tp-head" className="card__title">{headingCase(t(dayCard ? 'route.dayDetails' : 'route.todayPlan'))}</h2>{state.day === state.currentDay && <StatusBadge kind="booked" label={t('itin.today')} />}</div>
         {itineraryDay && <ItineraryDayInfo d={itineraryDay} last={state.day === days.length} today={state.day === state.currentDay} badge={false} />}
@@ -85,8 +86,8 @@ function PlanDay({ details = false }: { details?: boolean }) {
       {!plan.ready ? <p role="status" className="muted">{t('account.loading')}</p> : plan.failed && plan.items.length === 0 ? <LoadError retry={plan.retry} /> : (
         <>
           {plan.failed && <Banner kind="info" title={t('plan.today.partial')} action={<Button variant="secondary" onClick={plan.retry}>{t('plan.today.retry')}</Button>}><p>{t('plan.today.partialBody')}</p></Banner>}
-          {groups.length === 0 ? <p className="muted">{t('plan.today.empty')}</p> : groups.map((g) => (
-            <section key={g.period} aria-labelledby={`tp-${g.period}`}>
+          {groups.length === 0 ? <p className="muted">{t('plan.today.empty')}</p> : groups.map((g, gi) => (
+            <section key={g.period} aria-labelledby={`tp-${g.period}`} data-tour={gi === 0 ? 'plan-first' : undefined}>
               <h2 id={`tp-${g.period}`}>{headingCase(t(PERIOD[g.period]))}</h2>
               <ul className="event-list">
                 {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} dishes={dishesOnLine(i, savedDishes)} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} onAdd={addToPlan.add} onRemove={addToPlan.remove} busy={addToPlan.busy} />)}
@@ -98,8 +99,8 @@ function PlanDay({ details = false }: { details?: boolean }) {
           {plan.items.some((i) => i.status !== 'cancelled') && <p><Button variant="secondary" onClick={addToCalendar}>{t('plan.today.calendar')}</Button></p>}
         </>
       )}
-      <section aria-labelledby="tp-add">
-        <h2 id="tp-add" tabIndex={-1}>{headingCase(t('plan.today.add'))}</h2>
+      <section aria-labelledby="tp-add" data-tour="plan-add">
+        <h2 id="tp-add" tabIndex={-1}><PillIcon heading label={t('plan.bundle.pill.explorers')} />{headingCase(t('plan.today.add'))}</h2>
         <ul className="plain-bullets">{LINKS.map(([key, to]) => <li key={to}><Link to={`${to}?day=${state.day}`}>{t(key)}</Link></li>)}</ul>
       </section>
     </div>

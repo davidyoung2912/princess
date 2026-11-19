@@ -17,7 +17,7 @@ export function GlossaryScreen() {
       {GROUPS.map((g) => (
         <section key={g.letter} id={`gloss-${g.letter}`} aria-labelledby={`gloss-${g.letter}-h`}>
           <h2 id={`gloss-${g.letter}-h`}>{g.letter}</h2>
-          <dl className="facts">
+          <dl className="facts facts--gloss">
             {g.terms.map((x) => (
               <div key={x.term}>
                 <dt>{x.term}</dt>

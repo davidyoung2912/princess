@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { PillIcon } from '../PillIcon'
 import { formatTime } from '../../domain/cruise'
 import type { Bundle } from '../../domain/explorer/evening'
 import { EXPLORER_PATHS } from '../../domain/explorer/planItems'
@@ -23,13 +24,13 @@ export function DayBundles({ bundles, day, clockAt, busy, onAdd }: {
       <nav aria-label={t('plan.bundle.jump')}>
         <ul className="naut-jump">
           {[...bundles.map((b) => [`tp-bundle-${b.kind}`, t(PILL[b.kind])] as const), ['tp-add', t('plan.bundle.pill.explorers')] as const].map(([id, label]) => (
-            <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: 'start' }); document.getElementById(id)?.focus() }}>{label}</a></li>
+            <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: 'start' }); document.getElementById(id)?.focus() }}><PillIcon label={label} />{label}</a></li>
           ))}
         </ul>
       </nav>
       {bundles.map((b) => (
         <section key={b.kind} aria-labelledby={`tp-bundle-${b.kind}`}>
-          <h2 id={`tp-bundle-${b.kind}`} tabIndex={-1}>{headingCase(t(TITLE[b.kind]))}</h2>
+          <h2 id={`tp-bundle-${b.kind}`} tabIndex={-1}><PillIcon heading label={headingCase(t(TITLE[b.kind]))} />{headingCase(t(TITLE[b.kind]))}</h2>
           <p className="muted">{b.kind === 'return' ? t('plan.bundle.returnWhy', { time: b.tourEndsAt !== undefined ? clockAt(b.tourEndsAt) : '' }) : t(NOTE[b.kind])}</p>
           <ul className="event-list">
             {b.steps.map((s) => (
