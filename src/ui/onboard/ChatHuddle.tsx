@@ -12,6 +12,8 @@ import { api } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
+import { DialogHeader } from '../DialogHeader'
+import { Users } from '../icons'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
 
@@ -22,7 +24,8 @@ function Problem({ error }: { error: ApiError | null }) {
 }
 
 /** Start a huddle from the chat list: a name, and nothing else. Nobody is contacted by the app; the guest shares the link themselves. */
-export function StartHuddle({ onOpen }: { onOpen: (id: string) => void }) {
+export function StartHuddle() {
+  const nav = useNavigate()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const start = useAction(async () => {
@@ -31,14 +34,14 @@ export function StartHuddle({ onOpen }: { onOpen: (id: string) => void }) {
     const h = await api.chatConversations.startHuddle(clean)
     chatChanged()
     setOpen(false)
-    onOpen(h.id)
+    // Straight to the new chat with its invite open: the link is how people get in.
+    void nav(`/chat/c/${encodeURIComponent(h.id)}?invite=1`)
   })
   return (
     <>
       <p><Button variant="secondary" onClick={() => setOpen(true)}>{t('chuddle.start')}</Button></p>
       {open && (
-        <Dialog title={t('chuddle.start')} onClose={() => setOpen(false)}>
-          <p className="muted">{t('chuddle.startBody')}</p>
+        <Dialog title={t('chuddle.start')} onClose={() => setOpen(false)} header={(titleId) => <DialogHeader titleId={titleId} title={t('chuddle.start')} subtext={t('chuddle.startBody')} icon={Users} onClose={() => setOpen(false)} />}>
           <form onSubmit={(e) => { e.preventDefault(); if (cleanGroupName(name)) void start.run().catch(() => undefined) }}>
             <Field label={t('chuddle.name')} value={name} maxLength={MAX_GROUP_NAME} autoComplete="off" onChange={(e) => setName(e.target.value)} />
             <Problem error={start.error} />
@@ -185,8 +188,11 @@ export function HuddleDetails({ id, onClose, onLeft }: { id: string; onClose: ()
   const state = useMine(() => api.chatConversations.huddle(id), [id])
   const [current, setCurrent] = useState<Huddle | null>(null)
   const leave = useAction(async () => { await api.chatConversations.leaveHuddle(id); chatChanged(); onLeft() })
+  const removeMember = useAction(async (personId: string) => { await api.chatConversations.removeHuddleMember(id, personId); setCurrent(await api.chatConversations.huddle(id)); chatChanged() })
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const deleteChat = useAction(async () => { await api.chatConversations.deleteHuddle(id); chatChanged(); onLeft() })
   return (
-    <Dialog title={t('chuddle.details')} onClose={onClose}>
+    <Dialog title={t('chuddle.details')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={(current ?? state.data)?.name ?? t('chuddle.details')} subtext={t('chuddle.details')} icon={Users} onClose={onClose} />}>
       <Load state={state}>
         {(loaded) => {
           const h = current ?? loaded
@@ -194,15 +200,32 @@ export function HuddleDetails({ id, onClose, onLeft }: { id: string; onClose: ()
             <>
               <h3>{h.name}</h3>
               <p className="muted">{t('chuddle.who', { count: h.members.length, max: h.max })}</p>
-              <ul className="plain-list">{h.members.map((m) => <li key={m.id}>{m.you ? t('chuddle.you', { name: m.name }) : m.name}</li>)}</ul>
+              <ul className="plain-list">{h.members.map((m) => (
+                <li key={m.id}>
+                  {m.you ? t('chuddle.you', { name: m.name }) : m.name}
+                  {h.isCreator && !m.you && <Button variant="secondary" disabled={removeMember.busy} onClick={() => void removeMember.run(m.id).catch(() => undefined)}>{t('chuddle.remove')}<span className="visually-hidden"> {m.name}</span></Button>}
+                </li>
+              ))}</ul>
+              <Problem error={removeMember.error} />
               <p className="muted">{t('chuddle.privacy')}</p>
               {h.isCreator && <InviteLink huddle={h} set={setCurrent} />}
               <Shortlist huddle={h} set={setCurrent} />
               <WhenBooked huddle={h} set={setCurrent} />
               <p className={h.warn ? 'field__error' : 'muted'} role={h.warn ? 'alert' : undefined}>{t(h.warn ? 'chuddle.deleteSoon' : 'chuddle.deleteOn', { date: new Date(h.deleteOn).toLocaleDateString() })}</p>
               <Problem error={leave.error} />
+              {confirmDelete && (
+                <Dialog title={t('conv.delete.title')} onClose={() => setConfirmDelete(false)} header={(titleId) => <DialogHeader titleId={titleId} title={t('conv.delete.title')} subtext={h.name} icon={Users} onClose={() => setConfirmDelete(false)} />}>
+                  <p>{t('conv.delete.body', { name: h.name })}</p>
+                  <Problem error={deleteChat.error} />
+                  <div className="button-row">
+                    <Button disabled={deleteChat.busy} onClick={() => void deleteChat.run().catch(() => undefined)}>{t('conv.delete.yes')}</Button>
+                    <Button variant="secondary" onClick={() => setConfirmDelete(false)}>{t('conv.delete.no')}</Button>
+                  </div>
+                </Dialog>
+              )}
               <div className="button-row">
                 <Button variant="tertiary" disabled={leave.busy} onClick={() => void leave.run().catch(() => undefined)}>{t('chuddle.leave')}</Button>
+                {h.isCreator && <Button variant="secondary" onClick={() => setConfirmDelete(true)}>{t('chuddle.deleteChat')}</Button>}
                 <Button onClick={onClose}>{t('chuddle.close')}</Button>
               </div>
             </>
@@ -234,12 +257,11 @@ function JoinDialog({ token }: { token: string }) {
   if (dismissed) return null
   const close = () => { setDismissed(true); void nav('/chat', { replace: true }) }
   return (
-    <Dialog title={t('chuddle.joinTitle')} onClose={close}>
+    <Dialog title={t('chuddle.joinTitle')} onClose={close} header={(titleId) => <DialogHeader titleId={titleId} title={t('chuddle.joinTitle')} subtext={t('chuddle.joinBody')} icon={Users} onClose={close} />}>
       {preview.status === 'error' ? <Problem error={(preview.error as ApiError | undefined) ?? null} /> : (
         <Load state={preview}>
           {(p) => (
             <>
-              <p>{t('chuddle.joinBody')}</p>
               <ul className="plain-list">{p.members.map((m, i) => <li key={i}>{m}</li>)}</ul>
               <p className="muted">{t('chuddle.seats', { count: p.seatsLeft })}</p>
               <p className="muted">{t('chuddle.joinPrivacy')}</p>

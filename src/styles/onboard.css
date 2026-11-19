@@ -820,3 +820,14 @@ button.chat-quote { cursor: pointer; }
 /* Glossary: the term is the bold black heading of its card and the meaning is normal black text (the other fact grids show a quiet label over a bold value). */
 .facts--gloss dt { color: var(--text); font-size: inherit; font-weight: 700; }
 .facts--gloss dd { font-weight: 400; }
+
+/* A chat card with its own tools (the guest started it): a row of icon buttons in the card's bottom corner, outside the card's own button so buttons never nest. */
+.conv-item { position: relative; }
+.conv--tools { padding-bottom: calc(var(--space-3) + 2.25rem); }
+.conv__stats { font-size: var(--fs-caption); }
+.conv__tools { position: absolute; inset-block-end: var(--space-2); inset-inline-end: var(--space-3); display: flex; gap: var(--space-1); }
+.conv__tool { display: inline-grid; place-items: center; min-width: 2rem; min-height: 2rem; padding: 0; border: 2px solid var(--border); border-radius: 50%; background: var(--bg); color: var(--primary); cursor: pointer; }
+.conv__tool:hover, .conv__tool:focus-visible { border-color: var(--primary); }
+.conv__tool--danger { color: var(--danger); }
+.conv__tool--danger:hover, .conv__tool--danger:focus-visible { border-color: var(--danger); }
+.conv__tool .lucide { width: 1.1rem; height: 1.1rem; }

@@ -32,6 +32,9 @@ public static class ChatGroupEndpoints
         chat.MapPut("/groups/{id:guid}/announcement-only", async (Guid id, ChatGroupAnnouncementBody body, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => Results.Ok(await svc.SetAnnouncementOnlyAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("Makes the group announcement-only (only admins post; votes, answers and reactions stay open to everyone) or open again. Creator or the second admin. 403 admin.");
 
+        chat.MapDelete("/groups/{id:guid}", async (Guid id, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.DeleteAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
+            .WithSummary("Deletes the whole group, its messages and its members' places, for everyone (creator only). 403 creator.");
+
         chat.MapPost("/groups/{id:guid}/leave", async (Guid id, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.LeaveAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
             .WithSummary("The caller leaves the group. They read nothing said after, and the rest see a line in the thread. When the creator leaves, the person who has been in longest becomes the creator.");
 

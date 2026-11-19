@@ -67,11 +67,31 @@ export function NewGroup({ onClose, onCreated }: { onClose: () => void; onCreate
   )
 }
 
+/** Deleting a whole chat for everyone, by the guest who started it. The others are told at once and it leaves their lists. */
+export function DeleteChat({ chat, onClose, onDeleted }: { chat: { id: string; kind: string; name: string }; onClose: () => void; onDeleted: () => void }) {
+  const remove = useAction(async () => {
+    if (chat.kind === 'huddle') await api.chatConversations.deleteHuddle(chat.id)
+    else await api.chatGroups.delete(chat.id)
+    onDeleted()
+  })
+  return (
+    <Dialog title={t('conv.delete.title')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('conv.delete.title')} subtext={chat.name} icon={Trash2} onClose={onClose} />}>
+      <p>{t('conv.delete.body', { name: chat.name })}</p>
+      {remove.error && <p role="alert" className="field__error">{t('conv.delete.failed')}</p>}
+      <div className="button-row">
+        <Button disabled={remove.busy} onClick={() => void remove.run().catch(() => undefined)}>{t('conv.delete.yes')}</Button>
+        <Button variant="secondary" onClick={onClose}>{t('conv.delete.no')}</Button>
+      </div>
+    </Dialog>
+  )
+}
+
 /** The people, the limit, and what the guest can do: leave, and for the creator rename, add and remove. Opened from a group's thread. */
 export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; onClose: () => void; onLeft: () => void; onChanged: () => void }) {
   const group = useMine(() => api.chatGroups.get(id), [id])
   const connections = useMine(() => api.chatConnections.list())
   const [leaving, setLeaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [name, setName] = useState<string | null>(null)
   const [picked, setPicked] = useState<string[]>([])
   const [note, setNote] = useState('')
@@ -129,6 +149,8 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
             )}
             <p className="muted">{t('cgroup.history')}</p>
             <Button variant="secondary" onClick={() => setLeaving(true)}>{t('cgroup.leave')}</Button>
+            {g.isCreator && <Button variant="secondary" icon={Trash2} onClick={() => setDeleting(true)}>{t('chuddle.deleteChat')}</Button>}
+            {deleting && <DeleteChat chat={{ id, kind: 'group', name: g.name }} onClose={() => setDeleting(false)} onDeleted={() => { setDeleting(false); onLeft() }} />}
             {leaving && (
               <Dialog title={t('cgroup.leaveTitle', { name: g.name })} onClose={() => setLeaving(false)} header={(titleId) => <DialogHeader titleId={titleId} title={t('cgroup.leaveTitle', { name: g.name })} icon={Users} onClose={() => setLeaving(false)} />}>
                 <p>{t('cgroup.leaveBody')}</p>

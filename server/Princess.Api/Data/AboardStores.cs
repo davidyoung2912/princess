@@ -235,6 +235,9 @@ public sealed class ChatConversationRow : ChatMemberRow
     public bool LastPhoto { get; set; }
     public string LastUrgency { get; set; } = "normal";
     public DateTime? LastAt { get; set; }
+    /// <summary>When the caller last wrote a message here, and when someone else last did (people only, not system lines); null when never.</summary>
+    public DateTime? LastMineAt { get; set; }
+    public DateTime? LastTheirsAt { get; set; }
     /// <summary>The last message was deleted for everyone (its text is then empty here).</summary>
     public bool LastDeleted { get; set; }
     public int Unread { get; set; }

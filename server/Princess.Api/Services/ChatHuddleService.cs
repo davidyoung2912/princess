@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// an invitee signs in, sees who is in (first name and last initial) and nothing else, says they are 18 or over, and joins. A wrong, expired or revoked link all answer 404 <c>invalidLink</c>. The shortlist holds public cards only.
 /// Messages, reads and the member window are the ordinary conversation routes; a huddle has no photos and no SMS bridge. Converting to a party chat is a later slice. Nothing here logs a name, a message or a card's content.
 /// </summary>
-public sealed class ChatHuddleService(IChatHuddleStore store, IChatGroupStore groups, IUserClock userClock, IClock clock)
+public sealed class ChatHuddleService(IChatHuddleStore store, IChatGroupStore groups, IUserClock userClock, IClock clock, ChatNotifier notifier)
 {
     private static string Short(ChatGroupPersonRow p) => ChatConnectionRules.ShortName(p.FirstName, p.LastName);
 
@@ -112,6 +112,25 @@ public sealed class ChatHuddleService(IChatHuddleStore store, IChatGroupStore gr
         var name = ChatConnectionRules.ShortName(actor.FirstName, actor.LastName);
         if (await store.JoinAsync(link.GroupId, actor.Id, $"{name} joined", ChatHuddleRules.MaxMembers, now, ct) is not null) throw ApiException.Forbidden(ChatHuddleRules.Full);
         return new(link.GroupPublicId);
+    }
+
+    /// <summary>Removes a member (creator only, never themself) with a line in the thread. 400 self; 403 creator; 404 person.</summary>
+    public async Task RemoveMemberAsync(UserRecord actor, Guid id, ChatGroupRemoveBody? body, CancellationToken ct)
+    {
+        var g = await CreatorAsync(actor, id, ct);
+        var person = (await groups.ListActiveAsync(g.Id, ct)).FirstOrDefault(m => m.PublicId == body?.PersonId) ?? throw ApiException.NotFound("person");
+        if (person.UserId == actor.Id) throw ApiException.Invalid("self");
+        await groups.RemoveMemberAsync(g.Id, person.UserId, "removed", $"{Short(person)} was removed", await userClock.NowAsync(actor, ct), ct);
+        await notifier.ChatEndedAsync(person.UserId, g.PublicId, g.Name, false, ct);
+    }
+
+    /// <summary>Deletes the whole huddle for everyone (creator only). 403 creator.</summary>
+    public async Task DeleteAsync(UserRecord actor, Guid id, CancellationToken ct)
+    {
+        var g = await CreatorAsync(actor, id, ct);
+        var members = await groups.ListActiveAsync(g.Id, ct);
+        await groups.DeleteGroupAsync(g.Id, ct);
+        await Task.WhenAll(members.Where(m => m.UserId != actor.Id).Select(m => notifier.ChatEndedAsync(m.UserId, g.PublicId, g.Name, true, ct)));
     }
 
     public async Task LeaveAsync(UserRecord actor, Guid id, CancellationToken ct)

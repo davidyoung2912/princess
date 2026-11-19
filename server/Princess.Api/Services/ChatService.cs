@@ -52,6 +52,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         // A channel or room has hundreds of members: the list names none of them (they are public to each other only through what they post).
         var roomy = ChatRoomRules.IsRoomKind(m.Kind);
+        var owner = m.Kind == ChatConversationRules.Group || m.Kind == "huddle" ? members.FirstOrDefault(p => p.UserId == m.CreatedByUserId) : null;
         var others = roomy ? [] : members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(ShortName).ToList();
         return new(m.GroupPublicId, m.Kind, ChatConversationRules.DisplayName(m.Kind, m.Name, others), others, last, unread, m.Muted,
             ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded), Shipboard.Ms(at),
@@ -62,12 +63,20 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             CanPin: ChatCardRules.MayPin(m.Kind, ChatPlanningService.AdminOf(m, actor.Id)) && !ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded),
             AnnouncementOnly: m.Kind == ChatConversationRules.Group && m.AnnouncementOnly, Admin: ChatPlanningService.AdminOf(m, actor.Id),
             Room: rooms.InfoOf(m, actor.Role == "admin", roomy ? members.Count(p => p.Status == ChatConversationRules.Active) : 0, DateTime.UtcNow),
-            Avatar: m.Kind == ChatConversationRules.Direct ? members.FirstOrDefault(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active)?.Avatar : null);
+            Avatar: m.Kind == ChatConversationRules.Direct ? members.FirstOrDefault(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active)?.Avatar : null,
+            StartedAt: Shipboard.Ms(m.CreatedAt),
+            LastMineAt: (m as ChatConversationRow)?.LastMineAt is { } lm ? Shipboard.Ms(lm) : null,
+            LastTheirsAt: (m as ChatConversationRow)?.LastTheirsAt is { } lt ? Shipboard.Ms(lt) : null,
+            Owner: (m.Kind == ChatConversationRules.Group || m.Kind == "huddle") && m.CreatedByUserId == actor.Id,
+            OwnerName: owner is null ? null : ShortName(owner), OwnerAvatar: owner?.Avatar);
     }
 
     /// <summary>The caller's place in the conversation, or a 404 that is the same whether it does not exist or is someone else's.</summary>
     private async Task<ChatMemberRow> MemberAsync(UserRecord actor, Guid conversationId, CancellationToken ct) =>
-        await store.GetMemberAsync(actor.Id, conversationId, ct) ?? throw ApiException.NotFound();
+        await store.GetMemberAsync(actor.Id, conversationId, ct) is { } m && !RemovedFromChat(m) ? m : throw ApiException.NotFound();
+
+    /// <summary>Someone the creator removed from a made group or private chat has no more of it: it is not in their list and its thread answers 404, the same as a chat that was deleted. (Someone who left keeps what they read.)</summary>
+    private static bool RemovedFromChat(ChatMemberRow m) => m.Status == "removed" && (m.Kind == ChatConversationRules.Group || m.Kind == "huddle");
 
     /// <summary>The chips under a message, with the others' names for a screen reader. People the reader blocked are left out.</summary>
     private static List<ChatReactionDto> ReactionDtos(IEnumerable<ChatReactionRow> rows, long reader, Dictionary<long, ChatPeerRow> byId, ISet<long> blocked) =>

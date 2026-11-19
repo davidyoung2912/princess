@@ -66,6 +66,9 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var person = members.FirstOrDefault(m => m.PublicId == body?.PersonId) ?? throw ApiException.NotFound("person");
         if (person.UserId == actor.Id) throw ApiException.Invalid("self");
         await store.RemoveMemberAsync(group.Id, person.UserId, "removed", ChatGroupRules.RemovedLine(Short(person)), await clock.NowAsync(actor, ct), ct);
+        // The person is told at once, and the others' open apps refetch so the line and the member count show.
+        await notifier.ChatEndedAsync(person.UserId, group.PublicId, group.Name, false, ct);
+        await TellAsync(group, [.. members.Where(m => m.UserId != person.UserId && m.UserId != actor.Id)], "members", ct);
     }
 
     /// <summary>
@@ -107,6 +110,15 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
     /// <summary>The open apps of everyone in the group refetch (a live nudge, never a phone alert), so the composer and the controls change at once.</summary>
     private Task TellAsync(ChatGroupRow group, List<ChatGroupPersonRow> members, string kind, CancellationToken ct) =>
         Task.WhenAll(members.Select(m => notifier.ThreadChangedAsync(m.UserId, group.PublicId, kind, ct)));
+
+    /// <summary>Deletes the whole group for everyone (creator only). The others' open apps refetch, and the group is gone from their lists. 403 creator.</summary>
+    public async Task DeleteAsync(UserRecord actor, Guid id, CancellationToken ct)
+    {
+        var group = await CreatorGroupAsync(actor, id, ct);
+        var members = await store.ListActiveAsync(group.Id, ct);
+        await store.DeleteGroupAsync(group.Id, ct);
+        await Task.WhenAll(members.Where(m => m.UserId != actor.Id).Select(m => notifier.ChatEndedAsync(m.UserId, group.PublicId, group.Name, true, ct)));
+    }
 
     /// <summary>Anyone in the group can leave. They keep nothing of what is said after, and the others are told by a line in the thread.</summary>
     public async Task LeaveAsync(UserRecord actor, Guid id, CancellationToken ct)

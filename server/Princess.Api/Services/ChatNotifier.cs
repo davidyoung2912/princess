@@ -91,6 +91,18 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
         Deliver(userId, kind, new PushNotice($"chat:{kind}:{conversationId:N}:{userId}:{Guid.NewGuid():N}", "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), "", "",
             new() { ["conversation"] = conversationId.ToString("N") }), false, ct);
 
+    /// <summary>
+    /// The creator deleted a chat the person was in, or removed them from it. Told at once: an open app is nudged (and drops the conversation from its list and closes the thread), and a phone alert follows if no app answers.
+    /// It names the chat and says what happened, and nothing of what was said in it.
+    /// </summary>
+    public Task ChatEndedAsync(long userId, Guid conversationId, string chatName, bool deleted, CancellationToken ct)
+    {
+        var kind = deleted ? "chatDeleted" : "chatRemoved";
+        var title = deleted ? "A chat was deleted" : "You were removed from a chat";
+        var body = deleted ? $"“{chatName}” was deleted by the person who started it." : $"The person who started “{chatName}” removed you from it.";
+        return Deliver(userId, kind, new PushNotice($"chat:{kind}:{conversationId:N}:{userId}", "chat", "chat", false, 60, "/chat", title, body, new() { ["conversation"] = conversationId.ToString("N") }, ChatConversationRules.NoticeTag(conversationId)), true, ct);
+    }
+
     private Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct) =>
         Deliver(userId, kind, new PushNotice(ChatConnectionRules.NoticeKey(kind, connectionId), "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["connection"] = connectionId.ToString("N") }), true, ct);
 

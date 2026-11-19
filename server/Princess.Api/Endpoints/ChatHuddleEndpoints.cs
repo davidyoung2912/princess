@@ -29,6 +29,12 @@ public static class ChatHuddleEndpoints
         h.MapPost("/join", async (ChatHuddleTokenBody body, ICurrentUser me, ChatHuddleService svc, CancellationToken ct) => Results.Ok(await svc.JoinAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Joins with a link and the caller's statement that they are 18 or over (`adultConfirmed`). They read only what is said from then on. 404 invalidLink; 403 supervised, underage, needAge, alreadyIn, full or tooMany.");
 
+        h.MapPost("/{id:guid}/remove", async (Guid id, ChatGroupRemoveBody body, ICurrentUser me, ChatHuddleService svc, CancellationToken ct) => { await svc.RemoveMemberAsync(await me.LoadAsync(ct), id, body, ct); return Results.NoContent(); })
+            .WithSummary("Removes a member (creator only, never themself) and adds a line to the thread. 400 self, 403 creator, 404 person.");
+
+        h.MapDelete("/{id:guid}", async (Guid id, ICurrentUser me, ChatHuddleService svc, CancellationToken ct) => { await svc.DeleteAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
+            .WithSummary("Deletes the whole huddle for everyone (creator only). 403 creator.");
+
         h.MapPost("/{id:guid}/leave", async (Guid id, ICurrentUser me, ChatHuddleService svc, CancellationToken ct) => { await svc.LeaveAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
             .WithSummary("The caller leaves at once. They read nothing said after, and the rest see a line in the thread.");
 

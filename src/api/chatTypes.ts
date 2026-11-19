@@ -168,6 +168,16 @@ export interface ChatConversation {
   room?: ChatRoomInfo
   /** Direct chat only: the id of the other person's chosen avatar (see `src/domain/chatAvatar.ts`); absent for the initials. */
   avatar?: string
+  /** When the chat was started (milliseconds). */
+  startedAt?: number
+  /** When you last wrote a message here, and when someone else last did (milliseconds); absent when never. */
+  lastMineAt?: number
+  lastTheirsAt?: number
+  /** You started this made group or private chat, so you can invite, remove people and delete it. Absent when not. */
+  owner?: boolean
+  /** A made group or private chat only: who started it, and their chosen avatar (absent for initials). */
+  ownerName?: string
+  ownerAvatar?: string
 }
 
 /** Someone else in a conversation: their public id and first name with last initial. */
@@ -407,6 +417,10 @@ export interface ChatConversationsApi {
   /** Joins with the guest's statement that they are 18 or over. Returns the conversation id. Rejects `notFound` (`invalidLink`) or `forbidden` (`supervised`, `underage`, `needAge`, `alreadyIn`, `full`, `tooMany`). */
   joinHuddle(token: string): Promise<string>
   leaveHuddle(id: string): Promise<void>
+  /** The creator removes a member. */
+  removeHuddleMember(id: string, personId: string): Promise<void>
+  /** The creator deletes the whole chat for everyone. */
+  deleteHuddle(id: string): Promise<void>
   addHuddleCard(id: string, card: { kind: HuddleCardKind; title: string; fields: Record<string, string>; asOf: number }): Promise<Huddle>
   removeHuddleCard(id: string, cardId: string): Promise<Huddle>
   /** Your own OK, or taking it back, to carry the history into the party chat. */
@@ -547,6 +561,8 @@ export interface ChatGroupsApi {
   setAnnouncementOnly(id: string, on: boolean): Promise<ChatGroup>
   /** Creator only; never themself. */
   remove(id: string, personId: string): Promise<void>
+  /** The creator deletes the whole group for everyone. */
+  delete(id: string): Promise<void>
   leave(id: string): Promise<void>
   invites(): Promise<ChatGroupInvite[]>
   /** A decline is quiet. Rejects `conflict` (`answered`, `expired`, `full`) or `notFound`. */

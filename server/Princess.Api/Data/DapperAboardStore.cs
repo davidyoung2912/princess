@@ -617,6 +617,8 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
                    sp.Persona AS Persona, sp.Subtitle AS Subtitle,
                    lm.Id AS LastMessageId, ISNULL(lm.FromUserId, 0) AS LastFromUserId, CASE WHEN lm.DeletedAt IS NULL THEN lm.[Text] ELSE N'' END AS LastText,
                    CAST(CASE WHEN lm.Photo IS NULL OR lm.DeletedAt IS NOT NULL THEN 0 ELSE 1 END AS bit) AS LastPhoto, CAST(CASE WHEN lm.DeletedAt IS NULL THEN 0 ELSE 1 END AS bit) AS LastDeleted, lm.[At] AS LastAt, lm.Urgency AS LastUrgency,
+                   (SELECT MAX(x.[At]) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId = me.UserId) AS LastMineAt,
+                   (SELECT MAX(x.[At]) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId IS NOT NULL AND x.FromUserId <> me.UserId) AS LastTheirsAt,
                    (SELECT COUNT(*) FROM dbo.ChatMessages m
                     WHERE m.GroupId = g.Id AND m.IsSystem = 0 AND ISNULL(m.FromUserId, 0) <> me.UserId AND NOT (m.FromUserId IS NULL AND g.Kind <> 'stanley' AND me.StanleyMuted = 1) AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}) AS Unread
             FROM dbo.ChatGroupMembers me

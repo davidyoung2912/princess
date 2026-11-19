@@ -79,6 +79,8 @@ public interface IChatGroupStore
     Task<string?> AcceptInviteAsync(long id, string joinedLine, int max, DateTime now, CancellationToken ct);
     /// <summary>Takes a person out (<paramref name="status"/> is <c>left</c> or <c>removed</c>) and adds the line. When the creator leaves, the person who has been in longest becomes the creator. False when they were not an active member.</summary>
     Task<bool> RemoveMemberAsync(long groupId, long userId, string status, string line, DateTime now, CancellationToken ct);
+    /// <summary>Deletes the whole chat for everyone: its messages, members, invitations and everything hung on them go with it.</summary>
+    Task DeleteGroupAsync(long groupId, CancellationToken ct);
     /// <summary>Renames the group and adds the line.</summary>
     Task RenameAsync(long groupId, long byUserId, string name, string line, DateTime now, CancellationToken ct);
     /// <summary>Closes waiting invitations that passed their time, for the person (as invitee or guardian) or the group's creator.</summary>
@@ -239,6 +241,15 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
             """, new { i.GroupId, i.InviteeId, joinedLine, now }, tx, ct));
         await tx.CommitAsync(ct);
         return null;
+    }
+
+    public async Task DeleteGroupAsync(long groupId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        // Pins have a plain (not cascading) link to the group, so they go first; messages, members, invitations and the rest cascade from the group.
+        await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatPins WHERE GroupId = @groupId; DELETE FROM dbo.ChatGroups WHERE Id = @groupId", new { groupId }, tx, ct));
+        await tx.CommitAsync(ct);
     }
 
     public async Task<bool> RemoveMemberAsync(long groupId, long userId, string status, string line, DateTime now, CancellationToken ct)
