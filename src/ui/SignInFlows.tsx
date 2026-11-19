@@ -63,7 +63,7 @@ export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreate
           <p role="alert">{t('signin.signup.twin.body')}</p>
           <p>{t('signin.signup.twin.ifYou')}</p>
           <p>{t('signin.signup.twin.ifNot')}</p>
-          <Button block disabled={busy} onClick={(e) => void submit(e, true)}>{t('signin.signup.twin.continue')}</Button>
+          <Button disabled={busy} onClick={(e) => void submit(e, true)}>{t('signin.signup.twin.continue')}</Button>
         </Card>
         <p><Button variant="secondary" onClick={onBack}>{t('signin.signup.twin.signIn')}</Button></p>
         <p><Button variant="secondary" onClick={() => setTwin(false)}>{t('signin.signup.twin.edit')}</Button></p>
@@ -85,7 +85,7 @@ export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreate
           <Field label={t('signin.signup.dob')} hint={t('signin.signup.dob.hint')} type="date" min="1900-01-01" max={today()} value={v.dob} onChange={set('dob')} autoComplete="bday" error={err('dob') ?? err('tooYoung')} />
           <Field label={t('signin.signup.password')} hint={t('signin.signup.password.hint')} type="password" value={v.password} onChange={set('password')} autoComplete="new-password" error={err('password')} />
           <Field label={t('signin.signup.confirm')} type="password" value={v.confirm} onChange={set('confirm')} autoComplete="new-password" error={err('confirm')} />
-          <Button type="submit" block disabled={busy}>{busy ? t('signin.signup.busy') : t('signin.signup.submit')}</Button>
+          <Button type="submit" disabled={busy}>{busy ? t('signin.signup.busy') : t('signin.signup.submit')}</Button>
         </form>
       </Card>
       <p><Button variant="secondary" onClick={onBack}>{t('signin.mode.back')}</Button></p>
@@ -135,7 +135,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
         <PageHeader title={th('signin.code.title.forgot')} icon={KeyRound} />
         <div className="page">
           <p role="status">{t('signin.code.done')}</p>
-          <Button block onClick={onBack}>{t('signin.mode.back')}</Button>
+          <Button onClick={onBack}>{t('signin.mode.back')}</Button>
         </div>
       </>
     )
@@ -156,7 +156,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
               {purpose === 'reset' && <Field label={t('signin.code.newPassword')} hint={t('signin.signup.password.hint')} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />}
             </>
           )}
-          <Button type="submit" block disabled={busy}>
+          <Button type="submit" disabled={busy}>
             {sent ? t(purpose === 'reset' ? 'signin.code.reset' : 'signin.code.signin') : busy ? t('signin.code.sending') : t('signin.code.send')}
           </Button>
         </form>
