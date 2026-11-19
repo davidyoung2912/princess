@@ -1,6 +1,7 @@
-import { useId, useRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { useId, useRef, useState, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { ClearDraft } from './ClearDraft'
-import { CircleAlert } from './icons'
+import { CircleAlert, Eye, EyeOff } from './icons'
+import { t } from '../i18n'
 import { headingCase } from '../i18n'
 import { HelpTip } from './HelpTip'
 
@@ -13,11 +14,14 @@ interface FieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   error?: string
   /** The guest is writing in their own words (a note, a question), not entering a name, code or number: turns on spell checking, autocorrect and a capital at the start of a sentence. */
   prose?: boolean
+  /** For a password: a button inside the box shows the characters while it is on. Off to start with. */
+  reveal?: boolean
 }
 
 /** A text field with a visible label above it, optional hint, and an inline error. Never uses the placeholder as the label. */
-export function Field({ label, hint, help, error, prose, ...rest }: FieldProps) {
+export function Field({ label, hint, help, error, prose, reveal, ...rest }: FieldProps) {
   const id = useId()
+  const [shown, setShown] = useState(false)
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
   const describedBy = [hint ? hintId : '', error ? errorId : ''].filter(Boolean).join(' ') || undefined
@@ -28,7 +32,16 @@ export function Field({ label, hint, help, error, prose, ...rest }: FieldProps) 
         {help && <HelpTip about={label}>{help}</HelpTip>}
       </div>
       {hint && <p id={hintId} className="field__hint">{hint}</p>}
-      <input id={id} className="field__input" aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...(prose ? { spellCheck: true, autoCorrect: 'on', autoCapitalize: 'sentences' } : {})} {...rest} />
+      {reveal ? (
+        <div className="field__control">
+          <input id={id} className="field__input" aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...(prose ? { spellCheck: true, autoCorrect: 'on', autoCapitalize: 'sentences' } : {})} {...rest} {...(reveal ? { type: shown ? 'text' : 'password', autoCapitalize: 'none', spellCheck: false } : {})} />
+          <button type="button" className="field__reveal" aria-pressed={shown} aria-label={t(shown ? 'field.hidePassword' : 'field.showPassword')} title={t(shown ? 'field.hidePassword' : 'field.showPassword')} onClick={() => setShown((v) => !v)}>
+            {shown ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+          </button>
+        </div>
+      ) : (
+        <input id={id} className="field__input" aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...(prose ? { spellCheck: true, autoCorrect: 'on', autoCapitalize: 'sentences' } : {})} {...rest} {...(reveal ? { type: shown ? 'text' : 'password', autoCapitalize: 'none', spellCheck: false } : {})} />
+      )}
       {error && (
         <p id={errorId} className="field__error">
           <CircleAlert aria-hidden="true" />

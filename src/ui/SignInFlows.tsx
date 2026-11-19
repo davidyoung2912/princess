@@ -83,8 +83,8 @@ export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreate
           <Field label={t('signin.signup.email')} help={t('helptip.signupEmail')} value={v.email} onChange={set('email')} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} error={err('email')} />
           <PhoneField label={t('signin.signup.phone')} hint={t('signin.signup.phone.hint')} help={t('helptip.signupPhone')} value={v.phone} onChange={(phone) => setV({ ...v, phone })} error={err('phone')} />
           <Field label={t('signin.signup.dob')} hint={t('signin.signup.dob.hint')} type="date" min="1900-01-01" max={today()} value={v.dob} onChange={set('dob')} autoComplete="bday" error={err('dob') ?? err('tooYoung')} />
-          <Field label={t('signin.signup.password')} hint={t('signin.signup.password.hint')} type="password" value={v.password} onChange={set('password')} autoComplete="new-password" error={err('password')} />
-          <Field label={t('signin.signup.confirm')} type="password" value={v.confirm} onChange={set('confirm')} autoComplete="new-password" error={err('confirm')} />
+          <Field label={t('signin.signup.password')} hint={t('signin.signup.password.hint')} type="password" reveal value={v.password} onChange={set('password')} autoComplete="new-password" error={err('password')} />
+          <Field label={t('signin.signup.confirm')} type="password" reveal value={v.confirm} onChange={set('confirm')} autoComplete="new-password" error={err('confirm')} />
           <Button type="submit" disabled={busy}>{busy ? t('signin.signup.busy') : t('signin.signup.submit')}</Button>
         </form>
       </Card>

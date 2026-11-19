@@ -11826,6 +11826,8 @@ export const enCore = {
   'conv.writeMore': 'Writing helpers',
   'conv.members': 'In this chat: {names}',
   'conv.alone': 'Only you so far.',
+  'field.showPassword': 'Show password',
+  'field.hidePassword': 'Hide password',
   'invitations.title': 'Chat Invitations',
   'invitations.subtext': 'Everyone who has invited you to chat or to join a group. Choose which to accept or decline.',
   'invitations.none': 'You have no invitations waiting.',

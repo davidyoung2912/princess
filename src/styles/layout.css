@@ -44,7 +44,7 @@
 }
 .topbar__chat svg { width: 1.5rem; height: 1.5rem; }
 .topbar__chat:hover, .topbar__chat[aria-current='page'] { border-color: var(--primary-dark); background: var(--bg-subtle, var(--bg)); }
-.topbar__count { position: absolute; bottom: -0.4rem; inset-inline-start: -0.4rem; min-width: 1.25rem; padding: 0 0.25rem; border-radius: 0.625rem; background: var(--gold); color: #1a1a1a; font-size: 0.75rem; font-weight: 700; line-height: 1.25rem; text-align: center; border: 2px solid var(--bg); box-sizing: content-box; }
+.topbar__count { position: absolute; bottom: -0.4rem; inset-inline-start: -0.4rem; min-width: 1.25rem; padding: 0 0.25rem; border-radius: 0.625rem; background: #ffd21f; color: #1a1a1a; font-size: 0.75rem; font-weight: 700; line-height: 1.25rem; text-align: center; border: 2px solid var(--bg); box-sizing: content-box; }
 .topbar__search {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto;
   min-height: var(--target-min); padding: 0 var(--space-3);
@@ -356,7 +356,7 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .testbar__at-link { position: relative; }
 .testbar__at-link:hover { border-color: var(--primary); }
 /* The Chat count sits inside the button's corner: the carousel clips anything outside it. */
-.testbar__count { position: absolute; bottom: 0; inset-inline-start: 0; min-width: 1rem; padding: 0 0.2rem; border-radius: 0.5rem; background: var(--gold); color: #1a1a1a; font-size: 0.65rem; font-weight: 700; line-height: 1rem; text-align: center; }
+.testbar__count { position: absolute; bottom: 0; inset-inline-start: 0; min-width: 1rem; padding: 0 0.2rem; border-radius: 0.5rem; background: #ffd21f; color: #1a1a1a; font-size: 0.65rem; font-weight: 700; line-height: 1rem; text-align: center; }
 .testbar__at-link[aria-current='page'] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .testbar__at-link .lucide { width: 1.5rem; height: 1.5rem; }
 /* The six Explorer pages (entertainment, dining, shopping, spa, exercise, activities) wear the shared Explorer green. */
@@ -459,10 +459,10 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 
 /* The Chat count breathes with a soft gold glow to draw the eye. Reduced motion keeps a still glow. */
 @keyframes chat-count-glow {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 0%, transparent), 0 0 3px 0 color-mix(in srgb, var(--gold) 50%, transparent); }
-  50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 35%, transparent), 0 0 10px 3px color-mix(in srgb, var(--gold) 70%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, #ffd21f 0%, transparent), 0 0 3px 0 color-mix(in srgb, #ffd21f 50%, transparent); }
+  50% { box-shadow: 0 0 0 3px color-mix(in srgb, #ffd21f 35%, transparent), 0 0 10px 3px color-mix(in srgb, #ffd21f 70%, transparent); }
 }
 .topbar__count, .testbar__count { animation: chat-count-glow 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .topbar__count, .testbar__count { animation: none; box-shadow: 0 0 6px 2px color-mix(in srgb, var(--gold) 60%, transparent); }
+  .topbar__count, .testbar__count { animation: none; box-shadow: 0 0 6px 2px color-mix(in srgb, #ffd21f 60%, transparent); }
 }

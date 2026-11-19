@@ -56,6 +56,7 @@ export {
   Wind,
   Gauge,
   Eye,
+  EyeOff,
   Thermometer,
   CircleHelp as Ask,
   BedDouble as Cabin,
