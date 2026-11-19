@@ -34,6 +34,10 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     public Task GroupInviteAsync(long toUserId, Guid inviteId, string from, string group, CancellationToken ct) =>
         Deliver(toUserId, "groupInvite", Notice(ChatGroupRules.NoticeKey("invite", inviteId), ChatGroupRules.InviteNotice(from, group), inviteId), true, ct);
 
+    /// <summary>The person invited to a group said yes or no: the inviter's Chat badge counts it and an open app is nudged.</summary>
+    public Task GroupAnsweredAsync(long inviterId, Guid inviteId, string who, string group, bool accepted, CancellationToken ct) =>
+        Deliver(inviterId, "groupAnswer", Notice(ChatGroupRules.NoticeKey("answer", inviteId), ChatGroupRules.AnswerNotice(who, group, accepted), inviteId), true, ct);
+
     /// <summary>A guardian is asked to approve a group invitation for their child.</summary>
     public Task GroupApprovalAsync(long guardianUserId, Guid inviteId, string child, CancellationToken ct) =>
         Deliver(guardianUserId, "groupApproval", Notice(ChatGroupRules.NoticeKey("approval", inviteId), ChatGroupRules.ApprovalNotice(child), inviteId), true, ct);

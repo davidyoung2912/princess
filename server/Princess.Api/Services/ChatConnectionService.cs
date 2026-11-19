@@ -90,12 +90,16 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         var invites = await groups.ListInvitesForAsync(actor.Id, ct);
         var forChild = invites.Count(i => i.GuardianUserId == actor.Id && i.Status == ChatGroupRules.AwaitingGuardian);
         var urgent = await chat.ListUnackedUrgentAsync(actor.Id, ct);
-        return new(l.Incoming.Count + invites.Count - forChild, l.Approvals.Count + forChild, l.Answers.Count, l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct), urgent.Count, [.. urgent.Select(u => u.ConversationId).Distinct()]);
+        return new(l.Incoming.Count + invites.Count - forChild, l.Approvals.Count + forChild, l.Answers.Count + await groups.CountAnswersAsync(actor.Id, ct), l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct), urgent.Count, [.. urgent.Select(u => u.ConversationId).Distinct()]);
     }
 
     /// <summary>The sender has seen the answers (declines, and new connections).</summary>
-    public async Task SeenAsync(UserRecord actor, CancellationToken ct) =>
-        await store.MarkAnswersSeenAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
+    public async Task SeenAsync(UserRecord actor, CancellationToken ct)
+    {
+        var now = await clock.NowAsync(actor, ct);
+        await store.MarkAnswersSeenAsync(actor.Id, now, ct);
+        await groups.MarkAnswersSeenAsync(actor.Id, now, ct);
+    }
 
     public async Task<ChatConnectionDto> RequestAsync(UserRecord actor, ChatRequestBody? body, CancellationToken ct)
     {

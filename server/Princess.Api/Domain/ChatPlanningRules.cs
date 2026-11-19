@@ -138,20 +138,6 @@ public static class ChatPlanningRules
 
     // ---- Admins ----
 
-    /// <summary>The creator and one more person.</summary>
-    public const int MaxAdmins = 2;
-
-    /// <summary>The creator of a made group is always an admin; another member is one when the creator said so.</summary>
-    public static bool IsAdmin(bool isCreator, bool flagged) => isCreator || flagged;
-
-    /// <summary>Whether another admin can be named: the creator does not count against the one extra.</summary>
-    public static bool CanAddAdmin(int extraAdmins) => extraAdmins + 1 < MaxAdmins;
-
-    /// <summary>
-    /// Whether a person may write a message in a conversation. Everyone may, except in an announcement-only group, where only an admin posts. Votes, answers and reactions are not messages and stay open to everyone.
-    /// </summary>
-    public static bool MayPost(string kind, bool announcementOnly, bool isAdmin) => kind != ChatConversationRules.Group || !announcementOnly || isAdmin;
-
-    /// <summary>A supervised child is never made an admin: their guardian already decides who they chat with.</summary>
-    public static bool MayBeAdmin(bool supervised) => !supervised;
+    /// <summary>The creator of a made group is its only admin.</summary>
+    public static bool IsAdmin(bool isCreator, bool flagged) => isCreator;
 }

@@ -36,8 +36,44 @@ export function RequestsBanner({ onOpen }: { onOpen: () => void }) {
   return <Banner kind="info" title={t('people.banner', { count })} action={<Button variant="secondary" onClick={onOpen}>{t('people.bannerOpen')}</Button>} />
 }
 
-/** People (docs/chat-plan.md, 4.8): chat targets, requests waiting, requests sent, guardian approvals, and a single New chat button. */
+/** The People page, or with `?invitations=1` the Chat Invitations page. */
 export function People() {
+  const [params] = useSearchParams()
+  return params.get('invitations') === '1' ? <Invitations /> : <PeopleList />
+}
+
+/** Every invitation waiting for the guest (and for their children) in one place: chat requests from people and invitations to groups, each to accept or decline. */
+function Invitations() {
+  const list = useMine(() => api.chatConnections.list())
+  const invites = useMine(() => api.chatGroups.invites())
+  useChatLive(() => { list.retry(); invites.retry() })
+  const [note, setNote] = useState('')
+  const refresh = () => { list.retry(); invites.retry(); chatChanged() }
+  const done = (text: string) => { setNote(text); refresh() }
+  const waiting = list.data ? waitingCount(list.data) : 0
+  const count = waiting + (invites.data?.length ?? 0)
+  const loaded = list.data !== undefined && invites.data !== undefined
+  return (
+    <section aria-labelledby="invitations-h">
+      <h2 id="invitations-h" className="visually-hidden">{t('invitations.title')}</h2>
+      <p role="status" className="visually-hidden">{note}</p>
+      <Load state={list}>
+        {(c) => (
+          <>
+            {c.approvals.length > 0 && <Group id="approvals" rows={c.approvals} render={(r) => <Approval row={r} onDone={done} />} />}
+            {c.incoming.length > 0 && <Group id="incoming" rows={c.incoming} render={(r) => <Incoming row={r} onDone={done} />} />}
+          </>
+        )}
+      </Load>
+      <GroupInvites onDone={done} />
+      {loaded && count === 0 && <p>{t('invitations.none')}</p>}
+      <p><Link to="/chat">{t('invitations.back')}</Link></p>
+    </section>
+  )
+}
+
+/** People (docs/chat-plan.md, 4.8): chat targets, requests sent and answers, and a single New chat button. Invitations to answer are on their own page. */
+function PeopleList() {
   const list = useMine(() => api.chatConnections.list())
   const settings = useMine(() => api.chatConnections.settings())
   useChatLive(list.retry)
@@ -56,13 +92,10 @@ export function People() {
       <Button onClick={() => setSearching(true)}>{t('people.new')}</Button>
       <p role="status" className="visually-hidden">{note}</p>
       {searching && <Search onClose={() => setSearching(false)} onDone={(text) => { setNote(text); refresh() }} />}
-      <GroupInvites onDone={(text) => { setNote(text); refresh() }} />
       <Load state={list}>
         {(c) => (
           <>
             {!hasActivity(c) && <p>{t('people.none')}</p>}
-            {c.approvals.length > 0 && <Group id="approvals" rows={c.approvals} render={(r) => <Approval row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
-            {c.incoming.length > 0 && <Group id="incoming" rows={c.incoming} render={(r) => <Incoming row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
             {c.outgoing.length > 0 && <Group id="outgoing" rows={c.outgoing} render={(r) => <Outgoing row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
             {c.answers.length > 0 && <Group id="answers" rows={c.answers} render={(r) => <AnswerLine row={r} />} />}
             {c.connected.length > 0 && <Group id="connected" rows={c.connected} render={(r) => <Connected row={r} onDone={(text) => { setNote(text); refresh() }} />} />}

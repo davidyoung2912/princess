@@ -21,8 +21,6 @@ import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
 import { RequestsBanner } from './ChatPeople'
-import { GroupInvites } from './ChatGroups'
-import { chatChanged } from '../../hooks/useChatSummary'
 import { Conversations } from './ChatConversations'
 import { canFindPeople, canUseGuestServices } from '../../domain/chatKeep'
 import { conversationFromSearch } from '../../domain/chatThread'
@@ -39,7 +37,7 @@ export function ChatScreen() {
   const people = canFindPeople(eligibility.data)
   const service = canUseGuestServices(eligibility.data)
   // A chat notice for a request used to open People on this page (`?mode=people`); it is a page of its own now.
-  if (params.get('mode') === 'people') return <Navigate to="/chat/people" replace />
+  if (params.get('mode') === 'people') return <Navigate to="/chat/people?invitations=1" replace />
   // An older link to a conversation (`/chat?c=…`, from a notice or a toast) opens its page.
   const old = conversationFromSearch(params.toString())
   if (old) return <Navigate to={`/chat/c/${encodeURIComponent(old)}${params.get('m') ? `?m=${encodeURIComponent(params.get('m')!)}` : ''}`} replace />
@@ -56,8 +54,7 @@ export function ChatScreen() {
       {params.get('gone') === '1' && <Banner kind="info" title={t('chat.goneTitle')}><p>{t('chat.goneBody')}</p></Banner>}
       {!service && <Card info><p>{t('chat.beforeBooking')}</p></Card>}
       {people && <p><LinkButton to="/chat/people?find=1" icon={UserPlus}>{t('chat.invite')}</LinkButton></p>}
-      {people && <RequestsBanner onOpen={() => { void nav('/chat/people') }} />}
-      {people && <GroupInvites onDone={() => chatChanged()} />}
+      {people && <RequestsBanner onOpen={() => { void nav('/chat/people?invitations=1') }} />}
       <Conversations />
       <section aria-labelledby="chat-more-h" data-tour="chat-more">
         <h2 id="chat-more-h">{heading('chat.more.title')}</h2>

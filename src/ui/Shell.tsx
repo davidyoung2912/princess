@@ -122,7 +122,9 @@ export function Shell() {
   const appWelcomePage = introKind === 'app'
   // A chat's people-and-invites page (`/chat/c/:id?manage=1`) has its own title, not the conversation's.
   const chatPeoplePage = screen?.id === 'C07' && new URLSearchParams(search).get('manage') === '1'
-  const title = chatPeoplePage ? th('chatPeople.title') : appWelcomePage ? th('appWelcome.eyebrow') : stanleyIntroPage ? th('stanleyIntro.eyebrow') : action ? th(action.title) : landingWords ? landingWords.label : screen ? th(screen.titleKey) : route ? th(route.titleKey) : th('shell.notFound.title')
+  const newGroupPage = screen?.id === 'C07' && pathname === '/chat/c/new'
+  const invitationsPage = pathname === '/chat/people' && new URLSearchParams(search).get('invitations') === '1'
+  const title = invitationsPage ? th('invitations.title') : newGroupPage ? th('cgroup.new') : chatPeoplePage ? th('chatPeople.title') : appWelcomePage ? th('appWelcome.eyebrow') : stanleyIntroPage ? th('stanleyIntro.eyebrow') : action ? th(action.title) : landingWords ? landingWords.label : screen ? th(screen.titleKey) : route ? th(route.titleKey) : th('shell.notFound.title')
 
   useEffect(() => {
     recordVisit(pathname + search, navigationType)
@@ -241,7 +243,7 @@ export function Shell() {
           </button>
           <MyAvatarLink className="topbar__logo" />
         </header>
-        <TestBar menu={<PhoneMenu chatCount={chatCount} stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
+        <TestBar chatCount={chatCount} menu={<PhoneMenu chatCount={chatCount} stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
       </div>
       <nav className="tabs no-print" data-tour="nav" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
         <MyAvatarLink className="tabs__logo" />
@@ -275,7 +277,7 @@ export function Shell() {
       <UpdateBanner />
       <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        {chatPeoplePage ? <PageHeader title={t('chatPeople.title')} subtext={t('chatPeople.subtext')} icon={headerIcon} back /> : appWelcomePage ? <PageHeader title={th('appWelcome.eyebrow')} subtext={t('appWelcome.subtext')} icon={headerIcon} /> : stanleyIntroPage ? <PageHeader title={th('stanleyIntro.eyebrow')} subtext={t('stanleyIntro.subtext')} icon={headerIcon} /> : action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back={pathname !== '/welcome'} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
+        {invitationsPage ? <PageHeader title={t('invitations.title')} subtext={t('invitations.subtext')} icon={headerIcon} back /> : newGroupPage ? <PageHeader title={t('cgroup.new')} subtext={t('cgroup.newSubtext')} icon={headerIcon} back /> : chatPeoplePage ? <PageHeader title={t('chatPeople.title')} subtext={t('chatPeople.subtext')} icon={headerIcon} back /> : appWelcomePage ? <PageHeader title={th('appWelcome.eyebrow')} subtext={t('appWelcome.subtext')} icon={headerIcon} /> : stanleyIntroPage ? <PageHeader title={th('stanleyIntro.eyebrow')} subtext={t('stanleyIntro.subtext')} icon={headerIcon} /> : action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back={pathname !== '/welcome'} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
         {route && !route.public && !landing && <GuideCrumb />}
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}

@@ -88,14 +88,11 @@ public class ChatPlanningRulesTests
     }
 
     [Fact]
-    public void ThereIsOneAdminBesideTheCreatorAndAChildIsNeverOne()
+    public void TheCreatorIsTheOnlyAdmin()
     {
         Assert.True(ChatPlanningRules.IsAdmin(isCreator: true, flagged: false));
-        Assert.True(ChatPlanningRules.IsAdmin(isCreator: false, flagged: true));
+        Assert.False(ChatPlanningRules.IsAdmin(isCreator: false, flagged: true));
         Assert.False(ChatPlanningRules.IsAdmin(isCreator: false, flagged: false));
-        Assert.True(ChatPlanningRules.CanAddAdmin(0));
-        Assert.False(ChatPlanningRules.CanAddAdmin(1));
-        Assert.False(ChatPlanningRules.MayBeAdmin(supervised: true));
         Assert.True(ChatCardRules.MayPin("group", isAdmin: true));
         Assert.False(ChatCardRules.MayPin("group", isAdmin: false));
     }

@@ -41,13 +41,13 @@ const tourMark = (to: string): string | undefined => ({ '/chat': 'chat', '/today
  * The ship date with the guest's stage under it (the stage opens the stage welcome page). For demo accounts only, the date and a time block (whose clock it is under it) open a
  * picker that moves the testing date, which changes the guest's stage and what every screen shows. Demo accounts only.
  */
-export function TestBar({ menu }: { menu?: ReactNode }) {
+export function TestBar({ menu, chatCount = 0 }: { menu?: ReactNode; chatCount?: number }) {
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
   if (!context) return null
-  return <TestBarBody isDemo={context.isDemo === true} menu={menu} />
+  return <TestBarBody isDemo={context.isDemo === true} menu={menu} chatCount={chatCount} />
 }
 
-function TestBarBody({ isDemo, menu }: { isDemo: boolean; menu?: ReactNode }) {
+function TestBarBody({ isDemo, menu, chatCount }: { isDemo: boolean; menu?: ReactNode; chatCount: number }) {
   const position = useJourneyPosition()
   const now = useNow()
   const { pathname } = useLocation()
@@ -135,8 +135,9 @@ function TestBarBody({ isDemo, menu }: { isDemo: boolean; menu?: ReactNode }) {
         <button type="button" className="testbar__arrow" aria-label={t('testbar.at.prev')} disabled={!edges.start} onClick={() => step(-1)}><ChevronLeft aria-hidden="true" /></button>
         <nav className="testbar__at" ref={track} aria-label={t('testbar.at.label')}>
           {AT_LINKS.map(({ to, Icon, label }) => (
-            <Link key={to} to={to} data-tour={tourMark(to)} className={isExplorerButton(to) ? 'testbar__at-link testbar__at-link--explorer' : 'testbar__at-link'} aria-label={t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined} onClick={reveal} onFocus={reveal}>
+            <Link key={to} to={to} data-tour={tourMark(to)} className={isExplorerButton(to) ? 'testbar__at-link testbar__at-link--explorer' : 'testbar__at-link'} aria-label={to === '/chat' && chatCount > 0 ? `${t(label)}. ${t('people.tabBadge', { count: chatCount })}` : t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined} onClick={reveal} onFocus={reveal}>
               <Icon aria-hidden="true" />
+              {to === '/chat' && chatCount > 0 && <span className="testbar__count" aria-hidden="true">{chatCount > 9 ? '9+' : chatCount}</span>}
             </Link>
           ))}
         </nav>

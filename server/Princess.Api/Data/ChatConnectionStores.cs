@@ -115,7 +115,7 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
               AND (@like IS NULL OR p.LastName = @like OR p.FirstName + N' ' + p.LastName = @like)
               AND (
                     {SharesBooking}
-                    OR (ISNULL(up.ChatFindable, 1) = 1 AND u.IsSupervised = 0)   // any guest who has not turned finding off, at every stage
+                    OR (ISNULL(up.ChatFindable, 1) = 1 AND u.IsSupervised = 0)   -- any guest who has not turned finding off, at every stage
                   )
               AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks bl WHERE (bl.UserId = u.Id AND bl.BlockedUserId = @userId) OR (bl.UserId = @userId AND bl.BlockedUserId = u.Id))
             ORDER BY p.FirstName, p.LastName, u.Id

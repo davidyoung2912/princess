@@ -8,6 +8,6 @@ export function ChatNeedsYou() {
   const count = useChatWaiting()
   if (count === 0) return null
   return (
-    <Banner kind="info" title={t('needs.title', { count })} action={<LinkButton to="/chat?mode=people" variant="secondary">{t('needs.open')}</LinkButton>} />
+    <Banner kind="info" title={t('needs.title', { count })} action={<LinkButton to="/chat/people?invitations=1" variant="secondary">{t('needs.open')}</LinkButton>} />
   )
 }

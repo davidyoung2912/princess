@@ -44,6 +44,8 @@ public static class ChatGroupRules
     /// <summary>The key a notice is logged and de-duplicated under: one per invitation.</summary>
     public static string NoticeKey(string kind, Guid inviteId) => $"chat:group:{kind}:{inviteId:N}";
 
+    public static (string Title, string Body) AnswerNotice(string who, string group, bool accepted) => accepted ? ($"{who} joined your group", $"{who} accepted your invitation to {group}.") : ("An invitation was declined", $"{who} did not join {group}.");
+
     public static (string Title, string Body) InviteNotice(string from, string group) => ($"{from} invited you to a group", $"Open Princess to join {group}.");
     public static (string Title, string Body) ApprovalNotice(string child) => ("A group invitation needs your approval", $"Open Princess to review it for {child}.");
 }

@@ -57,7 +57,6 @@ public interface IChatGroupStore
     /// <summary>The people who are in the group now, the creator first, then in the order they joined.</summary>
     Task<List<ChatGroupPersonRow>> ListActiveAsync(long groupId, CancellationToken ct);
     /// <summary>Names or releases the group's second admin.</summary>
-    Task SetAdminAsync(long groupId, long userId, bool on, CancellationToken ct);
     /// <summary>Makes the group announcement-only (only admins post) or open again.</summary>
     Task SetAnnouncementOnlyAsync(long groupId, bool on, CancellationToken ct);
     /// <summary>The invitations still waiting for the group.</summary>
@@ -72,6 +71,10 @@ public interface IChatGroupStore
     Task<List<ChatGroupInviteRow>> ListInvitesForAsync(long userId, CancellationToken ct);
     /// <summary>Closes a waiting invitation, only if it is still in one of <paramref name="from"/>. False when it was not.</summary>
     Task<bool> SetInviteStatusAsync(long id, string[] from, string to, DateTime now, CancellationToken ct);
+    /// <summary>How many invitations the person sent were accepted or declined and not yet seen by them.</summary>
+    Task<int> CountAnswersAsync(long inviterId, CancellationToken ct);
+    /// <summary>The inviter has seen the answers.</summary>
+    Task MarkAnswersSeenAsync(long inviterId, DateTime now, CancellationToken ct);
     /// <summary>
     /// Accepts a waiting invitation and puts the person in the group in one transaction, with a "joined" line. A person who was in before starts a fresh window (they never see what was said while they were away).
     /// Returns <c>null</c> when done, <c>answered</c> when it was no longer waiting, <c>full</c> when the group has no room.
@@ -139,12 +142,6 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
             """, new { groupId }, null, ct))).ToList();
     }
 
-    public async Task SetAdminAsync(long groupId, long userId, bool on, CancellationToken ct)
-    {
-        await using var c = await db.OpenAsync(ct);
-        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroupMembers SET IsAdmin = @on WHERE GroupId = @groupId AND UserId = @userId AND Status = 'active'", new { groupId, userId, on }, null, ct));
-    }
-
     public async Task SetAnnouncementOnlyAsync(long groupId, bool on, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
@@ -207,6 +204,18 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
               AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks bl WHERE bl.UserId = i.InviteeId AND bl.BlockedUserId = i.InviterId)
             ORDER BY i.CreatedAt DESC, i.Id DESC
             """, new { userId }, null, ct))).ToList();
+    }
+
+    public async Task<int> CountAnswersAsync(long inviterId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.ChatGroupInvites WHERE InviterId = @inviterId AND Status IN ('accepted','declined') AND InviterSeenAt IS NULL", new { inviterId }, null, ct));
+    }
+
+    public async Task MarkAnswersSeenAsync(long inviterId, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroupInvites SET InviterSeenAt = @now WHERE InviterId = @inviterId AND Status IN ('accepted','declined') AND InviterSeenAt IS NULL", new { inviterId, now }, null, ct));
     }
 
     public async Task<bool> SetInviteStatusAsync(long id, string[] from, string to, DateTime now, CancellationToken ct)

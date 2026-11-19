@@ -3,7 +3,8 @@ namespace Princess.Api.Contracts;
 // Guest-made groups (docs/chat-plan.md, phase 5). People are the public guid of their user (D2); another guest is only ever a first name and a last initial. Instants are epoch ms (D6).
 
 /// <summary>Make a group of people the caller is connected with. At least two, at most 24 (25 with the caller). <c>Name</c> is 1 to 40 characters.</summary>
-public sealed record ChatGroupCreateBody(string? Name, List<Guid>? PersonIds);
+/// <summary><c>PersonIds</c> are people the caller already chats with; <c>InvitePersonIds</c> are people found by searching (an exact last name or email), who are invited straight into the group.</summary>
+public sealed record ChatGroupCreateBody(string? Name, List<Guid>? PersonIds, List<Guid>? InvitePersonIds = null);
 
 /// <summary>Invite more people to a group. Only its creator may.</summary>
 public sealed record ChatGroupInviteBody(List<Guid>? PersonIds);
@@ -21,9 +22,6 @@ public sealed record ChatGroupWaitingDto(Guid InviteId, Guid PersonId, string Na
 
 /// <summary>A group as a member sees it. <c>Id</c> is the conversation id. <c>Waiting</c> is filled only for the creator. <c>Max</c> is the size limit.</summary>
 public sealed record ChatGroupDto(Guid Id, string Name, List<ChatGroupMemberDto> Members, List<ChatGroupWaitingDto> Waiting, bool IsCreator, int Max, bool AnnouncementOnly = false, bool IsAdmin = false);
-
-/// <summary>Name or release the group's second admin (the creator only).</summary>
-public sealed record ChatGroupAdminBody(bool On);
 
 /// <summary>Make the group announcement-only (only admins post) or open again.</summary>
 public sealed record ChatGroupAnnouncementBody(bool On);

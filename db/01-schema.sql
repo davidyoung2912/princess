@@ -3315,6 +3315,7 @@ CREATE TABLE dbo.ChatGroupInvites (
   Status VARCHAR(16) NOT NULL,                  -- awaitingGuardian, pending, accepted, declined, cancelled, expired
   GuardianUserId BIGINT NULL,                   -- the invitee's guardian while the status is awaitingGuardian: their yes is the acceptance
   RespondedAt DATETIME2(0) NULL,
+  InviterSeenAt DATETIME2(0) NULL,              -- when the inviter saw that the invitation was accepted or declined (until then it counts on their Chat badge)
   ExpiresAt DATETIME2(0) NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatGroupInvites_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatGroupInvites_UpdatedAt DEFAULT SYSUTCDATETIME(),

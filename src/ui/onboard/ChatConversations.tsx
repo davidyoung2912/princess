@@ -57,7 +57,7 @@ import { ActionError } from '../account/parts'
 import { ClearDraft } from '../ClearDraft'
 import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
-import { DeleteChat, GroupPage, NewGroup } from './ChatGroups'
+import { DeleteChat, GroupPage, NewGroupPage } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { GetPersonButton, RecapCard } from './ChatRelay'
@@ -95,6 +95,8 @@ export function ConversationPage() {
   const { id = '' } = useParams()
   const [params] = useSearchParams()
   const nav = useNavigate()
+  // `/chat/c/new` is the New Chat Group page.
+  if (id === 'new') return <div className="page"><NewGroupPage onCreated={() => { void nav('/chat') }} /></div>
   const open = conversationFromSearch(`c=${encodeURIComponent(id)}`)
   if (!open) return <Navigate to="/chat" replace />
   // `?manage=1` is a group's people-and-invites page.
@@ -140,7 +142,6 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   useChatLive(load)
   // The live connection says when something changed; reading on a timer is only the fallback while it is down.
   useVisibleInterval(() => { if (!isChatLive()) load() }, 30_000)
-  const [making, setMaking] = useState(false)
   // The chat the guest is about to delete: only a group they started.
   const [deleting, setDeleting] = useState<ChatConversation | null>(null)
   const nav = useNavigate()
@@ -150,7 +151,6 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
     <section aria-labelledby="conv-h">
       {deleting && <DeleteChat chat={deleting} onClose={() => setDeleting(null)} onDeleted={() => { setDeleting(null); load(); chatChanged() }} />}
       <h2 id="conv-h">{heading('conv.title')}</h2>
-      {making && <NewGroup onClose={() => setMaking(false)} onCreated={(g) => { setMaking(false); onOpen(g.id) }} />}
       {failed && rows && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {failed && !rows && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {!rows && !failed && <p role="status" className="muted">{t('account.loading')}</p>}
@@ -173,7 +173,7 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
         )
       })())}
       {rows && <AwayPeople rows={rows} onChange={(id, on) => setRows((cur) => (cur ? cur.map((c) => (c.id === id ? { ...c, notifyAway: on } : c)) : cur))} />}
-      <p><Button variant="secondary" onClick={() => setMaking(true)}>{t('cgroup.new')}</Button></p>
+      <p><Button variant="secondary" onClick={() => { void nav('/chat/c/new') }}>{t('cgroup.new')}</Button></p>
       <DoNotDisturb />
     </section>
   )

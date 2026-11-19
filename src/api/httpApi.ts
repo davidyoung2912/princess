@@ -288,11 +288,10 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     notifyAway: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/notify-away`, { on }),
   }
   const chatGroups: HttpGroups['chatGroups'] = {
-    create: (name, personIds) => send('post', '/me/chat/groups', { name, personIds }),
+    create: (name, personIds, invitePersonIds) => send('post', '/me/chat/groups', { name, personIds, invitePersonIds: invitePersonIds ?? [] }),
     get: (id) => get(`/me/chat/groups/${seg(id)}`),
     rename: (id, name) => send('put', `/me/chat/groups/${seg(id)}`, { name }),
     invite: (id, personIds) => send('post', `/me/chat/groups/${seg(id)}/invite`, { personIds }),
-    setAdmin: (id, personId, on) => send('put', `/me/chat/groups/${seg(id)}/admins/${seg(personId)}`, { on }),
     setAnnouncementOnly: (id, on) => send('put', `/me/chat/groups/${seg(id)}/announcement-only`, { on }),
     remove: async (id, personId) => { await send('post', `/me/chat/groups/${seg(id)}/remove`, { personId }) },
     delete: async (id) => { await send('delete', `/me/chat/groups/${seg(id)}`) },

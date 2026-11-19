@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// The creator can invite, remove and rename; anyone can leave. A member reads only what was said from the moment they joined (the window in <see cref="ChatConversationRules.CanRead"/>).
 /// A group has 25 people at most, counting the creator and the invitations still waiting. A supervised child cannot make a group. Declines are quiet: the creator is never told who said no.
 /// </summary>
-public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IUserClock clock, ChatNotifier notifier, IChatStore chat, IChatStanleyStore stanley, IOptions<StanleyOptions> options)
+public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IUserClock clock, ChatNotifier notifier, IChatStore chat, IChatStanleyStore stanley, IOptions<StanleyOptions> options, IChatConnectionStore people)
 {
     private static string Short(ChatGroupPersonRow p) => ChatConnectionRules.ShortName(p.FirstName, p.LastName);
 
@@ -21,11 +21,13 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var name = ChatGroupRules.CleanName(body?.Name) ?? throw ApiException.Invalid("name");
         if (ProfanityFilter.IsBlocked(name)) throw ApiException.Invalid("blocked");
         var ids = Distinct(actor, body?.PersonIds);
-        if (ids.Count < ChatGroupRules.MinInvitedAtStart) throw ApiException.Invalid("tooFew");
-        if (!ChatGroupRules.Fits(1, 0, ids.Count)) throw ApiException.Invalid("tooMany");
+        var found = Distinct(actor, body?.InvitePersonIds).Where(f => !ids.Contains(f)).ToList();
+        if (ids.Count + found.Count < ChatGroupRules.MinInvitedAtStart) throw ApiException.Invalid("tooFew");
+        if (!ChatGroupRules.Fits(1, 0, ids.Count + found.Count)) throw ApiException.Invalid("tooMany");
         var now = await clock.NowAsync(actor, ct);
         // Everyone is checked before anything is made, so a bad person does not leave a half-made group.
         var invitees = await ConnectedAsync(actor, ids, ct);
+        invitees.AddRange(await FoundAsync(actor, found, ct));
         var group = await store.CreateAsync(actor.Id, name, now, ct);
         await InviteAllAsync(actor, group, invitees, now, ct);
         return await ViewAsync(actor, group, ct);
@@ -71,29 +73,7 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         await TellAsync(group, [.. members.Where(m => m.UserId != person.UserId && m.UserId != actor.Id)], "members", ct);
     }
 
-    /// <summary>
-    /// Names or releases the group's second admin (creator only). An admin can pin, close a poll before its time, post in an announcement-only group and switch that on or off; inviting, removing and renaming stay with the creator.
-    /// 400 self (the creator is always an admin), child (a supervised child is never made one) or person; 403 creator; 409 adminsFull.
-    /// </summary>
-    public async Task<ChatGroupDto> SetAdminAsync(UserRecord actor, Guid id, Guid personId, ChatGroupAdminBody? body, CancellationToken ct)
-    {
-        var group = await CreatorGroupAsync(actor, id, ct);
-        var members = await store.ListActiveAsync(group.Id, ct);
-        var person = members.FirstOrDefault(m => m.PublicId == personId) ?? throw ApiException.Invalid("person");
-        if (person.UserId == group.CreatedByUserId) throw ApiException.Invalid("self");
-        var on = body?.On == true;
-        if (on && !person.IsAdmin)
-        {
-            if (!ChatPlanningRules.MayBeAdmin(person.IsSupervised)) throw ApiException.Invalid("child");
-            if (!ChatPlanningRules.CanAddAdmin(members.Count(m => m.IsAdmin && m.UserId != group.CreatedByUserId))) throw ApiException.Conflict("adminsFull");
-        }
-        await store.SetAdminAsync(group.Id, person.UserId, on, ct);
-        person.IsAdmin = on;
-        await TellAsync(group, members, "admins", ct);
-        return await ViewAsync(actor, group, ct);
-    }
-
-    /// <summary>Makes the group announcement-only (only admins post; votes, answers and reactions stay open) or opens it again. The creator or the second admin may. 403 admin.</summary>
+    /// <summary>Makes the group announcement-only (only admins post; votes, answers and reactions stay open) or opens it again. Only the creator (the group's only admin) may. 403 admin.</summary>
     public async Task<ChatGroupDto> SetAnnouncementOnlyAsync(UserRecord actor, Guid id, ChatGroupAnnouncementBody? body, CancellationToken ct)
     {
         var group = await MemberGroupAsync(actor, id, ct);
@@ -131,7 +111,9 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
     /// <summary>Invitations waiting for the caller, and for children they are guardian of.</summary>
     public async Task<List<ChatGroupInviteDto>> InvitesAsync(UserRecord actor, CancellationToken ct)
     {
-        await store.ExpireAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
+        var now = await clock.NowAsync(actor, ct);
+        await store.ExpireAsync(actor.Id, now, ct);
+        await store.MarkAnswersSeenAsync(actor.Id, now, ct);   // opening the chat page is seeing who answered
         return [.. (await store.ListInvitesForAsync(actor.Id, ct)).Select(r => View(actor.Id, r))];
     }
 
@@ -156,12 +138,14 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         if (!body.Accept)
         {
             if (!await store.SetInviteStatusAsync(row.Id, [row.Status], ChatGroupRules.Declined, now, ct)) throw ApiException.Conflict("answered");
-            return;   // quiet: the creator is not told
+            await notifier.GroupAnsweredAsync(row.InviterId, row.PublicId, ChatConnectionRules.ShortName(row.InviteeFirst, row.InviteeLast), row.GroupName, false, ct);
+            return;
         }
         var who = ChatConnectionRules.ShortName(row.InviteeFirst, row.InviteeLast);
         var result = await store.AcceptInviteAsync(row.Id, ChatGroupRules.JoinedLine(who), ChatGroupRules.MaxMembers, now, ct);
         if (result == "full") throw ApiException.Conflict("full");
         if (result is not null) throw ApiException.Conflict("answered");
+        await notifier.GroupAnsweredAsync(row.InviterId, row.PublicId, who, row.GroupName, true, ct);
         await WelcomeAsync(row.GroupId, row.GroupName, now, ct);
     }
 
@@ -206,6 +190,21 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
             var user = await users.FindByPublicIdAsync(id, ct) ?? throw ApiException.Invalid("notConnected");
             if (!await store.AreConnectedAsync(actor.Id, user.Id, ct)) throw ApiException.Invalid("notConnected");
             if (await store.HasBlockedAsync(user.Id, actor.Id, ct)) continue;   // looks like any other invitation to the sender
+            if (user.IsSupervised && user.BookerUserId is null) throw ApiException.Invalid("noGuardian");
+            list.Add(user);
+        }
+        return list;
+    }
+
+    /// <summary>People the caller found by searching: each must be someone the search could have shown (findable, not blocked either way). Anyone else looks like nobody (400 person).</summary>
+    private async Task<List<UserRecord>> FoundAsync(UserRecord actor, List<Guid> ids, CancellationToken ct)
+    {
+        var list = new List<UserRecord>();
+        foreach (var id in ids)
+        {
+            var row = (await people.FindPeopleAsync(actor.Id, null, id, 1, ct)).FirstOrDefault();
+            var user = row is null ? null : await users.FindByIdAsync(row.UserId, ct);
+            if (user is null) throw ApiException.Invalid("person");
             if (user.IsSupervised && user.BookerUserId is null) throw ApiException.Invalid("noGuardian");
             list.Add(user);
         }

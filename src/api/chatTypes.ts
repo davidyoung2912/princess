@@ -159,7 +159,7 @@ export interface ChatConversation {
   mentionsOnly?: boolean
   /** Phase 4, a made group: only admins post (votes, answers and reactions stay open). Absent when not. */
   announcementOnly?: boolean
-  /** You are an admin of this made group (its creator, or the one other person the creator named). Absent when not. */
+  /** You are the admin of this made group (its creator). Absent when not. */
   admin?: boolean
   /** The permanent Stanley chat only: who he speaks for now, and the name shown under his. */
   voice?: StanleyVoice
@@ -516,15 +516,14 @@ export interface ChatGroupsApi {
    * Makes a group from 2 to 24 connected people and invites each. Rejects `invalid` (`name`, `blocked`, `tooFew`, `tooMany`, `notConnected`, `noGuardian`)
    * or `forbidden` (`supervised`: a child cannot make a group).
    */
-  create(name: string, personIds: string[]): Promise<ChatGroup>
+  /** `personIds` are people already chatted with; `invitePersonIds` are people found by searching, invited straight into the group. */
+  create(name: string, personIds: string[], invitePersonIds?: string[]): Promise<ChatGroup>
   /** Rejects `notFound` unless you are an active member. */
   get(id: string): Promise<ChatGroup>
   /** Creator only. Rejects `invalid` (`name`, `blocked`) or `forbidden` (`creator`). */
   rename(id: string, name: string): Promise<ChatGroup>
   /** Creator only. Rejects `invalid` (`person`, `notConnected`, `noGuardian`), `forbidden` (`creator`) or `conflict` (`full`). */
   invite(id: string, personIds: string[]): Promise<ChatGroup>
-  /** Creator only: names or releases the second admin (one beside the creator; a child is never one). Rejects `invalid` (`self`, `child`, `person`), `forbidden` (`creator`) or `conflict` (`adminsFull`). */
-  setAdmin(id: string, personId: string, on: boolean): Promise<ChatGroup>
   /** An admin: only admins post, or everyone again. Rejects `forbidden` (`admin`). */
   setAnnouncementOnly(id: string, on: boolean): Promise<ChatGroup>
   /** Creator only; never themself. */
