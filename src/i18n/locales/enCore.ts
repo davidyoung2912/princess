@@ -10781,7 +10781,7 @@ export const enCore = {
   'appWelcome.h.settings': 'Make it comfortable',
   'appWelcome.settings.intro': 'Choose what is easiest to read and look at. Each choice takes effect at once, and you can change any of them later in Settings.',
   'appWelcome.go': 'Continue',
-  'stanleySays.title': 'Stanley says',
+  'stanleySays.title': 'Stanley Says',
   'stanleySays.label': 'Stanley’s joke of the day',
   'stanleySays.dismiss': 'Dismiss',
   'sampleTrip.title': 'Choose a Sample Trip',

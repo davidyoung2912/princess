@@ -1,7 +1,7 @@
 /**
  * What a guest has been shown and dismissed, kept on their account so a tip dismissed on one device is not shown again on another:
  * `tips` is how many of each page's tips have been dismissed (page id to count), `tour` the first-visit tour steps dismissed, and `tourOn` whether the guest
- * has asked for the guided tour (it is off until they do).
+ * wants the guided tour (on unless they turn it off).
  * Plain data and plain functions, so it can be tested without a browser; `hints.ts` holds it in memory and syncs it.
  */
 export interface Hints {
@@ -10,7 +10,7 @@ export interface Hints {
   tourOn: boolean
 }
 
-export const EMPTY_HINTS: Hints = { tips: {}, tour: [], tourOn: false }
+export const EMPTY_HINTS: Hints = { tips: {}, tour: [], tourOn: true }
 
 /** The most pages and tour steps kept, and the longest id: the same limits the server checks. */
 export const HINTS_MAX_PAGES = 400, HINTS_MAX_STEPS = 120, HINTS_MAX_ID = 40
@@ -27,8 +27,8 @@ export function normalizeHints(raw: unknown): Hints {
     }
   }
   const tour = Array.isArray(src.tour) ? [...new Set(src.tour.filter((s): s is string => typeof s === 'string' && validId(s)))].slice(0, HINTS_MAX_STEPS) : []
-  const tourOn = src.tourOn === true
-  return Object.keys(tips).length === 0 && tour.length === 0 && !tourOn ? EMPTY_HINTS : { tips, tour, tourOn }
+  const tourOn = src.tourOn !== false
+  return Object.keys(tips).length === 0 && tour.length === 0 && tourOn ? EMPTY_HINTS : { tips, tour, tourOn }
 }
 
 /** Two devices both dismissed things: keep every dismissal (the larger count for a page, every tour step). */
@@ -37,7 +37,7 @@ export function mergeHints(remote: unknown, local: unknown): Hints {
   const b = normalizeHints(local)
   const tips: Record<string, number> = { ...a.tips }
   for (const [id, n] of Object.entries(b.tips)) tips[id] = Math.max(tips[id] ?? 0, n)
-  return normalizeHints({ tips, tour: [...a.tour, ...b.tour], tourOn: a.tourOn || b.tourOn })
+  return normalizeHints({ tips, tour: [...a.tour, ...b.tour], tourOn: a.tourOn && b.tourOn })
 }
 
 /** Dismisses a page's current tip (`total` is how many tips the page has, so the count never passes it). The same object comes back when nothing changes. */
