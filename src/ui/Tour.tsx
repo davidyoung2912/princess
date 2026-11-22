@@ -49,6 +49,14 @@ export function Tour({ paused = false }: { paused?: boolean }) {
 
 function TourCard({ step, count, last }: { step: TourStep; count: string | null; last: boolean }) {
   const titleId = useId()
+  // The part of the screen the step is about flashes while the card is up, and is brought into view if it is off screen.
+  useEffect(() => {
+    const els = targetsOf(step.target)
+    const r = els[0]?.getBoundingClientRect()
+    if (r && (r.top < 0 || r.bottom > window.innerHeight * 0.6)) els[0]?.scrollIntoView({ block: 'center', behavior: 'auto' })
+    els.forEach((el) => el.classList.add('tour-flash'))
+    return () => els.forEach((el) => el.classList.remove('tour-flash'))
+  }, [step.target])
   // A note that is not modal: the page behind stays usable. A step is announced politely when it appears, and the guest can still use the keyboard to reach Got It! after the page.
   return (
     <aside className="tour" data-testid="tour" role="region" aria-labelledby={titleId}>

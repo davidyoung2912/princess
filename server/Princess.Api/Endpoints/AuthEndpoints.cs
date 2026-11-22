@@ -82,6 +82,14 @@ public static class AuthEndpoints
             })
             .WithSummary("Sign out everywhere: ends every session and access token this person has, on every device, this one included. 403 on a view-as token.");
 
+        auth.MapPost("/credentials", async (ChangeCredentialsRequest body, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
+            {
+                if (me.ActorPublicId is not null) throw ApiException.Forbidden();
+                await svc.ChangeCredentialsAsync(await me.LoadAsync(ct), body, ct);
+                return Results.NoContent();
+            })
+            .WithSummary("Change the username and/or password (the current password is required). 400 badPassword when it is wrong, 409 usernameTaken. Ends every session on every device, so the person signs in again. 403 on a view-as token.");
+
         auth.MapPost("/sessions/list", async (SessionListRequest body, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
             {
                 if (me.ActorPublicId is not null) throw ApiException.Forbidden();

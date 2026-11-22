@@ -134,8 +134,9 @@ function TestBarBody({ isDemo, menu, chatCount }: { isDemo: boolean; menu?: Reac
             {status.where.from && status.where.to && <span className="testbar__hours"> {t('status.hours', { from: status.where.from, to: status.where.to })}</span>}
           </span>
         )}
+        {/* The yellow countdown link is hidden for now (the `hidden` attribute); remove it to bring it back. */}
         {status.count && (
-          <Link to="/itinerary" className="testbar__count">
+          <Link to="/itinerary" className="testbar__count" hidden>
             {status.count.kind === 'to' && status.count.days === 0 ? t('status.today') : status.count.kind === 'since' && status.count.days === 0 ? t('status.backToday') : t(status.count.kind === 'to' ? 'status.to' : 'status.since', { count: status.count.days })}
           </Link>
         )}

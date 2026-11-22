@@ -78,6 +78,13 @@ public sealed class InMemorySignInStore(InMemoryUserStore users, InMemoryRefresh
         return Task.FromResult<long?>(user.Id);
     }
 
+    public Task<bool> SetUsernameAsync(long userId, string username, DateTime now, CancellationToken ct)
+    {
+        if (users.Users.Any(x => x.Id != userId && string.Equals(x.Username, username, StringComparison.OrdinalIgnoreCase))) return Task.FromResult(false);
+        users.Users.Single(x => x.Id == userId).Username = username;
+        return Task.FromResult(true);
+    }
+
     public Task SetPasswordAsync(long userId, string passwordHash, DateTime now, CancellationToken ct)
     {
         var u = users.Users.Single(x => x.Id == userId);

@@ -16,6 +16,8 @@ public interface IAuthService
     Task LogoutAsync(UserRecord user, LogoutRequest request, CancellationToken ct);
     /// <summary>Ends every session this person has, on every device, this one included.</summary>
     Task LogoutEverywhereAsync(UserRecord user, CancellationToken ct);
+    /// <summary>Changes the username and/or password after checking the current password, then ends every session on every device.</summary>
+    Task ChangeCredentialsAsync(UserRecord user, ChangeCredentialsRequest request, CancellationToken ct);
     /// <summary>The devices this person is signed in on, the one holding <paramref name="currentRefreshToken"/> marked.</summary>
     Task<IReadOnlyList<DeviceSessionDto>> ListSessionsAsync(UserRecord user, string? currentRefreshToken, CancellationToken ct);
     /// <summary>Signs one device out. Not found for a device that is not this person's or is already signed out.</summary>
@@ -120,6 +122,32 @@ public sealed class AuthService(
         if (record is null || record.UserId != user.Id) return;
         await refreshTokens.RevokeFamilyAsync(record.UserId, record.FamilyId, clock.UtcNow, ct);
         await Audit("auth.logout", AuditOutcome.Success, user, null, ct);
+    }
+
+    public async Task ChangeCredentialsAsync(UserRecord user, ChangeCredentialsRequest request, CancellationToken ct)
+    {
+        var typed = request.CurrentPassword;
+        if (string.IsNullOrEmpty(typed) || typed.Length > 200 || !hasher.Verify(typed, user.PasswordHash ?? DummyHash))
+        {
+            await Audit("auth.credentials.change", AuditOutcome.Failure, user, new { reason = "wrongCurrentPassword" }, ct);
+            throw ApiException.Invalid("badPassword");
+        }
+        string? newName = null;
+        if (!string.IsNullOrWhiteSpace(request.NewUsername))
+        {
+            newName = UsernameRules.Clean(request.NewUsername) ?? throw ApiException.Invalid("username");
+            if (newName == user.Username) newName = null;
+        }
+        var newPassword = string.IsNullOrEmpty(request.NewPassword) ? null : request.NewPassword;
+        if (newPassword is not null && !ValidPassword(newPassword)) throw ApiException.Invalid("password");
+        if (newName is null && newPassword is null) throw ApiException.Invalid();
+
+        var now = clock.UtcNow;
+        if (newName is not null && !await signIn.SetUsernameAsync(user.Id, newName, now, ct)) throw ApiException.Conflict("usernameTaken");
+        // Either change signs the person out everywhere; a new password does it as part of saving it.
+        if (newPassword is not null) await signIn.SetPasswordAsync(user.Id, hasher.Hash(newPassword), now, ct);
+        else await signIn.EndAllSessionsAsync(user.Id, now, ct);
+        await Audit("auth.credentials.change", AuditOutcome.Success, user, new { username = newName is not null, password = newPassword is not null, sessionsEnded = true }, ct);
     }
 
     public async Task LogoutEverywhereAsync(UserRecord user, CancellationToken ct)

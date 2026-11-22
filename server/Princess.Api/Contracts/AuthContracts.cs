@@ -42,6 +42,9 @@ public sealed record RegisterRequest(string? Email, string? Password, string? Le
 /// <summary>Asks for a one-time code by email: for <c>/auth/forgot</c> a password reset, for <c>/auth/magic</c> a sign-in.</summary>
 public sealed record CodeRequest(string? Username);
 
+/// <summary>A signed-in person changing their username and/or password. The current password is always required; every session ends afterwards.</summary>
+public sealed record ChangeCredentialsRequest(string? CurrentPassword, string? NewUsername, string? NewPassword);
+
 public sealed record ResetRequest(string? Username, string? Code, string? NewPassword);
 
 public sealed record MagicRedeemRequest(string? Username, string? Code);

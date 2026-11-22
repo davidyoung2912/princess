@@ -49,6 +49,18 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
         throw new InvalidOperationException("Could not find a free account number.");
     }
 
+    public async Task<bool> SetUsernameAsync(long userId, string username, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        var taken = await c.ExecuteScalarAsync<int>(new CommandDefinition("SELECT COUNT(1) FROM dbo.Users WHERE Username = @username AND Id <> @userId", new { username, userId }, tx, cancellationToken: ct));
+        if (taken > 0) return false;
+        await c.ExecuteAsync(new CommandDefinition("UPDATE dbo.Users SET Username = @username, UpdatedAt = @now WHERE Id = @userId", new { username, userId, now }, tx, cancellationToken: ct));
+        await tx.CommitAsync(ct);
+        users.Invalidate();
+        return true;
+    }
+
     public async Task SetPasswordAsync(long userId, string passwordHash, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

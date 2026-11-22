@@ -467,3 +467,11 @@ main.signin { margin-inline: auto; }
 .says__text { margin: 0; }
 .says__dismiss { white-space: nowrap; }
 @media (max-width: 30rem) { .says { grid-template-columns: auto 1fr; } .says__dismiss { grid-column: 1 / -1; justify-self: start; } }
+
+.contact-status { margin-block: var(--space-4); }
+.contact-status > p { margin-block: 0 var(--space-3); }
+
+/* The part of the screen a tour step is about flashes; with reduced motion it just keeps a steady outline. */
+.tour-flash { outline: 3px solid var(--primary-bright, var(--primary)); outline-offset: 3px; border-radius: var(--radius-card); animation: tour-flash 1.1s ease-in-out infinite; }
+@keyframes tour-flash { 0%, 100% { outline-color: var(--primary-bright, var(--primary)); box-shadow: 0 0 0 0 transparent; } 50% { outline-color: transparent; box-shadow: 0 0 14px 4px color-mix(in srgb, var(--primary-bright, var(--primary)) 55%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .tour-flash { animation: none; } }

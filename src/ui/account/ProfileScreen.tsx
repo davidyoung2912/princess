@@ -18,6 +18,8 @@ import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { ErrorSummary, Field, TextArea, FieldLabel } from '../Field'
 import { ActionError, Load, SupervisedNote } from './parts'
+import { CredentialsCard } from './CredentialsCard'
+import { ContactNotices, VerifyStep, type ContactKind } from '../ContactSteps'
 import { partyPeople, personFirstName } from '../../account/context'
 
 const toggle = <T,>(list: readonly T[], item: T): T[] => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item])
@@ -30,6 +32,10 @@ export function ProfileScreen() {
   const party = useMine(() => api.account.party())
   const view = useMine(() => (id ? api.account.profile(id) : Promise.reject(new Error('unknown'))), [id])
   const now = useNow()
+  const [verifying, setVerifying] = useState<ContactKind | null>(null)
+  const [round, setRound] = useState(0)
+  // Confirming is the same page as at the welcome step, in place of this one until it is done or skipped.
+  if (verifying) return <VerifyStep kind={verifying} onDone={() => { setVerifying(null); setRound((n) => n + 1) }} />
 
   if (id === null) {
     return (
@@ -42,6 +48,7 @@ export function ProfileScreen() {
   const person = partyPeople(me?.id ?? '').find((x) => x.id === id)
   return (
     <div className="page">
+      {isSelf && <ContactNotices key={round} onVerify={setVerifying} />}
       {!isSelf && <h2>{th('profile.titleFor', { name: person?.name ?? '' })}</h2>}
       {!isSelf && <p><Link to="/me/profile">{t('profile.backToMine')}</Link></p>}
       <Load state={view}>
@@ -52,6 +59,8 @@ export function ProfileScreen() {
           </>
         )}
       </Load>
+
+      {isSelf && <CredentialsCard />}
 
       <Load state={party}>
         {(list) => list.length > 1 && (

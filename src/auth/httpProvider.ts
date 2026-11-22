@@ -85,7 +85,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
     if (!isApiError(e)) return e
     if (e.code === 'offline') return new AuthError('offline')
     if (e.retryable) return new AuthError('unavailable')
-    const named: AuthError['code'][] = ['usernameTaken', 'tooYoung', 'badCode', 'possibleDuplicate']
+    const named: AuthError['code'][] = ['usernameTaken', 'tooYoung', 'badCode', 'badPassword', 'possibleDuplicate']
     return new AuthError(named.find((n) => n === e.message) ?? fallback)
   }
 
@@ -122,6 +122,13 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       },
       async resolveReview(id, decision) {
         try { await raw.post(`/admin/reviews/${encodeURIComponent(id)}/resolve`, { decision }) } catch (e) { throw failure(e) }
+      },
+      async changeCredentials(input) {
+        try { await raw.post('/auth/credentials', input) } catch (e) { throw failure(e) }
+        // The server has ended every session, this one included.
+        clear()
+        notify()
+        opts.channel?.post({ type: 'session' })
       },
       async signOutEverywhere() {
         try { await raw.post('/auth/logout-all', {}) } catch (e) { throw failure(e) }

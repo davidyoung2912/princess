@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { t, th } from '../i18n'
 import { AvatarPicker } from './AvatarPicker'
 import { Card } from './Card'
-import { ContactSettings } from './ContactSteps'
+import { ContactSettings, VerifyStep, type ContactKind } from './ContactSteps'
 import { DataSettings } from './DataSettings'
 import { DiagnosticsSettings } from './DiagnosticsSettings'
 import { DisplaySettings } from './DisplaySettings'
@@ -11,6 +12,10 @@ import { StanleySettings } from './StanleySettings'
 import { TipsSettings } from './TipsSettings'
 
 export function SettingsScreen() {
+  const [verifying, setVerifying] = useState<ContactKind | null>(null)
+  const [round, setRound] = useState(0)
+  // Confirming is the same page as at the welcome step, in place of the settings until it is done or skipped.
+  if (verifying) return <VerifyStep kind={verifying} onDone={() => { setVerifying(null); setRound((n) => n + 1) }} />
   return (
     <div className="page">
       <DisplaySettings />
@@ -19,7 +24,7 @@ export function SettingsScreen() {
         <p>{t('avatar.intro')}</p>
         <AvatarPicker />
       </Card>
-      <ContactSettings />
+      <ContactSettings key={round} onVerify={setVerifying} />
       <StanleySettings />
       <StanleyAuthority source="settings" full />
       <TipsSettings />

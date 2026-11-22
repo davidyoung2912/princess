@@ -384,7 +384,7 @@ Run the solo plan's 14.3, and also open **all four boarding passes**, the **Emer
 
 ## 15. Supervised child accounts (seeded Harper family)
 
-A new family cannot create supervised accounts, so use the seed (demo password `Sailaway!2027`, per `server/README.md`). The seeded booker is **Daniel Harper** (`daniel@demo.princess.example`) with children **Ethan** and **Maya**.
+A new family cannot create supervised accounts, so use the seed (each password is the username, per `server/README.md`). The seeded booker is **Daniel Harper** (`daniel@demo.princess.example`) with children **Ethan** and **Maya**.
 
 1. Sign in as Daniel. Note the stage (the seed sets his clock).
 2. **View as a child.** Use the app's "view as" control for Maya, if the screens expose it, or the API (`POST /me/view-as/<Maya's id>`). **Expect:** a banner saying you are viewing as Maya, a 15-minute limit, and her **supervised restrictions** applied.

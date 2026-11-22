@@ -34,7 +34,7 @@ export type Credentials =
   /** The one-time code sent after `requestCode('magic', username)`. */
   | { method: 'code'; username: string; code: string; remember?: boolean }
 
-export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'usernameTaken' | 'tooYoung' | 'badCode' | 'possibleDuplicate' | 'invalid'
+export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'usernameTaken' | 'tooYoung' | 'badCode' | 'badPassword' | 'possibleDuplicate' | 'invalid'
 
 /** What a new account needs. `dob` is "YYYY-MM-DD"; the account holder must be an adult. */
 export interface Registration { username: string; /** Optional: may be empty, and may be shared with another account. */ email: string; password: string; /** One required legal name, as on a passport. */ legalName: string; dob: string; /** The phone number, as typed. */ phone: string; /** Sent after a `possibleDuplicate` answer, when the person says it is not them. */ confirmedDifferent?: boolean }
@@ -50,6 +50,8 @@ export interface AccountActions {
   resetPassword(username: string, code: string, newPassword: string): Promise<void>
   /** Ends every session this person has on every device (SEC-07), then clears this one. Fails, and keeps this device signed in, when the server cannot be reached. */
   signOutEverywhere(): Promise<void>
+  /** Changes the username and/or password (the current password is needed). Every session ends, on every device and this one, so the person signs in again. */
+  changeCredentials(input: { currentPassword: string; newUsername?: string; newPassword?: string }): Promise<void>
   /** The devices this person is signed in on, this one marked `current` (IDN-01). */
   listDevices(): Promise<DeviceSession[]>
   /** Signs one other device out. Fails, changing nothing, when the server cannot be reached. */

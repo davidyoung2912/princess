@@ -624,8 +624,8 @@ CREATE TABLE dbo.Profiles (
 );
 END
 IF COL_LENGTH(N'dbo.Profiles', N'KeepOut') IS NULL ALTER TABLE dbo.Profiles ADD KeepOut VARCHAR(60) NOT NULL CONSTRAINT DF_Profiles_KeepOut DEFAULT '';
--- Dish heads-ups (alcohol, raw, spicy) the guest wants flagged on menus, comma separated.
-IF COL_LENGTH(N'dbo.Profiles', N'AvoidFlags') IS NULL ALTER TABLE dbo.Profiles ADD AvoidFlags VARCHAR(30) NOT NULL CONSTRAINT DF_Profiles_AvoidFlags DEFAULT '';
+-- Dish heads-ups (alcohol, raw, spicy) the guest wants flagged on menus, comma separated; all three are on for a new account.
+IF COL_LENGTH(N'dbo.Profiles', N'AvoidFlags') IS NULL ALTER TABLE dbo.Profiles ADD AvoidFlags VARCHAR(30) NOT NULL CONSTRAINT DF_Profiles_AvoidFlags DEFAULT 'alcohol,raw,spicy';
 
 IF OBJECT_ID(N'dbo.ProfileTags', N'U') IS NULL
 BEGIN

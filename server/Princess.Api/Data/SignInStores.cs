@@ -40,6 +40,8 @@ public interface ISignInStore
     Task<bool> ClearReviewAsync(Guid publicId, DateTime now, CancellationToken ct);
     /// <summary>Sets a new password, clears any lock and revokes every refresh token and every access token issued before now.</summary>
     Task SetPasswordAsync(long userId, string passwordHash, DateTime now, CancellationToken ct);
+    /// <summary>Renames the account. False, changing nothing, when another account already has the username.</summary>
+    Task<bool> SetUsernameAsync(long userId, string username, DateTime now, CancellationToken ct);
     /// <summary>Revokes every refresh token and every access token issued before now, leaving the password as it is.</summary>
     Task EndAllSessionsAsync(long userId, DateTime now, CancellationToken ct);
     /// <summary>Spends any open code for this purpose, then stores the new one.</summary>

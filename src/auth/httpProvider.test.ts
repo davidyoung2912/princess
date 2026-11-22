@@ -131,6 +131,19 @@ describe('createHttpAuthProvider', () => {
     expect(down.auth.current()).not.toBeNull()
   })
 
+  it('changes the username and password, signs this device out, and stays signed in when the password is wrong', async () => {
+    const ok = make((c) => (c.url.endsWith('/credentials') ? reply(204) : reply(200, session(1))))
+    await ok.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
+    await ok.auth.account!.changeCredentials({ currentPassword: 'b', newUsername: 'newname1', newPassword: 'a-new-password' })
+    expect(ok.s.calls.at(-1)).toMatchObject({ url: '/api/v1/auth/credentials', method: 'POST', auth: 'Bearer a1' })
+    expect(ok.auth.current()).toBeNull()
+    expect(ok.storage.m.has(REFRESH_KEY)).toBe(false)
+    const wrong = make((c) => (c.url.endsWith('/credentials') ? reply(400, { title: 'badPassword' }) : reply(200, session(1))))
+    await wrong.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
+    await expect(wrong.auth.account!.changeCredentials({ currentPassword: 'x', newPassword: 'a-new-password' })).rejects.toMatchObject({ code: 'badPassword' })
+    expect(wrong.auth.current()).not.toBeNull()
+  })
+
   it('lists devices with this tab\'s refresh token and signs one out by id', async () => {
     const devices = [{ id: '7', device: 'Safari on iPhone', signedInAt: 1, lastActiveAt: 2, current: true }, { id: '9', device: 'Edge on Windows', signedInAt: 1, lastActiveAt: 1, current: false }]
     const a = make((c) => (c.url.endsWith('/sessions/list') ? reply(200, devices) : c.method === 'DELETE' ? reply(204) : reply(200, session(1))))

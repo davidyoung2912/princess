@@ -22,9 +22,10 @@ public class PasswordHasherTests
     [Fact]
     public void VerifiesTheHashTheTypeScriptSeedGeneratorWrote()
     {
-        // gerald, from db/seed/personas/01-users.sql (scripts/persona-seed.ts hashPassword).
-        const string seeded = "pbkdf2$600000$g48+sA3WWTtOwPb66gYJhw==$+qYcI9HWzdquaejgoGWkk0Pjau8VpYl33YbeCcRAC3KbZwoSDb0oDRbbE0X2ckVrZiQ89UA6jyyE6PgusYy1hQ==";
-        Assert.True(_hasher.Verify("Sailaway!2027", seeded));
+        // gerald, from db/seed/personas/01-users.sql (scripts/persona-seed.ts hashPassword): a seeded account's password is its username.
+        const string seeded = "pbkdf2$600000$g48+sA3WWTtOwPb66gYJhw==$Fo+MDDU1YsZzOBvE1iR8uaxIR0yzl3vL1jvzJ7GHK770pMQ/GpTdvAhmWzix4XyejOsoP7r9AHlO7bX3l368Fw==";
+        Assert.True(_hasher.Verify("gerald", seeded));
+        Assert.False(_hasher.Verify("Sailaway!2027", seeded));
         Assert.False(_hasher.Verify("wrong", seeded));
     }
 

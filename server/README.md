@@ -140,7 +140,7 @@ RFC 7807 problem details. `type` is one of the `src/api/errors.ts` codes (`inval
 
 ## Smoke calls (run against your database)
 
-Seeded demo password is `Sailaway!2027`. In bash:
+Every seeded account's password is its username (`gerald` signs in with `gerald`). In bash:
 
 ```
 B=http://localhost:5182
@@ -148,7 +148,7 @@ curl -s $B/health                      # {"status":"ok"}
 curl -s $B/health/db                   # {"status":"ok"} once the connection string works
 
 curl -s -X POST $B/api/v1/auth/login -H 'content-type: application/json' \
-  -d '{"identifier":"gerald@demo.princess.example","password":"Sailaway!2027"}'
+  -d '{"identifier":"gerald","password":"gerald"}'
 # Copy accessToken and refreshToken from the reply:
 curl -s $B/api/v1/me -H "authorization: Bearer $ACCESS"                      # Gerald Whitfield, tier platinum
 
@@ -169,7 +169,7 @@ Account, trips, payments, documents, notifications, support, help, privacy, budg
 
 ## Smoke calls for Phase 6 (run against your database)
 
-Sign in as each persona (password `Sailaway!2027`) and keep the token: `ACCESS=$(curl -s -X POST $B/api/v1/auth/login -H 'content-type: application/json' -d '{"identifier":"maria@demo.princess.example","password":"Sailaway!2027"}' | jq -r .accessToken)`.
+Sign in as each persona (the password is the username) and keep the token: `ACCESS=$(curl -s -X POST $B/api/v1/auth/login -H 'content-type: application/json' -d '{"identifier":"maria@demo.princess.example","password":"Sailaway!2027"}' | jq -r .accessToken)`.
 
 ```
 H="authorization: Bearer $ACCESS"

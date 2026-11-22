@@ -717,6 +717,14 @@ export async function signOutEverywhereSaving(): Promise<void> {
   clearOwnCopies()
 }
 
+/** Changes the username and/or password, then this device is signed out like every other (anything still waiting to reach the account is sent first). */
+export async function changeCredentialsSaving(input: { currentPassword: string; newUsername?: string; newPassword?: string }): Promise<void> {
+  await Promise.all([sync.flush().catch(() => {}), portRows.flush().catch(() => {})])
+  if (!auth.account) throw new Error('unsupported')
+  await auth.account.changeCredentials(input)
+  clearOwnCopies()
+}
+
 export async function signOutSaving(): Promise<void> {
   await Promise.all([sync.flush().catch(() => {}), portRows.flush().catch(() => {})])
   await auth.signOut()
