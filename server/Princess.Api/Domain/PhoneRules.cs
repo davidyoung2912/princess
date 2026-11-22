@@ -11,11 +11,11 @@ public sealed record PhoneCheckDoc(string? Verified, string? Phone, string? Hash
 /// <summary>
 /// Checking that a phone number is the guest's before texts go to it. A six-digit code is texted to the number on the profile; typing it back confirms that exact
 /// number. Changing the number on the profile makes it unconfirmed again, so a typo or someone else's number never gets a notice. The code is kept only as an HMAC
-/// under a key derived from the token signing key, lasts 10 minutes, allows 5 wrong tries and can be asked for again after a minute. Pure: no clock, no store.
+/// under a key derived from the token signing key, lasts 15 minutes, allows 5 wrong tries and can be asked for again after a minute. Pure: no clock, no store.
 /// </summary>
 public static class PhoneRules
 {
-    public const int CodeMinutes = 10, MaxAttempts = 5, ResendSeconds = 60;
+    public const int CodeMinutes = 15, MaxAttempts = 5, ResendSeconds = 60;
     public const string StateKey = "phoneCheck";
 
     /// <summary>The number as digits with a leading plus kept, so spacing and dashes do not matter; empty when there is nothing usable.</summary>

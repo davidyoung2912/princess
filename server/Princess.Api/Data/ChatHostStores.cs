@@ -201,7 +201,7 @@ public sealed class DapperChatHostStore(IDbConnectionFactory db) : IChatHostStor
     public async Task<Dictionary<long, (string First, string Last)>> NamesAsync(IReadOnlyCollection<long> userIds, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        var rows = await c.QueryAsync<(long UserId, string FirstName, string LastName)>(Sql.Cmd("SELECT UserId, FirstName, LastName FROM dbo.Profiles WHERE UserId IN @userIds", new { userIds }, null, ct));
+        var rows = await c.QueryAsync<(long UserId, string FirstName, string LastName)>(Sql.Cmd("SELECT Id AS UserId, ChatName AS FirstName, N'' AS LastName FROM dbo.Users WHERE Id IN @userIds", new { userIds }, null, ct));
         return rows.ToDictionary(r => r.UserId, r => (r.FirstName, r.LastName));
     }
 

@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { t, th } from '../i18n'
 import { AvatarPicker } from './AvatarPicker'
 import { Card } from './Card'
+import { ContactSettings } from './ContactSteps'
 import { DataSettings } from './DataSettings'
 import { DiagnosticsSettings } from './DiagnosticsSettings'
 import { DisplaySettings } from './DisplaySettings'
@@ -18,6 +19,7 @@ export function SettingsScreen() {
         <p>{t('avatar.intro')}</p>
         <AvatarPicker />
       </Card>
+      <ContactSettings />
       <StanleySettings />
       <StanleyAuthority source="settings" full />
       <TipsSettings />

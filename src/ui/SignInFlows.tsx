@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { AuthError, type AccountActions, type CodePurpose } from '../auth/provider'
-import { cleanCode, isCode, isEmail, signupProblems, type SignupProblem } from '../domain/signup'
+import { cleanCode, isCode, isUsername, signupProblems, type SignupProblem } from '../domain/signup'
 import { t, th, headingCase, type StringKey } from '../i18n'
 import { auth } from '../runtime'
 import { PhoneField } from './PhoneField'
@@ -16,7 +16,7 @@ const failText = (err: unknown, taken: StringKey = 'signin.error.invalid'): stri
   if (!(err instanceof AuthError)) return t('signin.error.invalid')
   if (err.code === 'offline') return t('signin.error.offline')
   if (err.code === 'unavailable') return t('signin.error.unavailable')
-  if (err.code === 'emailTaken') return t('signin.signup.error.emailTaken')
+  if (err.code === 'usernameTaken') return t('signin.signup.error.usernameTaken')
   if (err.code === 'possibleDuplicate') return t('signin.signup.twin.body')
   if (err.code === 'tooYoung') return t('signin.signup.problem.tooYoung')
   if (err.code === 'badCode') return t('signin.code.bad')
@@ -26,8 +26,8 @@ const failText = (err: unknown, taken: StringKey = 'signin.error.invalid'): stri
 const today = () => new Date().toISOString().slice(0, 10)
 
 /** Sign-up (ACT-01). On success the provider signs the person in and the gate swaps this page for the app. */
-export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreated: (email: string, password: string) => void }) {
-  const [v, setV] = useState({ email: '', password: '', confirm: '', firstName: '', lastName: '', dob: '', phone: '' })
+export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreated: (username: string, password: string) => void }) {
+  const [v, setV] = useState({ username: '', email: '', password: '', confirm: '', legalName: '', dob: '', phone: '' })
   const [problems, setProblems] = useState<SignupProblem[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -44,8 +44,8 @@ export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreate
     if (found.length) return
     setBusy(true)
     try {
-      await actions()?.register({ ...form, email: form.email.trim(), firstName: form.firstName.trim(), lastName: form.lastName.trim(), phone: form.phone.trim(), ...(confirmedDifferent ? { confirmedDifferent: true } : {}) })
-      onCreated(form.email.trim(), form.password)
+      await actions()?.register({ ...form, email: form.email.trim(), legalName: form.legalName.trim(), phone: form.phone.trim(), ...(confirmedDifferent ? { confirmedDifferent: true } : {}) })
+      onCreated(form.username.trim(), form.password)
     } catch (err) {
       if (err instanceof AuthError && err.code === 'possibleDuplicate') setTwin(true)
       else setError(failText(err))
@@ -78,10 +78,10 @@ export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreate
       <ErrorSummary title={t('signin.problems')} errors={summary} />
       <Card>
         <form onSubmit={(e) => void submit(e)} noValidate>
-          <Field label={t('signin.signup.first')} help={t('helptip.passportName')} value={v.firstName} onChange={set('firstName')} autoComplete="given-name" error={err('firstName')} />
-          <Field label={t('signin.signup.last')} help={t('helptip.passportName')} value={v.lastName} onChange={set('lastName')} autoComplete="family-name" error={err('lastName')} />
-          <Field label={t('signin.signup.email')} help={t('helptip.signupEmail')} value={v.email} onChange={set('email')} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} error={err('email')} />
-          <PhoneField label={t('signin.signup.phone')} hint={t('signin.signup.phone.hint')} help={t('helptip.signupPhone')} value={v.phone} onChange={(phone) => setV({ ...v, phone })} error={err('phone')} />
+          <Field label={t('signin.signup.legalName')} help={t('helptip.passportName')} value={v.legalName} onChange={set('legalName')} autoComplete="name" error={err('legalName')} />
+          <Field label={t('signin.signup.username')} hint={t('signin.signup.username.hint')} help={t('helptip.signupUsername')} value={v.username} onChange={set('username')} autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={30} error={err('username')} />
+          <Field label={t('signin.signup.email')} hint={t('signin.signup.optional')} help={t('helptip.signupEmail')} value={v.email} onChange={set('email')} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} error={err('email')} />
+          <PhoneField label={t('signin.signup.phone')} hint={`${t('signin.signup.optional')} ${t('signin.signup.phone.hint')}`} help={t('helptip.signupPhone')} value={v.phone} onChange={(phone) => setV({ ...v, phone })} error={err('phone')} />
           <Field label={t('signin.signup.dob')} hint={t('signin.signup.dob.hint')} type="date" min="1900-01-01" max={today()} value={v.dob} onChange={set('dob')} autoComplete="bday" error={err('dob') ?? err('tooYoung')} />
           <Field label={t('signin.signup.password')} hint={t('signin.signup.password.hint')} type="password" reveal value={v.password} onChange={set('password')} autoComplete="new-password" error={err('password')} />
           <Field label={t('signin.signup.confirm')} type="password" reveal value={v.confirm} onChange={set('confirm')} autoComplete="new-password" error={err('confirm')} />
@@ -109,7 +109,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
 
   const ask = async (e: FormEvent) => {
     e.preventDefault()
-    if (!isEmail(email)) { setErrors([t('signin.signup.problem.email')]); return }
+    if (!isUsername(email)) { setErrors([t('signin.signup.problem.username')]); return }
     setBusy(true)
     setErrors([])
     try { await actions()?.requestCode(purpose, email); setSent(true) } catch (err) { setErrors([failText(err)]) } finally { setBusy(false) }
@@ -125,7 +125,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
     setBusy(true)
     try {
       if (purpose === 'reset') { await actions()?.resetPassword(email, cleanCode(code), password); setDone(true); setPassword(''); setCode('') }
-      else await auth.signIn({ method: 'code', email, code: cleanCode(code) })
+      else await auth.signIn({ method: 'code', username: email, code: cleanCode(code) })
     } catch (err) { setErrors([failText(err)]) } finally { setBusy(false) }
   }
 
@@ -148,7 +148,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
       <ErrorSummary title={t('signin.problems')} errors={errors} />
       <Card>
         <form onSubmit={(e) => void (sent ? finish(e) : ask(e))} noValidate>
-          <Field label={t('signin.signup.email')} help={t('helptip.signupEmail')} value={email} onChange={(e) => setEmail(e.target.value)} readOnly={sent} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} />
+          <Field label={t('signin.signup.username')} value={email} onChange={(e) => setEmail(e.target.value)} readOnly={sent} autoComplete="username" autoCapitalize="none" spellCheck={false} />
           {sent && (
             <>
               <p role="status">{t('signin.code.sent')}</p>

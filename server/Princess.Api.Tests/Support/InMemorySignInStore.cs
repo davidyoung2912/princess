@@ -1,3 +1,4 @@
+using Princess.Api.Domain;
 using Princess.Api.Data;
 
 namespace Princess.Api.Tests.Support;
@@ -40,19 +41,19 @@ public sealed class InMemorySignInStore(InMemoryUserStore users, InMemoryRefresh
         return Task.CompletedTask;
     }
 
-    public List<(Guid Id, string First, string Last, DateOnly Dob)> People { get; } = [];
+    public List<(Guid Id, string Legal, DateOnly Dob)> People { get; } = [];
 
-    public Task<Guid?> FindPossibleDuplicateAsync(string firstName, string lastName, DateOnly dob, CancellationToken ct) =>
-        Task.FromResult(People.Where(p => p.Dob == dob && string.Equals(p.First, firstName, StringComparison.OrdinalIgnoreCase) && string.Equals(p.Last, lastName, StringComparison.OrdinalIgnoreCase)).Select(p => (Guid?)p.Id).FirstOrDefault());
+    public Task<Guid?> FindPossibleDuplicateAsync(string legalName, DateOnly dob, CancellationToken ct) =>
+        Task.FromResult(People.Where(p => p.Dob == dob && string.Equals(p.Legal, legalName, StringComparison.OrdinalIgnoreCase)).Select(p => (Guid?)p.Id).FirstOrDefault());
 
     public Task<IReadOnlyList<ReviewItem>> ListReviewsAsync(CancellationToken ct)
     {
         var items = users.Users.Where(u => u.ReviewReason is not null).Select(u =>
         {
             var me = People.First(p => p.Id == u.PublicId);
-            var matches = People.Where(p => p.Id != me.Id && p.Dob == me.Dob && string.Equals(p.First, me.First, StringComparison.OrdinalIgnoreCase) && string.Equals(p.Last, me.Last, StringComparison.OrdinalIgnoreCase))
+            var matches = People.Where(p => p.Id != me.Id && p.Dob == me.Dob && string.Equals(p.Legal, me.Legal, StringComparison.OrdinalIgnoreCase))
                 .Select(p => new ReviewMatch(p.Id, users.Users.First(x => x.PublicId == p.Id).AccountNumber, DateTime.UtcNow)).ToList();
-            return new ReviewItem(u.PublicId, u.AccountNumber, me.First, me.Last, me.Dob, DateTime.UtcNow, matches);
+            return new ReviewItem(u.PublicId, u.AccountNumber, me.Legal, me.Dob, DateTime.UtcNow, matches);
         }).ToList();
         return Task.FromResult<IReadOnlyList<ReviewItem>>(items);
     }
@@ -67,12 +68,13 @@ public sealed class InMemorySignInStore(InMemoryUserStore users, InMemoryRefresh
 
     public Task<long?> CreateAccountAsync(NewAccount a, DateTime now, CancellationToken ct)
     {
-        if (users.Users.Any(u => string.Equals(u.Email, a.Email, StringComparison.OrdinalIgnoreCase))) return Task.FromResult<long?>(null);
-        var user = users.Add(a.Email, null, first: a.FirstName);
+        if (users.Users.Any(u => string.Equals(u.Username, a.Username, StringComparison.OrdinalIgnoreCase))) return Task.FromResult<long?>(null);
+        var user = users.Add(a.Email, null, first: LegalNameRules.First(a.LegalName));
+        user.Username = a.Username;
         user.PasswordHash = a.PasswordHash;
-        user.LastName = a.LastName;
+        user.LastName = LegalNameRules.Last(a.LegalName);
         user.ReviewReason = a.ReviewReason;
-        People.Add((user.PublicId, a.FirstName, a.LastName, a.Dob));
+        People.Add((user.PublicId, a.LegalName, a.Dob));
         return Task.FromResult<long?>(user.Id);
     }
 

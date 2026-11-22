@@ -9,7 +9,7 @@ namespace Princess.Api.Tests;
 public class AccountApiTests : JourneyWorld
 {
     private static ProfileInput Edit(string first = "Priya", string last = "Harper", string email = "priya@demo.princess.example") =>
-        new(first, last, "1984-06-02", email, "555-0103", "us", ["vegetarian", "bogus"], ["hearing"], "twin", "Quiet cabin", new EmergencyInput("Sam Example", "555-0104", "Friend"));
+        new($"{first} {last}", "1984-06-02", email, "555-0103", "us", ["vegetarian", "bogus"], ["hearing"], "twin", "Quiet cabin", new EmergencyInput("Sam Example", "555-0104", "Friend"));
 
     [Fact]
     public async Task EveryEndpointNeedsASignIn()
@@ -134,15 +134,6 @@ public class AccountApiTests : JourneyWorld
         Assert.Equal("", F.Journey.Profiles[Maya.Id].Email);   // a booker editing a child leaves the sign-in email alone
         await Call(HttpMethod.Put, $"/api/v1/users/{Priya.PublicId}/profile", await SignIn(Priya), Edit(email: "priya.new@example.com"));
         Assert.Equal("priya.new@example.com", F.Journey.Profiles[Priya.Id].Email);
-    }
-
-    [Fact]
-    public async Task ATakenEmailIsAConflict()
-    {
-        F.Journey.TakenEmailOwners.Add(Priya.Id);
-        var r = await Call(HttpMethod.Put, $"/api/v1/users/{Priya.PublicId}/profile", await SignIn(Priya), Edit(email: "someone@else.example"));
-        Assert.Equal(HttpStatusCode.Conflict, r.Status);
-        Assert.Equal("emailTaken", r.ProblemTitle);
     }
 
     // ---- Helper ----

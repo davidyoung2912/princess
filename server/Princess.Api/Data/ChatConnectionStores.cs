@@ -88,12 +88,12 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
     }
 
     private const string Select = """
-        SELECT c.Id, c.PublicId, c.RequesterId, r.PublicId AS RequesterPublicId, rp.FirstName AS RequesterFirst, rp.LastName AS RequesterLast, r.IsSupervised AS RequesterSupervised,
-               c.TargetId, t.PublicId AS TargetPublicId, tp.FirstName AS TargetFirst, tp.LastName AS TargetLast, t.IsSupervised AS TargetSupervised, rup.ChatAvatar AS RequesterAvatar, tup.ChatAvatar AS TargetAvatar,
+        SELECT c.Id, c.PublicId, c.RequesterId, r.PublicId AS RequesterPublicId, r.ChatName AS RequesterFirst, N'' AS RequesterLast, r.IsSupervised AS RequesterSupervised,
+               c.TargetId, t.PublicId AS TargetPublicId, t.ChatName AS TargetFirst, N'' AS TargetLast, t.IsSupervised AS TargetSupervised, rup.ChatAvatar AS RequesterAvatar, tup.ChatAvatar AS TargetAvatar,
                c.Status, c.GuardianUserId, c.GuardianFor, g.PublicId AS ConversationId, c.EndedByUserId, c.RequesterSeenAt, c.RespondedAt, c.ExpiresAt, c.CreatedAt
         FROM dbo.ChatConnections c
-        JOIN dbo.Users r ON r.Id = c.RequesterId JOIN dbo.Profiles rp ON rp.UserId = r.Id
-        JOIN dbo.Users t ON t.Id = c.TargetId JOIN dbo.Profiles tp ON tp.UserId = t.Id
+        JOIN dbo.Users r ON r.Id = c.RequesterId
+        JOIN dbo.Users t ON t.Id = c.TargetId
         LEFT JOIN dbo.UserPrefs rup ON rup.UserId = r.Id LEFT JOIN dbo.UserPrefs tup ON tup.UserId = t.Id
         LEFT JOIN dbo.ChatGroups g ON g.Id = c.GroupId
         """;
@@ -105,20 +105,19 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPersonRow>(Sql.Cmd($"""
-            SELECT TOP (@max) u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, u.IsSupervised, up.ChatAvatar AS Avatar
+            SELECT TOP (@max) u.Id AS UserId, u.PublicId, u.ChatName AS FirstName, N'' AS LastName, u.IsSupervised, up.ChatAvatar AS Avatar
             FROM dbo.Users u
-            JOIN dbo.Profiles p ON p.UserId = u.Id
             LEFT JOIN dbo.UserPrefs up ON up.UserId = u.Id
             WHERE u.Id <> @userId AND u.Role = 'guest'
               AND (@personPublicId IS NULL OR u.PublicId = @personPublicId)
               AND (@email IS NULL OR u.Email = @email)
-              AND (@like IS NULL OR p.LastName = @like OR p.FirstName + N' ' + p.LastName = @like)
+              AND (@like IS NULL OR u.ChatName = @like)
               AND (
                     {SharesBooking}
                     OR (ISNULL(up.ChatFindable, 1) = 1 AND u.IsSupervised = 0)   -- any guest who has not turned finding off, at every stage
                   )
               AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks bl WHERE (bl.UserId = u.Id AND bl.BlockedUserId = @userId) OR (bl.UserId = @userId AND bl.BlockedUserId = u.Id))
-            ORDER BY p.FirstName, p.LastName, u.Id
+            ORDER BY u.ChatName, u.Id
             """, new { userId, like, personPublicId, max, email }, null, ct))).ToList();
     }
 

@@ -18,8 +18,8 @@ export interface EmergencyContact { name: string; phone: string; relationship: s
 import type { KeepOutGroup } from './preferenceUse'
 
 export interface Profile {
-  firstName: string
-  lastName: string
+  /** One required legal name, as on a passport. */
+  legalName: string
   /** "YYYY-MM-DD". */
   dob: string
   email: string
@@ -39,21 +39,21 @@ export interface Profile {
 const str = (v: unknown, fallback: string, max = 200): string => (typeof v === 'string' ? v.slice(0, max) : fallback)
 const pick = <T extends string>(list: readonly T[], v: unknown): T[] => (Array.isArray(v) ? [...new Set(v.filter((x): x is T => (list as readonly unknown[]).includes(x)))] : [])
 
-export type ProfileField = 'firstName' | 'lastName' | 'dob' | 'email' | 'phone' | 'emergencyName' | 'emergencyPhone'
-export type FieldProblem = 'required' | 'email' | 'phone' | 'date' | 'future' | 'pair'
+export type ProfileField = 'legalName' | 'dob' | 'email' | 'phone' | 'emergencyName' | 'emergencyPhone'
+export type FieldProblem = 'required' | 'long' | 'email' | 'phone' | 'date' | 'future' | 'pair'
 export type ProfileErrors = Partial<Record<ProfileField, FieldProblem>>
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const phoneOk = (v: string) => /^[\d\s()+.-]+$/.test(v) && v.replace(/\D/g, '').length >= 7 && v.replace(/\D/g, '').length <= 15
 
-/** Problems with a profile, by field. `today` is "YYYY-MM-DD". Contact details are optional for children. */
-export function validateProfile(p: Profile, today: string, child: boolean): ProfileErrors {
+/** Problems with a profile, by field. `today` is "YYYY-MM-DD". Email and phone are optional. */
+export function validateProfile(p: Profile, today: string): ProfileErrors {
   const errors: ProfileErrors = {}
-  if (!p.firstName.trim()) errors.firstName = 'required'
-  if (!p.lastName.trim()) errors.lastName = 'required'
+  if (!p.legalName.trim()) errors.legalName = 'required'
+  else if (p.legalName.trim().length > 120) errors.legalName = 'long'
   if (!/^\d{4}-\d{2}-\d{2}$/.test(p.dob) || Number.isNaN(Date.parse(p.dob))) errors.dob = p.dob ? 'date' : 'required'
   else if (p.dob > today) errors.dob = 'future'
-  if (p.email ? !EMAIL.test(p.email) : !child) errors.email = p.email ? 'email' : 'required'
+  if (p.email && !EMAIL.test(p.email)) errors.email = 'email'
   if (p.phone ? !phoneOk(p.phone) : false) errors.phone = 'phone'
   const hasName = !!p.emergency.name.trim()
   const hasPhone = !!p.emergency.phone.trim()

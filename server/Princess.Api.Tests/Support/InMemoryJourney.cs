@@ -34,7 +34,6 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
     public Dictionary<long, string?> DemoZones { get; } = [];
     public Dictionary<long, HashSet<string>> Scenarios { get; } = [];
     public Dictionary<long, int> DemoSpeeds { get; } = [];
-    public HashSet<long> TakenEmailOwners { get; } = [];
     private long _next = 1000;
 
     // ---- IAccountStore ----
@@ -52,7 +51,6 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
 
     public Task SaveProfileAsync(ProfileRecord p, bool updateEmail, DateTime now, CancellationToken ct)
     {
-        if (updateEmail && TakenEmailOwners.Contains(p.UserId)) throw ApiException.Conflict("emailTaken");
         if (!updateEmail) p.Email = Profiles.GetValueOrDefault(p.UserId)?.Email;
         Profiles[p.UserId] = p;
         return Task.CompletedTask;

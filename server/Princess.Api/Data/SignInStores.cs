@@ -17,13 +17,13 @@ public sealed record ChallengeUsage(int Requests, int Attempts);
 /// <summary>Where one person's failed password tries from one address stand.</summary>
 public sealed record ThrottleState(int Failures, int Strikes, DateTime? LockedUntil);
 
-public sealed record NewAccount(string Email, string PasswordHash, string FirstName, string LastName, DateOnly Dob, string? ReviewReason = null, string? Phone = null);
+public sealed record NewAccount(string Username, string? Email, string PasswordHash, string LegalName, DateOnly Dob, string? ReviewReason = null, string? Phone = null);
 
 /// <summary>Another adult account with the same name and date of birth as a flagged one (IDN-03). Never an email address.</summary>
 public sealed record ReviewMatch(Guid Id, string AccountNumber, DateTime CreatedAt);
 
 /// <summary>An account waiting for a person at Guest Services to say whether it duplicates another (IDN-03).</summary>
-public sealed record ReviewItem(Guid Id, string AccountNumber, string FirstName, string LastName, DateOnly Dob, DateTime CreatedAt, IReadOnlyList<ReviewMatch> Matches);
+public sealed record ReviewItem(Guid Id, string AccountNumber, string LegalName, DateOnly Dob, DateTime CreatedAt, IReadOnlyList<ReviewMatch> Matches);
 
 public sealed record OutboxMessage(long? UserId, string Channel, string Category, string To, string Subject, string Body);
 
@@ -32,8 +32,8 @@ public interface ISignInStore
 {
     /// <summary>Creates the user and profile in one transaction with a fresh unused 10-digit account number. Returns null when the email is already taken.</summary>
     Task<long?> CreateAccountAsync(NewAccount account, DateTime now, CancellationToken ct);
-    /// <summary>The public id of an existing adult account with the same first and last name (ignoring case and accents) and date of birth, or null (IDN-03).</summary>
-    Task<Guid?> FindPossibleDuplicateAsync(string firstName, string lastName, DateOnly dob, CancellationToken ct);
+    /// <summary>The public id of an existing adult account with the same legal name (ignoring case and accents) and date of birth, or null (IDN-03).</summary>
+    Task<Guid?> FindPossibleDuplicateAsync(string legalName, DateOnly dob, CancellationToken ct);
     /// <summary>The accounts flagged for a person to check, oldest first, each with the accounts it may duplicate (IDN-03).</summary>
     Task<IReadOnlyList<ReviewItem>> ListReviewsAsync(CancellationToken ct);
     /// <summary>Clears the flag on this account. False when it is not flagged (already settled, or no such account).</summary>

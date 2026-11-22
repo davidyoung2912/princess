@@ -169,10 +169,12 @@ public sealed class AuthService(
 
     public async Task<SessionResponse> RegisterAsync(RegisterRequest request, string? userAgent, string? ip, CancellationToken ct)
     {
-        var email = NormaliseEmail(request.Email);
-        var first = request.FirstName?.Trim();
-        var last = request.LastName?.Trim();
-        if (email is null || !ValidPassword(request.Password) || string.IsNullOrEmpty(first) || string.IsNullOrEmpty(last) || first.Length > 60 || last.Length > 60)
+        var username = UsernameRules.Clean(request.Username) ?? throw ApiException.Invalid("username");
+        // Email is optional and may be shared; when one is given it must look like one.
+        var emailText = request.Email?.Trim();
+        var email = string.IsNullOrEmpty(emailText) ? null : NormaliseEmail(emailText) ?? throw ApiException.Invalid("email");
+        var legalName = LegalNameRules.Clean(request.LegalName);
+        if (!ValidPassword(request.Password) || legalName is null)
             throw ApiException.Invalid();
         var phone = request.Phone?.Trim();
         if (!string.IsNullOrEmpty(phone) && (phone.Length > 30 || phone.Any(ch => !(char.IsAsciiDigit(ch) || " +().-".Contains(ch))) || PhoneRules.Normalise(phone).Count(char.IsAsciiDigit) is < 7 or > 15))
@@ -181,14 +183,14 @@ public sealed class AuthService(
             throw ApiException.Invalid("tooYoung");
 
         // IDN-03: the same name and date of birth as an existing account. Never merged by machine and never said who: the person says whether it is them, and a person at Guest Services settles it.
-        var twin = await signIn.FindPossibleDuplicateAsync(first, last, dob, ct);
+        var twin = await signIn.FindPossibleDuplicateAsync(legalName, dob, ct);
         if (twin is not null && request.ConfirmedDifferent != true)
         {
             await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.register", Outcome = AuditOutcome.Denied, Detail = AuditContext.Json(new { reason = "possibleDuplicate", attempt = AuditContext.Fingerprint(email) }) }, ct);
             throw ApiException.Conflict("possibleDuplicate");
         }
-        var id = await signIn.CreateAccountAsync(new NewAccount(email, hasher.Hash(request.Password!), first, last, dob, twin is null ? null : "duplicate", string.IsNullOrEmpty(phone) ? null : phone), clock.UtcNow, ct)
-            ?? await EmailTakenAsync(email, ct);
+        var id = await signIn.CreateAccountAsync(new NewAccount(username, email, hasher.Hash(request.Password!), legalName, dob, twin is null ? null : "duplicate", string.IsNullOrEmpty(phone) ? null : phone), clock.UtcNow, ct)
+            ?? await UsernameTakenAsync(username, ct);
         var user = await users.FindByIdAsync(id, ct) ?? throw ApiException.Invalid();
         await Audit("auth.register", AuditOutcome.Success, user, twin is null ? null : new { review = "duplicate", matches = twin }, ct);
         return await IssueAsync(user, Random.Shared.NextInt64(1, long.MaxValue), refreshTokenId: null, userAgent, ip, ct);
@@ -196,13 +198,13 @@ public sealed class AuthService(
 
     public async Task RequestCodeAsync(string purpose, CodeRequest request, CancellationToken ct)
     {
-        var email = NormaliseEmail(request.Email);
-        if (email is null) throw ApiException.Invalid();
-        var user = await users.FindByIdentifierAsync(email, ct);
-        // No answer differs for an unknown address, a child account or an account with no password.
+        var name = request.Username?.Trim();
+        if (string.IsNullOrEmpty(name) || name.Length > 40) throw ApiException.Invalid();
+        var user = await users.FindByIdentifierAsync(name, ct);
+        // No answer differs for an unknown username, a child account, an account with no password or one with no email to send to.
         if (user is null || user.IsSupervised || user.PasswordHash is null || user.Email is null)
         {
-            await Audit($"auth.{purpose}.request", AuditOutcome.Failure, user, new { reason = user is null ? "unknownAddress" : "notEligible", attempt = AuditContext.Fingerprint(email) }, ct);
+            await Audit($"auth.{purpose}.request", AuditOutcome.Failure, user, new { reason = user is null ? "unknownAddress" : "notEligible", attempt = AuditContext.Fingerprint(name) }, ct);
             return;
         }
 
@@ -226,24 +228,24 @@ public sealed class AuthService(
     public async Task ResetPasswordAsync(ResetRequest request, CancellationToken ct)
     {
         if (!ValidPassword(request.NewPassword)) throw ApiException.Invalid();
-        var user = await RedeemAsync(Reset, request.Email, request.Code, ct);
+        var user = await RedeemAsync(Reset, request.Username, request.Code, ct);
         await signIn.SetPasswordAsync(user.Id, hasher.Hash(request.NewPassword!), clock.UtcNow, ct);
         await Audit("auth.password.reset", AuditOutcome.Success, user, new { sessionsEnded = true }, ct);
     }
 
     public async Task<SessionResponse> RedeemMagicAsync(MagicRedeemRequest request, string? userAgent, string? ip, CancellationToken ct)
     {
-        var user = await RedeemAsync(Magic, request.Email, request.Code, ct);
+        var user = await RedeemAsync(Magic, request.Username, request.Code, ct);
         await users.RecordLoginSuccessAsync(user.Id, clock.UtcNow, ct);
         await Audit("auth.login", AuditOutcome.Success, user, new { method = "magicCode", previousLogin = user.LastLoginAt }, ct);
         return await IssueAsync(user, Random.Shared.NextInt64(1, long.MaxValue), refreshTokenId: null, userAgent, ip, ct);
     }
 
     /// <summary>Checks a one-time code and spends it. Every failure is the same <c>badCode</c>: wrong, expired, used, too many tries, unknown address.</summary>
-    private async Task<UserRecord> RedeemAsync(string purpose, string? emailText, string? code, CancellationToken ct)
+    private async Task<UserRecord> RedeemAsync(string purpose, string? usernameText, string? code, CancellationToken ct)
     {
-        var email = NormaliseEmail(emailText);
-        if (email is null || code is null || code.Length != 6 || !code.All(char.IsAsciiDigit)) throw ApiException.Invalid("badCode");
+        var email = usernameText?.Trim();
+        if (string.IsNullOrEmpty(email) || email.Length > 40 || code is null || code.Length != 6 || !code.All(char.IsAsciiDigit)) throw ApiException.Invalid("badCode");
         var user = await users.FindByIdentifierAsync(email, ct);
         var challenge = user is null ? null : await signIn.FindOpenChallengeAsync(user.Id, purpose, clock.UtcNow, ct);
         // Wrong tries add up across every code issued this hour, so asking for a new code does not refill the guesses.
@@ -313,7 +315,7 @@ public sealed class AuthService(
     }
 
     public static MeResponse Me(UserRecord u) => new(
-        u.PublicId, u.AccountNumber, u.Email, u.FirstName, u.LastName, u.Role, u.Tier, u.IsDemo, u.IsSupervised,
+        u.PublicId, u.AccountNumber, u.Username, u.Email, u.FirstName, u.LastName, u.Role, u.Tier, u.IsDemo, u.IsSupervised,
         u.BookerPublicId, u.TextSize, u.Locale, u.Currency, u.ReviewReason is not null);
 
     public static long Ms(DateTime utc) => new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
@@ -330,10 +332,10 @@ public sealed class AuthService(
     private async Task AuditById(string action, string outcome, long userId, object? detail, CancellationToken ct) =>
         await Audit(action, outcome, await users.FindByIdAsync(userId, ct), detail, ct);
 
-    private async Task<long> EmailTakenAsync(string email, CancellationToken ct)
+    private async Task<long> UsernameTakenAsync(string username, CancellationToken ct)
     {
-        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.register", Outcome = AuditOutcome.Failure, Detail = AuditContext.Json(new { reason = "emailTaken", attempt = AuditContext.Fingerprint(email) }) }, ct);
-        throw ApiException.Conflict("emailTaken");
+        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.register", Outcome = AuditOutcome.Failure, Detail = AuditContext.Json(new { reason = "usernameTaken", attempt = AuditContext.Fingerprint(email) }) }, ct);
+        throw ApiException.Conflict("usernameTaken");
     }
 
     private static string? Trim(string? s, int max) => s is null ? null : s.Length <= max ? s : s[..max];

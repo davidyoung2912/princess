@@ -7,7 +7,7 @@ namespace Princess.Api.Endpoints;
 
 /// <summary>One account waiting for a person to check it, and the accounts it may duplicate. No email address of anyone, and no merge: a person decides, and the decision is recorded.</summary>
 public sealed record ReviewMatchDto(Guid Id, string AccountNumber, long CreatedAt);
-public sealed record ReviewDto(Guid Id, string AccountNumber, string FirstName, string LastName, string Dob, long CreatedAt, IReadOnlyList<ReviewMatchDto> Matches);
+public sealed record ReviewDto(Guid Id, string AccountNumber, string LegalName, string Dob, long CreatedAt, IReadOnlyList<ReviewMatchDto> Matches);
 
 /// <summary>"different" (two people who share a name and birthday) or "same" (one guest with two accounts; joining them is done by Guest Services outside this screen).</summary>
 public sealed record ResolveReviewRequest(string? Decision);
@@ -23,7 +23,7 @@ public static class ReviewEndpoints
             {
                 await RequireAdminAsync(me, ct);
                 var items = await store.ListReviewsAsync(ct);
-                return Results.Ok(items.Select(i => new ReviewDto(i.Id, i.AccountNumber, i.FirstName, i.LastName, i.Dob.ToString("yyyy-MM-dd"), Ms(i.CreatedAt),
+                return Results.Ok(items.Select(i => new ReviewDto(i.Id, i.AccountNumber, i.LegalName, i.Dob.ToString("yyyy-MM-dd"), Ms(i.CreatedAt),
                     i.Matches.Select(m => new ReviewMatchDto(m.Id, m.AccountNumber, Ms(m.CreatedAt))).ToList())).ToList());
             })
             .WithSummary("Administrators only (403 otherwise): accounts flagged as a possible duplicate, oldest first, each with the accounts it may duplicate (account number and date joined; never an email address).");

@@ -30,7 +30,7 @@ public class AccountRulesTests
         Assert.Equal(expected, AccountRules.ValidateCard(brand, last4, expiry, Today));
 
     private static ProfileInput Good(string email = "gerald@example.com") =>
-        new("Gerald", "Whitfield", "1950-01-15", email, "555-0103", "us", [], [], "noPreference", "", new EmergencyInput("Sam Example", "555-0104", "Friend"));
+        new("Gerald Whitfield", "1950-01-15", email, "555-0103", "us", [], [], "noPreference", "", new EmergencyInput("Sam Example", "555-0104", "Friend"));
 
     [Fact]
     public void AGoodProfileHasNoProblems() => Assert.Empty(AccountRules.ValidateProfile(Good(), Today, false));
@@ -38,9 +38,9 @@ public class AccountRulesTests
     [Fact]
     public void ReportsEachProblemByField()
     {
-        var bad = Good("nope") with { FirstName = " ", Dob = "2030-01-01", Phone = "abc", Emergency = new EmergencyInput("Sam", "", "Friend") };
+        var bad = Good("nope") with { LegalName = " ", Dob = "2030-01-01", Phone = "abc", Emergency = new EmergencyInput("Sam", "", "Friend") };
         var errors = AccountRules.ValidateProfile(bad, Today, false);
-        Assert.Equal("required", errors["firstName"]);
+        Assert.Equal("required", errors["legalName"]);
         Assert.Equal("future", errors["dob"]);
         Assert.Equal("email", errors["email"]);
         Assert.Equal("phone", errors["phone"]);
@@ -55,10 +55,10 @@ public class AccountRulesTests
     }
 
     [Fact]
-    public void ContactDetailsAreOptionalForChildrenOnly()
+    public void ContactDetailsAreOptionalForEveryone()
     {
-        Assert.DoesNotContain("email", AccountRules.ValidateProfile(Good("") with { Phone = "" }, Today, child: true));
-        Assert.Equal("required", AccountRules.ValidateProfile(Good(""), Today, child: false)["email"]);
+        Assert.Empty(AccountRules.ValidateProfile(Good("") with { Phone = "" }, Today, child: true));
+        Assert.Empty(AccountRules.ValidateProfile(Good("") with { Phone = "" }, Today, child: false));
     }
 
     [Theory]

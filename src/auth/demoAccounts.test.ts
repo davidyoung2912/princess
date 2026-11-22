@@ -2,19 +2,19 @@ import { describe, expect, it } from 'vitest'
 import { normalizeDemoAccounts } from './demoAccounts'
 
 describe('demo accounts from the server', () => {
-  it('reads names and roles, and drops rows without an email', () => {
+  it('reads names and roles, and drops rows without a username', () => {
     expect(normalizeDemoAccounts([
-      { email: 'gerald@demo.princess.example', firstName: 'Gerald', lastName: 'Harper', role: 'guest' },
-      { email: '', firstName: 'No' },
+      { username: 'gerald', firstName: 'Gerald', lastName: 'Harper', role: 'guest' },
+      { username: '', firstName: 'No' },
       { firstName: 'Nobody' },
-      { email: 'x@demo.princess.example' },
+      { username: 'xavier' },
     ])).toEqual([
-      { email: 'gerald@demo.princess.example', name: 'Gerald Harper', role: 'guest' },
-      { email: 'x@demo.princess.example', name: 'x@demo.princess.example', role: '' },
+      { username: 'gerald', name: 'Gerald Harper', role: 'guest' },
+      { username: 'xavier', name: 'xavier', role: '' },
     ])
   })
   it('treats anything that is not a list as empty', () => {
     expect(normalizeDemoAccounts(null)).toEqual([])
-    expect(normalizeDemoAccounts({ email: 'a' })).toEqual([])
+    expect(normalizeDemoAccounts({ username: 'a' })).toEqual([])
   })
 })

@@ -161,7 +161,7 @@ describe('createHttpAuthProvider', () => {
   describe('sign-up and recovery', () => {
     it('registers without signing in, trimming the email', async () => {
       const { auth, s, storage } = make(() => reply(200, session(1, 'new@example.com')))
-      await auth.account!.register({ email: ' new@example.com ', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+15551234567' })
+      await auth.account!.register({ username: ' new.guest ', email: ' new@example.com ', password: 'a-long-password', legalName: 'N G', dob: '1990-01-01', phone: '+15551234567' })
       expect(auth.current()).toBeNull()
       expect(s.calls[0]).toMatchObject({ url: '/api/v1/auth/register', auth: null })
       expect(JSON.parse(s.calls[0].body!).email).toBe('new@example.com')
@@ -169,12 +169,12 @@ describe('createHttpAuthProvider', () => {
     })
     it('sends confirmedDifferent', async () => {
       const { auth, s } = make(() => reply(200, { ...session(1), user: { ...user('n@b.co'), needsReview: true } }))
-      await auth.account!.register({ email: 'n@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+15551234567', confirmedDifferent: true })
+      await auth.account!.register({ username: 'n.guest', email: 'n@b.co', password: 'a-long-password', legalName: 'N G', dob: '1990-01-01', phone: '+15551234567', confirmedDifferent: true })
       expect(JSON.parse(s.calls.at(-1)!.body!)).toMatchObject({ confirmedDifferent: true })
     })
     it('maps the named failures', async () => {
-      const input = { email: 'a@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01', phone: '+15551234567' }
-      await expect(make(() => reply(409, { title: 'emailTaken' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'emailTaken' })
+      const input = { username: 'a.guest', email: 'a@b.co', password: 'a-long-password', legalName: 'N G', dob: '1990-01-01', phone: '+15551234567' }
+      await expect(make(() => reply(409, { title: 'usernameTaken' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'usernameTaken' })
       await expect(make(() => reply(409, { title: 'possibleDuplicate' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'possibleDuplicate' })
       await expect(make(() => reply(400, { title: 'tooYoung' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'tooYoung' })
       await expect(make(() => reply(400, { title: 'badCode' })).auth.account!.resetPassword('a@b.co', '123456', 'a-long-password')).rejects.toMatchObject({ code: 'badCode' })
@@ -182,19 +182,19 @@ describe('createHttpAuthProvider', () => {
     })
     it('asks for each kind of code on its own route and sends the reset', async () => {
       const { auth, s } = make(() => reply(204))
-      await auth.account!.requestCode('reset', ' a@b.co ')
-      await auth.account!.requestCode('magic', 'a@b.co')
-      await auth.account!.resetPassword('a@b.co', ' 123456 ', 'a-long-password')
+      await auth.account!.requestCode('reset', ' a.guest ')
+      await auth.account!.requestCode('magic', 'a.guest')
+      await auth.account!.resetPassword('a.guest', ' 123456 ', 'a-long-password')
       expect(s.calls.map((c) => c.url)).toEqual(['/api/v1/auth/forgot', '/api/v1/auth/magic', '/api/v1/auth/reset'])
-      expect(JSON.parse(s.calls[0].body!)).toEqual({ email: 'a@b.co' })
-      expect(JSON.parse(s.calls[2].body!)).toEqual({ email: 'a@b.co', code: '123456', newPassword: 'a-long-password' })
+      expect(JSON.parse(s.calls[0].body!)).toEqual({ username: 'a.guest' })
+      expect(JSON.parse(s.calls[2].body!)).toEqual({ username: 'a.guest', code: '123456', newPassword: 'a-long-password' })
     })
     it('signs in with an emailed code', async () => {
       const { auth, s } = make(() => reply(200, session(1)))
-      const got = await auth.signIn({ method: 'code', email: 'maya@demo.princess.example', code: '123456' })
+      const got = await auth.signIn({ method: 'code', username: 'maya@demo.princess.example', code: '123456' })
       expect(got).toMatchObject({ method: 'code' })
       expect(s.calls[0].url).toBe('/api/v1/auth/magic/redeem')
-      await expect(make(() => reply(400, { title: 'badCode' })).auth.signIn({ method: 'code', email: 'a@b.co', code: '000000' })).rejects.toMatchObject({ code: 'badCode' })
+      await expect(make(() => reply(400, { title: 'badCode' })).auth.signIn({ method: 'code', username: 'a@b.co', code: '000000' })).rejects.toMatchObject({ code: 'badCode' })
     })
   })
 })

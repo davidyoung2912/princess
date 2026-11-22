@@ -22,6 +22,29 @@ public sealed class AccountService(
             .ToList();
     }
 
+    /// <summary>The caller's own email and phone, for the Settings page.</summary>
+    public async Task<ContactDto> ContactAsync(UserRecord actor, CancellationToken ct)
+    {
+        var p = await accounts.GetProfileAsync(actor.Id, ct) ?? throw ApiException.NotFound();
+        return new(actor.Email ?? "", p.Phone ?? "");
+    }
+
+    /// <summary>Sets or clears the caller's email and phone. Both are optional and may be shared with other accounts; a changed one is unconfirmed until its code is typed back.</summary>
+    public async Task<ContactDto> SetContactAsync(UserRecord actor, ContactDto? input, CancellationToken ct)
+    {
+        if (actor.IsSupervised) throw ApiException.Forbidden("supervised");
+        var emailText = input?.Email?.Trim() ?? "";
+        var email = emailText.Length == 0 ? "" : Auth.AuthService.NormaliseEmail(emailText) ?? throw ApiException.Invalid("email");
+        var phone = input?.Phone?.Trim() ?? "";
+        if (phone.Length > 0 && !AccountRules.PhoneOk(phone)) throw ApiException.Invalid("phone");
+        var p = await accounts.GetProfileAsync(actor.Id, ct) ?? throw ApiException.NotFound();
+        p.Email = email;
+        p.Phone = phone;
+        await accounts.SaveProfileAsync(p, updateEmail: true, await clock.NowAsync(actor, ct), ct);
+        actor.Email = email.Length == 0 ? null : email;
+        return new(email, phone);
+    }
+
     public async Task<ProfileViewDto> ProfileAsync(UserRecord actor, Guid id, CancellationToken ct)
     {
         var s = await subjects.ResolveAsync(actor, id, HelperPermission.Profile, write: false, ct);
@@ -41,8 +64,7 @@ public sealed class AccountService(
         var next = new ProfileRecord
         {
             UserId = s.Target.Id,
-            FirstName = AccountRules.Trunc(input.FirstName?.Trim(), 60),
-            LastName = AccountRules.Trunc(input.LastName?.Trim(), 60),
+            LegalName = LegalNameRules.Clean(input.LegalName) ?? before.LegalName,
             Dob = DateOnly.ParseExact(input.Dob!, "yyyy-MM-dd").ToDateTime(TimeOnly.MinValue),
             Email = AccountRules.Trunc(input.Email?.Trim(), 120),
             Phone = AccountRules.Trunc(input.Phone?.Trim(), 30),
@@ -62,13 +84,13 @@ public sealed class AccountService(
 
         // The name rules need the booking's departure; a person with no booking has nothing to protect.
         var days = DaysToDeparture(s.Booking, today);
-        var rule = AccountRules.NameChange($"{before.FirstName} {before.LastName}", $"{next.FirstName} {next.LastName}", days);
+        var rule = AccountRules.NameChange(before.LegalName, next.LegalName, days);
         if (rule != NameChangeResult.Allowed) throw ApiException.Conflict(rule == NameChangeResult.Late ? "late" : "large");
 
         // The email is the sign-in name, so only the person themself changes it; a booker or helper editing someone else leaves it alone.
         var self = actor.Id == s.Target.Id && !s.Target.IsSupervised;
         await accounts.SaveProfileAsync(next, updateEmail: self, now, ct);
-        await accounts.AddHistoryAsync(s.Target.Id, actor.Id, "profile", $"{next.FirstName} {next.LastName}".Trim(), now, ct);
+        await accounts.AddHistoryAsync(s.Target.Id, actor.Id, "profile", next.LegalName, now, ct);
         return await ViewAsync(actor, s, ct);
     }
 
@@ -88,7 +110,7 @@ public sealed class AccountService(
     public static int DaysToDeparture(SharedBooking? b, DateOnly today) => b is null ? NoBookingDays : TripRules.DaysBetween(today, D(b.Departure));
 
     public static ProfileDto ToDto(ProfileRecord p) => new(
-        p.FirstName, p.LastName, D(p.Dob).ToString("yyyy-MM-dd"), p.Email ?? "", p.Phone ?? "", p.Citizenship,
+        p.LegalName, D(p.Dob).ToString("yyyy-MM-dd"), p.Email ?? "", p.Phone ?? "", p.Citizenship,
         p.Dietary.ToArray(), p.Needs.ToArray(), p.Bedding, p.SpecialRequests, new EmergencyDto(p.EmergencyName, p.EmergencyPhone, p.EmergencyRelationship),
         p.KeepOut.Split(',', StringSplitOptions.RemoveEmptyEntries),
         p.AvoidFlags.Split(',', StringSplitOptions.RemoveEmptyEntries));

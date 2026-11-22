@@ -25,7 +25,7 @@ public static class AuthEndpoints
                 Results.Ok(await svc.RegisterAsync(body, UserAgent(http), Ip(http), ct)))
             .AllowAnonymous()
             .RequireRateLimiting(LoginLimiter)
-            .WithSummary("Create an account (adults only, with a phone number of 7 to 15 digits) and sign in. 409 emailTaken when the address has one; 409 possibleDuplicate when an adult account has the same name and date of birth, unless `confirmedDifferent` is true, in which case the account is made and flagged for a person at Guest Services to check.");
+            .WithSummary("Create an account (adults only, with a phone number of 7 to 15 digits) and sign in. 409 usernameTaken when the username is in use; 409 possibleDuplicate when an adult account has the same name and date of birth, unless `confirmedDifferent` is true, in which case the account is made and flagged for a person at Guest Services to check.");
 
         auth.MapPost("/forgot", async (CodeRequest body, IAuthService svc, CancellationToken ct) =>
             {
@@ -101,8 +101,8 @@ public static class AuthEndpoints
             {
                 if (!config.GetValue("Demo:Enabled", false)) throw ApiException.NotFound();
                 var rows = await users.ListDemoAsync(ct);
-                return Results.Ok(rows.Where(u => !string.IsNullOrEmpty(u.Email))
-                    .Select(u => new DemoAccountDto(u.Email!, u.FirstName ?? "", u.LastName, u.Role)));
+                return Results.Ok(rows.Where(u => !string.IsNullOrEmpty(u.Username) && u.PasswordHash is not null)
+                    .Select(u => new DemoAccountDto(u.Username, u.FirstName ?? "", u.LastName, u.Role)));
             })
             .AllowAnonymous()
             .WithSummary("The seeded demo accounts (email, name, role) so a demo sign-in page can list them. 404 unless `Demo:Enabled` is true (off by default).");

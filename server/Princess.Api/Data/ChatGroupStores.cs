@@ -95,14 +95,13 @@ public interface IChatGroupStore
 public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupStore
 {
     private const string InviteSelect = """
-        SELECT i.Id, i.PublicId, i.GroupId, g.Name AS GroupName, i.InviterId, ip.FirstName AS InviterFirst, ip.LastName AS InviterLast, ipp.ChatAvatar AS InviterAvatar,
-               i.InviteeId, u.PublicId AS InviteePublicId, up.FirstName AS InviteeFirst, up.LastName AS InviteeLast, upp.ChatAvatar AS InviteeAvatar,
+        SELECT i.Id, i.PublicId, i.GroupId, g.Name AS GroupName, i.InviterId, iu.ChatName AS InviterFirst, N'' AS InviterLast, ipp.ChatAvatar AS InviterAvatar,
+               i.InviteeId, u.PublicId AS InviteePublicId, u.ChatName AS InviteeFirst, N'' AS InviteeLast, upp.ChatAvatar AS InviteeAvatar,
                i.Status, i.GuardianUserId, i.ExpiresAt, i.CreatedAt
         FROM dbo.ChatGroupInvites i
         JOIN dbo.ChatGroups g ON g.Id = i.GroupId
-        JOIN dbo.Profiles ip ON ip.UserId = i.InviterId
+        JOIN dbo.Users iu ON iu.Id = i.InviterId
         JOIN dbo.Users u ON u.Id = i.InviteeId
-        JOIN dbo.Profiles up ON up.UserId = u.Id
         LEFT JOIN dbo.UserPrefs ipp ON ipp.UserId = i.InviterId
         LEFT JOIN dbo.UserPrefs upp ON upp.UserId = u.Id
         """;
@@ -135,7 +134,7 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatGroupPersonRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, u.IsSupervised, m.IsAdmin, up.ChatAvatar AS Avatar
+            SELECT u.Id AS UserId, u.PublicId, u.ChatName AS FirstName, N'' AS LastName, u.IsSupervised, m.IsAdmin, up.ChatAvatar AS Avatar
             FROM dbo.ChatGroupMembers m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.Users u ON u.Id = m.UserId

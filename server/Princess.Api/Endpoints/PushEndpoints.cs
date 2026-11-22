@@ -77,6 +77,14 @@ public static class PushEndpoints
                 Results.Ok(await svc.MarkReadAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Push").WithSummary("Marks the sent alerts as seen (clears the unread count).");
 
+        api.MapGet("/me/contact", async (ICurrentUser me, AccountService svc, CancellationToken ct) =>
+                Results.Ok(await svc.ContactAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Push").WithSummary("The email address and phone number on the account (either may be empty).");
+
+        api.MapPut("/me/contact", async (ContactDto body, ICurrentUser me, AccountService svc, CancellationToken ct) =>
+                Results.Ok(await svc.SetContactAsync(await me.LoadAsync(ct), body, ct)))
+            .WithTags("Push").WithSummary("Sets or clears the email address and phone number. Neither is required and neither needs to be unique. A changed one is unconfirmed until a code sent to it is typed back; notices go only to a confirmed one. 400 email or phone when one is not valid; 403 supervised.");
+
         api.MapGet("/me/phone-check", async (ICurrentUser me, PhoneCheckService svc, CancellationToken ct) =>
                 Results.Ok(await svc.StatusAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Push").WithSummary("Whether the phone number on the profile has been confirmed by text.");

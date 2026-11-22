@@ -10,8 +10,11 @@ public sealed record PartyMemberDto(Guid Id, string Name, int Age, bool Child);
 public sealed record EmergencyDto(string Name, string Phone, string Relationship);
 
 public sealed record ProfileDto(
-    string FirstName, string LastName, string Dob, string Email, string Phone, string Citizenship,
+    string LegalName, string Dob, string Email, string Phone, string Citizenship,
     string[] Dietary, string[] Needs, string Bedding, string SpecialRequests, EmergencyDto Emergency, string[] KeepOut, string[] AvoidFlags);
+
+/// <summary>The email address and phone number on the account, either of which may be empty. Changing one makes it unconfirmed until a code is typed back.</summary>
+public sealed record ContactDto(string Email, string Phone);
 
 public sealed record ProfileViewDto(ProfileDto Profile, Guid Id, bool CanEdit, int DaysToDeparture);
 

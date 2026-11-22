@@ -558,7 +558,10 @@ CREATE TABLE dbo.Users (
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Users_PublicId DEFAULT NEWID() CONSTRAINT UX_Users_PublicId UNIQUE,
   Slug NVARCHAR(30) NULL,                       -- seed personas only: gerald, maya ...
   AccountNumber CHAR(10) NOT NULL,
-  Email NVARCHAR(254) NULL,
+  Username NVARCHAR(40) NOT NULL,               -- the sign-in credential: unique, at least 6 characters for a new account
+  ChatNickname NVARCHAR(30) NULL,               -- optional name shown in every chat; the username is shown when it is empty
+  ChatName AS (ISNULL(ChatNickname, Username)) PERSISTED,
+  Email NVARCHAR(254) NULL,                     -- optional and may be shared between accounts
   PasswordHash NVARCHAR(200) NULL,              -- pbkdf2$iter$salt$hash (D12)
   Role VARCHAR(5) NOT NULL CONSTRAINT DF_Users_Role DEFAULT 'guest',
   IsDemo BIT NOT NULL CONSTRAINT DF_Users_IsDemo DEFAULT 0,
@@ -586,7 +589,8 @@ CREATE TABLE dbo.Users (
   CONSTRAINT CK_Users_Password CHECK (IsSupervised = 1 OR IsDemo = 1 OR PasswordHash IS NOT NULL),
   CONSTRAINT CK_Users_Currency CHECK (Currency LIKE '[A-Z][A-Z][A-Z]')
 );
-CREATE UNIQUE INDEX UX_Users_Email ON dbo.Users (Email) WHERE Email IS NOT NULL;
+CREATE UNIQUE INDEX UX_Users_Username ON dbo.Users (Username);
+CREATE INDEX IX_Users_Email ON dbo.Users (Email) WHERE Email IS NOT NULL;
 CREATE UNIQUE INDEX UX_Users_Slug ON dbo.Users (Slug) WHERE Slug IS NOT NULL;
 CREATE INDEX IX_Users_BookerUserId ON dbo.Users (BookerUserId) WHERE BookerUserId IS NOT NULL;
 END
@@ -598,7 +602,11 @@ IF OBJECT_ID(N'dbo.Profiles', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.Profiles (
   UserId BIGINT NOT NULL CONSTRAINT PK_Profiles PRIMARY KEY,
-  FirstName NVARCHAR(60) NOT NULL, LastName NVARCHAR(60) NOT NULL, Dob DATE NOT NULL,
+  LegalName NVARCHAR(120) NOT NULL,             -- one required legal name, as on a passport
+  -- Read-only splits at the last space, kept in step with LegalNameRules in the server: chat short names and matching use them.
+  FirstName AS (CASE WHEN CHARINDEX(N' ', LegalName) = 0 THEN LegalName ELSE RTRIM(LEFT(LegalName, LEN(LegalName) - CHARINDEX(N' ', REVERSE(LegalName)))) END) PERSISTED,
+  LastName AS (CASE WHEN CHARINDEX(N' ', LegalName) = 0 THEN N'' ELSE RIGHT(LegalName, CHARINDEX(N' ', REVERSE(LegalName)) - 1) END) PERSISTED,
+  Dob DATE NOT NULL,
   Phone NVARCHAR(30) NULL,
   Citizenship VARCHAR(5) NOT NULL CONSTRAINT DF_Profiles_Citizenship DEFAULT 'us',
   Bedding VARCHAR(12) NOT NULL CONSTRAINT DF_Profiles_Bedding DEFAULT 'noPreference',

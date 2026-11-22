@@ -11,6 +11,7 @@ public class ChatConnectionRulesTests
     [InlineData("O'Neil", "O'Neil")]
     [InlineData("Anne-Marie", "Anne-Marie")]
     [InlineData("José", "José")]
+    [InlineData("sam_r.99", "sam_r.99")]
     public void ASearchIsTidiedAndKept(string text, string expected) => Assert.Equal(expected, ChatConnectionRules.CleanQuery(text));
 
     [Theory]
@@ -19,7 +20,6 @@ public class ChatConnectionRulesTests
     [InlineData("  ")]
     [InlineData("S")]
     [InlineData("100%")]
-    [InlineData("a_b_c")]
     [InlineData("[abc]")]
     [InlineData("Sam; DROP")]
     public void ATooShortOrOddSearchIsRefused(string? text) => Assert.Null(ChatConnectionRules.CleanQuery(text));

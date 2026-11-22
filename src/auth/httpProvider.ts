@@ -21,7 +21,7 @@ export interface HttpAuthOptions {
 }
 
 interface WireUser {
-  id: string; accountNumber: string; email: string | null; firstName: string | null; lastName: string | null; role: string; tier: string; isDemo: boolean; needsReview?: boolean
+  id: string; accountNumber: string; username: string; email: string | null; firstName: string | null; lastName: string | null; role: string; tier: string; isDemo: boolean; needsReview?: boolean
 }
 interface WireSession { accessToken: string; expiresAt: number; refreshToken: string; refreshExpiresAt: number; user: WireUser }
 
@@ -52,7 +52,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
   const take = (w: WireSession, method: AuthMethod = 'password'): Session => {
     access = w.accessToken
     store(w.refreshToken)
-    const user: SessionUser = { id: w.user.id, accountNumber: w.user.accountNumber, email: w.user.email, firstName: w.user.firstName, lastName: w.user.lastName, role: w.user.role, tier: w.user.tier, isDemo: w.user.isDemo, ...(w.user.needsReview ? { needsReview: true } : {}) }
+    const user: SessionUser = { id: w.user.id, accountNumber: w.user.accountNumber, username: w.user.username, email: w.user.email, firstName: w.user.firstName, lastName: w.user.lastName, role: w.user.role, tier: w.user.tier, isDemo: w.user.isDemo, ...(w.user.needsReview ? { needsReview: true } : {}) }
     current = { signedInAt: now(), method, user }
     return current
   }
@@ -85,7 +85,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
     if (!isApiError(e)) return e
     if (e.code === 'offline') return new AuthError('offline')
     if (e.retryable) return new AuthError('unavailable')
-    const named: AuthError['code'][] = ['emailTaken', 'tooYoung', 'badCode', 'possibleDuplicate']
+    const named: AuthError['code'][] = ['usernameTaken', 'tooYoung', 'badCode', 'possibleDuplicate']
     return new AuthError(named.find((n) => n === e.message) ?? fallback)
   }
 
@@ -101,14 +101,14 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       async register(input) {
         try {
           // The account is made but nobody is signed in: the guest signs in on the sign-in page, with their details filled in.
-          await raw.post<WireSession>('/auth/register', { ...input, email: input.email.trim() }, { anonymous: true })
+          await raw.post<WireSession>('/auth/register', { ...input, username: input.username.trim(), email: input.email.trim() }, { anonymous: true })
         } catch (e) { throw failure(e) }
       },
-      async requestCode(purpose, email) {
-        try { await raw.post(purpose === 'reset' ? '/auth/forgot' : '/auth/magic', { email: email.trim() }, { anonymous: true }) } catch (e) { throw failure(e) }
+      async requestCode(purpose, username) {
+        try { await raw.post(purpose === 'reset' ? '/auth/forgot' : '/auth/magic', { username: username.trim() }, { anonymous: true }) } catch (e) { throw failure(e) }
       },
-      async resetPassword(email, code, newPassword) {
-        try { await raw.post('/auth/reset', { email: email.trim(), code: code.trim(), newPassword }, { anonymous: true }) } catch (e) { throw failure(e) }
+      async resetPassword(username, code, newPassword) {
+        try { await raw.post('/auth/reset', { username: username.trim(), code: code.trim(), newPassword }, { anonymous: true }) } catch (e) { throw failure(e) }
       },
       async listDevices() {
         const token = storedToken()
@@ -134,7 +134,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       try {
         remember = c.remember === true
         const session = c.method === 'code'
-          ? take(await raw.post<WireSession>('/auth/magic/redeem', { email: c.email.trim(), code: c.code.trim() }, { anonymous: true }), 'code')
+          ? take(await raw.post<WireSession>('/auth/magic/redeem', { username: c.username.trim(), code: c.code.trim() }, { anonymous: true }), 'code')
           : take(await raw.post<WireSession>('/auth/login', { identifier: c.identifier.trim(), password: c.password }, { anonymous: true }))
         notify()
         opts.channel?.post({ type: 'session' })

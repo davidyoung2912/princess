@@ -22,6 +22,8 @@ public sealed class InMemoryUserStore : IUserStore
             Id = id,
             PublicId = Guid.NewGuid(),
             AccountNumber = accountNumber ?? (4100000000 + id).ToString(),
+            // A test user signs in by the email it was made with, so the username mirrors it.
+            Username = email ?? $"user{Users.Count + 1:D6}",
             Email = email,
             // Low cost so the suite stays quick; Verify honours the iteration count stored in the hash.
             PasswordHash = password is null ? null : TestHashes.Make(password),
@@ -36,7 +38,7 @@ public sealed class InMemoryUserStore : IUserStore
     }
 
     public Task<UserRecord?> FindByIdentifierAsync(string identifier, CancellationToken ct) =>
-        Task.FromResult(Users.FirstOrDefault(u => string.Equals(u.Email, identifier, StringComparison.OrdinalIgnoreCase) || u.AccountNumber == identifier));
+        Task.FromResult(Users.FirstOrDefault(u => string.Equals(u.Username, identifier, StringComparison.OrdinalIgnoreCase) || u.AccountNumber == identifier));
 
     public Task<UserRecord?> FindByIdAsync(long id, CancellationToken ct) => Task.FromResult(Users.FirstOrDefault(u => u.Id == id));
 
@@ -57,6 +59,12 @@ public sealed class InMemoryUserStore : IUserStore
         {
             u.FailedLogins++;
         }
+        return Task.CompletedTask;
+    }
+
+    public Task SetChatNicknameAsync(long userId, string? nickname, CancellationToken ct)
+    {
+        Users.Single(x => x.Id == userId).ChatNickname = nickname;
         return Task.CompletedTask;
     }
 

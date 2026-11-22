@@ -45,12 +45,12 @@ public class SignInFlowsApiTests : IDisposable
     [Fact]
     public async Task RegisterCreatesAnAccountAndSignsIn()
     {
-        var r = await Post("register", new RegisterRequest(" New.Guest@Example.com ", "a-long-password", "Nia", "Guest", Dob(30)));
+        var r = await Post("register", new RegisterRequest(" New.Guest@Example.com ", "a-long-password", "Nia Guest", Dob(30), Username: "new.guest"));
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         var s = (await r.Content.ReadFromJsonAsync<SessionResponse>(Json))!;
         Assert.Equal("new.guest@example.com", s.User.Email);
         Assert.Equal("Nia", s.User.FirstName);
-        Assert.Equal(HttpStatusCode.OK, (await Post("login", new LoginRequest("new.guest@example.com", "a-long-password"))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Post("login", new LoginRequest("new.guest", "a-long-password"))).StatusCode);
     }
 
     [Theory]
@@ -59,41 +59,52 @@ public class SignInFlowsApiTests : IDisposable
     [InlineData("a@example.com", "a-long-password", 12)]
     public async Task RegisterRefusesBadInput(string email, string password, int age)
     {
-        var r = await Post("register", new RegisterRequest(email, password, "A", "B", Dob(age)));
+        var r = await Post("register", new RegisterRequest(email, password, "A B", Dob(age), Username: "valid.name"));
         Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
     }
 
     [Fact]
-    public async Task RegisterRefusesAnAddressInUse()
+    public async Task RegisterRefusesAUsernameInUseButAllowsASharedEmail()
     {
-        var r = await Post("register", new RegisterRequest("GERALD@demo.princess.example", "a-long-password", "A", "B", Dob(30)));
-        Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
+        var first = await Post("register", new RegisterRequest("shared@example.com", "a-long-password", "A B", Dob(30), Username: "sharedname"));
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var same = await Post("register", new RegisterRequest(null, "a-long-password", "C D", Dob(31), Username: "SharedName"));
+        Assert.Equal(HttpStatusCode.Conflict, same.StatusCode);
+        var shared = await Post("register", new RegisterRequest("shared@example.com", "a-long-password", "E F", Dob(32), Username: "othername"));
+        Assert.Equal(HttpStatusCode.OK, shared.StatusCode);
     }
+
+    [Theory]
+    [InlineData("short")]
+    [InlineData("has space")]
+    [InlineData(null)]
+    public async Task RegisterRefusesAnUnfitUsername(string? name) =>
+        Assert.Equal(HttpStatusCode.BadRequest, (await Post("register", new RegisterRequest(null, "a-long-password", "A B", Dob(30), Username: name))).StatusCode);
 
     [Fact]
     public async Task ASecondSignUpWithTheSameNameAndBirthdayAsksFirstThenFlagsForAPerson()
     {
         var dob = Dob(40);
-        Assert.Equal(HttpStatusCode.OK, (await Post("register", new RegisterRequest("one@example.com", "a-long-password", "Zoë", "Marsh", dob))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Post("register", new RegisterRequest("one@example.com", "a-long-password", "Zoë Marsh", dob, Username: "oneuser"))).StatusCode);
         // Same name (ignoring case) and birthday, another address: asked, not created, and nobody is named.
-        var ask = await Post("register", new RegisterRequest("two@example.com", "a-long-password", "ZOË", "marsh", dob));
+        var ask = await Post("register", new RegisterRequest("two@example.com", "a-long-password", "ZOË marsh", dob, Username: "twouser"));
         Assert.Equal(HttpStatusCode.Conflict, ask.StatusCode);
         Assert.Contains("possibleDuplicate", await ask.Content.ReadAsStringAsync());
         Assert.Equal(HttpStatusCode.Unauthorized, (await Post("login", new LoginRequest("two@example.com", "a-long-password"))).StatusCode);
         // The person says they are different: created, and flagged for a person to check.
-        var ok = await Post("register", new RegisterRequest("two@example.com", "a-long-password", "ZOË", "marsh", dob, true));
+        var ok = await Post("register", new RegisterRequest("two@example.com", "a-long-password", "ZOË marsh", dob, true, Username: "twouser"));
         Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
         Assert.True((await ok.Content.ReadFromJsonAsync<SessionResponse>(Json))!.User.NeedsReview);
         // A different birthday is not a match.
-        Assert.Equal(HttpStatusCode.OK, (await Post("register", new RegisterRequest("three@example.com", "a-long-password", "Zoë", "Marsh", Dob(41)))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Post("register", new RegisterRequest("three@example.com", "a-long-password", "Zoë Marsh", Dob(41), Username: "threeuser"))).StatusCode);
     }
 
     [Fact]
     public async Task OnlyAnAdministratorSeesTheFlaggedAccountsAndSettlingOneClearsTheFlag()
     {
         var dob = Dob(40);
-        await Post("register", new RegisterRequest("one@example.com", "a-long-password", "Zoë", "Marsh", dob));
-        var flagged = (await (await Post("register", new RegisterRequest("two@example.com", "a-long-password", "Zoë", "Marsh", dob, true))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
+        await Post("register", new RegisterRequest("one@example.com", "a-long-password", "Zoë Marsh", dob, Username: "oneuser"));
+        var flagged = (await (await Post("register", new RegisterRequest("two@example.com", "a-long-password", "Zoë Marsh", dob, true, Username: "twouser"))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
         var staff = _f.Users.Add("staff@example.com", Password, first: "Sam");
         staff.Role = "admin";
         var admin = (await (await Post("login", new LoginRequest("staff@example.com", Password))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
@@ -122,7 +133,7 @@ public class SignInFlowsApiTests : IDisposable
         Assert.Empty(_f.SignIn.Outbox);
         Assert.Equal(HttpStatusCode.NoContent, (await Post("forgot", new CodeRequest(_gerald.Email))).StatusCode);
         Assert.Single(_f.SignIn.Outbox);
-        Assert.Equal(HttpStatusCode.BadRequest, (await Post("forgot", new CodeRequest("nonsense"))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Post("forgot", new CodeRequest(""))).StatusCode);
     }
 
     [Fact]

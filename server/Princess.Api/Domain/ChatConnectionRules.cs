@@ -46,7 +46,7 @@ public static class ChatConnectionRules
         var clean = sb.ToString();
         if (IsEmail(clean)) return clean;   // an email address is looked up whole, never in part
         if (clean.Length < MinQuery || clean.Length > MaxQuery) return null;
-        return clean.All(c => char.IsLetterOrDigit(c) || c is ' ' or '-' or '\'' or '.') ? clean : null;
+        return clean.All(c => char.IsLetterOrDigit(c) || c is ' ' or '-' or '\'' or '.' or '_') ? clean : null;
     }
 
     /// <summary>The first name and the first letter of the last name ("Sam R."): all another guest sees of a person.</summary>

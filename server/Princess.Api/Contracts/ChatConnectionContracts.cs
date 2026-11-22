@@ -30,7 +30,10 @@ public sealed record ChatRespondBody(bool Accept, bool Block = false);
 
 /// <summary>The caller's chat choices. <c>Findable</c>: other guests on the sailing can find them by name. <c>ShowPreview</c>: a notice may show the message text (used from phase 4).</summary>
 /// <summary><c>Typing</c> (phase 2): show "is typing" to the others and see theirs. On unless turned off; an older app that leaves it out keeps it on.</summary>
-public sealed record ChatSettingsDto(bool Findable, bool ShowPreview, bool Typing = true);
+/// <summary>The chat nickname to set; empty clears it.</summary>
+public sealed record NicknameBody(string? Nickname);
+
+public sealed record ChatSettingsDto(bool Findable, bool ShowPreview, bool Typing = true, string? Nickname = null);
 
 // ---- Conversations and messages (phase 4) ----
 

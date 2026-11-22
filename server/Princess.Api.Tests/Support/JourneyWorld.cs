@@ -94,7 +94,7 @@ public abstract class JourneyWorld : IDisposable
     {
         F.Journey.Profiles[u.Id] = new ProfileRecord
         {
-            UserId = u.Id, FirstName = first, LastName = last, Dob = DateTime.Parse(dob), Email = email, Phone = u.IsSupervised ? "" : "555-0103",
+            UserId = u.Id, LegalName = $"{first} {last}".Trim(), Dob = DateTime.Parse(dob), Email = email, Phone = u.IsSupervised ? "" : "555-0103",
             EmergencyName = u.IsSupervised ? "" : "Sam Example", EmergencyPhone = u.IsSupervised ? "" : "555-0104", EmergencyRelationship = u.IsSupervised ? "" : "Friend",
         };
         foreach (var g in F.Journey.Party.Values.SelectMany(p => p).Where(g => g.UserId == u.Id))

@@ -636,10 +636,9 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar, m.Status, u.IsSupervised, u.BookerUserId
+            SELECT u.Id AS UserId, u.PublicId, u.ChatName AS FirstName, N'' AS LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar, m.Status, u.IsSupervised, u.BookerUserId
             FROM dbo.ChatGroupMembers m
             JOIN dbo.Users u ON u.Id = m.UserId
-            JOIN dbo.Profiles pr ON pr.UserId = u.Id
             LEFT JOIN dbo.UserPrefs p ON p.UserId = u.Id
             WHERE m.GroupId = @groupId
             """, new { groupId }, null, ct))).ToList();
@@ -651,10 +650,9 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         if (map.Count == 0) return map;
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT m.GroupId, u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar, m.Status, u.IsSupervised, u.BookerUserId
+            SELECT m.GroupId, u.Id AS UserId, u.PublicId, u.ChatName AS FirstName, N'' AS LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar, m.Status, u.IsSupervised, u.BookerUserId
             FROM dbo.ChatGroupMembers m
             JOIN dbo.Users u ON u.Id = m.UserId
-            JOIN dbo.Profiles pr ON pr.UserId = u.Id
             LEFT JOIN dbo.UserPrefs p ON p.UserId = u.Id
             WHERE m.GroupId IN @groupIds
             """, new { groupIds = map.Keys.ToArray() }, null, ct));
@@ -666,11 +664,10 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT DISTINCT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar
+            SELECT DISTINCT u.Id AS UserId, u.PublicId, u.ChatName AS FirstName, N'' AS LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar
             FROM dbo.ChatGroupMembers me
             JOIN dbo.ChatGroupMembers m ON m.GroupId = me.GroupId AND m.UserId <> me.UserId
             JOIN dbo.Users u ON u.Id = m.UserId
-            JOIN dbo.Profiles pr ON pr.UserId = u.Id
             LEFT JOIN dbo.UserPrefs p ON p.UserId = u.Id
             WHERE me.UserId = @userId
             """, new { userId }, null, ct))).ToList();

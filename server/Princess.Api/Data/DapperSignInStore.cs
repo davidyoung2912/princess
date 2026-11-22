@@ -25,7 +25,7 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
     {
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
-        var taken = await c.ExecuteScalarAsync<int>(new CommandDefinition("SELECT COUNT(1) FROM dbo.Users WHERE Email = @Email", new { a.Email }, tx, cancellationToken: ct));
+        var taken = await c.ExecuteScalarAsync<int>(new CommandDefinition("SELECT COUNT(1) FROM dbo.Users WHERE Username = @Username", new { a.Username }, tx, cancellationToken: ct));
         if (taken > 0) return null;
         // A random 10-digit number starting with 4; retry on the rare clash with the unique index.
         for (var attempt = 0; attempt < 5; attempt++)
@@ -34,15 +34,15 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
             var exists = await c.ExecuteScalarAsync<int>(new CommandDefinition("SELECT COUNT(1) FROM dbo.Users WHERE AccountNumber = @number", new { number }, tx, cancellationToken: ct));
             if (exists > 0) continue;
             var id = await c.ExecuteScalarAsync<long>(new CommandDefinition("""
-                INSERT INTO dbo.Users (AccountNumber, Email, PasswordHash, ReviewReason, CreatedAt, UpdatedAt)
+                INSERT INTO dbo.Users (AccountNumber, Username, Email, PasswordHash, ReviewReason, CreatedAt, UpdatedAt)
                 OUTPUT INSERTED.Id
-                VALUES (@number, @Email, @PasswordHash, @ReviewReason, @now, @now)
-                """, new { number, a.Email, a.PasswordHash, a.ReviewReason, now }, tx, cancellationToken: ct));
+                VALUES (@number, @Username, @Email, @PasswordHash, @ReviewReason, @now, @now)
+                """, new { number, a.Username, a.Email, a.PasswordHash, a.ReviewReason, now }, tx, cancellationToken: ct));
             await c.ExecuteAsync(new CommandDefinition(
-                "INSERT INTO dbo.Profiles (UserId, FirstName, LastName, Dob, Phone, CreatedAt, UpdatedAt) VALUES (@id, @FirstName, @LastName, @Dob, @Phone, @now, @now)",
-                new { id, a.FirstName, a.LastName, Dob = a.Dob.ToDateTime(TimeOnly.MinValue), a.Phone, now }, tx, cancellationToken: ct));
+                "INSERT INTO dbo.Profiles (UserId, LegalName, Dob, Phone, CreatedAt, UpdatedAt) VALUES (@id, @LegalName, @Dob, @Phone, @now, @now)",
+                new { id, a.LegalName, Dob = a.Dob.ToDateTime(TimeOnly.MinValue), a.Phone, now }, tx, cancellationToken: ct));
             // Every account has a permanent chat with Stanley from the start, made in the same transaction so there is never an account without one.
-            await StanleyThread.EnsureAsync(c, tx, id, Domain.StanleyPersonaRules.Welcome(a.FirstName), now, ct);
+            await StanleyThread.EnsureAsync(c, tx, id, Domain.StanleyPersonaRules.Welcome(Domain.LegalNameRules.First(a.LegalName)), now, ct);
             await tx.CommitAsync(ct);
             return id;
         }
@@ -64,26 +64,25 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
         users.Invalidate();
     }
 
-    public async Task<Guid?> FindPossibleDuplicateAsync(string firstName, string lastName, DateOnly dob, CancellationToken ct)
+    public async Task<Guid?> FindPossibleDuplicateAsync(string legalName, DateOnly dob, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         return await c.ExecuteScalarAsync<Guid?>(new CommandDefinition("""
             SELECT TOP 1 u.PublicId FROM dbo.Users u JOIN dbo.Profiles p ON p.UserId = u.Id
             WHERE u.IsSupervised = 0 AND u.IsDemo = 0 AND p.Dob = @dob
-              AND p.FirstName COLLATE Latin1_General_CI_AI = @firstName COLLATE Latin1_General_CI_AI
-              AND p.LastName COLLATE Latin1_General_CI_AI = @lastName COLLATE Latin1_General_CI_AI
+              AND p.LegalName COLLATE Latin1_General_CI_AI = @legalName COLLATE Latin1_General_CI_AI
             ORDER BY u.Id
-            """, new { firstName, lastName, dob = dob.ToDateTime(TimeOnly.MinValue) }, cancellationToken: ct));
+            """, new { legalName, dob = dob.ToDateTime(TimeOnly.MinValue) }, cancellationToken: ct));
     }
 
-    private sealed record ReviewRow(Guid Id, string AccountNumber, string FirstName, string LastName, DateTime Dob, DateTime CreatedAt);
+    private sealed record ReviewRow(Guid Id, string AccountNumber, string LegalName, DateTime Dob, DateTime CreatedAt);
     private sealed record MatchRow(Guid Id, string AccountNumber, DateTime CreatedAt);
 
     public async Task<IReadOnlyList<ReviewItem>> ListReviewsAsync(CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         var rows = (await c.QueryAsync<ReviewRow>(new CommandDefinition("""
-            SELECT TOP 100 u.PublicId AS Id, u.AccountNumber, p.FirstName, p.LastName, p.Dob, u.CreatedAt
+            SELECT TOP 100 u.PublicId AS Id, u.AccountNumber, p.LegalName, p.Dob, u.CreatedAt
             FROM dbo.Users u JOIN dbo.Profiles p ON p.UserId = u.Id
             WHERE u.ReviewReason IS NOT NULL
             ORDER BY u.Id
@@ -95,11 +94,10 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
                 SELECT u.PublicId AS Id, u.AccountNumber, u.CreatedAt
                 FROM dbo.Users u JOIN dbo.Profiles p ON p.UserId = u.Id
                 WHERE u.IsSupervised = 0 AND u.IsDemo = 0 AND u.PublicId <> @Id AND p.Dob = @Dob
-                  AND p.FirstName COLLATE Latin1_General_CI_AI = @FirstName COLLATE Latin1_General_CI_AI
-                  AND p.LastName COLLATE Latin1_General_CI_AI = @LastName COLLATE Latin1_General_CI_AI
+                  AND p.LegalName COLLATE Latin1_General_CI_AI = @LegalName COLLATE Latin1_General_CI_AI
                 ORDER BY u.Id
-                """, new { r.Id, r.Dob, r.FirstName, r.LastName }, cancellationToken: ct))).Select(m => new ReviewMatch(m.Id, m.AccountNumber, m.CreatedAt)).ToList();
-            items.Add(new ReviewItem(r.Id, r.AccountNumber, r.FirstName, r.LastName, DateOnly.FromDateTime(r.Dob), r.CreatedAt, matches));
+                """, new { r.Id, r.Dob, r.LegalName }, cancellationToken: ct))).Select(m => new ReviewMatch(m.Id, m.AccountNumber, m.CreatedAt)).ToList();
+            items.Add(new ReviewItem(r.Id, r.AccountNumber, r.LegalName, DateOnly.FromDateTime(r.Dob), r.CreatedAt, matches));
         }
         return items;
     }

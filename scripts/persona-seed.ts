@@ -253,20 +253,20 @@ function resetFile(): string {
 function usersFile(): string {
   const body = collect(() => {
     const row = (p: Person, i: number): V[] => [
-      pub(`user:${p.slug}`), p.slug, accountNumber(i), p.child ? null : emailOf(p.slug), p.child ? null : hashPassword(p.slug), 'guest', true, !!p.child,
+      pub(`user:${p.slug}`), p.slug, accountNumber(i), p.slug, p.first, p.child ? null : emailOf(p.slug), p.child ? null : hashPassword(p.slug), 'guest', true, !!p.child,
       p.child ? raw(`(SELECT Id FROM dbo.Users WHERE Slug = N'${p.child}')`) : null, p.tier ?? 'none', !!p.sanctuary, p.textSize ?? 'standard',
     ]
-    const cols = ['PublicId', 'Slug', 'AccountNumber', 'Email', 'PasswordHash', 'Role', 'IsDemo', 'IsSupervised', 'BookerUserId', 'Tier', 'Sanctuary', 'TextSize']
+    const cols = ['PublicId', 'Slug', 'AccountNumber', 'Username', 'ChatNickname', 'Email', 'PasswordHash', 'Role', 'IsDemo', 'IsSupervised', 'BookerUserId', 'Tier', 'Sanctuary', 'TextSize']
     insert('dbo.Users', cols, PEOPLE.map((p, i) => ({ p, i })).filter((x) => !x.p.child).map((x) => row(x.p, x.i)))
     insert('dbo.Users', cols, PEOPLE.map((p, i) => ({ p, i })).filter((x) => x.p.child).map((x) => row(x.p, x.i)))
     out.push('DECLARE')
     out.push(PEOPLE.map((p) => `  @u_${p.slug} BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'${p.slug}')`).join(',\n') + ';', '')
 
-    insert('dbo.Profiles', ['UserId', 'FirstName', 'LastName', 'Dob', 'Phone', 'Citizenship', 'Bedding', 'SpecialRequests', 'EmergencyName', 'EmergencyPhone', 'EmergencyRelationship', 'Street', 'City', 'Region', 'Postcode', 'Country'],
+    insert('dbo.Profiles', ['UserId', 'LegalName', 'Dob', 'Phone', 'Citizenship', 'Bedding', 'SpecialRequests', 'EmergencyName', 'EmergencyPhone', 'EmergencyRelationship', 'Street', 'City', 'Region', 'Postcode', 'Country'],
       PEOPLE.map((p, i) => {
         const adult = isAdult(p.slug)
         const lead = adult && !PEOPLE.some((o) => o.child === p.slug)
-        return [U(p.slug), p.first, p.last, dt(dobOf(p)), adult ? `+1 305 555 ${String(1000 + i * 37).slice(-4)}` : null, p.other ? 'other' : 'us', 'noPreference',
+        return [U(p.slug), `${p.first} ${p.last}`, dt(dobOf(p)), adult ? `+1 305 555 ${String(1000 + i * 37).slice(-4)}` : null, p.other ? 'other' : 'us', 'noPreference',
           p.needs?.includes('mobility') ? 'Stateroom close to the elevators, please.' : '', adult ? 'Alex Contact' : (p.child ? 'See booker' : ''), adult ? '+1 305 555 0100' : '', adult ? 'Friend' : '',
           lead ? `${100 + i} Harbour Road` : null, lead ? 'Fort Lauderdale' : null, lead ? 'FL' : null, lead ? '33301' : null, lead ? 'United States' : null] as V[]
       }))

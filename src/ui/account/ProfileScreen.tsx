@@ -86,9 +86,9 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setSaved(false)
-    const found = validateProfile(p, dateIn(now, 'America/New_York'), child)
+    const found = validateProfile(p, dateIn(now, 'America/New_York'))
     setErrors(found)
-    const rule = nameChange(`${view.profile.firstName} ${view.profile.lastName}`, `${p.firstName} ${p.lastName}`, view.daysToDeparture)
+    const rule = nameChange(view.profile.legalName, p.legalName, view.daysToDeparture)
     setNameBlocked(rule.allowed ? null : rule.reason)
     if (Object.keys(found).length > 0 || !rule.allowed) return
     if (await save.run(p)) {
@@ -109,8 +109,7 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
           </Banner>
         )}
         <h2>{th('profile.details')}</h2>
-        <Field label={t('profile.field.firstName')} help={t('helptip.passportName')} value={p.firstName} onChange={(e) => set({ firstName: e.target.value })} error={err('firstName')} autoComplete="given-name" />
-        <Field label={t('profile.field.lastName')} value={p.lastName} onChange={(e) => set({ lastName: e.target.value })} error={err('lastName')} hint={t('profile.nameHint')} autoComplete="family-name" />
+        <Field label={t('profile.field.legalName')} help={t('helptip.passportName')} hint={t('profile.nameHint')} value={p.legalName} onChange={(e) => set({ legalName: e.target.value })} error={err('legalName')} autoComplete="name" />
         <Field label={t('profile.field.dob')} help={t('helptip.dobProfile')} type="date" value={p.dob} onChange={(e) => set({ dob: e.target.value })} error={err('dob')} autoComplete="bday" />
         <Field label={t('profile.field.email')} type="email" value={p.email} onChange={(e) => set({ email: e.target.value })} error={err('email')} autoComplete="email" hint={child ? t('profile.optionalChild') : undefined} />
         <Field label={t('profile.field.phone')} help={t('helptip.mobile')} type="tel" value={p.phone} onChange={(e) => set({ phone: e.target.value })} error={err('phone')} autoComplete="tel" />

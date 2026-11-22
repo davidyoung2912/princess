@@ -117,7 +117,7 @@ export function CalendarFeed() {
 }
 
 /** Texts go only to a phone number the guest has confirmed: a six-digit code is texted to the number on the profile and typed back here. */
-export function PhoneCheck() {
+export function PhoneCheck({ onVerified }: { onVerified?: () => void } = {}) {
   const status = useMine(() => api.phoneCheck.status())
   const [code, setCode] = useState('')
   const send = useAction(() => api.phoneCheck.sendCode())
@@ -137,7 +137,7 @@ export function PhoneCheck() {
                 <Button variant={s.pending ? 'secondary' : 'primary'} disabled={send.busy} onClick={async () => { if (await send.run()) { setCode(''); status.retry() } }}>{s.pending ? t('phoneCheck.resend') : t('phoneCheck.send')}</Button>
                 {send.error?.code === 'conflict' ? <p role="alert" className="field__error">{t('phoneCheck.err.soon')}</p> : send.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('phoneCheck.err.phone')}</p> : <ActionError error={send.error} />}
                 {s.pending && (
-                  <form onSubmit={async (e) => { e.preventDefault(); if (await confirm.run(code)) { setCode(''); status.retry() } }}>
+                  <form onSubmit={async (e) => { e.preventDefault(); if (await confirm.run(code)) { setCode(''); status.retry(); onVerified?.() } }}>
                     <div className="field">
                       <label htmlFor="phone-code">{t('phoneCheck.code')}</label>
                       <input id="phone-code" className="field__input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
@@ -155,7 +155,7 @@ export function PhoneCheck() {
 }
 
 /** Payment and travel notice emails go only to an address the guest has confirmed: a six-digit code is emailed to the address on the account and typed back here. */
-export function EmailCheck() {
+export function EmailCheck({ onVerified }: { onVerified?: () => void } = {}) {
   const status = useMine(() => api.emailCheck.status())
   const [code, setCode] = useState('')
   const send = useAction(() => api.emailCheck.sendCode())
@@ -175,7 +175,7 @@ export function EmailCheck() {
                 <Button variant={s.pending ? 'secondary' : 'primary'} disabled={send.busy} onClick={async () => { if (await send.run()) { setCode(''); status.retry() } }}>{s.pending ? t('emailCheck.resend') : t('emailCheck.send')}</Button>
                 {send.error?.code === 'conflict' ? <p role="alert" className="field__error">{t('emailCheck.err.soon')}</p> : send.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('emailCheck.err.phone')}</p> : <ActionError error={send.error} />}
                 {s.pending && (
-                  <form onSubmit={async (e) => { e.preventDefault(); if (await confirm.run(code)) { setCode(''); status.retry() } }}>
+                  <form onSubmit={async (e) => { e.preventDefault(); if (await confirm.run(code)) { setCode(''); status.retry(); onVerified?.() } }}>
                     <div className="field">
                       <label htmlFor="email-code">{t('emailCheck.code')}</label>
                       <input id="email-code" className="field__input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />

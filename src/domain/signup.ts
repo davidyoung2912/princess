@@ -6,7 +6,12 @@ import { isWholePhone } from './phone'
 export const MIN_PASSWORD = 10
 export let MIN_ACCOUNT_AGE = 18
 
-export type SignupProblem = 'email' | 'password' | 'firstName' | 'lastName' | 'dob' | 'phone' | 'tooYoung' | 'confirm'
+export type SignupProblem = 'username' | 'email' | 'password' | 'legalName' | 'dob' | 'phone' | 'tooYoung' | 'confirm'
+
+/** A sign-in name: 6 to 30 letters, digits and . _ - (the server also refuses blocked words). */
+export const MIN_USERNAME = 6
+export const MAX_USERNAME = 30
+export const isUsername = (s: string): boolean => s.trim().length >= MIN_USERNAME && s.trim().length <= MAX_USERNAME && /^[A-Za-z0-9._-]+$/.test(s.trim())
 
 export const isEmail = (s: string): boolean => /^[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+$/.test(s.trim()) && s.trim().length <= 254
 
@@ -28,14 +33,14 @@ export function isAdult(dob: string, today: string): boolean {
 /** Every problem with a sign-up form, in field order. Empty means it can be sent. `confirm`, when given, is the password typed a second time and must match. */
 export function signupProblems(r: Registration, today: string, confirm?: string): SignupProblem[] {
   const out: SignupProblem[] = []
-  if (!isEmail(r.email)) out.push('email')
+  if (!isUsername(r.username)) out.push('username')
+  if (r.email.trim() && !isEmail(r.email)) out.push('email')
   if (r.password.length < MIN_PASSWORD || r.password.length > 200) out.push('password')
   else if (confirm !== undefined && confirm !== r.password) out.push('confirm')
-  if (!r.firstName.trim() || r.firstName.trim().length > 60) out.push('firstName')
-  if (!r.lastName.trim() || r.lastName.trim().length > 60) out.push('lastName')
+  if (!r.legalName.trim() || r.legalName.trim().length > 120) out.push('legalName')
   if (!isRealDate(r.dob)) out.push('dob')
   else if (!isAdult(r.dob, today)) out.push('tooYoung')
-  if (!isPhone(r.phone)) out.push('phone')
+  if (r.phone.trim() && !isPhone(r.phone)) out.push('phone')
   return out
 }
 

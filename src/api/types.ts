@@ -916,6 +916,11 @@ export interface Api {
     sendCode(): Promise<EmailCheck>
     confirm(code: string): Promise<EmailCheck>
   }
+  /** The email address and phone number on the account. Both are optional, and either may be shared with another account. */
+  contact: {
+    get(): Promise<Contact>
+    save(contact: Contact): Promise<Contact>
+  }
   support: {
     tickets(): Promise<Ticket[]>
     callback(phone: string): Promise<Ticket>
@@ -1352,6 +1357,9 @@ export interface WifiApi {
 
 /** Whether the profile has a phone number, whether it has been confirmed by text, and whether a code is waiting. */
 /** Whether the account has an email address, whether it has been confirmed by an emailed code, and whether a code is waiting. */
+/** Empty strings mean none. Saving a changed one makes it unconfirmed until its code is typed back. */
+export interface Contact { email: string; phone: string }
+
 export interface EmailCheck { hasEmail: boolean; verified: boolean; pending: boolean }
 
 export interface PhoneCheck { hasPhone: boolean; verified: boolean; pending: boolean }

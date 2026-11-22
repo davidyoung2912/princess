@@ -5,6 +5,8 @@ public sealed class UserRecord
     public long Id { get; set; }
     public Guid PublicId { get; set; }
     public string AccountNumber { get; set; } = "";
+    public string Username { get; set; } = "";
+    public string? ChatNickname { get; set; }
     public string? Email { get; set; }
     public string? PasswordHash { get; set; }
     public string Role { get; set; } = "guest";

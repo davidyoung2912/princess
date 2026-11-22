@@ -105,22 +105,22 @@ describe('documents engine', () => {
 })
 
 const GERALD: Profile = {
-  firstName: 'Gerald', lastName: 'Whitfield', dob: '1956-01-15', email: 'gerald.whitfield@example.com', phone: '555-0103', citizenship: 'us', dietary: [], needs: ['hearing'],
+  legalName: 'Gerald Whitfield', dob: '1956-01-15', email: 'gerald.whitfield@example.com', phone: '555-0103', citizenship: 'us', dietary: [], needs: ['hearing'],
   bedding: 'noPreference', specialRequests: '', emergency: { name: 'Sam Example', phone: '555-0104', relationship: 'Friend' },
 }
 
 describe('profile', () => {
   it('accepts a complete profile and counts the age on a date', () => {
-    expect(validateProfile(GERALD, '2027-03-07', false)).toEqual({})
+    expect(validateProfile(GERALD, '2027-03-07')).toEqual({})
     expect(ageOn(GERALD.dob, '2027-03-07')).toBe(71)
   })
 
 
   it('reports each problem on its field', () => {
-    const p = { ...GERALD, firstName: ' ', dob: '2030-01-01', email: 'nope', phone: 'abc', emergency: { name: 'Sam', phone: '', relationship: '' } }
-    expect(validateProfile(p, '2027-03-07', false)).toEqual({ firstName: 'required', dob: 'future', email: 'email', phone: 'phone', emergencyPhone: 'pair' })
-    expect(validateProfile({ ...p, dob: '' }, '2027-03-07', false).dob).toBe('required')
-    expect(validateProfile({ ...GERALD, email: '' }, '2027-03-07', true).email).toBeUndefined()
+    const p = { ...GERALD, legalName: ' ', dob: '2030-01-01', email: 'nope', phone: 'abc', emergency: { name: 'Sam', phone: '', relationship: '' } }
+    expect(validateProfile(p, '2027-03-07')).toEqual({ legalName: 'required', dob: 'future', email: 'email', phone: 'phone', emergencyPhone: 'pair' })
+    expect(validateProfile({ ...p, dob: '' }, '2027-03-07').dob).toBe('required')
+    expect(validateProfile({ ...GERALD, email: '' }, '2027-03-07').email).toBeUndefined()
   })
 
   it('lets small spelling fixes through early and sends bigger or later changes to Guest Services', () => {

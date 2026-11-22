@@ -61,14 +61,23 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     public async Task<ChatSettingsDto> SettingsAsync(UserRecord actor, CancellationToken ct)
     {
         var (findable, preview, typing) = await store.GetSettingsAsync(actor.Id, ct);
-        return new(findable, preview, typing);
+        return new(findable, preview, typing, actor.ChatNickname ?? "");
     }
 
     public async Task<ChatSettingsDto> SetSettingsAsync(UserRecord actor, ChatSettingsDto? body, CancellationToken ct)
     {
         if (body is null) throw ApiException.Invalid("settings");
         await store.SetSettingsAsync(actor.Id, body.Findable, body.ShowPreview, body.Typing, ct);
-        return body;
+        return body with { Nickname = actor.ChatNickname ?? "" };
+    }
+
+    /// <summary>Sets the name shown in chat. Empty clears it and the username shows instead; anything else must be fit and clean of blocked words.</summary>
+    public async Task<ChatSettingsDto> SetNicknameAsync(UserRecord actor, NicknameBody? body, CancellationToken ct)
+    {
+        if (body is null || !NicknameRules.TryClean(body.Nickname, out var nick)) throw ApiException.Invalid("nickname");
+        await users.SetChatNicknameAsync(actor.Id, nick, ct);
+        actor.ChatNickname = nick;
+        return await SettingsAsync(actor, ct);
     }
 
     /// <summary>The master "Hide me": nobody can find the caller by name, every chat with them ends and every waiting request is withdrawn. The others are not told. Turning being found back on later does not bring chats back.</summary>

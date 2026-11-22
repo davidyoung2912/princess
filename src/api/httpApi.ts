@@ -23,6 +23,7 @@ export interface HttpGroups {
   calendar: Api['calendar']
   phoneCheck: Api['phoneCheck']
   emailCheck: Api['emailCheck']
+  contact: Api['contact']
   support: Api['support']
   help: Api['help']
   budget: BudgetApi
@@ -359,6 +360,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     stanleyPrefs: () => get('/me/chat/stanley/prefs'),
     saveStanleyPrefs: (topicsOff) => send('put', '/me/chat/stanley/prefs', { topicsOff }),
     saveSettings: (settings) => send('put', '/me/chat/settings', settings),
+    saveNickname: (nickname) => send('put', '/me/chat/nickname', { nickname }),
     sms: () => get('/me/chat/sms'),
     saveSms: (on, idle) => send('put', '/me/chat/sms', { on, idle }),
     hide: () => send('post', '/me/chat/hide'),
@@ -531,6 +533,10 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       status: () => get('/me/email-check'),
       sendCode: () => send('post', '/me/email-check/code'),
       confirm: (code) => send('post', '/me/email-check/confirm', { code }),
+    },
+    contact: {
+      get: () => get('/me/contact'),
+      save: (contact) => send('put', '/me/contact', contact),
     },
     support: {
       tickets: () => get('/me/support-tickets'),
@@ -766,6 +772,7 @@ export function toApi(g: HttpGroups): Api {
     calendar: g.calendar,
     phoneCheck: g.phoneCheck,
     emailCheck: g.emailCheck,
+    contact: g.contact,
     support: g.support,
     help: g.help,
     budget: g.budget,

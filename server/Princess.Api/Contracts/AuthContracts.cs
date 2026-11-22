@@ -16,6 +16,7 @@ public sealed record DeviceSessionDto(string Id, string Device, long SignedInAt,
 public sealed record MeResponse(
     Guid Id,
     string AccountNumber,
+    string Username,
     string? Email,
     string? FirstName,
     string? LastName,
@@ -36,14 +37,14 @@ public sealed record SessionResponse(string AccessToken, long ExpiresAt, string 
 public sealed record ViewAsResponse(string AccessToken, long ExpiresAt, MeResponse User);
 
 /// <summary>Sign-up. The account holder must be an adult; children are added as supervised guests by their booker. <c>Dob</c> is "yyyy-MM-dd".</summary>
-public sealed record RegisterRequest(string? Email, string? Password, string? FirstName, string? LastName, string? Dob, bool? ConfirmedDifferent = null, string? Phone = null);
+public sealed record RegisterRequest(string? Email, string? Password, string? LegalName, string? Dob, bool? ConfirmedDifferent = null, string? Phone = null, string? Username = null);
 
 /// <summary>Asks for a one-time code by email: for <c>/auth/forgot</c> a password reset, for <c>/auth/magic</c> a sign-in.</summary>
-public sealed record CodeRequest(string? Email);
+public sealed record CodeRequest(string? Username);
 
-public sealed record ResetRequest(string? Email, string? Code, string? NewPassword);
+public sealed record ResetRequest(string? Username, string? Code, string? NewPassword);
 
-public sealed record MagicRedeemRequest(string? Email, string? Code);
+public sealed record MagicRedeemRequest(string? Username, string? Code);
 
 /// <summary>One seeded demo account for the non-production sign-in help. The shared demo password is not part of it.</summary>
-public sealed record DemoAccountDto(string Email, string FirstName, string? LastName, string Role);
+public sealed record DemoAccountDto(string Username, string FirstName, string? LastName, string Role);

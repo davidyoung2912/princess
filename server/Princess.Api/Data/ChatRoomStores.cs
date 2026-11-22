@@ -361,11 +361,10 @@ public sealed class DapperChatRoomStore(IDbConnectionFactory db) : IChatRoomStor
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatRoomPostRow>(Sql.Cmd("""
-            SELECT TOP (@max) m.PublicId, u.PublicId AS FromPublicId, pr.FirstName, pr.LastName, m.[Text], m.[At],
+            SELECT TOP (@max) m.PublicId, u.PublicId AS FromPublicId, u.ChatName AS FirstName, N'' AS LastName, m.[Text], m.[At],
                    CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.ChatPins p WHERE p.GroupId = m.GroupId AND p.MessageId = m.Id) THEN 1 ELSE 0 END AS bit) AS Pinned
             FROM dbo.ChatMessages m
             JOIN dbo.Users u ON u.Id = m.FromUserId
-            JOIN dbo.Profiles pr ON pr.UserId = m.FromUserId
             WHERE m.GroupId = @groupId AND m.IsSystem = 0 AND m.DeletedAt IS NULL AND m.FromUserId IS NOT NULL AND m.[Text] <> N''
             ORDER BY m.Id DESC
             """, new { groupId, max }, null, ct))).ToList();
@@ -375,12 +374,11 @@ public sealed class DapperChatRoomStore(IDbConnectionFactory db) : IChatRoomStor
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatRoomPersonRow>(Sql.Cmd("""
-            SELECT TOP (@max) u.PublicId, pr.FirstName, pr.LastName, m.ModMutedUntil AS MutedUntil
+            SELECT TOP (@max) u.PublicId, u.ChatName AS FirstName, N'' AS LastName, m.ModMutedUntil AS MutedUntil
             FROM dbo.ChatGroupMembers m
             JOIN dbo.Users u ON u.Id = m.UserId
-            JOIN dbo.Profiles pr ON pr.UserId = m.UserId
             WHERE m.GroupId = @groupId AND m.Status = 'active'
-            ORDER BY pr.FirstName, pr.LastName
+            ORDER BY u.ChatName
             """, new { groupId, max }, null, ct))).ToList();
     }
 
@@ -388,11 +386,11 @@ public sealed class DapperChatRoomStore(IDbConnectionFactory db) : IChatRoomStor
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatRoomModeratorRow>(Sql.Cmd("""
-            SELECT u.PublicId, pr.FirstName, pr.LastName,
+            SELECT u.PublicId, u.ChatName AS FirstName, N'' AS LastName,
                    CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.ChatRoomModerators r WHERE r.GroupId = @groupId AND r.UserId = u.Id) THEN 1 ELSE 0 END AS bit) AS Named
-            FROM dbo.Users u JOIN dbo.Profiles pr ON pr.UserId = u.Id
+            FROM dbo.Users u
             WHERE u.Role = 'admin'
-            ORDER BY pr.FirstName, pr.LastName
+            ORDER BY u.ChatName
             """, new { groupId }, null, ct))).ToList();
     }
 
@@ -409,10 +407,10 @@ public sealed class DapperChatRoomStore(IDbConnectionFactory db) : IChatRoomStor
     }
 
     private const string HeldSelect = """
-        SELECT h.Id, h.PublicId, h.GroupId, g.PublicId AS GroupPublicId, g.Name AS GroupName, h.FromUserId, pr.FirstName, pr.LastName, h.[Text], h.Reason, h.Status, h.[At]
+        SELECT h.Id, h.PublicId, h.GroupId, g.PublicId AS GroupPublicId, g.Name AS GroupName, h.FromUserId, fu.ChatName AS FirstName, N'' AS LastName, h.[Text], h.Reason, h.Status, h.[At]
         FROM dbo.ChatHeldMessages h
         JOIN dbo.ChatGroups g ON g.Id = h.GroupId
-        JOIN dbo.Profiles pr ON pr.UserId = h.FromUserId
+        JOIN dbo.Users fu ON fu.Id = h.FromUserId
         """;
 
     public async Task<List<ChatHeldRow>> ListHeldAsync(int max, CancellationToken ct)

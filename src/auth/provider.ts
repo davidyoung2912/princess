@@ -4,6 +4,8 @@ import type { PersonaId } from '../domain/people'
 export interface SessionUser {
   id: string
   accountNumber: string
+  /** The sign-in name. */
+  username: string
   email: string | null
   firstName: string | null
   lastName: string | null
@@ -26,16 +28,16 @@ export const ownerIdOf = (session: Pick<Session, 'user'> | null | undefined): st
 
 export type AuthMethod = 'password' | 'code'
 
-/** Ways to sign in. `password` takes an email (the server can be switched to accept the 10-digit account number too) (ACT-01). */
+/** Ways to sign in. `password` takes the username (the server can be switched to accept the 10-digit account number too) (ACT-01). */
 export type Credentials =
   | { method: 'password'; identifier: string; password: string; /** Keep this device signed in across app starts until sign-out. */ remember?: boolean }
-  /** The one-time code emailed after `requestCode('magic', email)`. */
-  | { method: 'code'; email: string; code: string; remember?: boolean }
+  /** The one-time code sent after `requestCode('magic', username)`. */
+  | { method: 'code'; username: string; code: string; remember?: boolean }
 
-export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'emailTaken' | 'tooYoung' | 'badCode' | 'possibleDuplicate' | 'invalid'
+export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'usernameTaken' | 'tooYoung' | 'badCode' | 'possibleDuplicate' | 'invalid'
 
 /** What a new account needs. `dob` is "YYYY-MM-DD"; the account holder must be an adult. */
-export interface Registration { email: string; password: string; firstName: string; lastName: string; dob: string; /** The phone number, as typed. */ phone: string; /** Sent after a `possibleDuplicate` answer, when the person says it is not them. */ confirmedDifferent?: boolean }
+export interface Registration { username: string; /** Optional: may be empty, and may be shared with another account. */ email: string; password: string; /** One required legal name, as on a passport. */ legalName: string; dob: string; /** The phone number, as typed. */ phone: string; /** Sent after a `possibleDuplicate` answer, when the person says it is not them. */ confirmedDifferent?: boolean }
 
 export type CodePurpose = 'reset' | 'magic'
 
@@ -43,9 +45,9 @@ export type CodePurpose = 'reset' | 'magic'
 export interface AccountActions {
   /** Makes the account. It does not sign the guest in: the sign-in page does that. */
   register(input: Registration): Promise<void>
-  /** Asks for a one-time code by email. Completes the same way whether or not the address has an account. */
-  requestCode(purpose: CodePurpose, email: string): Promise<void>
-  resetPassword(email: string, code: string, newPassword: string): Promise<void>
+  /** Asks for a one-time code, sent to the email on the account. Completes the same way whether or not the username has an account. */
+  requestCode(purpose: CodePurpose, username: string): Promise<void>
+  resetPassword(username: string, code: string, newPassword: string): Promise<void>
   /** Ends every session this person has on every device (SEC-07), then clears this one. Fails, and keeps this device signed in, when the server cannot be reached. */
   signOutEverywhere(): Promise<void>
   /** The devices this person is signed in on, this one marked `current` (IDN-01). */
@@ -65,7 +67,7 @@ export type ReviewDecision = 'different' | 'same'
 export interface ReviewMatch { id: string; accountNumber: string; createdAt: number }
 
 /** A flagged account waiting for a person to check it (IDN-03). `dob` is "YYYY-MM-DD". */
-export interface ReviewItem { id: string; accountNumber: string; firstName: string; lastName: string; dob: string; createdAt: number; matches: ReviewMatch[] }
+export interface ReviewItem { id: string; accountNumber: string; legalName: string; dob: string; createdAt: number; matches: ReviewMatch[] }
 
 /** One device this person is signed in on (IDN-01). Instants are epoch milliseconds. */
 export interface DeviceSession { id: string; device: string; signedInAt: number; lastActiveAt: number; current: boolean }

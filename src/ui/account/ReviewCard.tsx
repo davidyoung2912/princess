@@ -52,7 +52,7 @@ export function ReviewCard() {
         <ul className="plain-list">
           {items.map((i) => (
             <li key={i.id}>
-              <h3>{i.firstName} {i.lastName}</h3>
+              <h3>{i.legalName}</h3>
               <p>{t('review.account', { number: i.accountNumber, date: day(i.createdAt) })} · {t('review.dob', { dob: i.dob })}</p>
               {i.matches.length === 0
                 ? <p className="muted">{t('review.noMatch')}</p>

@@ -49,7 +49,8 @@ export interface ChatDnd { until: number }
 export type ChatDndMode = 'hour' | 'morning' | 'off'
 
 /** `typing`: show "is typing" to the others and see theirs (on unless turned off). */
-export interface ChatSettings { findable: boolean; showPreview: boolean; typing: boolean }
+/** `nickname` is the name shown in chat, empty when none is set (the username shows then). It is changed through `saveNickname`, never `saveSettings`. */
+export interface ChatSettings { findable: boolean; showPreview: boolean; typing: boolean; nickname: string }
 
 /** Why chat by text cannot be turned on: a child's account, no number on the profile, a number not yet confirmed, or switched off for everyone. */
 export type ChatSmsReason = 'supervised' | 'noPhone' | 'unverified' | 'off'
@@ -105,6 +106,8 @@ export interface ChatConnectionsApi {
   /** Saves the topics switched off. Rejects `invalid` (`topics`). */
   saveStanleyPrefs(topicsOff: string[]): Promise<StanleyChatPrefs>
   saveSettings(settings: ChatSettings): Promise<ChatSettings>
+  /** Sets the chat nickname (empty clears it). Rejects with `invalid` when it is not allowed. */
+  saveNickname(nickname: string): Promise<ChatSettings>
   sms(): Promise<ChatSms>
   /** Rejects `invalid` (`noPhone`, `unverified`, `off`) or `forbidden` (`supervised`) when it cannot be turned on. */
   saveSms(on: boolean, idle: boolean): Promise<ChatSms>

@@ -1,10 +1,12 @@
-import { useLocation } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { t, th } from '../../i18n'
 import { Card } from '../Card'
-import { LinkButton } from '../Button'
+import { Button } from '../Button'
+import { pendingChecks, VerifyStep, type ContactKind } from '../ContactSteps'
 import { AvatarPicker } from '../AvatarPicker'
 import { DisplaySettings } from '../DisplaySettings'
 import { Chip } from '../Chip'
+import { NicknameField } from '../NicknameField'
 import { useState } from 'react'
 import type { ChatSettings } from '../../api/chatTypes'
 import { useAction } from '../../hooks/useAction'
@@ -42,6 +44,20 @@ const back = (from: unknown): string => (typeof from === 'string' && from.starts
 export function AppWelcome() {
   const { state } = useLocation()
   const to = back((state as { from?: unknown } | null)?.from)
+  const navigate = useNavigate()
+  // Continue first offers to confirm an email address, then a phone number (each on its own page), when the account has them and they are not yet confirmed.
+  const [queue, setQueue] = useState<ContactKind[]>([])
+  const [busy, setBusy] = useState(false)
+  const leave = () => navigate(to, { replace: true })
+  const onward = async () => {
+    setBusy(true)
+    const todo = await pendingChecks().catch((): ContactKind[] => [])
+    setBusy(false)
+    if (todo.length === 0) leave()
+    else setQueue(todo)
+  }
+  const checked = () => { if (queue.length <= 1) leave(); else setQueue(queue.slice(1)) }
+  if (queue.length > 0) return <VerifyStep key={queue[0]} kind={queue[0]} onDone={checked} />
   return (
     <div className="page welcome app-welcome">
       <Card hero labelledBy="app-welcome-hello-h">
@@ -54,14 +70,19 @@ export function AppWelcome() {
         <AvatarPicker />
         <p className="app-welcome__hint">{t('appWelcome.avatar.hint')}</p>
       </Card>
+      <Card labelledBy="app-welcome-nick-h">
+        <h2 id="app-welcome-nick-h">{th('nickname.title')}</h2>
+        <p>{t('nickname.intro')}</p>
+        <NicknameField />
+      </Card>
       <Discoverable />
-      <div className="button-row"><LinkButton to={to} replace>{t('appWelcome.go')}</LinkButton></div>
+      <div className="button-row"><Button disabled={busy} onClick={() => void onward()}>{t('appWelcome.go')}</Button></div>
       <section aria-labelledby="app-welcome-settings-h">
         <h2 id="app-welcome-settings-h">{th('appWelcome.h.settings')}</h2>
         <p>{t('appWelcome.settings.intro')}</p>
         <DisplaySettings />
       </section>
-      <div className="button-row"><LinkButton to={to} replace>{t('appWelcome.go')}</LinkButton></div>
+      <div className="button-row"><Button disabled={busy} onClick={() => void onward()}>{t('appWelcome.go')}</Button></div>
     </div>
   )
 }

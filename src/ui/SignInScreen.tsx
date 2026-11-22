@@ -13,23 +13,23 @@ import { CodeFlow, SignUpForm } from './SignInFlows'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'magic'
 
-/** The sign-in page: email plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
+/** The sign-in page: username plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
 // TEMPORARY, development builds only: pre-fill the "port-solo-1" test account (boarding on day one of the 7-day sailing) so testing is one click.
 const DEV_LOGIN = import.meta.env.PROD ? '' : 'port-solo-1'
 
 export function SignInScreen() {
   const [mode, setMode] = useState<Mode>('signin')
-  // A new account sends the guest back here with their email and password filled in; they press Sign in themselves.
-  const [fresh, setFresh] = useState<{ email: string; password: string } | null>(null)
+  // A new account sends the guest back here with their username and password filled in; they press Sign in themselves.
+  const [fresh, setFresh] = useState<{ username: string; password: string } | null>(null)
   // Switching mode swaps the page in place, so start the new one at the top (its header card included).
   useEffect(() => { window.scrollTo(0, 0) }, [mode])
-  if (mode === 'signup') return <main className="signin" id="main"><SignUpForm onBack={() => setMode('signin')} onCreated={(email, password) => { setFresh({ email, password }); setMode('signin') }} /></main>
+  if (mode === 'signup') return <main className="signin" id="main"><SignUpForm onBack={() => setMode('signin')} onCreated={(username, password) => { setFresh({ username, password }); setMode('signin') }} /></main>
   if (mode === 'forgot' || mode === 'magic') return <main className="signin" id="main"><CodeFlow purpose={mode === 'forgot' ? 'reset' : 'magic'} onBack={() => setMode('signin')} /></main>
   return <PasswordSignIn go={setMode} fresh={fresh} />
 }
 
-function PasswordSignIn({ go, fresh }: { go: (m: Mode) => void; fresh: { email: string; password: string } | null }) {
-  const [identifier, setIdentifier] = useState(fresh?.email ?? DEV_LOGIN)
+function PasswordSignIn({ go, fresh }: { go: (m: Mode) => void; fresh: { username: string; password: string } | null }) {
+  const [identifier, setIdentifier] = useState(fresh?.username ?? DEV_LOGIN)
   const [password, setPassword] = useState(fresh?.password ?? DEV_LOGIN)
   const [remember, setRemember] = useState(true)
   const [busy, setBusy] = useState(false)

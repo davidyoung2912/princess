@@ -1,3 +1,4 @@
+import { NicknameField } from '../NicknameField'
 import { ChatLooks } from './ChatLooks'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
@@ -200,6 +201,7 @@ function Settings({ state, onHidden }: { state: ReturnType<typeof useMine<ChatSe
       <p className="muted">{t('chat.receiptsBody')}</p>
       <ActionError error={save.error} />
       <ActionError error={flipReceipts.error} />
+      <NicknameField />
       <ChatLooks />
       <Button variant="secondary" onClick={() => setConfirm(true)}>{t('people.hide')}</Button>
       <p className="muted">{t('people.hideBody')}</p>

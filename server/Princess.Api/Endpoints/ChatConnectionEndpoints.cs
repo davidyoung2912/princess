@@ -47,7 +47,10 @@ public static class ChatConnectionEndpoints
             .WithSummary("The caller's chat choices: whether other guests can find them by name (on unless turned off), and whether a notice may show message text (off unless turned on).");
 
         chat.MapPut("/settings", async (ChatSettingsDto body, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SetSettingsAsync(await me.LoadAsync(ct), body, ct)))
-            .WithSummary("Saves the caller's chat choices and returns them.");
+            .WithSummary("Saves the caller's chat choices and returns them. The chat nickname is not part of this; it has its own route.");
+
+        chat.MapPut("/nickname", async (NicknameBody body, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SetNicknameAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Sets the caller's chat nickname (2 to 30 letters, digits, spaces and . _ - '), checked for blocked words; empty clears it so their username shows in chat. 400 nickname when it is not allowed.");
 
         chat.MapGet("/sms", async (ICurrentUser me, ChatSmsService svc, CancellationToken ct) => Results.Ok(await svc.SettingsAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("The text bridge for when the caller is ashore: on, whether idle time also counts as ashore, and whether it can be turned on (available, with a reason: supervised, noPhone, unverified or off).");

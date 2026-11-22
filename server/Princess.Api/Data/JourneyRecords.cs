@@ -30,8 +30,9 @@ public sealed class SharedBooking
 public sealed class ProfileRecord
 {
     public long UserId { get; set; }
-    public string FirstName { get; set; } = "";
-    public string LastName { get; set; } = "";
+    public string LegalName { get; set; } = "";
+    public string FirstName => Domain.LegalNameRules.First(LegalName);
+    public string LastName => Domain.LegalNameRules.Last(LegalName);
     public DateTime Dob { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }

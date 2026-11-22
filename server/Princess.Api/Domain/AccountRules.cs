@@ -73,12 +73,12 @@ public static partial class AccountRules
     public static Dictionary<string, string> ValidateProfile(ProfileInput p, DateOnly today, bool child)
     {
         var errors = new Dictionary<string, string>();
-        if (string.IsNullOrWhiteSpace(p.FirstName)) errors["firstName"] = "required";
-        if (string.IsNullOrWhiteSpace(p.LastName)) errors["lastName"] = "required";
+        if (string.IsNullOrWhiteSpace(p.LegalName)) errors["legalName"] = "required";
+        else if (LegalNameRules.Clean(p.LegalName) is null) errors["legalName"] = "long";
         if (!IsIsoDate(p.Dob)) errors["dob"] = string.IsNullOrEmpty(p.Dob) ? "required" : "date";
         else if (DateOnly.ParseExact(p.Dob!, "yyyy-MM-dd") > today) errors["dob"] = "future";
         var email = p.Email ?? "";
-        if (email.Length > 0 ? !EmailPattern().IsMatch(email) : !child) errors["email"] = email.Length > 0 ? "email" : "required";
+        if (email.Length > 0 && !EmailPattern().IsMatch(email)) errors["email"] = "email";
         if (!string.IsNullOrEmpty(p.Phone) && !PhoneOk(p.Phone)) errors["phone"] = "phone";
         var hasName = !string.IsNullOrWhiteSpace(p.Emergency?.Name);
         var hasPhone = !string.IsNullOrWhiteSpace(p.Emergency?.Phone);
@@ -116,8 +116,7 @@ public static partial class AccountRules
 public sealed record EmergencyInput(string? Name, string? Phone, string? Relationship);
 
 public sealed record ProfileInput(
-    string? FirstName,
-    string? LastName,
+    string? LegalName,
     string? Dob,
     string? Email,
     string? Phone,
