@@ -28,7 +28,13 @@ public static class PhoneRules
 
     public static byte[] KeyFrom(string signingKey) => HMACSHA256.HashData(Encoding.UTF8.GetBytes(signingKey), "phone-check"u8);
 
-    public static string NewCode() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+    /// <summary>
+    /// A fixed code to use in place of a random one, set once at start-up (see Program.cs) and only while email and text are simulated, so no code can be read anywhere.
+    /// Null means every code is random, which is how it must be once a real provider sends them.
+    /// </summary>
+    public static string? FixedCode { get; set; }
+
+    public static string NewCode() => FixedCode ?? RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
 
     public static string Hash(byte[] key, string salt, string phone, string code) =>
         Convert.ToBase64String(HMACSHA256.HashData(key, Encoding.UTF8.GetBytes($"{salt}|{phone}|{code}")));

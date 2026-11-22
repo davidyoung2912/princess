@@ -1,3 +1,4 @@
+import { CodeBoxes } from '../CodeBoxes'
 import { useState } from 'react'
 import { ADVISORS, ADVISOR_LANGUAGES, ADVISOR_SPECIALITIES, ASSIST_KINDS, CONSENT_REGIONS, advisorsFor, doubleOptInFor, type AdvisorWay, type AssistKind, type MarketingChannel } from '../../domain/ahead'
 import { formatMoney } from '../../domain/money'
@@ -127,7 +128,7 @@ function Channel({ channel, reload, region }: { channel: MarketingChannel; reloa
                 <p><StatusBadge kind="waitlist" label={t('mkt.pending', { contact: c.contact })} /></p>
                 <p className="muted">{t('mkt.demoCode', { code: c.demoCode ?? '' })}</p>
                 <form onSubmit={(e) => { e.preventDefault(); void confirm.run() }}>
-                  <Field label={t('mkt.code')} help={t('helptip.code')} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
+                  <CodeBoxes label={t('mkt.code')} value={code} onChange={setCode} />
                   <Button type="submit" disabled={confirm.busy || !v.canEdit}>{t('mkt.confirm')}</Button>{' '}
                   <Button variant="tertiary" disabled={withdraw.busy} onClick={() => void withdraw.run()}>{t('mkt.cancel')}</Button>
                 </form>

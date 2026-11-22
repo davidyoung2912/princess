@@ -1,3 +1,4 @@
+import { CODE_LENGTH, CodeBoxes } from '../CodeBoxes'
 import { useEffect, useState } from 'react'
 import { usePushState } from '../../hooks/usePushState'
 import { useAction } from '../../hooks/useAction'
@@ -138,13 +139,9 @@ export function PhoneCheck({ onVerified }: { onVerified?: () => void } = {}) {
                 {send.error?.code === 'conflict' ? <p role="alert" className="field__error">{t('phoneCheck.err.soon')}</p> : send.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('phoneCheck.err.phone')}</p> : <ActionError error={send.error} />}
                 {s.pending && (
                   <form onSubmit={async (e) => { e.preventDefault(); if (await confirm.run(code)) { setCode(''); status.retry(); onVerified?.() } }}>
-                    <div className="field">
-                      <label htmlFor="phone-code">{t('phoneCheck.code')}</label>
-                      <input id="phone-code" className="field__input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
-                      <p className="field__hint">{t('phoneCheck.codeHint')}</p>
-                    </div>
+                    <CodeBoxes label={t('phoneCheck.code')} hint={t('phoneCheck.codeHint')} value={code} onChange={setCode} />
                     {confirm.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('phoneCheck.err.code')}</p> : <ActionError error={confirm.error} />}
-                    <Button type="submit" disabled={confirm.busy || code.trim().length !== 6}>{t('phoneCheck.confirm')}</Button>
+                    <Button type="submit" disabled={confirm.busy || code.length !== CODE_LENGTH}>{t('phoneCheck.confirm')}</Button>
                   </form>
                 )}
               </>
@@ -176,13 +173,9 @@ export function EmailCheck({ onVerified }: { onVerified?: () => void } = {}) {
                 {send.error?.code === 'conflict' ? <p role="alert" className="field__error">{t('emailCheck.err.soon')}</p> : send.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('emailCheck.err.phone')}</p> : <ActionError error={send.error} />}
                 {s.pending && (
                   <form onSubmit={async (e) => { e.preventDefault(); if (await confirm.run(code)) { setCode(''); status.retry(); onVerified?.() } }}>
-                    <div className="field">
-                      <label htmlFor="email-code">{t('emailCheck.code')}</label>
-                      <input id="email-code" className="field__input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
-                      <p className="field__hint">{t('emailCheck.codeHint')}</p>
-                    </div>
+                    <CodeBoxes label={t('emailCheck.code')} hint={t('emailCheck.codeHint')} value={code} onChange={setCode} />
                     {confirm.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('emailCheck.err.code')}</p> : <ActionError error={confirm.error} />}
-                    <Button type="submit" disabled={confirm.busy || code.trim().length !== 6}>{t('emailCheck.confirm')}</Button>
+                    <Button type="submit" disabled={confirm.busy || code.length !== CODE_LENGTH}>{t('emailCheck.confirm')}</Button>
                   </form>
                 )}
               </>

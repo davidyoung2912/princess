@@ -175,6 +175,7 @@
 .testbar__item:hover { border-color: var(--primary); }
 .testbar__item--time { align-items: flex-start; justify-content: center; text-align: start; }
 .testbar__main { font-weight: 700; }
+.testbar__item--static, .testbar__item--static:hover { cursor: default; border-color: transparent; }
 .testbar__item--date, .testbar__item--date:hover { cursor: default; border-color: transparent; } /* the date button inside draws its own hover border, so the wrapper must not draw a second one */
 .testbar__pick { background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: start; border: 2px solid transparent; border-radius: var(--radius-md, 0.5rem); min-height: var(--target-min); padding: 0 var(--space-1); cursor: pointer; }
 .testbar__pick:hover { border-color: var(--primary); }

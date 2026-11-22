@@ -3,6 +3,7 @@ import { AuthError, type AccountActions, type CodePurpose } from '../auth/provid
 import { cleanCode, isCode, isUsername, signupProblems, type SignupProblem } from '../domain/signup'
 import { t, th, headingCase, type StringKey } from '../i18n'
 import { auth } from '../runtime'
+import { CodeBoxes } from './CodeBoxes'
 import { PhoneField } from './PhoneField'
 import { Button } from './Button'
 import { Card } from './Card'
@@ -152,7 +153,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
           {sent && (
             <>
               <p role="status">{t('signin.code.sent')}</p>
-              <Field label={t('signin.code.field')} help={t('helptip.code')} value={code} onChange={(e) => setCode(e.target.value)} autoComplete="one-time-code" inputMode="numeric" />
+              <CodeBoxes label={t('signin.code.field')} value={code} onChange={setCode} />
               {purpose === 'reset' && <Field label={t('signin.code.newPassword')} hint={t('signin.signup.password.hint')} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />}
             </>
           )}

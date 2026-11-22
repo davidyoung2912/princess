@@ -70,23 +70,20 @@ public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users,
     {
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
-        try
-        {
-            await c.ExecuteAsync(Sql.Cmd("""
-                UPDATE dbo.Profiles SET LegalName = @LegalName, Dob = @Dob, Phone = @Phone, Citizenship = @Citizenship,
-                  Bedding = @Bedding, SpecialRequests = @SpecialRequests, KeepOut = @KeepOut, AvoidFlags = @AvoidFlags, EmergencyName = @EmergencyName, EmergencyPhone = @EmergencyPhone,
-                  EmergencyRelationship = @EmergencyRelationship, UpdatedAt = @now
-                WHERE UserId = @UserId
-                """, new { p.UserId, p.LegalName, p.Dob, Phone = NullIfEmpty(p.Phone), p.Citizenship, p.Bedding, p.SpecialRequests, p.KeepOut, p.AvoidFlags, p.EmergencyName, p.EmergencyPhone, p.EmergencyRelationship, now }, tx, ct));
-            if (updateEmail)
-                await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.Users SET Email = @email, UpdatedAt = @now WHERE Id = @UserId", new { p.UserId, email = NullIfEmpty(p.Email), now }, tx, ct));
-            await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ProfileTags WHERE UserId = @UserId", new { p.UserId }, tx, ct));
-            var tags = p.Dietary.Select(code => new { p.UserId, Kind = "dietary", Code = code }).Concat(p.Needs.Select(code => new { p.UserId, Kind = "need", Code = code })).ToList();
-            if (tags.Count > 0)
-                await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ProfileTags (UserId, Kind, Code) VALUES (@UserId, @Kind, @Code)", tags, tx, ct));
-            await tx.CommitAsync(ct);
-            users.Invalidate(); // name and email are part of the cached user row
-        }
+        await c.ExecuteAsync(Sql.Cmd("""
+            UPDATE dbo.Profiles SET LegalName = @LegalName, Dob = @Dob, Phone = @Phone, Citizenship = @Citizenship,
+              Bedding = @Bedding, SpecialRequests = @SpecialRequests, KeepOut = @KeepOut, AvoidFlags = @AvoidFlags, EmergencyName = @EmergencyName, EmergencyPhone = @EmergencyPhone,
+              EmergencyRelationship = @EmergencyRelationship, UpdatedAt = @now
+            WHERE UserId = @UserId
+            """, new { p.UserId, p.LegalName, p.Dob, Phone = NullIfEmpty(p.Phone), p.Citizenship, p.Bedding, p.SpecialRequests, p.KeepOut, p.AvoidFlags, p.EmergencyName, p.EmergencyPhone, p.EmergencyRelationship, now }, tx, ct));
+        if (updateEmail)
+            await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.Users SET Email = @email, UpdatedAt = @now WHERE Id = @UserId", new { p.UserId, email = NullIfEmpty(p.Email), now }, tx, ct));
+        await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ProfileTags WHERE UserId = @UserId", new { p.UserId }, tx, ct));
+        var tags = p.Dietary.Select(code => new { p.UserId, Kind = "dietary", Code = code }).Concat(p.Needs.Select(code => new { p.UserId, Kind = "need", Code = code })).ToList();
+        if (tags.Count > 0)
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ProfileTags (UserId, Kind, Code) VALUES (@UserId, @Kind, @Code)", tags, tx, ct));
+        await tx.CommitAsync(ct);
+        users.Invalidate(); // name and email are part of the cached user row
     }
 
     private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;

@@ -467,3 +467,8 @@ main.signin { margin-inline: auto; }
 .phone-field__country { flex: 0 0 9.5rem; min-width: 0; width: auto; padding-inline: var(--space-2); text-overflow: ellipsis; }
 .phone-field__number { flex: 1 1 10rem; min-width: 0; font-variant-numeric: tabular-nums; }
 @media (max-width: 26rem) { .phone-field__row { flex-direction: column; } .phone-field__country { flex-basis: auto; width: 100%; } }
+
+/* The six-digit code: six square boxes in a row that take one digit each. */
+.code-boxes__label { font-weight: 600; }
+.code-boxes__row { display: flex; gap: var(--space-2); max-width: 22rem; }
+.code-boxes__box { flex: 1 1 0; min-width: 0; padding-inline: 0; text-align: center; font-size: var(--fs-title, 1.5rem); font-variant-numeric: tabular-nums; }

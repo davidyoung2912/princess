@@ -1,4 +1,5 @@
 using Princess.Api.Auth;
+using Princess.Api.Contracts;
 using Princess.Api.Services;
 
 namespace Princess.Api.Endpoints;

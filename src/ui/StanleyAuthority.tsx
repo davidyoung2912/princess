@@ -1,10 +1,10 @@
+import { CodeBoxes } from './CodeBoxes'
 import { useState } from 'react'
 import { canSwitch, countRows, rowsOf } from '../ai/stanleyPermissions'
 import { useStanleyPermissions, type Failure } from '../hooks/useStanleyPermissions'
 import { headingCase, t, th, type StringKey } from '../i18n'
 import { Button } from './Button'
 import { Card } from './Card'
-import { Field } from './Field'
 
 const GROUPS = ['watching', 'preparing', 'handling'] as const
 
@@ -51,7 +51,7 @@ export function StanleyAuthority({ source, full = false }: { source: 'welcome' |
             <h3 id="stanley-stepup-h">{th('stanleyAuthority.stepup.title')}</h3>
             <p>{t('stanleyAuthority.stepup.body')}</p>
             {p.stepUp === 'sent' && (
-              <Field label={t('stanleyAuthority.stepup.code')} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
+              <CodeBoxes label={t('stanleyAuthority.stepup.code')} value={code} onChange={setCode} />
             )}
             <div className="button-row">
               {p.stepUp === 'ask'

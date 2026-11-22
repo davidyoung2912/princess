@@ -57,7 +57,7 @@ services.AddSingleton<AuditQueue>();
 services.AddHostedService<AuditWriterService>();
 services.AddScoped<IAuditLog, AuditLog>();
 services.AddScoped<ISignInStore, DapperSignInStore>();
-services.AddScoped<IMessageSender, StubMessageSender>();
+services.AddScoped<IMessageSender, ProviderMessageSender>();
 services.AddScoped<IAuthService, AuthService>();
 services.AddScoped<AccessService>();
 services.AddScoped<IAccountStore, DapperAccountStore>();
@@ -117,6 +117,14 @@ services.AddHostedService<ChatFanoutService>();
 services.AddScoped<IFinishStore, DapperFinishStore>();
 // External sources and the concierge model are chosen by configuration (Providers:*), all defaulting to the simulation.
 services.AddProviders(builder.Configuration);
+
+// Until a real email and text provider is set, no one can read a code that was "sent", so Verification:FixedCode (six digits) stands in for every random code.
+// It is ignored the moment either provider is real (pingram), so switching on real sending returns every code to random without touching this setting.
+var fixedCode = builder.Configuration["Verification:FixedCode"];
+if (fixedCode is { Length: 6 } && fixedCode.All(char.IsAsciiDigit)
+    && !string.Equals(builder.Configuration["Providers:Email"], "pingram", StringComparison.OrdinalIgnoreCase)
+    && !string.Equals(builder.Configuration["Providers:Sms"], "pingram", StringComparison.OrdinalIgnoreCase))
+    PhoneRules.FixedCode = fixedCode;
 services.AddScoped<IUserClock, UserClock>();
 services.AddScoped<SubjectAccess>();
 services.AddScoped<AccountService>();
@@ -374,6 +382,7 @@ if (builder.Configuration.GetValue<bool>("Logging:Json"))
 }
 
 var app = builder.Build();
+if (PhoneRules.FixedCode is not null) app.Logger.LogWarning("Verification:FixedCode is in use: every confirmation and sign-in code is {Length} fixed digits until Pingram (or another real provider) is set for email and text. Clear the setting once codes are really sent.", PhoneRules.FixedCode.Length);
 
 if (forwarded) app.UseForwardedHeaders();
 app.UseSecurityHeaders(hsts: !app.Environment.IsDevelopment());

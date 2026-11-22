@@ -110,12 +110,20 @@ function TestBarBody({ isDemo, menu, chatCount }: { isDemo: boolean; menu?: Reac
           ? <button type="button" className="testbar__main testbar__pick" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabelLong(now, position.zone)}`}>{dateWords}</button>
           : <span className="testbar__main">{dateWords}</span>}
       </div>
-      {isDemo && (
-        <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
-          <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>
-          <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
-        </button>
-      )}
+      {isDemo
+        ? (
+          <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
+            <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>
+            <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
+          </button>
+        )
+        : (
+          // Everyone sees the time; only a demo account can open the picker that moves it.
+          <span className="testbar__item testbar__item--time testbar__item--static" role="group" aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
+            <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>
+            <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
+          </span>
+        )}
       <p className="testbar__status" aria-label={t('status.label')}>
         <Link to="/welcome" state={{ from: pathname }} className="testbar__stage testbar__stage--current" aria-current="step" aria-label={`${t('testbar.stage')}: ${stage}`}>{stage}</Link>
         {status.day !== null && <Link to="/itinerary" className="testbar__day">{t('status.day', { day: status.day })}</Link>}

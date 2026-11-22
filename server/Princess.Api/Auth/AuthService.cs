@@ -216,7 +216,7 @@ public sealed class AuthService(
             await Audit($"auth.{purpose}.request", AuditOutcome.Denied, user, new { reason = "tooManyRequests" }, ct);
             return;
         }
-        var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        var code = PhoneRules.NewCode();
         var salt = RandomNumberGenerator.GetBytes(16);
         await signIn.ReplaceChallengeAsync(user.Id, purpose, CodeHash(purpose, user.Id, code, salt), salt, now.AddMinutes(CodeMinutes), now, ct);
         var subject = purpose == Reset ? "Your Princess password reset code" : "Your Princess sign-in code";
@@ -334,7 +334,7 @@ public sealed class AuthService(
 
     private async Task<long> UsernameTakenAsync(string username, CancellationToken ct)
     {
-        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.register", Outcome = AuditOutcome.Failure, Detail = AuditContext.Json(new { reason = "usernameTaken", attempt = AuditContext.Fingerprint(email) }) }, ct);
+        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.register", Outcome = AuditOutcome.Failure, Detail = AuditContext.Json(new { reason = "usernameTaken", attempt = AuditContext.Fingerprint(username) }) }, ct);
         throw ApiException.Conflict("usernameTaken");
     }
 
