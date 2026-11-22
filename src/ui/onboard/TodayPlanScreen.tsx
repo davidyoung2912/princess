@@ -1,3 +1,4 @@
+import { PathLinkList } from '../ScreenList'
 import { PillIcon } from '../PillIcon'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -101,7 +102,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
       )}
       <section aria-labelledby="tp-add" data-tour="plan-add">
         <h2 id="tp-add" tabIndex={-1}><PillIcon heading label={t('plan.bundle.pill.explorers')} />{headingCase(t('plan.today.add'))}</h2>
-        <ul className="plain-bullets">{LINKS.map(([key, to]) => <li key={to}><Link to={`${to}?day=${state.day}`}>{t(key)}</Link></li>)}</ul>
+        <PathLinkList items={LINKS.map(([, to]) => ({ path: to, query: `day=${state.day}` }))} />
       </section>
     </div>
   )

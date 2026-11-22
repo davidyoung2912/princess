@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { getContext, subscribeContext } from '../account/context'
 import { t, th } from '../i18n'
-import { openedFrom, type TabColour } from '../routes/screens'
+import { openedFrom, screenForPath, type TabColour } from '../routes/screens'
 import { listedScreens } from '../routes/stageNav'
 import { SCREEN_ICONS } from './screenIcons'
 import { CircleDot, Pin } from 'lucide-react'
@@ -67,5 +67,28 @@ function TileItem({ id, title, text, live, icon, children }: { id: string; title
         </div>
       )}
     </li>
+  )
+}
+
+/**
+ * A list of links to known screens, given by path, for pages that mix in their own badges or conditions: each row looks like the main pages' tiles
+ * (icon, title, what the guest can do there beneath, hover card on a wide screen). A path that is not a registered screen is left out.
+ */
+export function PathLinkList({ items, colour = 'blue' }: { items: readonly ({ path: string; query?: string; badge?: ReactNode } | null | false | undefined)[]; colour?: TabColour }) {
+  return (
+    <ul className="link-list screen-list">
+      {items.map((item) => {
+        if (!item) return null
+        const screen = screenForPath(item.path)
+        if (!screen) return null
+        const Icon = SCREEN_ICONS[screen.id] ?? CircleDot
+        const icon = <Icon className="screen-list__icon" size={20} aria-hidden="true" />
+        return (
+          <TileItem key={item.path} id={screen.id} title={th(screen.titleKey)} text={t(screen.subtextKey)} live={undefined} icon={icon}>
+            <Link to={item.query ? `${item.path}?${item.query}` : item.path} state={openedFrom(colour)}>{icon}{th(screen.titleKey)}{item.badge}</Link>
+          </TileItem>
+        )
+      })}
+    </ul>
   )
 }

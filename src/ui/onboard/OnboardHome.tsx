@@ -1,3 +1,4 @@
+import { PathLinkList } from '../ScreenList'
 import { ChatNeedsYou } from './ChatNeedsYou'
 import { Link } from 'react-router'
 import { formatTemp } from '../../domain/readiness'
@@ -107,13 +108,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
 
       <nav aria-labelledby="onb-links-h">
         <h2 id="onb-links-h">{th('onb.quick')}</h2>
-        <ul className="link-list">
-          <li><Link to="/home/boarding-pass">{t('route.boardingPass')}</Link></li>
-          <li><Link to="/ship/emergency">{t('route.emergency')}</Link></li>
-          <li><Link to="/ship/map">{t('route.deckMap')}</Link></li>
-          <li><Link to="/me/bill">{t('route.bill')}</Link></li>
-          <li><Link to="/chat">{t('route.chat')}</Link></li>
-        </ul>
+        <PathLinkList items={[{ path: '/home/boarding-pass' }, { path: '/ship/emergency' }, { path: '/ship/map' }, { path: '/me/bill' }, { path: '/chat' }]} />
       </nav>
     </>
   )
