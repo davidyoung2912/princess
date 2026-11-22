@@ -12,7 +12,7 @@ const cspFor = (apiUrl: string): string => [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.princess.com",
+  `img-src 'self' data: blob: https://*.princess.com${apiImages(apiUrl)}`,
   `connect-src 'self'${apiOrigin(apiUrl)}`,
   "worker-src 'self'",
   "manifest-src 'self'",
@@ -20,6 +20,11 @@ const cspFor = (apiUrl: string): string => [
   "base-uri 'self'",
   "form-action 'none'",
 ].join('; ')
+
+/** The API's origin for `img-src` when it is absolute: guest avatars are pictures served by the API (`/public/avatars/<id>`), so an image tag needs that origin too. */
+function apiImages(apiUrl: string): string {
+  try { return /^https?:\/\//i.test(apiUrl) ? ` ${new URL(apiUrl).origin}` : '' } catch { return '' }
+}
 
 /** The API's origin for `connect-src` when `VITE_API_URL` is an absolute address (a relative one such as `/api/v1` is already 'self'). */
 function apiOrigin(apiUrl: string): string {

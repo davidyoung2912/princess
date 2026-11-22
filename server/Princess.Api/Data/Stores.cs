@@ -9,6 +9,8 @@ public interface IUserStore
     /// <summary>Adds a failure; at <paramref name="maxFailures"/> locks the account for <paramref name="lockout"/> and resets the count.</summary>
     Task RecordLoginFailureAsync(long userId, int maxFailures, TimeSpan lockout, DateTime now, CancellationToken ct);
     Task RecordLoginSuccessAsync(long userId, DateTime now, CancellationToken ct);
+    /// <summary>Sets the sample itinerary (a sailing id) a guest with no booking uses for the Explorers.</summary>
+    Task SetSampleSailingAsync(long userId, string sailingId, CancellationToken ct);
     /// <summary>Sets (or with null clears) the name shown in chat.</summary>
     Task SetChatNicknameAsync(long userId, string? nickname, CancellationToken ct);
     /// <summary>The seeded demo accounts (not supervised children), by first name, for the non-production sign-in help.</summary>

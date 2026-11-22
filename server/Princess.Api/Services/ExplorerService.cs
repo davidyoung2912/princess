@@ -15,7 +15,7 @@ public sealed class ExplorerService(ScopeLoader scopes, IOnboardStore store, IPr
     private async Task<(Scope Scope, string ShipId, ShipExplorer Ship, bool Changes)> OpenAsync(UserRecord actor, string? number, string? kind, int day, CancellationToken ct)
     {
         if (!ExplorerCatalogue.ValidKind(kind)) throw ApiException.NotFound("explorer");
-        var c = await scopes.LoadAsync(actor, number, write: false, ct);
+        var c = number == SampleTripService.Number ? await scopes.LoadSampleAsync(actor, ct) : await scopes.LoadAsync(actor, number, write: false, ct);
         if (day < 1 || day > Itinerary.MaxDay || day > c.Timeline.Days.Count) throw ApiException.Invalid("day");
         var shipId = AboardPlans.ShipOfSailing(c.Booking.SailingId);
         return (c, shipId, ExplorerCatalogue.Of(shipId), (await scopes.ScenariosAsync(actor, ct)).Contains("planChange"));
@@ -44,8 +44,9 @@ public sealed class ExplorerService(ScopeLoader scopes, IOnboardStore store, IPr
     /// </summary>
     public async Task<List<DayTourDto>> ToursAsync(UserRecord actor, string? number, int day, CancellationToken ct)
     {
-        var c = await scopes.LoadAsync(actor, number, write: false, ct);
+        var c = number == SampleTripService.Number ? await scopes.LoadSampleAsync(actor, ct) : await scopes.LoadAsync(actor, number, write: false, ct);
         if (day < 1 || day > Itinerary.MaxDay || day > c.Timeline.Days.Count) throw ApiException.Invalid("day");
+        if (number == SampleTripService.Number) return [];   // a sample trip has no bookings
         var date = c.Departure.AddDays(day - 1);
         var zone = c.Timeline.ShipZoneOnDate(date);
         var list = new List<DayTourDto>();

@@ -5,6 +5,9 @@ import { getHints, hintsLoaded, subscribeHints, updateHints } from './hints'
 /** The tour steps the signed-in guest has already been shown. These are kept on their account, so they follow them to every device. */
 export const loadTourSeen = (): readonly string[] => getHints().tour
 
+/** Whether the guest has asked for the guided tour. It is off until they do (Me → Settings). */
+export const loadTourOn = (): boolean => getHints().tourOn
+
 /** True once the account's copy has arrived, so a step dismissed on another device is known before the tour starts. */
 export const tourReady = hintsLoaded
 

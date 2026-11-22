@@ -41,12 +41,27 @@ public sealed class Scope
 
 
 /// <summary>Loads a <see cref="Scope"/> after the access check: any guest to read, an adult guest to write (data model section 7). A stranger gets the same <c>notFound</c> as a missing booking.</summary>
-public sealed class ScopeLoader(AccessService access, ITripStore trips, IAccountStore accounts, IUserClock clock, IDemoStore demo)
+public sealed class ScopeLoader(AccessService access, ITripStore trips, IAccountStore accounts, IUserClock clock, IDemoStore demo, SampleTripService sample)
 {
     /// <summary>The scenarios switched on for the person, who must be a demo user; real users never have any.</summary>
     public async Task<HashSet<string>> ScenariosAsync(UserRecord actor, CancellationToken ct) => actor.IsDemo ? await demo.GetScenariosAsync(actor.Id, ct) : [];
 
     private static DateOnly D(DateTime d) => DateOnly.FromDateTime(d);
+
+    /// <summary>
+    /// A read-only stand-in for a booking: the guest's sample sailing, with nobody on it. It is for the Explorers before the guest has booked (a booking id of 0 matches no rows), and refuses
+    /// once they have a trip, so a booked guest always sees their own.
+    /// </summary>
+    public async Task<Scope> LoadSampleAsync(UserRecord actor, CancellationToken ct)
+    {
+        var now = await clock.NowAsync(actor, ct);
+        var today = TripRules.Today(now);
+        if (await sample.HasTripAsync(actor, today, ct)) throw ApiException.NotFound();
+        var s = await sample.ChosenAsync(actor, ct) ?? throw ApiException.NotFound();
+        var departure = D(s.Departure);
+        var booking = new BookingRow { BookingId = 0, Number = SampleTripService.Number, BookerUserId = actor.Id, SailingId = s.Id, Departure = s.Departure, Nights = s.Nights, ShipName = StanleyPersonaRules.ShipNameFromId(s.ShipId) ?? "" };
+        return new Scope { Actor = actor, Booking = booking, Now = now, Today = today, Departure = departure, Days = TripRules.DaysBetween(today, departure), Nights = s.Nights, Timeline = TimelineBook.For(s.Id, departure), Party = [] };
+    }
 
     public async Task<Scope> LoadAsync(UserRecord actor, string? number, bool write, CancellationToken ct)
     {

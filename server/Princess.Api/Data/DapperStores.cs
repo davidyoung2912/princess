@@ -5,7 +5,7 @@ namespace Princess.Api.Data;
 public sealed class DapperUserStore(IDbConnectionFactory db, UserCache cache) : IUserStore
 {
     private const string Select = """
-        SELECT u.Id, u.PublicId, u.AccountNumber, u.Username, u.ChatNickname, u.Email, u.PasswordHash, u.Role, u.IsDemo, u.IsSupervised, u.BookerUserId,
+        SELECT u.Id, u.PublicId, u.AccountNumber, u.Username, u.ChatNickname, u.SampleSailingId, u.Email, u.PasswordHash, u.Role, u.IsDemo, u.IsSupervised, u.BookerUserId,
                u.Tier, u.[TextSize], u.Locale, u.Currency, u.FailedLogins, u.LockedUntil, u.SessionsValidFrom, u.LastLoginAt, u.ReviewReason,
                p.FirstName, p.LastName, b.PublicId AS BookerPublicId
         FROM dbo.Users u
@@ -52,6 +52,13 @@ public sealed class DapperUserStore(IDbConnectionFactory db, UserCache cache) : 
               UpdatedAt = @now
             WHERE Id = @userId
             """, new { userId, maxFailures, lockSeconds = (int)lockout.TotalSeconds, now }, cancellationToken: ct));
+    }
+
+    public async Task SetSampleSailingAsync(long userId, string sailingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(new CommandDefinition("UPDATE dbo.Users SET SampleSailingId = @sailingId, UpdatedAt = SYSUTCDATETIME() WHERE Id = @userId", new { userId, sailingId }, cancellationToken: ct));
+        cache.Invalidate();
     }
 
     public async Task SetChatNicknameAsync(long userId, string? nickname, CancellationToken ct)

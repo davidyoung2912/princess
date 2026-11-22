@@ -559,6 +559,7 @@ CREATE TABLE dbo.Users (
   Slug NVARCHAR(30) NULL,                       -- seed personas only: gerald, maya ...
   AccountNumber CHAR(10) NOT NULL,
   Username NVARCHAR(40) NOT NULL,               -- the sign-in credential: unique, at least 6 characters for a new account
+  SampleSailingId VARCHAR(40) NULL,             -- the sample itinerary a guest with no booking uses for the Explorers; ignored once they book
   ChatNickname NVARCHAR(30) NULL,               -- optional name shown in every chat; the username is shown when it is empty
   ChatName AS (ISNULL(ChatNickname, Username)) PERSISTED,
   Email NVARCHAR(254) NULL,                     -- optional and may be shared between accounts

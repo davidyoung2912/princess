@@ -271,14 +271,10 @@ public sealed class SimRouteConditionsProvider : IRouteConditionsProvider
     public RouteConditionsDto Conditions(string departure, string crowd) => FeedRules.Route(departure, crowd);
 }
 
-/// <summary>Counts the batch in the log and keeps nothing; a real sink replaces this.</summary>
-public sealed class LoggingTelemetrySink(ILogger<LoggingTelemetrySink> log) : ITelemetrySink
+/// <summary>Accepts the batch and keeps nothing, quietly (no console line per batch); a real sink replaces this.</summary>
+public sealed class LoggingTelemetrySink : ITelemetrySink
 {
-    public Task AcceptAsync(IReadOnlyList<TelemetryItemDto> items, CancellationToken ct)
-    {
-        log.LogInformation("Telemetry batch: {Errors} errors, {Events} events", items.Count(i => i.Type == "error"), items.Count(i => i.Type == "event"));
-        return Task.CompletedTask;
-    }
+    public Task AcceptAsync(IReadOnlyList<TelemetryItemDto> items, CancellationToken ct) => Task.CompletedTask;
 }
 
 public sealed record PrintSubmission(string Reference, DateTime DeliverBy);

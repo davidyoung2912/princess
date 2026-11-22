@@ -205,6 +205,7 @@ services.AddOptions<PassOptions>().BindConfiguration(PassOptions.Section).Valida
 services.AddSingleton<PassLookupGuard>();
 services.AddScoped<CheckinService>();
 services.AddScoped<OnboardService>();
+services.AddScoped<SampleTripService>();
 services.AddScoped<ExplorerService>();
 services.AddScoped<SpaService>();
 services.AddScoped<ServiceChatService>();

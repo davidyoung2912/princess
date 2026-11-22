@@ -60,13 +60,15 @@ export function useExplorerDay(): ExplorerDayState {
 /** One Explorer on one day, with a copy kept for offline use. */
 export function useExplorerData(kind: ExplorerKind, day: number): SavedCopy<ExplorerDay> {
   const me = usePersona()
-  return useSavedCopy('explorer', `${me?.id ?? 'none'}:${kind}:${day}`, () => api.onboard.explorerDay(kind, day), asExplorerDay, [me?.id])
+  const sailing = useSailing().id   // a guest with no booking sees their sample itinerary, so the ship is part of what is kept
+  return useSavedCopy('explorer', `${me?.id ?? 'none'}:${sailing}:${kind}:${day}`, () => api.onboard.explorerDay(kind, day), asExplorerDay, [me?.id, sailing])
 }
 
 /** One venue on one day, with a copy kept for offline use. */
 export function useVenueData(kind: ExplorerKind, venueId: string, day: number): SavedCopy<VenueDay> {
   const me = usePersona()
-  return useSavedCopy('explorer', `${me?.id ?? 'none'}:${kind}:${venueId}:${day}`, () => api.onboard.explorerVenue(kind, venueId, day), asVenueDay, [me?.id])
+  const sailing = useSailing().id
+  return useSavedCopy('explorer', `${me?.id ?? 'none'}:${sailing}:${kind}:${venueId}:${day}`, () => api.onboard.explorerVenue(kind, venueId, day), asVenueDay, [me?.id, sailing])
 }
 
 /** The shore excursions the guest has booked on one cruise day, with a copy kept for offline use. */

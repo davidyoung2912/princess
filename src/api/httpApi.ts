@@ -24,6 +24,7 @@ export interface HttpGroups {
   phoneCheck: Api['phoneCheck']
   emailCheck: Api['emailCheck']
   contact: Api['contact']
+  sampleTrip: Api['sampleTrip']
   support: Api['support']
   help: Api['help']
   budget: BudgetApi
@@ -108,6 +109,13 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   }
   const inBooking = async <T>(path: string): Promise<T> => (await http.get(`/bookings/${seg(await number())}${path}`)) as T
   const get = async <T>(path: string): Promise<T> => (await http.get(path)) as T
+  /** A read for the Explorers: under the current trip, or, for a guest with no booking yet, under the sample itinerary they chose. */
+  const inTripOrSample = async <T>(path: string): Promise<T> => {
+    try { return await inBooking<T>(path) } catch (e) {
+      if (e instanceof ApiError && e.code === 'notFound' && e.message === 'noTrip') return get<T>(`/me/sample-trip${path}`)
+      throw e
+    }
+  }
   const send = async <T>(method: 'post' | 'put' | 'patch' | 'delete', path: string, body?: unknown, o?: RequestOptions): Promise<T> =>
     (method === 'delete' ? await http.delete(path, o) : await http[method](path, body, o)) as T
   /** A money-moving post: carries an `Idempotency-Key` so a repeat of the same attempt is not charged twice. */
@@ -150,10 +158,10 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       return view
     },
     togglePlan: (eventId, on) => inTrip('put', `/onboard/plan/${seg(eventId)}`, { on, day: eventDay.get(eventId) ?? lastDay }),
-    explorerDay: (kind, day) => inBooking(`/onboard/explorer/${seg(kind)}?day=${day}`),
-    explorerVenue: (kind, venueId, day) => inBooking(`/onboard/explorer/${seg(kind)}/${seg(venueId)}?day=${day}`),
+    explorerDay: (kind, day) => inTripOrSample(`/onboard/explorer/${seg(kind)}?day=${day}`),
+    explorerVenue: (kind, venueId, day) => inTripOrSample(`/onboard/explorer/${seg(kind)}/${seg(venueId)}?day=${day}`),
     togglePlanOn: (eventId, day, on) => inTrip('put', `/onboard/plan/${seg(eventId)}`, { on, day }),
-    dayTours: (day) => inBooking(`/onboard/tours?day=${day}`),
+    dayTours: (day) => inTripOrSample(`/onboard/tours?day=${day}`),
     setPlanReminder: (eventId, day, lead) => inTrip('put', `/onboard/plan/${seg(eventId)}`, { on: true, day, lead }),
     portDay: () => inBooking('/onboard/port-day'),
     muster: () => inBooking('/onboard/muster'),
@@ -534,6 +542,10 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       sendCode: () => send('post', '/me/email-check/code'),
       confirm: (code) => send('post', '/me/email-check/confirm', { code }),
     },
+    sampleTrip: {
+      get: () => get('/me/sample-trip'),
+      choose: (sailingId) => send('put', '/me/sample-trip', { sailingId }),
+    },
     contact: {
       get: () => get('/me/contact'),
       save: (contact) => send('put', '/me/contact', contact),
@@ -773,6 +785,7 @@ export function toApi(g: HttpGroups): Api {
     phoneCheck: g.phoneCheck,
     emailCheck: g.emailCheck,
     contact: g.contact,
+    sampleTrip: g.sampleTrip,
     support: g.support,
     help: g.help,
     budget: g.budget,

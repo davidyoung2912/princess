@@ -95,7 +95,7 @@ public static class StateRules
     public const int HintsMaxPages = 400, HintsMaxSteps = 120, HintsMaxId = 40;
 
     /// <summary>
-    /// The problem for a <c>hints</c> document: <c>{ tips: { "&lt;page id&gt;": count }, tour: [ "&lt;step id&gt;" ] }</c>, the page tips and first-visit tour steps the guest has dismissed.
+    /// The problem for a <c>hints</c> document: <c>{ tips: { "&lt;page id&gt;": count }, tour: [ "&lt;step id&gt;" ], tourOn: true }</c> (the tour is off unless <c>tourOn</c> is true), the page tips and first-visit tour steps the guest has dismissed.
     /// Ids are letters, digits, dot, dash or underscore; a count is a whole number from 1; both parts are optional.
     /// </summary>
     private static string? HintsProblem(JsonObject data)
@@ -114,6 +114,10 @@ public static class StateRules
                 if (node is not JsonArray steps || steps.Count > HintsMaxSteps) return "badData";
                 foreach (var step in steps)
                     if (step is not JsonValue s || !s.TryGetValue<string>(out var id) || !IdOk(id)) return "badData";
+            }
+            else if (part == "tourOn")
+            {
+                if (node is not JsonValue on || !on.TryGetValue<bool>(out _)) return "badData";
             }
             else return "badData";
         }

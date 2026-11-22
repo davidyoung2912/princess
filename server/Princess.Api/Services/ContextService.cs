@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// A real account's sailing is its current trip; a demo account's is the one saved in its demo controls (else its trip). The time is the
 /// server's, moved by the demo clock for a demo account.
 /// </summary>
-public sealed class ContextService(ICurrentUser me, ITripStore trips, IAccountStore accounts, IDemoStore demo, IUserClock clock, IInboxStore inbox, IBookingStore bookings)
+public sealed class ContextService(ICurrentUser me, ITripStore trips, IAccountStore accounts, IDemoStore demo, IUserClock clock, IInboxStore inbox, IBookingStore bookings, SampleTripService sample)
 {
     public async Task<ContextDto> GetAsync(CancellationToken ct)
     {
@@ -39,6 +39,8 @@ public sealed class ContextService(ICurrentUser me, ITripStore trips, IAccountSt
         }
 
         var stage = await StageAsync(user, all, current, sailing, now, today, ct);
+        // With no trip the screens still need a sailing to draw (the Explorers, the itinerary): the guest's sample itinerary.
+        if (current is null && !user.IsDemo) sailing = (await sample.ChosenAsync(user, ct))?.Id ?? sailing;
         var booking = current is null ? null : new ContextBookingDto(current.Number, current.SailingId, current.FareId == "standard" ? "none" : current.FareId, current.CategoryId);
         return new ContextDto(self, members, booking, sailing, zone, new DateTimeOffset(DateTime.SpecifyKind(now, DateTimeKind.Utc)).ToUnixTimeMilliseconds(), user.IsDemo,
             stage.Stage, stage.FocusSailingId, stage.Reason);

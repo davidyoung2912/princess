@@ -62,6 +62,12 @@ public sealed class InMemoryUserStore : IUserStore
         return Task.CompletedTask;
     }
 
+    public Task SetSampleSailingAsync(long userId, string sailingId, CancellationToken ct)
+    {
+        Users.Single(x => x.Id == userId).SampleSailingId = sailingId;
+        return Task.CompletedTask;
+    }
+
     public Task SetChatNicknameAsync(long userId, string? nickname, CancellationToken ct)
     {
         Users.Single(x => x.Id == userId).ChatNickname = nickname;

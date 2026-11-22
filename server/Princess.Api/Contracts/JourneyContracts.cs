@@ -16,6 +16,14 @@ public sealed record ProfileDto(
 /// <summary>The email address and phone number on the account, either of which may be empty. Changing one makes it unconfirmed until a code is typed back.</summary>
 public sealed record ContactDto(string Email, string Phone);
 
+/// <summary>One sample itinerary a guest with no booking can use for the Explorers: a sailing on one of the ships.</summary>
+public sealed record SampleOptionDto(string SailingId, string ShipId, string ShipName, string Departure, int Nights);
+
+/// <summary><paramref name="Active"/> is true while the guest has no current booking; <paramref name="SailingId"/> is the one in use (the first ship's when none was chosen).</summary>
+public sealed record SampleTripDto(bool Active, string SailingId, List<SampleOptionDto> Options);
+
+public sealed record SampleTripRequest(string? SailingId);
+
 public sealed record ProfileViewDto(ProfileDto Profile, Guid Id, bool CanEdit, int DaysToDeparture);
 
 public sealed record SaveHelperRequest(string? Name, string? Relationship, string[]? Permissions, string? Status);

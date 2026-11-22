@@ -194,6 +194,11 @@ main.signin { margin-inline: auto; }
   box-shadow: 0 2px 6px rgba(10, 20, 60, 0.3); transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease), border-color var(--t-fast) var(--ease); }
 .tabs__logo .me-avatar__pic { width: 5.5rem; height: 5.5rem; font-size: 1.75rem; border-width: 4px; }
 .me-avatar:is(:hover, :focus-visible) .me-avatar__pic { transform: scale(1.1); border-color: var(--primary-bright, var(--primary)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-bright, var(--primary)) 25%, transparent), 0 0 18px color-mix(in srgb, var(--primary-bright, var(--primary)) 60%, transparent); }
+.tabs__logo.me-avatar { display: none; } /* the rail's picture shows only with the desktop rail; on phones it sits at the top, beside the date */
+@media (min-width: 1024px) { .tabs__logo.me-avatar { display: inline-flex; } .testbar__avatar.me-avatar { display: none; } }
+.testbar__avatar.me-avatar { flex: none; margin-inline-end: var(--space-2); }
+.testbar__avatar .me-avatar__pic { width: 2rem; height: 2rem; font-size: 0.8rem; border-width: 2px; }
+.testbar__avatar img { display: block; height: 2rem; width: 2rem; border-radius: 50%; }
 .me-avatar:active .me-avatar__pic { transform: scale(0.97); }
 @media (prefers-reduced-motion: reduce) { .me-avatar__pic { transition: none; } .me-avatar:is(:hover, :focus-visible, :active) .me-avatar__pic { transform: none; } }
 :root[data-motion='reduced'] .me-avatar:is(:hover, :focus-visible, :active) .me-avatar__pic { transform: none; }

@@ -916,6 +916,11 @@ export interface Api {
     sendCode(): Promise<EmailCheck>
     confirm(code: string): Promise<EmailCheck>
   }
+  /** Until a guest has booked, the Explorers describe a sample itinerary they choose: one sailing each of Sun, Sky and Sapphire Princess. */
+  sampleTrip: {
+    get(): Promise<SampleTrip>
+    choose(sailingId: string): Promise<SampleTrip>
+  }
   /** The email address and phone number on the account. Both are optional, and either may be shared with another account. */
   contact: {
     get(): Promise<Contact>
@@ -1357,6 +1362,10 @@ export interface WifiApi {
 
 /** Whether the profile has a phone number, whether it has been confirmed by text, and whether a code is waiting. */
 /** Whether the account has an email address, whether it has been confirmed by an emailed code, and whether a code is waiting. */
+export interface SampleOption { sailingId: string; shipId: string; shipName: string; /** "YYYY-MM-DD". */ departure: string; nights: number }
+/** `active` is false once the guest has a current booking (the sample is then not used or offered); `sailingId` is the one in use. */
+export interface SampleTrip { active: boolean; sailingId: string; options: SampleOption[] }
+
 /** Empty strings mean none. Saving a changed one makes it unconfirmed until its code is typed back. */
 export interface Contact { email: string; phone: string }
 

@@ -6,6 +6,7 @@ import { pendingChecks, VerifyStep, type ContactKind } from '../ContactSteps'
 import { AvatarPicker } from '../AvatarPicker'
 import { DisplaySettings } from '../DisplaySettings'
 import { Chip } from '../Chip'
+import { SampleTripCard } from './SampleTripCard'
 import { NicknameField } from '../NicknameField'
 import { useState } from 'react'
 import type { ChatSettings } from '../../api/chatTypes'
@@ -64,6 +65,7 @@ export function AppWelcome() {
         <h2 id="app-welcome-hello-h">{t('appWelcome.h.hello')}</h2>
         <p>{t('appWelcome.hello')}</p>
       </Card>
+      <SampleTripCard />
       <Card labelledBy="app-welcome-avatar-h">
         <h2 id="app-welcome-avatar-h">{th('avatar.title')}</h2>
         <p>{t('avatar.intro')}</p>

@@ -1,3 +1,4 @@
+import { MyAvatarLink } from './MyAvatarLink'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import { getContext, subscribeContext } from '../account/context'
@@ -103,6 +104,7 @@ function TestBarBody({ isDemo, menu, chatCount }: { isDemo: boolean; menu?: Reac
   )
   return (
     <div className="testbar no-print" data-tour="date" role="group" aria-label={t('testbar.label')}>
+      <MyAvatarLink className="testbar__avatar" />
       <div className="testbar__item testbar__item--date">
         {isDemo
           ? <button type="button" className="testbar__main testbar__pick" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabelLong(now, position.zone)}`}>{dateWords}</button>
