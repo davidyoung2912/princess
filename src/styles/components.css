@@ -472,3 +472,12 @@ main.signin { margin-inline: auto; }
 .code-boxes__label { font-weight: 600; }
 .code-boxes__row { display: flex; gap: var(--space-2); max-width: 22rem; }
 .code-boxes__box { flex: 1 1 0; min-width: 0; padding-inline: 0; text-align: center; font-size: var(--fs-title, 1.5rem); font-variant-numeric: tabular-nums; }
+
+/* Stanley's joke of the day under the tip card on Home: teal, with his laughing head. */
+.says { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--teal-tint); color: var(--text); border-left: 0.5rem solid var(--teal); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+.says__icon { width: 3rem; height: 3rem; border-radius: 50%; }
+.says__body { min-width: 0; }
+.says__title { margin: 0; font-weight: 700; }
+.says__text { margin: 0; }
+.says__dismiss { white-space: nowrap; }
+@media (max-width: 30rem) { .says { grid-template-columns: auto 1fr; } .says__dismiss { grid-column: 1 / -1; justify-self: start; } }

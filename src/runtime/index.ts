@@ -1,3 +1,4 @@
+import { clearJokeDismissal } from '../settings/jokeOfTheDay'
 import { ApiError } from '../api/errors'
 import { createHttpGroups, toApi } from '../api/httpApi'
 import type { Api } from '../api/types'
@@ -727,6 +728,7 @@ export async function signOutSaving(): Promise<void> {
  * their documents stay (saved screens still go), so nothing typed is lost; so does the outbox of unsent messages. The next different person to sign in clears what stays.
  */
 function clearOwnCopies(): void {
+  clearJokeDismissal()   // signing in again shows Stanley's joke again, even on the same day
   const store = local()
   if (!store) return
   const waiting = sync.status() === 'error' || portRows.status() === 'error'

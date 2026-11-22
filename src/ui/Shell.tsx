@@ -49,6 +49,7 @@ import { pageArt } from './pageArt'
 import { DeepLinkNote } from './DeepLinkNote'
 import { useActiveDeck } from '../hooks/useShipCatalogue'
 import { TipCard } from './TipCard'
+import { StanleySays } from './StanleySays'
 import { Tour } from './Tour'
 import { StageOverviewCta } from './home/StageOverviewCta'
 import { GuideCrumb, WhatNext } from './GuideFlow'
@@ -286,6 +287,7 @@ export function Shell() {
         {route && !route.public && <CatchUp />}
         {route && !route.public && <BrowseDepthNote />}
         {route && !route.public && !NO_TIP_SCREENS.includes(screen?.id ?? '') && <TipCard id={tipIdFor(landing ? undefined : screen?.id, landing?.key)} />}
+        {pathname === '/' && <StanleySays />}
         {landing?.key === 'home' && <StageOverviewCta />}
         {route && !route.public && !landing && <StanleyCoach screenId={screen?.id} />}
         <Suspense fallback={<PageSkeleton />}>
