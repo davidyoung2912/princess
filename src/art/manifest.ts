@@ -17,10 +17,11 @@ export const POSES = {
 } as const
 export type PoseId = keyof typeof POSES
 
-/** The head-and-shoulders moods, then the same face in a uniform or a role. */
+/** The head-and-shoulders moods, then the same face in a uniform or a role, then the head for each thing Stanley helps with (accounting, chatting, dining, gaming, laughing, planning, searching, security, shopping, weather). */
 export const HEADS = [
   'stanley', 'confused', 'congratulations', 'excited', 'idea', 'proud', 'sailor-salute', 'sunglasses', 'surprised', 'gentle',
   'accountant', 'captain', 'chef', 'customer-service', 'formal', 'lifeguard', 'maintenance', 'navigating', 'scheduler', 'sherlock', 'vacation',
+  'accounting', 'chatting', 'dining', 'gaming', 'laughing', 'planning', 'searching', 'security', 'shopping', 'weather',
 ] as const
 export type HeadId = (typeof HEADS)[number]
 

@@ -7,7 +7,7 @@ import sharp from 'sharp'
 
 const SRC = 'art/source'
 const OUT = 'src/assets/art'
-const RENAME = { lifebouy: 'lifebuoy', suprised: 'surprised' }
+const RENAME = { lifebouy: 'lifebuoy', suprised: 'surprised', dinning: 'dining' }
 const SETS = [
   { dir: 'heroes', out: 'heroes', sizes: [{ w: 1200, suffix: '' }, { w: 600, suffix: '-sm' }], quality: 72, budget: 105 * 1024 },
   { dir: 'poses', out: 'stanley', sizes: [{ w: 384, suffix: '' }], quality: 80, budget: 60 * 1024, inside: true },
