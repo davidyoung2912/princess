@@ -12,11 +12,11 @@ import { useOwnerId, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t, th as heading, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
-import { Button, LinkButton } from '../Button'
+import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
 import { Phone } from '../icons'
-import { Baby, Headset, MessageSquareMore, Search, UserPlus, Users, type LucideIcon } from 'lucide-react'
+import { Baby, Headset, MessageSquareMore, Search, Users, type LucideIcon } from 'lucide-react'
 import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
@@ -53,7 +53,6 @@ export function ChatScreen() {
       <p>{t('chat.free')}</p>
       {params.get('gone') === '1' && <Banner kind="info" title={t('chat.goneTitle')}><p>{t('chat.goneBody')}</p></Banner>}
       {!service && <Card info><p>{t('chat.beforeBooking')}</p></Card>}
-      {people && <p><LinkButton to="/chat/people?find=1" icon={UserPlus}>{t('chat.invite')}</LinkButton></p>}
       {people && <RequestsBanner onOpen={() => { void nav('/chat/people?invitations=1') }} />}
       <Conversations />
       <section aria-labelledby="chat-more-h" data-tour="chat-more">

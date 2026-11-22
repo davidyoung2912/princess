@@ -48,7 +48,7 @@ import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { OctagonAlert, TriangleAlert } from '../icons'
-import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, UserMinus, UserPlus, X, Footprints, type LucideIcon } from 'lucide-react'
+import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, X, Footprints, type LucideIcon } from 'lucide-react'
 
 /** A small icon for each quick reply; the words are its label. */
 const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
@@ -242,6 +242,7 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, shipTime, 
         <span className="conv__body">
           <span className="conv__top">
             <strong>{c.name}</strong>
+            {c.owner && <span className="tag tag--good">{t('cgroup.status.leader')}</span>}
             {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
           </span>
           {level !== 'normal' && <UrgencyTag level={level} />}
@@ -258,8 +259,7 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, shipTime, 
       </button>
       {c.owner && (
         <span className="conv__tools" role="group" aria-label={t('conv.tools.label', { name: c.name })}>
-          <button type="button" className="conv__tool" onClick={() => onManage(c)} aria-label={t('conv.tool.invite', { name: c.name })} title={t('conv.tool.invite', { name: c.name })}><UserPlus aria-hidden="true" /></button>
-          <button type="button" className="conv__tool" onClick={() => onManage(c)} aria-label={t('conv.tool.members', { name: c.name })} title={t('conv.tool.members', { name: c.name })}><UserMinus aria-hidden="true" /></button>
+          <button type="button" className="conv__tool" onClick={() => onManage(c)} aria-label={t('conv.tool.edit', { name: c.name })} title={t('conv.tool.edit', { name: c.name })}><Pencil aria-hidden="true" /></button>
           <button type="button" className="conv__tool conv__tool--danger" onClick={() => onDelete(c)} aria-label={t('conv.tool.delete', { name: c.name })} title={t('conv.tool.delete', { name: c.name })}><Trash2 aria-hidden="true" /></button>
         </span>
       )}

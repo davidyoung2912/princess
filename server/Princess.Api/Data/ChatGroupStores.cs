@@ -37,10 +37,12 @@ public sealed class ChatGroupInviteRow
     public long InviterId { get; set; }
     public string InviterFirst { get; set; } = "";
     public string InviterLast { get; set; } = "";
+    public string? InviterAvatar { get; set; }
     public long InviteeId { get; set; }
     public Guid InviteePublicId { get; set; }
     public string InviteeFirst { get; set; } = "";
     public string InviteeLast { get; set; } = "";
+    public string? InviteeAvatar { get; set; }
     public string Status { get; set; } = "";
     public long? GuardianUserId { get; set; }
     public DateTime ExpiresAt { get; set; }
@@ -93,14 +95,16 @@ public interface IChatGroupStore
 public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupStore
 {
     private const string InviteSelect = """
-        SELECT i.Id, i.PublicId, i.GroupId, g.Name AS GroupName, i.InviterId, ip.FirstName AS InviterFirst, ip.LastName AS InviterLast,
-               i.InviteeId, u.PublicId AS InviteePublicId, up.FirstName AS InviteeFirst, up.LastName AS InviteeLast,
+        SELECT i.Id, i.PublicId, i.GroupId, g.Name AS GroupName, i.InviterId, ip.FirstName AS InviterFirst, ip.LastName AS InviterLast, ipp.ChatAvatar AS InviterAvatar,
+               i.InviteeId, u.PublicId AS InviteePublicId, up.FirstName AS InviteeFirst, up.LastName AS InviteeLast, upp.ChatAvatar AS InviteeAvatar,
                i.Status, i.GuardianUserId, i.ExpiresAt, i.CreatedAt
         FROM dbo.ChatGroupInvites i
         JOIN dbo.ChatGroups g ON g.Id = i.GroupId
         JOIN dbo.Profiles ip ON ip.UserId = i.InviterId
         JOIN dbo.Users u ON u.Id = i.InviteeId
         JOIN dbo.Profiles up ON up.UserId = u.Id
+        LEFT JOIN dbo.UserPrefs ipp ON ipp.UserId = i.InviterId
+        LEFT JOIN dbo.UserPrefs upp ON upp.UserId = u.Id
         """;
 
     public async Task<ChatGroupRow> CreateAsync(long creatorId, string name, DateTime now, CancellationToken ct)

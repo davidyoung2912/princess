@@ -1,5 +1,4 @@
-import { Trash2, Users } from '../icons'
-import { Link } from 'react-router'
+import { Check, Trash2, Users, X } from '../icons'
 import { useState } from 'react'
 import type { ChatConnections, ChatGroup, ChatGroupInvite, ChatPerson } from '../../api/chatTypes'
 import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, togglePicked } from '../../domain/chatGroups'
@@ -27,7 +26,7 @@ function Problem({ error }: { error: ApiError | null }) {
 }
 
 /** The people the guest is connected with, as checkboxes to pick from. Each box is a native checkbox with the person's name as its label. */
-function PickPeople({ people, picked, onToggle, legend }: { people: readonly { personId: string; name: string }[]; picked: readonly string[]; onToggle: (id: string) => void; legend: string }) {
+function PickPeople({ people, picked, onToggle, legend }: { people: readonly { personId: string; name: string; avatar?: string }[]; picked: readonly string[]; onToggle: (id: string) => void; legend: string }) {
   if (people.length === 0) return <p className="muted">{t('cgroup.nobody')}</p>
   return (
     <fieldset className="plain-fieldset">
@@ -35,7 +34,7 @@ function PickPeople({ people, picked, onToggle, legend }: { people: readonly { p
       {people.map((p) => (
         <label key={p.personId} className="choice">
           <input type="checkbox" checked={picked.includes(p.personId)} onChange={() => onToggle(p.personId)} />
-          <span>{p.name}</span>
+          <span className="person-line"><ChatAvatar avatar={p.avatar} name={p.name} small /><span>{p.name}</span></span>
         </label>
       ))}
     </fieldset>
@@ -76,7 +75,7 @@ export function NewGroupPage({ onCreated }: { onCreated: (group: ChatGroup) => v
   const connected = new Set((connections.data?.connected ?? []).map((c) => c.personId))
   // Everyone chosen for the group, whether already a contact or just found: all of them get the invitation when the group is made.
   const chosen: ChatPerson[] = [
-    ...(connections.data?.connected ?? []).filter((c) => picked.includes(c.personId)).map((c) => ({ id: c.personId, name: c.name, relation: 'connected' as const })),
+    ...(connections.data?.connected ?? []).filter((c) => picked.includes(c.personId)).map((c) => ({ id: c.personId, name: c.name, relation: 'connected' as const, avatar: c.avatar })),
     ...found,
   ]
   const drop = (id: string) => { setPicked((x) => x.filter((p) => p !== id)); setFound((x) => x.filter((f) => f.id !== id)) }
@@ -171,6 +170,7 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
   const rename = useAction(async () => { const clean = cleanGroupName(name ?? ''); if (clean) { await api.chatGroups.rename(id, clean); setName(null); done(t('cgroup.renamed')) } })
   const invite = useAction(async () => { await api.chatGroups.invite(id, picked); setPicked([]); done(t('cgroup.invited', { count: picked.length })) })
   const remove = useAction(async (personId: string, who: string) => { await api.chatGroups.remove(id, personId); done(t('cgroup.removed', { name: who })) })
+  const revoke = useAction(async (inviteId: string, who: string) => { await api.chatGroups.revokeInvite(id, inviteId); done(t('cgroup.revoked', { name: who })) })
   const leave = useAction(async () => { await api.chatGroups.leave(id); chatChanged(); onLeft() })
   const announce = useAction(async (on: boolean) => { await api.chatGroups.setAnnouncementOnly(id, on); done(t('cgroup.announce')) })
   return (
@@ -198,12 +198,18 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
               </>
             )}
             {g.isCreator && g.waiting.length > 0 && (
-              <>
-                <h3>{headingCase(t('cgroup.waiting'))}</h3>
+              <Card labelledBy="grp-waiting-h">
+                <h3 id="grp-waiting-h">{headingCase(t('cgroup.waiting'))}</h3>
                 <ul className="plain-list">
-                  {g.waiting.map((w) => <li key={w.inviteId}><span>{w.name} <span className="muted">{t('cgroup.status.pending')}{w.needsGuardian ? ` (${t('cgroup.waitingGuardian')})` : ''}</span></span></li>)}
+                  {g.waiting.map((w) => (
+                    <li key={w.inviteId}>
+                      <span className="person-line"><ChatAvatar avatar={w.avatar} name={w.name} small /><span><strong>{w.name}</strong> <span className="muted">{t('cgroup.status.pending')}{w.needsGuardian ? ` (${t('cgroup.waitingGuardian')})` : ''}</span></span></span>
+                      <Button variant="secondary" icon={Trash2} disabled={revoke.busy} onClick={() => void revoke.run(w.inviteId, w.name)}>{t('cgroup.revoke')}<span className="visually-hidden"> {w.name}</span></Button>
+                    </li>
+                  ))}
                 </ul>
-              </>
+                <Problem error={revoke.error} />
+              </Card>
             )}
             {g.isCreator && (
               <>
@@ -217,7 +223,7 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
               </>
             )}
             <p className="muted">{t('cgroup.history')}</p>
-            <Button variant="secondary" onClick={() => setLeaving(true)}>{t('cgroup.leave')}</Button>
+            {!g.isCreator && <Button variant="secondary" onClick={() => setLeaving(true)}>{t('cgroup.leave')}</Button>}
             {g.isCreator && <Button variant="secondary" icon={Trash2} onClick={() => setDeleting(true)}>{t('cgroup.deleteChat')}</Button>}
             {deleting && <DeleteChat chat={{ id, kind: 'group', name: g.name }} onClose={() => setDeleting(false)} onDeleted={() => { setDeleting(false); onLeft() }} />}
             {leaving && (
@@ -245,7 +251,6 @@ function AddPeople({ group, connections, picked, setPicked, busy, onInvite }: {
     <div>
       <PickPeople people={people} picked={picked} onToggle={(id) => setPicked(togglePicked(picked, id))} legend={t('cgroup.add')} />
       {people.length > 0 && <Button variant="secondary" disabled={busy || picked.length === 0} onClick={onInvite}>{t('cgroup.addSend')}</Button>}
-      <p className="muted"><Link to="/chat/people?find=1">{t('cgroup.findMore')}</Link></p>
     </div>
   )
 }
@@ -275,11 +280,12 @@ function Invite({ invite, onDone }: { invite: ChatGroupInvite; onDone: (note: st
   })
   return (
     <>
-      <p><strong>{child ? t('cgroup.inviteChild', { child: invite.childName ?? '', group: invite.groupName, from: invite.from }) : t('cgroup.invite', { from: invite.from, group: invite.groupName })}</strong></p>
+      <h4 className="invite-card__title"><Users aria-hidden="true" /> {invite.groupName}</h4>
+      <p className="person-line"><ChatAvatar avatar={invite.fromAvatar} name={invite.from} small /><span>{child ? t('cgroup.inviteChild', { child: invite.childName ?? '', from: invite.from }) : t('cgroup.invite', { from: invite.from })}</span></p>
       <p className="muted">{t(child ? 'cgroup.inviteChildBody' : 'cgroup.inviteBody')}</p>
       <div className="button-row">
-        <Button disabled={answer.busy} onClick={() => void answer.run(true)}>{t(child ? 'people.allow' : 'cgroup.join')}<span className="visually-hidden"> {invite.groupName}</span></Button>
-        <Button variant="secondary" disabled={answer.busy} onClick={() => void answer.run(false)}>{t('people.decline')}<span className="visually-hidden"> {invite.groupName}</span></Button>
+        <Button icon={Check} disabled={answer.busy} onClick={() => void answer.run(true)}>{t(child ? 'people.allow' : 'cgroup.join')}<span className="visually-hidden"> {invite.groupName}</span></Button>
+        <Button variant="secondary" icon={X} disabled={answer.busy} onClick={() => void answer.run(false)}>{t('people.decline')}<span className="visually-hidden"> {invite.groupName}</span></Button>
       </div>
       <Problem error={answer.error} />
     </>

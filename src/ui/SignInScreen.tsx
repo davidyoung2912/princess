@@ -63,7 +63,7 @@ function PasswordSignIn({ go, fresh }: { go: (m: Mode) => void; fresh: { email: 
       <Card>
         <form onSubmit={(e) => void submit(e)} noValidate>
           <Field label={t('signin.identifier')} hint={t('signin.identifier.hint')} value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} error={missing.id} />
-          <Field label={t('signin.password')} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" error={missing.pw} />
+          <Field label={t('signin.password')} type="password" reveal value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" error={missing.pw} />
           <label className="choice">
             <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
             <span>{t('signin.remember')}</span>

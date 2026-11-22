@@ -294,6 +294,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     invite: (id, personIds) => send('post', `/me/chat/groups/${seg(id)}/invite`, { personIds }),
     setAnnouncementOnly: (id, on) => send('put', `/me/chat/groups/${seg(id)}/announcement-only`, { on }),
     remove: async (id, personId) => { await send('post', `/me/chat/groups/${seg(id)}/remove`, { personId }) },
+    revokeInvite: async (id, inviteId) => { await send('delete', `/me/chat/groups/${seg(id)}/invites/${seg(inviteId)}`) },
     delete: async (id) => { await send('delete', `/me/chat/groups/${seg(id)}`) },
     leave: async (id) => { await send('post', `/me/chat/groups/${seg(id)}/leave`) },
     invites: () => get('/me/chat/group-invites'),

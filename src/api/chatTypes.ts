@@ -494,7 +494,7 @@ export interface ChatExport { name: string; at: number; lines: ChatExportLine[];
 export interface ChatGroupMember { id: string; name: string; avatar?: string; you: boolean; creator: boolean; /** The second admin (the creator is always one). Absent when not. */ admin?: boolean }
 
 /** An invitation the creator is still waiting on. `needsGuardian`: the person is a child and their guardian must say yes. */
-export interface ChatGroupWaiting { inviteId: string; personId: string; name: string; needsGuardian: boolean }
+export interface ChatGroupWaiting { inviteId: string; personId: string; name: string; needsGuardian: boolean; avatar?: string }
 
 /** A group as a member sees it. `id` is the conversation id. `waiting` is filled only for the creator. `max` is the size limit, the creator included. */
 export interface ChatGroup { id: string; name: string; members: ChatGroupMember[]; waiting: ChatGroupWaiting[]; isCreator: boolean; max: number; /** Only admins post. Absent when not. */ announcementOnly?: boolean; /** You are an admin (the creator, or the second admin). Absent when not. */ isAdmin?: boolean }
@@ -509,6 +509,8 @@ export interface ChatGroupInvite {
   childName: string | null
   at: number
   expiresAt: number
+  /** The inviter's chosen avatar id; absent for initials. */
+  fromAvatar?: string
 }
 
 export interface ChatGroupsApi {
@@ -528,6 +530,8 @@ export interface ChatGroupsApi {
   setAnnouncementOnly(id: string, on: boolean): Promise<ChatGroup>
   /** Creator only; never themself. */
   remove(id: string, personId: string): Promise<void>
+  /** Creator only: takes back an invitation nobody has answered. Rejects `conflict` (`answered`). */
+  revokeInvite(id: string, inviteId: string): Promise<void>
   /** The creator deletes the whole group for everyone. */
   delete(id: string): Promise<void>
   leave(id: string): Promise<void>

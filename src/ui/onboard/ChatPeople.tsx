@@ -1,10 +1,9 @@
-import { UserPlus, X } from '../icons'
 import { ChatLooks } from './ChatLooks'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import type { ChatConnection, ChatPerson, ChatSettings, ChatSms } from '../../api/chatTypes'
+import type { ChatConnection, ChatSettings, ChatSms } from '../../api/chatTypes'
 import { needsPhone, smsReason } from '../../domain/chatSms'
-import { cleanQuery, hasActivity, personAction, relationNote, requestProblem, waitingCount } from '../../domain/chatConnections'
+import { waitingCount } from '../../domain/chatConnections'
 import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -13,16 +12,12 @@ import { api } from '../../runtime'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
-import { DialogHeader } from '../DialogHeader'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
-import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
 import { GroupInvites } from './ChatGroups'
-import { Icebreakers, StanleyNote } from './ChatStanley'
-import { useStanleyStatus } from '../../hooks/useStanleyStatus'
-import { problemLine } from '../../domain/chatWriting'
+import { StanleyNote } from './ChatStanley'
 import { ChatAvatar } from './ChatLooks'
 import type { ApiError } from '../../api/errors'
 
@@ -39,7 +34,7 @@ export function RequestsBanner({ onOpen }: { onOpen: () => void }) {
 /** The People page, or with `?invitations=1` the Chat Invitations page. */
 export function People() {
   const [params] = useSearchParams()
-  return params.get('invitations') === '1' ? <Invitations /> : <PeopleList />
+  return params.get('invitations') === '1' ? <Invitations /> : <ChatSettingsPage />
 }
 
 /** Every invitation waiting for the guest (and for their children) in one place: chat requests from people and invitations to groups, each to accept or decline. */
@@ -50,6 +45,9 @@ function Invitations() {
   const [note, setNote] = useState('')
   const refresh = () => { list.retry(); invites.retry(); chatChanged() }
   const done = (text: string) => { setNote(text); refresh() }
+  // Opening the page is seeing any answers to requests the guest sent, so the Chat badge stops counting them.
+  const answered = list.data ? list.data.answers.length + list.data.connected.filter((c) => c.isNew).length : 0
+  useEffect(() => { if (answered > 0) void api.chatConnections.seen().then(chatChanged, () => undefined) }, [answered])
   const waiting = list.data ? waitingCount(list.data) : 0
   const count = waiting + (invites.data?.length ?? 0)
   const loaded = list.data !== undefined && invites.data !== undefined
@@ -72,43 +70,21 @@ function Invitations() {
   )
 }
 
-/** People (docs/chat-plan.md, 4.8): chat targets, requests sent and answers, and a single New chat button. Invitations to answer are on their own page. */
-function PeopleList() {
-  const list = useMine(() => api.chatConnections.list())
+/** Chat settings: who can find the guest, what notices show, typing and read receipts, the text-message bridge and hiding from chat. */
+function ChatSettingsPage() {
   const settings = useMine(() => api.chatConnections.settings())
-  useChatLive(list.retry)
-  // `?find=1` (the Invite button on the Chat page) opens the search straight away.
-  const [params] = useSearchParams()
-  const [searching, setSearching] = useState(params.get('find') === '1')
   const [note, setNote] = useState('')
-  const refresh = () => { list.retry(); chatChanged() }
-  // The answers are on screen, so the sender has seen them: clear the badge once the list has loaded.
-  const answered = list.data ? list.data.answers.length + list.data.connected.filter((c) => c.isNew).length : 0
-  useEffect(() => { if (answered > 0) void api.chatConnections.seen().then(chatChanged, () => undefined) }, [answered])
   return (
-    <section aria-labelledby="people-h">
-      <h2 id="people-h">{th('people.title')}</h2>
-      <p className="muted">{t('people.body')}</p>
-      <Button onClick={() => setSearching(true)}>{t('people.new')}</Button>
+    <section aria-labelledby="chat-settings-h">
+      <h2 id="chat-settings-h" className="visually-hidden">{t('chatSettings.title')}</h2>
       <p role="status" className="visually-hidden">{note}</p>
-      {searching && <Search onClose={() => setSearching(false)} onDone={(text) => { setNote(text); refresh() }} />}
-      <Load state={list}>
-        {(c) => (
-          <>
-            {!hasActivity(c) && <p>{t('people.none')}</p>}
-            {c.outgoing.length > 0 && <Group id="outgoing" rows={c.outgoing} render={(r) => <Outgoing row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
-            {c.answers.length > 0 && <Group id="answers" rows={c.answers} render={(r) => <AnswerLine row={r} />} />}
-            {c.connected.length > 0 && <Group id="connected" rows={c.connected} render={(r) => <Connected row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
-          </>
-        )}
-      </Load>
       <TextBridge />
-      <Settings state={settings} onHidden={() => { setNote(t('people.hidden')); refresh() }} />
+      <Settings state={settings} onHidden={() => { setNote(t('people.hidden')); chatChanged() }} />
     </section>
   )
 }
 
-function Group({ id, rows, render }: { id: 'approvals' | 'incoming' | 'outgoing' | 'answers' | 'connected'; rows: readonly ChatConnection[]; render: (row: ChatConnection) => React.ReactNode }) {
+function Group({ id, rows, render }: { id: 'approvals' | 'incoming'; rows: readonly ChatConnection[]; render: (row: ChatConnection) => React.ReactNode }) {
   return (
     <section aria-labelledby={`people-${id}`}>
       <h3 id={`people-${id}`}>{th(`people.g.${id}` as StringKey)}</h3>
@@ -135,12 +111,6 @@ function Incoming({ row, onDone }: { row: ChatConnection; onDone: (note: string)
   )
 }
 
-/** A request that was not taken up: Stanley's kind line when his chat help is on, otherwise the plain one. It never says who or why. */
-function AnswerLine({ row }: { row: ChatConnection }) {
-  const status = useStanleyStatus()
-  return status?.on === true && row.note ? <StanleyNote text={row.note} /> : <p>{t('people.declined', { name: row.name })}</p>
-}
-
 function Approval({ row, onDone }: { row: ChatConnection; onDone: (note: string) => void }) {
   const answer = useAction(async (accept: boolean) => { await api.chatConnections.respond(row.id, accept, false); onDone(t('people.answered')) })
   return (
@@ -153,93 +123,6 @@ function Approval({ row, onDone }: { row: ChatConnection; onDone: (note: string)
       </div>
       <ActionError error={answer.error} />
     </>
-  )
-}
-
-function Outgoing({ row, onDone }: { row: ChatConnection; onDone: (note: string) => void }) {
-  const cancel = useAction(async () => { await api.chatConnections.cancel(row.id); onDone(t('people.cancelled', { name: row.name })) })
-  return (
-    <>
-      <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{row.name}</strong> <span className="muted">{t('people.waitingForReply')}</span></p>
-      <StanleyNote text={row.note} />
-      <Button variant="secondary" icon={X} disabled={cancel.busy} onClick={() => void cancel.run()}>{t('people.cancel')}<span className="visually-hidden"> {row.name}</span></Button>
-      <ActionError error={cancel.error} />
-    </>
-  )
-}
-
-function Connected({ row, onDone }: { row: ChatConnection; onDone: (note: string) => void }) {
-  const [confirm, setConfirm] = useState(false)
-  const end = useAction(async () => { await api.chatConnections.end(row.id); setConfirm(false); onDone(t('people.ended', { name: row.name })) })
-  return (
-    <>
-      <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{row.name}</strong>{row.isNew && <> <span className="tag">{t('people.new.tag')}</span></>}</p>
-      <p className="muted">{t('people.connectedBody')}</p>
-      <Button variant="tertiary" onClick={() => setConfirm(true)}>{t('people.end')}<span className="visually-hidden"> {row.name}</span></Button>
-      {confirm && (
-        <Dialog title={t('people.endTitle', { name: row.name })} onClose={() => setConfirm(false)}>
-          <p>{t('people.endBody')}</p>
-          <div className="button-row">
-            <Button disabled={end.busy} onClick={() => void end.run()}>{t('people.endYes')}</Button>
-            <Button variant="secondary" onClick={() => setConfirm(false)}>{t('people.endNo')}</Button>
-          </div>
-          <ActionError error={end.error} />
-        </Dialog>
-      )}
-    </>
-  )
-}
-
-/** Search by name on this sailing, then ask. Opens in a dialog so focus is trapped and Escape closes it. */
-function Search({ onClose, onDone }: { onClose: () => void; onDone: (note: string) => void }) {
-  const [text, setText] = useState('')
-  const [results, setResults] = useState<ChatPerson[] | null>(null)
-  const [sent, setSent] = useState<ReadonlySet<string>>(new Set())
-  const [problem, setProblem] = useState<ApiError | null>(null)
-  const latest = useRef(0)
-  const query = cleanQuery(text)
-  const find = useAction(async () => {
-    if (!query) return
-    const n = ++latest.current
-    const found = await api.chatConnections.search(query)
-    if (n === latest.current) setResults(found)
-  })
-  const ask = useAction(async (p: ChatPerson) => {
-    setProblem(null)
-    try { await api.chatConnections.request(p.id) } catch (e) { setProblem(e as ApiError); throw e }
-    setSent(new Set([...sent, p.id]))
-    onDone(t('people.asked', { name: p.name }))
-  })
-  const why = problem ? requestProblem(problem.code, problem.message) : null
-  const status = useStanleyStatus()
-  const kind = why ? problemLine(status, why) : undefined
-  return (
-    <Dialog title={t('people.new')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('people.new')} subtext={t('people.searchHint')} icon={UserPlus} onClose={onClose} />}>
-      <form onSubmit={(e) => { e.preventDefault(); if (query) void find.run() }}>
-        <Field label={t('people.search')} hint={t('people.searchHint')} value={text} maxLength={254} autoComplete="off" onChange={(e) => { setText(e.target.value); setResults(null) }} />
-        <Button type="submit" disabled={find.busy || !query}>{t('people.find')}</Button>
-      </form>
-      {find.error && (find.error.code === 'offline' || find.error.code === 'network') ? <Banner kind="offline" title={t('people.offline')} /> : <ActionError error={find.error} />}
-      {results && (results.length === 0
-        ? <p role="status">{t('people.noMatch')}</p>
-        : (
-          <ul className="plain-list" aria-label={t('people.results')}>
-            {results.map((p) => {
-              const action = personAction(p.relation)
-              const note = relationNote(p.relation)
-              return (
-                <li key={p.id} className="row">
-                  <span className="person-line"><ChatAvatar avatar={p.avatar} name={p.name} small /><strong>{p.name}</strong>{note && <> <span className="muted">{t(`people.rel.${note}` as StringKey)}</span></>}{sent.has(p.id) && <> <span className="muted">{t('people.rel.asked')}</span></>}</span>
-                  {action === 'ask' && !sent.has(p.id) && <Button variant="secondary" disabled={ask.busy} onClick={() => void ask.run(p)}>{t('people.ask')}<span className="visually-hidden"> {p.name}</span></Button>}
-                  {action === 'open' && <Link to="/chat">{t('people.openChat')}<span className="visually-hidden"> {p.name}</span></Link>}
-                </li>
-              )
-            })}
-          </ul>
-        ))}
-      {why ? <p role="alert" className="field__error">{kind ?? t(`people.problem.${why}` as StringKey)}</p> : <ActionError error={ask.error} />}
-      {sent.size > 0 && <><StanleyNote text={status?.lines.sent} /><Icebreakers /></>}
-    </Dialog>
   )
 }
 

@@ -831,3 +831,7 @@ button.chat-quote { cursor: pointer; }
 .conv__tool--danger { color: var(--danger); }
 .conv__tool--danger:hover, .conv__tool--danger:focus-visible { border-color: var(--danger); }
 .conv__tool .lucide { width: 1.1rem; height: 1.1rem; }
+
+/* A group invitation card: the group's name is the title. */
+.invite-card__title { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); font-size: var(--fs-title, 1.25rem); color: var(--primary); }
+.invite-card__title svg { width: 1.5rem; height: 1.5rem; flex: none; }

@@ -61,6 +61,15 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         return await ViewAsync(actor, group, ct);
     }
 
+    /// <summary>The creator takes back an invitation that has not been answered. It leaves the invitee's list; an answered one is 409 answered.</summary>
+    public async Task RevokeInviteAsync(UserRecord actor, Guid id, Guid inviteId, CancellationToken ct)
+    {
+        var group = await CreatorGroupAsync(actor, id, ct);
+        var row = await store.GetInviteAsync(inviteId, ct);
+        if (row is null || row.GroupId != group.Id) throw ApiException.NotFound("invite");
+        if (!await store.SetInviteStatusAsync(row.Id, [ChatGroupRules.Pending, ChatGroupRules.AwaitingGuardian], ChatGroupRules.Cancelled, await clock.NowAsync(actor, ct), ct)) throw ApiException.Conflict("answered");
+    }
+
     public async Task RemoveAsync(UserRecord actor, Guid id, ChatGroupRemoveBody? body, CancellationToken ct)
     {
         var group = await CreatorGroupAsync(actor, id, ct);
@@ -100,10 +109,11 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         await Task.WhenAll(members.Where(m => m.UserId != actor.Id).Select(m => notifier.ChatEndedAsync(m.UserId, group.PublicId, group.Name, true, ct)));
     }
 
-    /// <summary>Anyone in the group can leave. They keep nothing of what is said after, and the others are told by a line in the thread.</summary>
+    /// <summary>Anyone in the group can leave except its leader, who has to delete the group instead (403 leader). The others are told by a line in the thread and read nothing said after.</summary>
     public async Task LeaveAsync(UserRecord actor, Guid id, CancellationToken ct)
     {
         var group = await MemberGroupAsync(actor, id, ct);
+        if (group.CreatedByUserId == actor.Id) throw ApiException.Forbidden("leader");
         var me = (await store.ListActiveAsync(group.Id, ct)).First(m => m.UserId == actor.Id);
         if (!await store.RemoveMemberAsync(group.Id, actor.Id, "left", ChatGroupRules.LeftLine(Short(me)), await clock.NowAsync(actor, ct), ct)) throw ApiException.NotFound();
     }
@@ -230,7 +240,7 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var members = await store.ListActiveAsync(group.Id, ct);
         var creator = group.CreatedByUserId == actor.Id;
         var waiting = creator
-            ? [.. (await store.ListWaitingAsync(group.Id, ct)).Select(w => new ChatGroupWaitingDto(w.PublicId, w.InviteePublicId, ChatConnectionRules.ShortName(w.InviteeFirst, w.InviteeLast), w.Status == ChatGroupRules.AwaitingGuardian))]
+            ? [.. (await store.ListWaitingAsync(group.Id, ct)).Select(w => new ChatGroupWaitingDto(w.PublicId, w.InviteePublicId, ChatConnectionRules.ShortName(w.InviteeFirst, w.InviteeLast), w.Status == ChatGroupRules.AwaitingGuardian, w.InviteeAvatar))]
             : new List<ChatGroupWaitingDto>();
         var admin = ChatPlanningRules.IsAdmin(creator, members.Any(m => m.UserId == actor.Id && m.IsAdmin));
         return new(group.PublicId, group.Name,
@@ -242,7 +252,7 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
     {
         var from = ChatConnectionRules.ShortName(r.InviterFirst, r.InviterLast);
         return r.GuardianUserId == me && r.Status == ChatGroupRules.AwaitingGuardian
-            ? new(r.PublicId, "approval", r.GroupName, from, r.InviteePublicId, r.InviteeFirst, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt))
-            : new(r.PublicId, "incoming", r.GroupName, from, null, null, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt));
+            ? new(r.PublicId, "approval", r.GroupName, from, r.InviteePublicId, r.InviteeFirst, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt), r.InviterAvatar)
+            : new(r.PublicId, "incoming", r.GroupName, from, null, null, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt), r.InviterAvatar);
     }
 }

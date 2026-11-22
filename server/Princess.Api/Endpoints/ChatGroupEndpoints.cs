@@ -23,6 +23,9 @@ public static class ChatGroupEndpoints
         chat.MapPost("/groups/{id:guid}/invite", async (Guid id, ChatGroupInviteBody body, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => Results.Ok(await svc.InviteAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("Invites more connected people (creator only). People already in the group or already invited are skipped. 400 person|notConnected|noGuardian, 403 creator, 409 full (25 people, counting waiting invitations).");
 
+        chat.MapDelete("/groups/{id:guid}/invites/{inviteId:guid}", async (Guid id, Guid inviteId, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.RevokeInviteAsync(await me.LoadAsync(ct), id, inviteId, ct); return Results.NoContent(); })
+            .WithSummary("Takes back an invitation nobody has answered yet (creator only). 403 creator, 404 invite, 409 answered.");
+
         chat.MapPost("/groups/{id:guid}/remove", async (Guid id, ChatGroupRemoveBody body, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.RemoveAsync(await me.LoadAsync(ct), id, body, ct); return Results.NoContent(); })
             .WithSummary("Removes a member (creator only, never themself) and adds a line to the thread. 400 self, 403 creator, 404 person.");
 
@@ -33,7 +36,7 @@ public static class ChatGroupEndpoints
             .WithSummary("Deletes the whole group, its messages and its members' places, for everyone (creator only). 403 creator.");
 
         chat.MapPost("/groups/{id:guid}/leave", async (Guid id, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.LeaveAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
-            .WithSummary("The caller leaves the group. They read nothing said after, and the rest see a line in the thread. When the creator leaves, the person who has been in longest becomes the creator.");
+            .WithSummary("The caller leaves the group. They read nothing said after, and the rest see a line in the thread. The leader cannot leave (403 leader): they delete the group instead.");
 
         chat.MapGet("/group-invites", async (ICurrentUser me, ChatGroupService svc, CancellationToken ct) => Results.Ok(await svc.InvitesAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Group invitations waiting for the caller (incoming), and for a child the caller is guardian of (approval). Each shows the group name and the inviter's short name, never who else is in it.");
