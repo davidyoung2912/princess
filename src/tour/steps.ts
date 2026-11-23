@@ -11,6 +11,7 @@ export interface TourStep {
   /** The icon shown beside the title (a key into the tour's icon table). */
   icon: 'nav' | 'search' | 'stanley' | 'help' | 'menu' | 'date' | 'header' | 'tip' | 'chat' | 'today' | 'explorers' | 'weather' | 'navigation' | 'itinerary'
     | 'pin' | 'pass' | 'bill' | 'clock' | 'ship' | 'anchor' | 'waves' | 'pack'
+    | 'me' | 'settings' | 'bell' | 'doc' | 'wallet' | 'food' | 'stats' | 'people' | 'wifi' | 'cart' | 'list'
   /** True for a step about one page's own content (found by the same `data-tour` mark) rather than the screen's frame: it shows when the guest reaches that page, and is not counted in "n/total". */
   page?: boolean
 }
@@ -39,6 +40,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'homeShortcuts', target: 'home-shortcuts', side: 'bottom', icon: 'pin', page: true },
   { id: 'homeTiles', target: 'home-tiles', side: 'top', icon: 'nav', page: true },
   { id: 'meTrip', target: 'me-trip', side: 'bottom', icon: 'header', page: true },
+  { id: 'meStats', target: 'me-stats', side: 'top', icon: 'stats', page: true },
   { id: 'chatMore', target: 'chat-more', side: 'top', icon: 'chat', page: true },
   { id: 'planCard', target: 'plan-card', side: 'bottom', icon: 'today', page: true },
   { id: 'pickDate', target: 'pick-date', side: 'bottom', icon: 'date', page: true },
@@ -64,6 +66,36 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'packAdd', target: 'pack-add', side: 'bottom', icon: 'pack', page: true },
   { id: 'billTotal', target: 'bill-total', side: 'bottom', icon: 'bill', page: true },
   { id: 'billLines', target: 'bill-lines', side: 'top', icon: 'bill', page: true },
+  { id: 'planList', target: 'plan-list', side: 'bottom', icon: 'today', page: true },
+  { id: 'planCheck', target: 'plan-check', side: 'bottom', icon: 'list', page: true },
+  { id: 'planDays', target: 'plan-days', side: 'top', icon: 'date', page: true },
+  { id: 'checkMilestone', target: 'check-milestone', side: 'bottom', icon: 'list', page: true },
+  { id: 'shipList', target: 'ship-list', side: 'bottom', icon: 'ship', page: true },
+  { id: 'venuesGrid', target: 'venues-grid', side: 'top', icon: 'food', page: true },
+  { id: 'pulseVenues', target: 'pulse-venues', side: 'bottom', icon: 'ship', page: true },
+  { id: 'pulseLines', target: 'pulse-lines', side: 'top', icon: 'clock', page: true },
+  { id: 'deckFind', target: 'deck-find', side: 'bottom', icon: 'search', page: true },
+  { id: 'orderMine', target: 'order-mine', side: 'bottom', icon: 'cart', page: true },
+  { id: 'orderCart', target: 'order-cart', side: 'top', icon: 'cart', page: true },
+  { id: 'wifiHelp', target: 'wifi-help', side: 'bottom', icon: 'wifi', page: true },
+  { id: 'wifiAdd', target: 'wifi-add', side: 'top', icon: 'wifi', page: true },
+  { id: 'chatPeople', target: 'chat-people', side: 'bottom', icon: 'people', page: true },
+  { id: 'chatRooms', target: 'chat-rooms', side: 'bottom', icon: 'chat', page: true },
+  { id: 'chatSearch', target: 'chat-search', side: 'bottom', icon: 'search', page: true },
+  { id: 'chatService', target: 'chat-service', side: 'bottom', icon: 'help', page: true },
+  { id: 'meList', target: 'me-list', side: 'bottom', icon: 'me', page: true },
+  { id: 'meHistory', target: 'me-history', side: 'top', icon: 'clock', page: true },
+  { id: 'meSettings', target: 'me-settings-list', side: 'top', icon: 'settings', page: true },
+  { id: 'statsHero', target: 'stats-hero', side: 'bottom', icon: 'stats', page: true },
+  { id: 'statsJokes', target: 'stats-jokes', side: 'top', icon: 'tip', page: true },
+  { id: 'statsJump', target: 'stats-jump', side: 'bottom', icon: 'list', page: true },
+  { id: 'notifInbox', target: 'notif-inbox', side: 'bottom', icon: 'bell', page: true },
+  { id: 'notifPrefs', target: 'notif-prefs', side: 'top', icon: 'bell', page: true },
+  { id: 'docsCheck', target: 'docs-check', side: 'bottom', icon: 'doc', page: true },
+  { id: 'docsEntry', target: 'docs-entry', side: 'top', icon: 'doc', page: true },
+  { id: 'paySummary', target: 'pay-summary', side: 'bottom', icon: 'wallet', page: true },
+  { id: 'payCards', target: 'pay-cards', side: 'top', icon: 'wallet', page: true },
+  { id: 'settingsAvatar', target: 'settings-avatar', side: 'bottom', icon: 'me', page: true },
 ]
 
 /** The steps about the screen's frame, which are counted ("3/14") and can be finished in one go; the page steps are not. */

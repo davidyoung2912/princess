@@ -40,7 +40,7 @@ export function VenuesScreen() {
       </div>
       <FavouritesTonight />
       <p role="status" className="muted">{t('ven.count', { count: list.length })}</p>
-      <ul className="card-grid">
+      <ul className="card-grid" data-tour="venues-grid">
         {list.map((v) => (
           <li key={v.id} className="card">
             <h2 className="card__title"><Link to={`/ship/venues/${v.id}`}>{v.name}</Link></h2>

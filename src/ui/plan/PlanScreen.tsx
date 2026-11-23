@@ -36,7 +36,7 @@ export function PlanScreen() {
 
       <Load state={list}>
         {(c) => (
-          <Card labelledBy="check-h">
+          <Card labelledBy="check-h" tour="plan-check">
             <h2 id="check-h" className="card__title">{th('route.checklist')}</h2>
             <p className="progress-line">{t('plan.check.progress', { done: c.progress.done, total: c.progress.total })}</p>
             <progress className="meter" max={c.progress.total} value={c.progress.done} aria-label={t('plan.check.progress', { done: c.progress.done, total: c.progress.total })} />
@@ -51,7 +51,7 @@ export function PlanScreen() {
 
       <TabScreens tabKey="plan" />
 
-      <section aria-labelledby="days-h">
+      <section aria-labelledby="days-h" data-tour="plan-days">
         <h2 id="days-h">{th('plan.days')}</h2>
         <Load state={plan}>
           {(p) => (

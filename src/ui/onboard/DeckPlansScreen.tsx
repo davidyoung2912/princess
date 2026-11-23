@@ -58,7 +58,7 @@ export function DeckPlansPanel({ initialShip = 'sun' }: { initialShip?: DeckPlan
     <>
       <p>{t('dv.intro')}</p>
       {target && <p role="status">{t('exp.nav.noteMap', { title: target.label, deck: target.deck, section: t(`map.section.${target.section}` as StringKey).toLowerCase() })}</p>}
-      <form onSubmit={find} className="deckfind">
+      <form onSubmit={find} className="deckfind" data-tour="deck-find">
         <div className="field">
           <label htmlFor="deck-cabin">{t('dv.cabinLabel')}</label>
           <p className="field__hint" id="deck-cabin-hint">{t('dv.cabinHint')}</p>

@@ -19,7 +19,7 @@ export function SettingsScreen() {
   return (
     <div className="page">
       <DisplaySettings />
-      <Card labelledBy="avatar-h">
+      <Card labelledBy="avatar-h" tour="settings-avatar">
         <h2 id="avatar-h">{th('avatar.title')}</h2>
         <p>{t('avatar.intro')}</p>
         <AvatarPicker />

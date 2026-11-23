@@ -22,8 +22,8 @@ export function ChecklistScreen() {
             <p className="progress-line" role="status">{t('plan.check.progress', { done: c.progress.done, total: c.progress.total })}</p>
             <progress className="meter" max={c.progress.total} value={c.progress.done} aria-label={t('plan.check.progress', { done: c.progress.done, total: c.progress.total })} />
             <PlanError error={tick.error} />
-            {c.milestones.map((m) => (
-              <section key={m.daysBefore} className="milestone" aria-labelledby={`m-${m.daysBefore}`}>
+            {c.milestones.map((m, i) => (
+              <section key={m.daysBefore} className="milestone" aria-labelledby={`m-${m.daysBefore}`} data-tour={i === 0 ? 'check-milestone' : undefined}>
                 <h2 id={`m-${m.daysBefore}`}>{th('check.milestone', { count: m.daysBefore })} <span className="muted">· {formatDate(m.due)}</span></h2>
                 {m.entries.map((e) => <Row key={e.id} entry={e} busy={tick.busy} onTick={(done) => void tick.run(e.id, done)} />)}
               </section>

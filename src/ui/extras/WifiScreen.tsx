@@ -29,7 +29,7 @@ export function WifiScreen() {
       <Banner kind="info" title={t('phone.guard')}><p>{t('phone.guardBody')} <Link to="/plan/phone">{t('route.phone')}</Link></p></Banner>
       <WifiQrCard />
       <Load state={view}>{(v) => <Wifi v={v} reload={view.retry} />}</Load>
-      <section aria-labelledby="wifi-help-h">
+      <section aria-labelledby="wifi-help-h" data-tour="wifi-help">
         <h2 id="wifi-help-h">{th('wifi.help')}</h2>
         <ol className="plain-bullets">{(['network', 'forget', 'portal', 'device', 'desk'] as const).map((k) => <li key={k}>{t(`wifi.step.${k}` as StringKey)}</li>)}</ol>
       </section>
@@ -52,7 +52,7 @@ function Wifi({ v, reload }: { v: WifiView; reload: () => void }) {
       <p>{v.includedLeft > 0 ? t('wifi.includedLeft', { count: v.includedLeft }) : t('wifi.noneIncluded')}</p>
       {v.devices.length === 0 ? <p className="muted">{t('wifi.noDevices')}</p> : <ul className="order-list">{v.devices.map((d) => <Device key={d.id} d={d} canBuy={v.canBuy} reload={reload} />)}</ul>}
       {v.canBuy && (
-        <Card labelledBy="wifi-add-h">
+        <Card labelledBy="wifi-add-h" tour="wifi-add">
           <h2 id="wifi-add-h" className="card__title">{th('wifi.add')}</h2>
           <form onSubmit={(e) => { e.preventDefault(); sure.ask(cost, t('wifi.confirmWhat'), () => void add.run()) }}>
             <Field label={t('wifi.deviceName')} help={t('helptip.deviceName')} value={name} maxLength={30} onChange={(e) => setName(e.target.value)} />

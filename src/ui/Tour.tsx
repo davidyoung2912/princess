@@ -1,10 +1,12 @@
-import { useEffect, useId, useState, useSyncExternalStore } from 'react'
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { t } from '../i18n'
 import type { StringKey } from '../i18n'
 import { startVisibleInterval } from '../hooks/visibleInterval'
 import { loadTourOn, loadTourSeen, markTourStep, skipTour, subscribeTour, tourReady } from '../settings/tour'
+import { resetTourScroll, scrollIntoViewTracked } from '../tour/scroll'
 import { GENERAL_STEPS, nextStep, TOUR_STEPS, type TourStep } from '../tour/steps'
 import { Button } from './Button'
+import { TOUR_ICONS } from './tourIcons'
 
 /** Every part of the screen marked `data-tour="<name>"` that is showing. */
 const targetsOf = (name: string): HTMLElement[] => [...document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`)].filter((el) => getComputedStyle(el).visibility !== 'hidden')
@@ -40,6 +42,13 @@ export function Tour({ paused = false }: { paused?: boolean }) {
     queueMicrotask(look)
     return startVisibleInterval(look, 700)
   }, [seen, paused, ready, on])
+  // The tour may move the page to show a step. When it is finished with the page (the last step done, the rest skipped, or the tour turned off), the page goes back to the top.
+  const shown = useRef<TourStep | null>(null)
+  useEffect(() => {
+    if (shown.current && !step) resetTourScroll()
+    shown.current = step
+  }, [step])
+  useEffect(() => { if (!on) resetTourScroll() }, [on])
   if (!step || paused || !ready || !on) return null
   // The frame steps are counted among themselves ("3/14"); a step about one page's content has no count, and always offers Skip.
   const index = GENERAL_STEPS.findIndex((s) => s.id === step.id)
@@ -49,18 +58,20 @@ export function Tour({ paused = false }: { paused?: boolean }) {
 
 function TourCard({ step, count, last }: { step: TourStep; count: string | null; last: boolean }) {
   const titleId = useId()
+  const Icon = TOUR_ICONS[step.icon]
   // The part of the screen the step is about flashes while the card is up, and is brought into view if it is off screen.
   useEffect(() => {
     const els = targetsOf(step.target)
     const r = els[0]?.getBoundingClientRect()
-    if (r && (r.top < 0 || r.bottom > window.innerHeight * 0.6)) els[0]?.scrollIntoView({ block: 'center', behavior: 'auto' })
+    if (r && els[0] && (r.top < 0 || r.bottom > window.innerHeight * 0.6)) scrollIntoViewTracked(els[0])
     els.forEach((el) => el.classList.add('tour-flash'))
     return () => els.forEach((el) => el.classList.remove('tour-flash'))
   }, [step.target])
   // A note that is not modal: the page behind stays usable. A step is announced politely when it appears, and the guest can still use the keyboard to reach Got It! after the page.
   return (
     <aside className="tour" data-testid="tour" role="region" aria-labelledby={titleId}>
-      <p className="tour__text"><strong id={titleId} className="tour__title">{t(`tour.${step.id}.title` as StringKey)}</strong> {t(`tour.${step.id}.body` as StringKey)}</p>
+      <p className="tour__head"><Icon className="tour__icon" aria-hidden="true" /><strong id={titleId} className="tour__title">{t(`tour.${step.id}.title` as StringKey)}</strong></p>
+      <p className="tour__text">{t(`tour.${step.id}.body` as StringKey)}</p>
       <div className="tour__foot">
         {count ? <span className="tour__count" aria-label={t('tour.count.label', { n: count.split('/')[0]!, total: count.split('/')[1]! })}>{count}</span> : <span className="tour__count" />}
         {!last && <button type="button" className="tour__skip" onClick={skipTour}>{t('tour.skip')}</button>}

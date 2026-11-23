@@ -50,7 +50,7 @@ export function ChatSearch({ conversationId, onPick }: { conversationId?: string
     <section aria-labelledby={`${inputId}-h`}>
       <h2 id={`${inputId}-h`} className={conversationId ? 'visually-hidden' : undefined}>{conversationId ? t('csearch.inChat') : t('csearch.title')}</h2>
       {!conversationId && <p className="muted">{t('csearch.intro')}</p>}
-      <form role="search" onSubmit={(e) => { e.preventDefault(); setMore(null); void run.run() }}>
+      <form role="search" data-tour="chat-search" onSubmit={(e) => { e.preventDefault(); setMore(null); void run.run() }}>
         <div className="field">
           <label htmlFor={inputId}>{t('csearch.label')}</label>
           <input id={inputId} ref={input} className="field__input" type="search" enterKeyHint="search" autoComplete="off" maxLength={MAX_QUERY} value={raw} onChange={(e) => setRaw(e.target.value)} aria-describedby={`${inputId}-hint`} />

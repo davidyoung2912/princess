@@ -46,7 +46,7 @@ export function OrderScreen() {
           </>
         )}
       </Load>
-      <section aria-labelledby="mine-h">
+      <section aria-labelledby="mine-h" data-tour="order-mine">
         <h2 id="mine-h">{th('ord.mine')}</h2>
         <Load state={orders}>{(list) => (list.length === 0 ? <p className="muted">{t('ord.none')}</p> : <ul className="order-list">{list.map((o) => <OrderCard key={o.id} o={o} guests={menu.data?.guests ?? []} reload={orders.retry} />)}</ul>)}</Load>
       </section>
@@ -113,7 +113,7 @@ function Builder({ menu, placed }: { menu: OrderMenuView; placed: () => void }) 
         </section>
       ))}
 
-      <Card hero labelledBy="cart-h">
+      <Card hero labelledBy="cart-h" tour="order-cart">
         <h2 id="cart-h" className="card__title">{th('ord.yours')}</h2>
         {lines.length === 0 ? <StanleyEmpty pose="tray">{t('ord.empty')}</StanleyEmpty> : (
           <ul className="plain-bullets">

@@ -6,7 +6,8 @@ import { countShare } from '../../hooks/useStatsTracker'
 import { t, type StringKey } from '../../i18n'
 import { routeForPath } from '../../routes/nav'
 import { cardText, highlightItems, reportText, sectionText, statText, visibleSections } from '../../stats/share'
-import { sendText, type SendResult } from '../../stats/send'
+import { sendPicture, sendText, type SendResult } from '../../stats/send'
+import { drawPicture, pictureLines } from '../../stats/picture'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { BackLink } from '../onboard/common'
@@ -61,11 +62,18 @@ function Report({ report }: { report: StatsReport }) {
     if (result === 'shared' || result === 'copied') countShare()
     setStatus(result ?? 'none')
   }
+  const sharePicture = async () => {
+    const title = t('stats.heroTitle', { name: report.name })
+    const png = await drawPicture(report, pictureLines(report, titleOfPath, showJokes), title, t('stats.madeUp'))
+    const result = png ? await sendPicture(png, 'my-cruise-stats.png', title) : 'failed'
+    if (result === 'shared' || result === 'copied') countShare()
+    setStatus(result ?? 'none')
+  }
   const top = highlightItems(report).filter((s) => showJokes || !s.joke)
 
   return (
     <>
-      <Card hero labelledBy="stats-hero-h">
+      <Card hero labelledBy="stats-hero-h" tour="stats-hero">
         <h2 id="stats-hero-h" className="card__title">{t('stats.heroTitle', { name: report.name })}</h2>
         <p>{report.headline}</p>
         <p className="muted">{t('stats.counts', { real: report.realCount, jokes: report.jokeCount })}</p>
@@ -76,14 +84,15 @@ function Report({ report }: { report: StatsReport }) {
         )}
         <div className="actions">
           <Button onClick={() => void share(cardText(report, titleOfPath), t('stats.heroTitle', { name: report.name }))}>{t('stats.shareCard')}</Button>
+          <Button variant="secondary" onClick={() => void sharePicture()}>{t('stats.sharePicture')}</Button>
           <Button variant="secondary" onClick={() => void share(reportText(report, titleOfPath, showJokes), t('stats.heroTitle', { name: report.name }))}>{t('stats.shareAll')}</Button>
         </div>
-        <label className="choice"><input type="checkbox" checked={showJokes} onChange={(e) => setShowJokes(e.target.checked)} /><span>{t('stats.showJokes')}<small>{t('stats.showJokesHint')}</small></span></label>
+        <label className="choice" data-tour="stats-jokes"><input type="checkbox" checked={showJokes} onChange={(e) => setShowJokes(e.target.checked)} /><span>{t('stats.showJokes')}<small>{t('stats.showJokesHint')}</small></span></label>
         <p role="status" className="muted">{status === 'none' ? '' : t(`recap.shared.${status}` as StringKey)}</p>
         <p className="muted">{t('stats.private')}</p>
       </Card>
 
-      <nav aria-label={t('stats.jump')}>
+      <nav aria-label={t('stats.jump')} data-tour="stats-jump">
         <ul className="naut-jump">
           {sections.map((s) => <li key={s.id}><a href={`#stats-${s.id}`}><span aria-hidden="true">{s.icon}</span> {s.title}</a></li>)}
         </ul>

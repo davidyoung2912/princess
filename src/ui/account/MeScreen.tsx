@@ -48,9 +48,15 @@ export function MeScreen() {
         </Load>
       </section>
 
+      <Card info labelledBy="me-stats-h" tour="me-stats">
+        <h2 id="me-stats-h" className="card__title">{th('me.stats')}</h2>
+        <p>{t('me.statsBody')}</p>
+        <p><Link to="/me/stats">{t('route.stats')}</Link></p>
+      </Card>
+
       <TabScreens tabKey="me" badges={{ '/me/notifications': unread > 0 ? <span className="tag tag--alert">{t('me.unread', { count: unread })}</span> : null }} />
 
-      <section aria-labelledby="hist-h">
+      <section aria-labelledby="hist-h" data-tour="me-history">
         <h2 id="hist-h">{th('me.history')}</h2>
         <p className="muted">{t('me.historyIntro')}</p>
         <Load state={history}>

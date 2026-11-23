@@ -89,7 +89,7 @@ export function Service() {
   const c = channelById(channel)!
   const minutes = channels.data?.find((x) => x.id === channel)?.minutes ?? c.minutes
   return (
-    <section aria-labelledby="svc-h">
+    <section aria-labelledby="svc-h" data-tour="chat-service">
       <h2 id="svc-h">{heading('chat.service')}</h2>
       {me?.child && <SupervisedNote booker={personFirstName(me.booker)} />}
       <fieldset className="plain-fieldset">

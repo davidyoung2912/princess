@@ -18,7 +18,7 @@ import { startHerePath } from '../guide/tabs'
  * tab it was opened from, so the screen keeps that tab's colour. Screens that need an id the list cannot know (a particular sailing or port) are
  * reached from the list they open from, so they are left out here.
  */
-export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headingId }: { ids: readonly string[]; colour: TabColour; badges?: Record<string, ReactNode>; live?: Record<string, TileLine>; heading?: string; headingId: string }) {
+export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headingId, tour }: { ids: readonly string[]; colour: TabColour; badges?: Record<string, ReactNode>; live?: Record<string, TileLine>; heading?: string; headingId: string; tour?: string }) {
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
   const { screens: pins, toggleScreen, ready } = usePins()
   const { data: guide } = useGuideView()
@@ -26,7 +26,7 @@ export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headi
   const items = listedScreens(orderForParty(ids, pins), { sailingId: context?.focusSailingId ?? context?.sailingId ?? null, tripNumber: context?.booking?.number ?? null })
   if (items.length === 0) return null
   return (
-    <nav aria-labelledby={headingId}>
+    <nav aria-labelledby={headingId} data-tour={tour}>
       <h2 id={headingId} className={heading ? undefined : 'visually-hidden'}>{heading ?? t('shell.nav')}</h2>
       <ul className="link-list screen-list">
         {items.map(({ screen, to }) => {

@@ -46,7 +46,7 @@ export function PaymentsScreen() {
           return (
             <>
               {!v.canPay && me && <SupervisedNote booker={personFirstName(me.booker)} />}
-              <Card labelledBy="summary-h">
+              <Card labelledBy="summary-h" tour="pay-summary">
                 <h2 id="summary-h">{th('pay.summary')}</h2>
                 <dl className="facts">
                   <div><dt>{t('pay.total')}</dt><dd>{formatMoney(trip.plan.total)}</dd></div>
@@ -96,7 +96,7 @@ export function PaymentsScreen() {
                 </ul>
               </section>
 
-              <section aria-labelledby="cards-h">
+              <section aria-labelledby="cards-h" data-tour="pay-cards">
                 <h2 id="cards-h">{th('pay.cards')}</h2>
                 <ActionError error={remove.error} />
                 {v.cards.length === 0 && <p className="muted">{t('pay.noCards')}</p>}

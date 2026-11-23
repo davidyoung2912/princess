@@ -21,8 +21,8 @@ export function TabScreens({ tabKey, badges }: { tabKey: string; badges?: Record
     const { main, settings } = splitMe(ids)
     return (
       <>
-        <ScreenList ids={float(main)} colour={tab.colour} badges={badges} live={live} headingId="me-list-h" heading={th('tabs.me.yours')} />
-        <ScreenList ids={settings} colour={tab.colour} badges={badges} live={live} headingId="me-settings-h" heading={th('tabs.me.settings')} />
+        <ScreenList ids={float(main)} colour={tab.colour} badges={badges} live={live} headingId="me-list-h" heading={th('tabs.me.yours')} tour="me-list" />
+        <ScreenList ids={settings} colour={tab.colour} badges={badges} live={live} headingId="me-settings-h" heading={th('tabs.me.settings')} tour="me-settings-list" />
       </>
     )
   }
@@ -30,7 +30,7 @@ export function TabScreens({ tabKey, badges }: { tabKey: string; badges?: Record
   const rest = ids.filter((id) => !mine.includes(id))
   const forYouList = mine.length > 0 ? <ScreenList ids={mine} colour={tab.colour} badges={badges} live={live} headingId={`${tab.key}-foryou-h`} heading={th('tabs.forYou')} /> : null
   if (tab.key === 'ship') {
-    return <>{forYouList}{groupShip(rest).map((g) => <ScreenList key={g.group ?? 'rest'} ids={float(order(g.ids))} colour={tab.colour} badges={badges} live={live} headingId={`ship-${g.group ?? 'rest'}-h`} heading={g.group ? th(`tabs.ship.${g.group}`) : undefined} />)}</>
+    return <>{forYouList}{groupShip(rest).map((g, i) => <ScreenList key={g.group ?? 'rest'} tour={i === 0 ? 'ship-list' : undefined} ids={float(order(g.ids))} colour={tab.colour} badges={badges} live={live} headingId={`ship-${g.group ?? 'rest'}-h`} heading={g.group ? th(`tabs.ship.${g.group}`) : undefined} />)}</>
   }
-  return <>{forYouList}<ScreenList ids={float(order(rest))} colour={tab.colour} badges={badges} live={live} headingId={`${tab.key}-list-h`} /></>
+  return <>{forYouList}<ScreenList ids={float(order(rest))} colour={tab.colour} badges={badges} live={live} headingId={`${tab.key}-list-h`} tour={tab.key === 'plan' ? 'plan-list' : undefined} /></>
 }

@@ -87,7 +87,7 @@ function ChatSettingsPage() {
 
 function Group({ id, rows, render }: { id: 'approvals' | 'incoming'; rows: readonly ChatConnection[]; render: (row: ChatConnection) => React.ReactNode }) {
   return (
-    <section aria-labelledby={`people-${id}`}>
+    <section aria-labelledby={`people-${id}`} data-tour="chat-people">
       <h3 id={`people-${id}`}>{th(`people.g.${id}` as StringKey)}</h3>
       <ul className="plain-list">
         {rows.map((r) => <li key={r.id}><Card>{render(r)}</Card></li>)}

@@ -37,7 +37,7 @@ function PulseBody({ env, now }: { env: PulseEnv; now: number }) {
       <p>{t('pulse.intro')}</p>
       <Banner kind="info" title={t('pulse.honest')}><p>{t('pulse.honestBody')}</p></Banner>
 
-      <Card labelledBy="pulse-h">
+      <Card labelledBy="pulse-h" tour="pulse-venues">
         <h2 id="pulse-h" className="card__title">{th('pulse.venues')}</h2>
         <ul className="plain-list">
           {PULSE_VENUES.map((v) => {
@@ -54,7 +54,7 @@ function PulseBody({ env, now }: { env: PulseEnv; now: number }) {
         </ul>
       </Card>
 
-      <Card labelledBy="lines-h">
+      <Card labelledBy="lines-h" tour="pulse-lines">
         <h2 id="lines-h" className="card__title">{th('lines.title')}</h2>
         <ul className="plain-list">
           {LINES.map((l) => {

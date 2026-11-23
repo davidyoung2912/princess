@@ -49,7 +49,7 @@ export function NotificationsScreen() {
           }
           return (
             <>
-              <section aria-labelledby="inbox-h">
+              <section aria-labelledby="inbox-h" data-tour="notif-inbox">
                 <h2 id="inbox-h">{th('notices.title')}</h2>
                 {notices.length === 0 && <Card info><p>{t('notices.none')}</p></Card>}
                 {shown.map(row)}
@@ -85,7 +85,7 @@ function Prefs({ prefs, onSaved }: { prefs: NotificationPrefs; onSaved: () => vo
   const flip = (c: Category, ch: Channel) => { setSaved(false); setDraft({ ...draft, channels: { ...draft.channels, [c]: { ...draft.channels[c], [ch]: !draft.channels[c][ch] } } }) }
   const quiet = (patch: Partial<NotificationPrefs['quiet']>) => { setSaved(false); setDraft({ ...draft, quiet: { ...draft.quiet, ...patch } }) }
   return (
-    <section aria-labelledby="prefs-h">
+    <section aria-labelledby="prefs-h" data-tour="notif-prefs">
       <h2 id="prefs-h">{th('notices.prefs')}</h2>
       <p>{t('notices.prefsIntro')}</p>
       {CATEGORIES.map((c) => (

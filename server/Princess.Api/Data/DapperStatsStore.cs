@@ -31,6 +31,8 @@ public sealed class DapperStatsStore(IDbConnectionFactory db) : IStatsStore
           (SELECT COUNT(*) FROM dbo.ChatMessagePhotos p JOIN dbo.ChatMessages m ON m.Id = p.MessageId WHERE m.FromUserId = @id)
             + (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id AND Photo IS NOT NULL) AS chat_photos,
           (SELECT COUNT(DISTINCT CAST([At] AS DATE)) FROM dbo.ChatMessages WHERE FromUserId = @id) AS chat_days,
+          (SELECT MIN([At]) FROM dbo.ChatMessages WHERE FromUserId = @id) AS first_msg_at,
+          (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id AND [Text] LIKE N'%good morning%') AS mornings_said,
           (SELECT COUNT(*) FROM dbo.ChatGroupMembers WHERE UserId = @id) AS groups,
           (SELECT COUNT(*) FROM dbo.ChatConnections WHERE Status = 'accepted' AND (RequesterId = @id OR TargetId = @id)) AS connections,
           (SELECT COUNT(*) FROM dbo.ChatReactions WHERE UserId = @id) AS reacts_given,
@@ -52,7 +54,11 @@ public sealed class DapperStatsStore(IDbConnectionFactory db) : IStatsStore
           (SELECT COUNT(*) FROM dbo.Orders WHERE PlacedByUserId = @id AND Stage <> 'cancelled' AND Kind IN ('room', 'breakfast')) AS room_orders,
           (SELECT ISNULL(SUM(CAST(l.Qty AS BIGINT)), 0) FROM dbo.OrderLines l JOIN dbo.Orders o ON o.Id = l.OrderId WHERE o.PlacedByUserId = @id AND o.Stage <> 'cancelled') AS order_items,
           (SELECT ISNULL(SUM(TipCents), 0) FROM dbo.Orders WHERE PlacedByUserId = @id AND Stage <> 'cancelled') AS tip_cents,
+          (SELECT COUNT(*) FROM dbo.Orders WHERE PlacedByUserId = @id AND Stage <> 'cancelled' AND Kind = 'breakfast') AS breakfasts,
           (SELECT COUNT(*) FROM dbo.DrinkLogs WHERE UserId = @id) AS drinks,
+          (SELECT ISNULL(SUM(d.Cents), 0) FROM dbo.DrinkLogs l JOIN ref.Drinks d ON d.Id = l.DrinkId WHERE l.UserId = @id) AS drink_cents,
+          (SELECT COUNT(*) FROM dbo.DrinkLogs l JOIN ref.Drinks d ON d.Id = l.DrinkId WHERE l.UserId = @id AND d.Alcohol = 0) AS alcohol_free,
+          (SELECT COUNT(*) FROM dbo.GroupTableFriends f JOIN dbo.DiningReservations r ON r.Id = f.ReservationId JOIN dbo.DiningReservationGuests g ON g.ReservationId = r.Id WHERE g.UserId = @id AND r.Status <> 'cancelled') AS table_friends,
           (SELECT COUNT(DISTINCT DrinkId) FROM dbo.DrinkLogs WHERE UserId = @id) AS drink_kinds,
           -- shows and events
           (SELECT COUNT(*) FROM dbo.ShowTicketGuests g JOIN dbo.ShowTickets s ON s.Id = g.ShowTicketId WHERE g.UserId = @id AND s.Status <> 'cancelled') AS shows,
@@ -67,6 +73,7 @@ public sealed class DapperStatsStore(IDbConnectionFactory db) : IStatsStore
           (SELECT ISNULL(SUM(CAST(ISNULL(x.WalkKm, 0) * 10 AS BIGINT)), 0) FROM dbo.TourBookingGuests g JOIN dbo.TourBookings t ON t.Id = g.TourBookingId JOIN ref.Excursions x ON x.Id = t.ExcursionId WHERE g.UserId = @id AND t.Status = 'booked') AS tour_walk_tenths,
           (SELECT ISNULL(SUM(t.TotalCents), 0) FROM dbo.TourBookingGuests g JOIN dbo.TourBookings t ON t.Id = g.TourBookingId WHERE g.UserId = @id AND t.Status = 'booked') AS tour_cents,
           (SELECT COUNT(*) FROM dbo.TourBookingGuests g JOIN dbo.TourBookings t ON t.Id = g.TourBookingId JOIN ref.Excursions x ON x.Id = t.ExcursionId WHERE g.UserId = @id AND t.Status = 'booked' AND x.Tender = 1) AS tours_tender,
+          (SELECT ISNULL(MIN(DATEDIFF(MINUTE, CAST('00:00' AS TIME), x.StartLocal)), -1) FROM dbo.TourBookingGuests g JOIN dbo.TourBookings t ON t.Id = g.TourBookingId JOIN ref.Excursions x ON x.Id = t.ExcursionId WHERE g.UserId = @id AND t.Status = 'booked') AS tour_earliest,
           -- spa
           (SELECT COUNT(*) FROM dbo.SpaAppointmentGuests g JOIN dbo.SpaAppointments a ON a.Id = g.AppointmentId WHERE g.UserId = @id AND a.Status = 'booked') AS spa,
           (SELECT ISNULL(SUM(CAST(a.Minutes AS BIGINT)), 0) FROM dbo.SpaAppointmentGuests g JOIN dbo.SpaAppointments a ON a.Id = g.AppointmentId WHERE g.UserId = @id AND a.Status = 'booked') AS spa_minutes,

@@ -28,7 +28,7 @@ export function Rooms({ onOpen }: { onOpen: (id: string) => void }) {
   useChatLive(list.retry)
   const [previewing, setPreviewing] = useState<ChatRoomListItem | null>(null)
   return (
-    <section aria-labelledby="rooms-h">
+    <section aria-labelledby="rooms-h" data-tour="chat-rooms">
       <h2 id="rooms-h">{headingCase(t('room.title'))}</h2>
       <p className="muted">{t('room.intro')}</p>
       <Load state={list}>

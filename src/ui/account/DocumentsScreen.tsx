@@ -28,8 +28,8 @@ export function DocumentsScreen() {
             {d.guests.length > 0 && d.guests.every((g) => g.blocking === 0) && <StanleyMoment id="docsReady" subject={d.returnDate} />}
             <p className="muted">{t('docs.returnDate', { date: formatDate(d.returnDate), until: formatDate(passportValidUntil(d.returnDate)) })}</p>
             <ActionError error={set.error} />
-            {d.guests.map((g) => (
-              <Card key={g.id} labelledBy={`g-${g.id}`}>
+            {d.guests.map((g, i) => (
+              <Card key={g.id} labelledBy={`g-${g.id}`} tour={i === 0 ? 'docs-check' : undefined}>
                 <h2 id={`g-${g.id}`}>{g.name}</h2>
                 <p className="muted">{t('docs.guestLine', { age: g.age, citizenship: t(`profile.citizenship.${g.citizenship}` as StringKey) })}</p>
                 {g.blocking === 0 ? <StatusBadge kind="booked" label={t('docs.allReady')} /> : <StatusBadge kind="changed" label={t('docs.needs', { count: g.blocking })} />}
@@ -40,7 +40,7 @@ export function DocumentsScreen() {
               </Card>
             ))}
             <p className="muted">{t('docs.privacy')}</p>
-            <section aria-labelledby="entry-h">
+            <section aria-labelledby="entry-h" data-tour="docs-entry">
               <h2 id="entry-h">{th('docs.entry')}</h2>
               <ul className="plain-list">{PORT_ENTRY.map((p) => <li key={p.country}><span><strong>{p.country}</strong><br />{p.note}</span></li>)}</ul>
             </section>

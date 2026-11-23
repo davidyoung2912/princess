@@ -41,6 +41,8 @@ public static class StatsRules
             Cabin(r, seed),
             Fortune(today, seed),
             Towel(seed),
+            PoolDeck(r, seed),
+            Karaoke(r, seed),
         };
         var all = sections.SelectMany(s => s.Stats).ToList();
         var real = all.Count(s => !s.Joke);
@@ -86,6 +88,11 @@ public static class StatsRules
         items.Add(S("app.morning", "Minutes in the app before 9 am", Num(morning / 60)));
         items.Add(S("app.member", "Member since", createdAt.ToString("MMMM d, yyyy", En), $"{Days(since)} ago"));
         items.Add(S("app.shares", "Times you shared a stat", Num(r.Counter("shares"))));
+        items.Add(S("app.perVisit", "Screens per visit", opens > 0 ? (views / (double)opens).ToString("N1", En) : "Not yet"));
+        items.Add(S("app.mostViews", "Most screens in one day", Num(r.Days.Count == 0 ? 0 : r.Days.Max(d => d.Views))));
+        if (r.Days.Count > 0) { var best = r.Days.OrderByDescending(d => d.Seconds).ThenBy(d => d.Day).First(); items.Add(S("app.bestDay", "Your busiest day in the app", best.Day.ToString("MMMM d, yyyy", En), Dur(best.Seconds))); }
+        items.Add(S("app.weekend", "Share of your days that were weekends", r.Days.Count == 0 ? "Not yet" : $"{(r.Days.Count(d => d.Day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday) * 100 / r.Days.Count).ToString(En)}%"));
+        items.Add(S("app.statsViews", "Times you have checked your stats", Num(r.Counter("route.me.stats")), "This page counts, of course"));
         items.Add(J("app.thumb", "Thumb distance travelled", $"{(views * 0.9 / 100 + Roll(seed, "thumb", 1, 9) / 10.0).ToString("N1", En)} metres", "Roughly a very short sprint"));
         items.Add(J("app.battery", "Battery sacrificed to the app", $"{(seconds / 60 * 3 / 10 + Roll(seed, "battery", 2, 14)).ToString(En)}%", "Given cheerfully"));
         items.Add(J("app.guilt", "Screen-time guilt level", Pick(seed, "guilt", "Mild", "Moderate", "Cruise-appropriate", "Concerning but charming")));
@@ -134,6 +141,9 @@ public static class StatsRules
             S("chat.mentions", "Times someone mentioned you", Num(r.Get("mentions"))),
             S("chat.pinned", "Your messages that were pinned", Num(r.Get("pinned"))),
         };
+        if (r.Date("first_msg_at") is { } firstMsg) items.Add(S("chat.first", "Your first message", firstMsg.ToString("MMMM d, yyyy", En)));
+        if (r.Get("chat_days") > 0) items.Add(S("chat.perDay", "Messages on a day you chat", (msgs / (double)r.Get("chat_days")).ToString("N1", En)));
+        items.Add(S("chat.mornings", "Good mornings said", Num(r.Get("mornings_said"))));
         if (r.Text("emoji") is { Length: > 0 } e) items.Add(S("chat.emoji", "Your favourite reaction", e));
         if (r.Text("room") is { Length: > 0 } room) items.Add(S("chat.room", "Your chattiest chat", room));
         items.Add(J("chat.typing", "Time spent typing, deleting and retyping", $"{Num(Math.Max(2, msgs * 7 / 60) + Roll(seed, "typing", 1, 9))} minutes", "Mostly deleting"));
@@ -167,7 +177,11 @@ public static class StatsRules
             S("dining.room", "Room service and breakfast orders", Num(r.Get("room_orders"))),
             S("dining.items", "Items ordered", Num(r.Get("order_items"))),
             S("dining.tips", "Tipped on orders", Money(r.Get("tip_cents"))),
+            S("dining.breakfasts", "Breakfasts ordered to your door", Num(r.Get("breakfasts"))),
             S("dining.drinks", "Drinks logged", Num(r.Get("drinks"))),
+            S("dining.drinkSpend", "Value of the drinks logged", Money(r.Get("drink_cents"))),
+            S("dining.zero", "Alcohol-free drinks logged", Num(r.Get("alcohol_free"))),
+            S("dining.friends", "Friends added to your dinner tables", Num(r.Get("table_friends"))),
             S("dining.drinkKinds", "Different drinks logged", Num(r.Get("drink_kinds"))),
         };
         if (r.Text("venue") is { Length: > 0 } v) items.Add(S("dining.fav", "Your favourite restaurant", v));
@@ -209,6 +223,7 @@ public static class StatsRules
             S("ashore.spend", "Spent on excursions", Money(r.Get("tour_cents"))),
             S("ashore.tender", "Excursions that need a tender boat", Num(r.Get("tours_tender"))),
         };
+        if (r.Get("tour_earliest") >= 0) items.Add(S("ashore.earliest", "Your earliest excursion start", TimeOfDay(r.Get("tour_earliest"))));
         if (r.Text("port") is { Length: > 0 } p) items.Add(S("ashore.fav", "Your favourite port", p));
         if (r.Text("tour") is { Length: > 0 } t) items.Add(S("ashore.favTour", "Your most booked excursion", t));
         items.Add(J("ashore.souvenir", "Fridge magnets you will definitely buy", Num(Roll(seed, "magnet", 2, 14))));
@@ -358,6 +373,10 @@ public static class StatsRules
             ("Curious Cat: 25 different screens", routes >= 25),
             ("Stanley's Friend: 10 questions", r.Get("asks") >= 10),
             ("Sharer: shared a stat", r.Counter("shares") >= 1),
+            ("Stat Nerd: checked your stats 5 times", r.Counter("route.me.stats") >= 5),
+            ("Zero Hero: 5 alcohol-free drinks", r.Get("alcohol_free") >= 5),
+            ("Host with the Most: 5 friends at your tables", r.Get("table_friends") >= 5),
+            ("Weekend Warrior: half your days on weekends", r.Days.Count >= 4 && r.Days.Count(d => d.Day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday) * 2 >= r.Days.Count),
         };
         var earned = badges.Where(b => b.Earned).Select(b => b.Name).ToList();
         var next = badges.FirstOrDefault(b => !b.Earned);
@@ -467,6 +486,36 @@ public static class StatsRules
         return Sec("towel", "Towel animal intelligence", "A rigorous study with no methodology.", "🐘", items, true);
     }
 
+    private static StatSection PoolDeck(StatsRaw r, uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("pool.loungers", "Loungers reserved with a single towel", Num(Roll(seed, "poolTowel", 1, 5)), "Diplomatically, nobody noticed"),
+            J("pool.cannon", "Cannonballs you thought about doing", Num(Roll(seed, "cannon", 0, 9))),
+            J("pool.sunscreen", "Sunscreen missed spot", Pick(seed, "spot", "Left ear", "Back of knees", "Top of feet", "All of it, apparently")),
+            J("pool.tan", "Tan line sharpness", $"{Roll(seed, "tan", 40, 99)}%"),
+            J("pool.hot", "Hot tub time before it got awkward", $"{Roll(seed, "hottub", 6, 45)} minutes"),
+            J("pool.slide", "Times you eyed the water slide before deciding no", Num(Roll(seed, "slide", 1, 12) + r.Get("tours") / 3)),
+            J("pool.read", "Pages read on a lounger before the nap", Num(Roll(seed, "pages", 2, 30))),
+        };
+        return Sec("pool", "Pool deck politics", "Lounger law and sunscreen science. Invented.", "🏊", items, true);
+    }
+
+    private static StatSection Karaoke(StatsRaw r, uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("karaoke.song", "Your signature karaoke song", Pick(seed, "song", "A power ballad", "Something from the eighties", "Whatever the group picks", "A song you will deny")),
+            J("karaoke.notes", "Notes hit, roughly", $"{Roll(seed, "notes", 21, 83)}%"),
+            J("karaoke.crowd", "Crowd members who sang along", Num(Roll(seed, "crowd", 2, 40) + r.Get("shows") * 2)),
+            J("karaoke.encore", "Chance of an encore request", $"{Roll(seed, "encorechance", 5, 70)}%"),
+            J("karaoke.mic", "Microphone grip confidence", Pick(seed, "mic", "Firm", "Sweaty", "Held like an ice cream", "Natural")),
+            J("karaoke.dance", "Dance moves unlocked", Num(Roll(seed, "moves", 1, 9))),
+            J("karaoke.career", "Stage name", Pick(seed, "stage", "DJ Deck Chair", "The Lido Lion", "Madame Mariner", "Captain Karaoke")),
+        };
+        return Sec("karaoke", "Karaoke career", "A rising star, according to nobody.", "🎤", items, true);
+    }
+
     // ---- helpers --------------------------------------------------------------------------------------------------------------------
 
     private static StatItem S(string id, string label, string value, string? note = null, string? route = null) => new(id, label, value, note, false, route);
@@ -507,7 +556,7 @@ public static class StatsRules
     private static long Total(StatsRaw r) => new[] { "msgs", "dinners", "orders", "drinks", "shows", "plan_events", "tours", "spa", "checklist", "packed", "favourites", "requests", "laundry", "uploads", "reacts_given" }.Sum(k => r.Get(k)) + r.Counter("views");
 
     /// <summary>The run of consecutive active days that ends today or yesterday (the device's day may be a day ahead or behind), and the longest run ever.</summary>
-    internal static (int Current, int Longest) Streaks(List<StatsDay> days, DateOnly today)
+    public static (int Current, int Longest) Streaks(List<StatsDay> days, DateOnly today)
     {
         var set = days.Select(d => d.Day).ToHashSet();
         var longest = 0;
@@ -533,11 +582,11 @@ public static class StatsRules
     }
 
     private static uint Seed(Guid id) { var b = id.ToByteArray(); return BitConverter.ToUInt32(b, 0) ^ BitConverter.ToUInt32(b, 4) ^ BitConverter.ToUInt32(b, 8) ^ BitConverter.ToUInt32(b, 12); }
-    internal static long Roll(uint seed, string salt, int low, int high) => low + Hash(seed, salt) % (uint)(high - low + 1);
-    internal static string Pick(uint seed, string salt, params string[] options) => options[(int)(Hash(seed, salt) % (uint)options.Length)];
+    public static long Roll(uint seed, string salt, int low, int high) => low + Hash(seed, salt) % (uint)(high - low + 1);
+    public static string Pick(uint seed, string salt, params string[] options) => options[(int)(Hash(seed, salt) % (uint)options.Length)];
 
     /// <summary>The ids a client may count, and what shape they take: used to refuse anything else.</summary>
-    internal static bool KnownCounter(string key, long value)
+    public static bool KnownCounter(string key, long value)
     {
         if (value < 0 || value > 100_000) return false;
         if (key is "opens" or "views" or "seconds" or "shares") return true;
