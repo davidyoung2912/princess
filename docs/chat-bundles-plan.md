@@ -308,6 +308,8 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 
 > **Built 2026-11-23, part 3 (small): chat icon on Home** (front end checked with test, lint, tsc and build; no server change). **Done:** the Home "what is on next" events and tonight's dining reservations carry the send-to-chat icon (an event as a bundle or a plan, a booking as a card; no price or booking number goes). **Not done (B11 part 4):** icon on explorer landing tiles and Stanley answers, naming the original sender of a forward (needs the server), thumbnails, state review, accessibility pass.
 
+> **Built 2026-11-23, part 4 (small): chat icon on explorer venue tiles** (front end checked with test, lint, tsc and build; no server change). **Done:** each venue card in the explorer lists sends the venue as a bundle. **Not done (B11 part 5):** Stanley answers (needs the server: admin confirm in made groups), naming the original sender of a forward (server), thumbnails, state review, accessibility pass.
+
 ## 7. Risks
 
 - **Scope creep in B2 to B6.** Each planning object is built once, in a fixed order, and each phase is usable on its own.

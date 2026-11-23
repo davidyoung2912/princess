@@ -23,6 +23,7 @@ import { ForYou } from './ForYou'
 import { forYouFirst, recommendEvents, recommendVenues } from '../../domain/explorer/recommend'
 import { useTaste } from '../../hooks/useTaste'
 import { StatusBadge } from '../StatusBadge'
+import { SendToChat } from '../onboard/SendToChat'
 
 export interface ExplorerContext { data: ExplorerDay; state: ExplorerDayState; reload: () => void }
 
@@ -115,7 +116,7 @@ function VenueCard({ day, state, basePath, pins, kindLabels, dishQuery, diet, fo
   return (
     <li className="card exp-card">
       <PinButton venue={v} pins={pins} tour={first ? 'exp-pin' : undefined} />
-      <h3 className="card__title"><Link className="exp-card__link" to={`${basePath}/${v.id}?day=${state.day}`}>{v.title}</Link></h3>
+      <h3 className="card__title"><Link className="exp-card__link" to={`${basePath}/${v.id}?day=${state.day}`}>{v.title}</Link> <SendToChat shareRef={`venue:${v.id}`} title={v.title} /></h3>
       <p className="muted">{kindLabels[v.kind] ?? v.kind} · {v.deckLabel}</p>
       {forYou && !pins.isPinned(v) && <StatusBadge kind="ready" label={t('exp.foryou.badge')} />}
       <HoursBadge hours={day.hours} day={state.day} currentDay={state.currentDay} now={state.now} />
