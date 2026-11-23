@@ -25,6 +25,12 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
             return new(ChatPlanningRules.Tally(rows.Select(r => r.Choice), poll.Options.Count), mine?.Choice, closed, Shipboard.Ms(ChatPlanningRules.ClosesAt(m.At)), !closed && ChatPlanningRules.MayClose(m.FromUserId == reader, isAdmin),
                 Decided: m.DecidedOption, MayDecide: m.DecidedOption is null && ChatPlanningRules.MayDecide(kind ?? ChatConversationRules.Group, m.FromUserId == reader, isAdmin));
         }
+        if (m.Kind == ChatBoardRules.Kind)
+        {
+            if (ChatBoardRules.Parse(m.Payload) is not { } board) return null;
+            var masks = rows.Where(r => !blocked.Contains(r.UserId) || r.UserId == reader).Select(r => r.Choice);
+            return new(ChatBoardRules.Counts(masks, board.Refs.Count), mine?.Choice ?? 0, false, null, false);
+        }
         if (m.Kind != ChatCardRules.Plan) return null;
         var going = rows.Where(r => r.Choice == ChatPlanningRules.Going && r.UserId != reader && !blocked.Contains(r.UserId) && byId.TryGetValue(r.UserId, out var p) && p.Status == ChatConversationRules.Active)
             .Select(r => ChatConnectionRules.ShortName(byId[r.UserId].FirstName, byId[r.UserId].LastName)).ToList();
@@ -37,7 +43,7 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
-        if (message.Kind != kind || message.DeletedAt is not null) throw ApiException.Invalid(kind == ChatPlanningRules.Poll ? "notPoll" : "notPlan");
+        if (message.Kind != kind || message.DeletedAt is not null) throw ApiException.Invalid(kind == ChatPlanningRules.Poll ? "notPoll" : kind == ChatBoardRules.Kind ? "notBoard" : "notPlan");
         return (member, message, await clock.NowAsync(actor, ct));
     }
 
@@ -108,6 +114,21 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
             await TellAsync(actor, member, "poll", ct);
         }
         else throw ApiException.Conflict("decided");
+        return await TallyAsync(actor, member, message, now, ct);
+    }
+
+    /// <summary>
+    /// Phase B6: "I'm in" (or not) for one item of a day board. Kept as a bit of the caller's one answer; nothing is added to a programme, booked or reserved (adding to your own day is a separate tap on the board).
+    /// A supervised child's answer is recorded for the group. Returns the counts with <c>Mine</c> as the caller's bits. 400 item or notBoard; 403 stanley; 404; 409 closed.
+    /// </summary>
+    public async Task<ChatTallyDto> BoardAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatBoardRequest? body, CancellationToken ct)
+    {
+        var (member, message, now) = await TargetAsync(actor, conversationId, messageId, ChatBoardRules.Kind, ct);
+        var board = ChatBoardRules.Parse(message.Payload) ?? throw ApiException.Invalid("notBoard");
+        if (body is null || !ChatBoardRules.ValidItem(body.Item, board.Refs.Count)) throw ApiException.Invalid("item");
+        var previous = await store.GetResponseAsync(message.Id, actor.Id, ct);
+        await store.SetResponseAsync(message.Id, actor.Id, ChatBoardRules.With(previous?.Choice ?? 0, body.Item, body.In), false, now, ct);
+        await TellAsync(actor, member, "board", ct);
         return await TallyAsync(actor, member, message, now, ct);
     }
 

@@ -17,7 +17,7 @@ public static class ChatCardRules
     public static bool IsTyped(string? kind) => kind is Card or Place or Plan;
 
     /// <summary>A card, place, plan or poll is deleted and sent again, never reworded.</summary>
-    public static bool CannotEdit(string? kind) => IsTyped(kind) || kind == ChatPlanningRules.Poll || kind == ChatBundleRules.Kind;
+    public static bool CannotEdit(string? kind) => IsTyped(kind) || kind == ChatPlanningRules.Poll || kind == ChatBundleRules.Kind || kind == ChatBoardRules.Kind;
 
     // What a card can be.
     public const string Excursion = "excursion", Dining = "dining", Booking = "booking", PortDay = "portDay", PlaceType = "place", Venue = "venue", Menu = "menu";

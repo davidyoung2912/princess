@@ -15,6 +15,7 @@ import { meetingProblem } from '../../ai/stanleyGroup'
 import { api, stanleyGroup } from '../../runtime'
 import { t, type StringKey, headingCase } from '../../i18n'
 import { Button, LinkButton } from '../Button'
+import { BoardForm } from './ChatBoard'
 import { useShipTime } from './shipTime'
 
 const votes = (n: number): string => t('cpoll.votes', { count: n })
@@ -422,6 +423,7 @@ export function PlanTools({ conversation, onSent }: { conversation: ChatConversa
       {open && !events && !failed && <p role="status" className="muted">{t('conv.share.loading')}</p>}
       {failed && <p role="alert" className="field__error">{t('conv.share.failed')}</p>}
       {events && events.length > 0 && <SlotPollForm conversationId={conversation.id} days={Math.max(...planDays(events))} onSent={onSent} />}
+      {events && <BoardForm conversationId={conversation.id} events={events} onSent={onSent} />}
       {events && <PlanForm conversationId={conversation.id} events={events} onSent={onSent} />}
     </details>
   )

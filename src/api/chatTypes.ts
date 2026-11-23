@@ -260,12 +260,14 @@ export interface ChatMessage {
   /** The sender deleted it for everyone: `text` is empty and there is no photo, quote or chips (phase 2). */
   deleted?: boolean
   /** Phase 3: `card` (something shared from the app) or `place` (a meeting point). Absent for text and photos. `text` then holds the words the list and alerts use; the screen draws `card`. */
-  kind?: 'card' | 'place' | 'plan' | 'poll' | 'bundle'
+  kind?: 'card' | 'place' | 'plan' | 'poll' | 'bundle' | 'board'
   card?: ChatCard
   /** Chat bundles, B1: something from the app (a venue or a menu so far). Plain fields, so a reader that does not know `type` can still show it. */
   bundle?: ChatBundle
   /** Phase 4, a poll: the question and its options (the words come from the person who asked). */
   poll?: ChatPoll
+  /** Phase B6, a day board: the day and its things. */
+  board?: ChatBoard
   /** Phase 4, a poll or a plan: the answers as you see them. */
   tally?: ChatTally
   /** It is one of the pinned messages in this conversation. */
@@ -294,6 +296,9 @@ export interface ChatPlace { id: string; name: string; deck: number; section: st
 export interface ChatPlannable { ref: string; title: string; day: number; time: string; place?: string }
 export interface ChatShareables { items: ChatShareable[]; places: ChatPlace[]; events?: ChatPlannable[] }
 
+/** Phase B6: a day board. `items` is one entry per thing, rebuilt for you, or null where it is no longer available to you (also listed in `gone`); `clashes` are the items that overlap your own plans, yours alone. For a board `tally.counts` is how many are in for each item and `tally.mine` is your own items, one bit each. */
+export interface ChatBoard { day: number; items: (ChatBundle | null)[]; gone?: number[]; clashes?: number[] }
+
 /** A poll: a question and two to five options. */
 export interface ChatPoll {
   question: string
@@ -321,6 +326,8 @@ export type ChatTypedSend =
   | { kind: 'plan'; shareRef: string; note?: string }
   | { kind: 'poll'; question: string; options: string[]; optionRefs?: (string | null)[]; slots?: string[] }
   | { kind: 'bundle'; shareRef: string; note?: string }
+  /** Phase B6: a day board; `optionRefs` are `event:` refs on `day`. */
+  | { kind: 'board'; day: number; optionRefs: string[] }
 
 /** One of the six reactions in use on a message. `names` are the others (first name and last initial) for a screen reader; yours is counted and marked by `mine`, not named. */
 export interface ChatReaction { emoji: string; count: number; mine: boolean; names: string[] }
@@ -395,6 +402,8 @@ export interface ChatConversationsApi {
   closePoll(id: string, messageId: string): Promise<ChatTally>
   /** Phase B4: decides a poll on one option (closing it); once only. Nothing is booked or added to anyone's day. Rejects `invalid` (`option`, `notPoll`), `forbidden` (`decide`), `conflict` (`decided`, `gone`, `closed`). */
   decidePoll(id: string, messageId: string, option: number): Promise<ChatTally>
+  /** Phase B6: says you are in, or not, for one item of a day board. Returns the counts. Nothing is added to a day or booked. Rejects `invalid` (`item`, `notBoard`), `forbidden` (`stanley`), `notFound` or `conflict` (`closed`). */
+  boardIn(id: string, messageId: string, item: number, on: boolean): Promise<ChatTally>
   /** Answers a plan. Going puts its event on your programme when your sailing runs it that day (a child's answer never does); another answer takes it off if the plan put it there. Rejects `invalid` (`choice`, `notPlan`), `notFound` or `conflict` (`closed`). */
   rsvp(id: string, messageId: string, choice: ChatRsvp): Promise<ChatTally>
   /** Alerts you only for a mention in this conversation. Returns the new state. Rejects `forbidden` (`stanley`) or `notFound`. */

@@ -65,6 +65,7 @@ import { LeavePersonalChat, NewPersonalChatPage } from './ChatPersonal'
 import { BundleCard } from './BundleCard'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
+import { BoardMessage } from './ChatBoard'
 import { GetPersonButton, RecapCard } from './ChatRelay'
 import { CoordinatorButton, CoordinatorProvider, RemainingCard, RemindersSwitch } from './ChatCoordinator'
 import { RoomDetails, RulesDialog } from './ChatRooms'
@@ -1292,6 +1293,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
       <p className="chat-msg__meta">{own ? <MyChatAvatar small /> : <GreetFace name={m.fromName ?? ''}><ChatAvatar avatar={m.avatar} name={m.fromName ?? ''} small /></GreetFace>}<strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
       {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} held={held} onHold={onHold} />
+        : m.kind === 'board' && m.board ? <BoardMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} />
         : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
         : bundle ? <BundleCard bundle={bundle} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
