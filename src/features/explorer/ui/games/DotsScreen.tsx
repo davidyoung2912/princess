@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { SIZES, SIZE_IDS, chooseMove, freeEdges, hCount, isOver, play, start, winner, type Dots, type DotsSizeId } from '../../../games/domain/dots'
-import type { Skill } from '../../../games/domain/search'
+import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t, type StringKey } from '../../../../shared/i18n'
 import { LevelBar } from './parts'
-import { useComputerTurn } from './board/shared'
+import { OPENINGS, useComputerTurn, useHint, usePref, type Opening } from './board/shared'
 import { VsShell } from './board/VsShell'
 import { useCardGame } from './cards/useCardGame'
 
@@ -12,8 +12,10 @@ const STEP = 1
 
 /** Dots and Boxes: you are blue and draw first. Finish a box's fourth side to take it and go again. Lines are real buttons, so they work by keyboard and screen reader. */
 export function DotsScreen() {
-  const [skill, setSkill] = useState<Skill>('captain')
-  const [size, setSize] = useState<DotsSizeId>('small')
+  const [skill, setSkill] = usePref<Skill>('dots', 'skill', SKILL_LIST, 'captain')
+  const [size, setSize] = usePref<DotsSizeId>('dots', 'size', SIZE_IDS, 'small')
+  const [opening, setOpening] = usePref<Opening>('dots', 'opening', OPENINGS, 'you')
+  const hint = useHint<Dots, number>()
   const [started, setStarted] = useState(false)
   const game = useCardGame<Dots>(() => start(3))
   const g = game.state
@@ -23,7 +25,7 @@ export function DotsScreen() {
   const H = hCount(g.w, g.h)
   const draw = (e: number) => { if (!mine) return; const next = play(g, e); if (next) game.commit(next) }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m !== null) { const next = play(g, m); if (next) game.commit(next) } })
-  const reset = () => game.restart(start(SIZES[size]))
+  const reset = () => { game.restart(opening === 'you' ? start(SIZES[size]) : { ...start(SIZES[size]), turn: 2 }); hint.reset() }
   const w = winner(g)
   const pt = (k: number) => 0.5 + k * STEP
   const line = (e: number) => {
@@ -34,11 +36,12 @@ export function DotsScreen() {
 
   return (
     <VsShell
-      name="dots" skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      game="dots" name="dots" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       options={<LevelBar name="dots-size" legend={t('db.size.label')} levels={SIZE_IDS.map((s) => ({ id: s, label: `${t(NAMES[s])} ${SIZES[s]}×${SIZES[s]}` }))} level={size} onLevel={setSize} />}
       status={t(mine ? (g.taken.length ? 'db.again' : 'bd.yourTurn') : 'bd.thinking')} thinking={!mine && !over}
-      result={over ? { title: t(w === 1 ? 'bd.win' : w === 2 ? 'bd.lose' : 'bd.draw'), body: t('db.final', { a: g.scores[0], b: g.scores[1] }) } : null}
+      result={over ? { title: t(w === 1 ? 'bd.win' : w === 2 ? 'bd.lose' : 'bd.draw'), body: t('db.final', { a: g.scores[0], b: g.scores[1] }), outcome: w === 1 ? 'win' : w === 2 ? 'loss' : 'draw' } : null}
       meta={<span>{t('db.score', { a: g.scores[0], b: g.scores[1] })}</span>}
+      hint={{ run: () => { const m = chooseMove(g, 'captain'); if (m !== null) hint.give(g, m) }, shown: hint.of(g) !== null, used: hint.used }}
       help={<><p>{t('db.help.1')}</p><p>{t('db.help.2')}</p></>}
     >
       <svg className="bd-board bd-board--dots" viewBox={`0 0 ${n + 1} ${n + 1}`} role="group" aria-label={t('db.aria', { a: g.scores[0], b: g.scores[1] })}>
@@ -49,7 +52,7 @@ export function DotsScreen() {
           const drawn = g.edges[e]
           return (
             <g key={e} className="bd-hit">
-              <line className={`bd-edgeline ${drawn ? 'bd-edgeline--on' : ''} ${g.last === e ? 'bd-edgeline--last' : ''}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
+              <line className={`bd-edgeline ${drawn ? 'bd-edgeline--on' : ''} ${g.last === e ? 'bd-edgeline--last' : ''} ${hint.of(g) === e ? 'bd-edgeline--hint' : ''}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
               {!drawn && <line className="bd-edgetap" x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} onClick={() => draw(e)} />}
             </g>
           )

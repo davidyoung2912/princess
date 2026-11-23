@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { chooseMove, place, start, SIZE_OF, type Five, type FiveMode } from '../../../games/domain/fiveRow'
-import type { Skill } from '../../../games/domain/search'
+import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t } from '../../../../shared/i18n'
-import { useComputerTurn, useRoving } from './board/shared'
+import { OPENINGS, useComputerTurn, useHint, usePref, useRoving, type Opening } from './board/shared'
 import { VsShell } from './board/VsShell'
 import { useCardGame } from './cards/useCardGame'
 
 /** Gomoku (15 by 15) and Pente (19 by 19, with captures) share one board: you are black and move first. The stones sit on the line crossings, drawn in SVG. */
 function FiveRow({ mode }: { mode: FiveMode }) {
   const n = SIZE_OF[mode]
-  const [skill, setSkill] = useState<Skill>('captain')
+  const [skill, setSkill] = usePref<Skill>(mode, 'skill', SKILL_LIST, 'captain')
+  const [opening, setOpening] = usePref<Opening>(mode, 'opening', OPENINGS, 'you')
+  const hint = useHint<Five, number>()
   const [started, setStarted] = useState(false)
   const game = useCardGame<Five>(() => start(mode))
   const g = game.state
@@ -18,16 +20,17 @@ function FiveRow({ mode }: { mode: FiveMode }) {
   const pick = (i: number) => { if (!mine) return; const next = place(g, i); if (next) game.commit(next) }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m !== null) { const next = place(g, m); if (next) game.commit(next) } })
   const { root, props } = useRoving(n, n * n, pick)
-  const reset = () => game.restart(start(mode))
+  const reset = () => { game.restart(opening === 'you' ? start(mode) : { ...start(mode), turn: 2 }); hint.reset() }
   const hoshi = mode === 'pente' ? [3, 9, 15] : [3, 7, 11]
   const star = (i: number) => hoshi.includes(i % n) && hoshi.includes(Math.floor(i / n))
 
   return (
     <VsShell
-      name={mode} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      game={mode} name={mode} opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       status={t(mine ? 'bd.yourTurn' : 'bd.thinking')} thinking={!mine && !over}
-      result={over ? { title: t(g.winner === 1 ? 'bd.win' : g.winner === 2 ? 'bd.lose' : 'bd.draw'), body: (mode === 'pente' ? t('pn.final', { n: g.moves }) : t('gm.final', { n: g.moves })) } : null}
+      result={over ? { title: t(g.winner === 1 ? 'bd.win' : g.winner === 2 ? 'bd.lose' : 'bd.draw'), body: (mode === 'pente' ? t('pn.final', { n: g.moves }) : t('gm.final', { n: g.moves })), outcome: g.winner === 1 ? 'win' : g.winner === 2 ? 'loss' : 'draw' } : null}
       meta={mode === 'pente' ? <span>{t('pn.captures', { a: g.captures[0], b: g.captures[1] })}</span> : <span>{t('gm.moves', { n: g.moves })}</span>}
+      hint={{ run: () => { const m = chooseMove(g, 'captain'); if (m !== null) hint.give(g, m) }, shown: hint.of(g) !== null, used: hint.used }}
       undo={{ can: game.canUndo, run: () => game.undoUntil((s) => s.turn === 1 && s.winner === 0) }}
       help={<><p>{mode === 'pente' ? t('pn.help.1') : t('gm.help.1')}</p><p>{mode === 'pente' ? t('pn.help.2') : t('gm.help.2')}</p></>}
     >
@@ -39,6 +42,7 @@ function FiveRow({ mode }: { mode: FiveMode }) {
           return (
             <g key={i} {...props(i)} onClick={() => pick(i)} className="bd-hit" aria-label={t(d === 1 ? 'fr.cell.black' : d === 2 ? 'fr.cell.white' : 'fr.cell.empty', { r: y + 1, c: x + 1 })}>
               <rect className="bd-sq bd-sq--clear" x={x} y={y} width={1} height={1} />
+              {hint.of(g) === i && <circle className="bd-hintring" cx={x + 0.5} cy={y + 0.5} r={0.4} />}
               {d === 0 && star(i) && <circle className="bd-star" cx={x + 0.5} cy={y + 0.5} r={0.11} />}
               {d !== 0 && <circle className={`bd-stone bd-stone--${d === 1 ? 'b' : 'w'} ${g.last === i ? 'bd-stone--last' : ''} ${g.line.includes(i) ? 'bd-stone--win' : ''}`} cx={x + 0.5} cy={y + 0.5} r={0.43} />}
             </g>

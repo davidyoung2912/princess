@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { applyStep, canPlay, chooseTurn, endTurn, legalSteps, pipCount, rollDice, start, withDice, type Backgammon, type Step } from '../../../games/domain/backgammon'
-import type { Skill } from '../../../games/domain/search'
+import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t } from '../../../../shared/i18n'
 import { Button } from '../../../../shared/ui/Button'
-import { useComputerTurn } from './board/shared'
+import { OPENINGS, useComputerTurn, useHint, usePref, type Opening } from './board/shared'
 import { VsShell } from './board/VsShell'
 import { useCardGame } from './cards/useCardGame'
 
@@ -14,7 +14,9 @@ const BAR = 'bar'
 
 /** Backgammon against the computer: you are white and move from the top right round to the bottom right, then bear off. Roll, tap a disc, tap where it goes. */
 export function BackgammonScreen() {
-  const [skill, setSkill] = useState<Skill>('captain')
+  const [skill, setSkill] = usePref<Skill>('backgammon', 'skill', SKILL_LIST, 'captain')
+  const [opening, setOpening] = usePref<Opening>('backgammon', 'opening', OPENINGS, 'you')
+  const hint = useHint<Backgammon, Step>()
   const [started, setStarted] = useState(false)
   const game = useCardGame<Backgammon>(start)
   const g = game.state
@@ -41,7 +43,7 @@ export function BackgammonScreen() {
     for (const s of chooseTurn(g, skill)) cur = applyStep(cur, s)
     game.commit(cur.winner ? cur : endTurn(cur))
   })
-  const reset = () => { game.restart(start()); setFrom(null); setNote('') }
+  const reset = () => { game.restart(opening === 'you' ? start() : { ...start(), turn: 1 }); setFrom(null); setNote(''); hint.reset() }
   const w = g.winner
 
   const disc = (side: 0 | 1, x: number, y: number, k: number, key: string, picked = false) => <circle key={key} className={`bd-disc bd-disc--${side === 0 ? 'w' : 'b'} ${picked ? 'bd-disc--pick' : ''}`} cx={x} cy={y} r={0.43} data-k={k} />
@@ -62,9 +64,9 @@ export function BackgammonScreen() {
 
   return (
     <VsShell
-      name="backgammon" skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      game="backgammon" name="backgammon" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       status={note || (mine ? (rolled ? (stuck ? t('bk.nomove') : t('bk.move')) : t('bk.roll')) : t('bd.thinking'))} thinking={!mine && !over}
-      result={over ? { title: t(w === 1 ? 'bd.win' : 'bd.lose'), body: t('bk.final', { a: g.off[0], b: g.off[1] }) } : null}
+      result={over ? { title: t(w === 1 ? 'bd.win' : 'bd.lose'), body: t('bk.final', { a: g.off[0], b: g.off[1] }), outcome: w === 1 ? 'win' : 'loss' } : null}
       meta={<span>{t('bk.pips', { a: pipCount(g, 0), b: pipCount(g, 1) })}</span>}
       undo={{ can: game.canUndo, run: () => {
         const startOfTurn = g.left.length === g.dice.length
@@ -72,6 +74,7 @@ export function BackgammonScreen() {
         else game.undoUntil((s) => s.turn === 0 && s.dice.length > 0 && s.left.length === s.dice.length && s.winner === 0)
         setFrom(null); setNote('')
       } }}
+      hint={{ run: () => { if (!mine) return; if (!rolled) { setNote(t('bk.roll')); return } const seq = chooseTurn(g, 'captain'); if (seq.length) { hint.give(g, seq[0]); setFrom(seq[0].from) } }, shown: hint.of(g) !== null, used: hint.used }}
       tools={stuck ? <button type="button" className="sd-tool sd-tool--go" onClick={pass}><span>{t('bk.pass')}</span></button> : null}
       help={<><p>{t('bk.help.1')}</p><p>{t('bk.help.2')}</p></>}
     >
@@ -86,7 +89,7 @@ export function BackgammonScreen() {
           return (
             <g key={p} data-p={p} role="button" tabIndex={mine ? 0 : -1} aria-label={label} className="bd-hit" onClick={() => (dest ? choose(p) : g.points[p] > 0 ? tapSource(p) : setFrom(null))}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (dest) choose(p); else if (g.points[p] > 0) tapSource(p) } }}>
-              <polygon className={`bd-tri bd-tri--${p % 2 ? 'a' : 'b'} ${dest ? 'bd-tri--dest' : ''}`} points={top ? `${x},0 ${x + 1},0 ${x + 0.5},${H * 0.45}` : `${x},${H} ${x + 1},${H} ${x + 0.5},${H * 0.55}`} />
+              <polygon className={`bd-tri bd-tri--${p % 2 ? 'a' : 'b'} ${dest ? 'bd-tri--dest' : ''} ${hint.of(g)?.to === p ? 'bd-tri--hint' : ''}`} points={top ? `${x},0 ${x + 1},0 ${x + 0.5},${H * 0.45}` : `${x},${H} ${x + 1},${H} ${x + 0.5},${H * 0.55}`} />
             </g>
           )
         })}

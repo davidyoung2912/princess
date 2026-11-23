@@ -10,7 +10,7 @@ import { GameClock, GameHelp, LevelBar, SolvedCard } from './parts'
 import { useGameClock } from './gameHooks'
 
 const SIZE_KEYS: Record<SizeId, StringKey> = { small: 'bs.size.small', classic: 'bs.size.classic', large: 'bs.size.large' }
-const SKILL_KEYS: Record<Skill, StringKey> = { cadet: 'bs.skill.cadet', captain: 'bs.skill.captain', admiral: 'bs.skill.admiral' }
+const SKILL_KEYS: Record<Skill, StringKey> = { cadet: 'bd.skill.cadet', captain: 'bd.skill.captain', admiral: 'bd.skill.admiral' }
 const SHIP_KEYS: Record<ShipKind, StringKey> = { carrier: 'bs.ship.carrier', battleship: 'bs.ship.battleship', cruiser: 'bs.ship.cruiser', submarine: 'bs.ship.submarine', destroyer: 'bs.ship.destroyer', patrol: 'bs.ship.patrol', frigate: 'bs.ship.frigate' }
 
 /** A1 style name of a square, columns by letter and rows by number. */
@@ -209,8 +209,8 @@ export function BattleshipScreen() {
       <div className="page">
         <div className="sd bs">
           <LevelBar name="battleship-size" legend={t('bs.size.label')} levels={SIZE_IDS.map((s) => ({ id: s, label: `${t(SIZE_KEYS[s])} ${SIZES[s].n}×${SIZES[s].n}` }))} level={size} onLevel={changeSize} />
-          <LevelBar name="battleship-skill" legend={t('bs.skill.label')} levels={SKILLS.map((s) => ({ id: s, label: t(SKILL_KEYS[s]) }))} level={skill} onLevel={setSkill} />
-          <p className="bs-lead">{t(`bs.skill.${skill}.about` as StringKey)}</p>
+          <LevelBar name="battleship-skill" legend={t('bd.skill.label')} levels={SKILLS.map((s) => ({ id: s, label: t(SKILL_KEYS[s]) }))} level={skill} onLevel={setSkill} />
+          <p className="bs-lead">{t(`bd.skill.${skill}.about` as StringKey)}</p>
           <h2 className="bs-h">{t('bs.setup.title')}</h2>
           <Board
             n={n} label={t('bs.board.mine', { n })} className="bs-wrap--setup" selected={cursor} onCell={onSetupCell}

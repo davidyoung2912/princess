@@ -4,7 +4,9 @@ import { t, type StringKey } from '../../../../shared/i18n'
 import { Button } from '../../../../shared/ui/Button'
 import { Lightbulb, Undo } from '../../../../shared/ui/icons'
 import { MoreLinks } from '../Parts'
-import { useRoving } from './board/shared'
+import { dailySeed, useRoving, usePref, useSoloRecord } from './board/shared'
+import { SoloRecord } from './board/SoloRecord'
+import { seededRng } from '../../../games/domain/cards'
 import { useCardGame } from './cards/useCardGame'
 import { GameHelp, LevelBar, SolvedCard } from './parts'
 
@@ -12,15 +14,18 @@ const NAMES: Record<LightsLevel, StringKey> = { easy: 'lo.level.easy', medium: '
 
 /** Lights Out: a tap flips a tile and the four beside it; turn every light off. Every puzzle is made from a real scramble, so it can always be solved, and Hint names a tile on the shortest way. */
 export function LightsScreen() {
-  const [level, setLevel] = useState<LightsLevel>('medium')
+  const [level, setLevel] = usePref<LightsLevel>('lights', 'level', LIGHTS_LEVELS, 'medium')
   const n = SIZE_OF[level]
-  const game = useCardGame(() => generate('medium'))
+  const game = useCardGame(() => generate(level))
   const board = game.state
   const [hint, setHint] = useState<number | null>(null)
   const done = isOff(board)
   const lit = board.filter(Boolean).length
 
-  const fresh = (l: LightsLevel) => { setLevel(l); game.restart(generate(l)); setHint(null) }
+  const [daily, setDaily] = useState(false)
+  const fresh = (l: LightsLevel) => { setLevel(l); setDaily(false); game.restart(generate(l)); setHint(null) }
+  const today = () => { setDaily(true); game.restart(generate(level, seededRng(dailySeed(LIGHTS_LEVELS.indexOf(level))))); setHint(null) }
+  useSoloRecord('lights', daily ? `${level}-daily` : level, done ? 'win' : null, game.moves)
   const tap = (i: number) => { if (done) return; game.commit(press(board, i, n)); setHint(null) }
   const { root, props } = useRoving(n, n * n, tap)
   const giveHint = () => { const s = solution(board, n); setHint(s && s.length ? s[0] : null) }
@@ -29,6 +34,7 @@ export function LightsScreen() {
     <div className="page">
       <div className="sd bd">
         <LevelBar name="lights-level" legend={t('lo.level.label')} levels={LIGHTS_LEVELS.map((l) => ({ id: l, label: `${t(NAMES[l])} ${SIZE_OF[l]}×${SIZE_OF[l]}` }))} level={level} onLevel={fresh} />
+        {daily && <p className="bd-note">{t('bd.daily.note')}</p>}
         <p className="sd-meta"><span>{t('lo.lit', { n: lit })}</span><span>{t('peg.moves', { n: game.moves })}</span></p>
         <svg ref={root} className="bd-board bd-board--lights" viewBox={`0 0 ${n} ${n}`} role="group" aria-label={t('lo.aria', { n: lit })}>
           <rect className="bd-panel" x={0} y={0} width={n} height={n} rx={0.25} />
@@ -39,12 +45,14 @@ export function LightsScreen() {
           ))}
         </svg>
         <div className="sd-tools bd-tools">
+          <button type="button" className="sd-tool" onClick={today}><span>{t('bd.daily')}</span></button>
           <button type="button" className="sd-tool" onClick={giveHint} disabled={done}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('bd.hint')}</span></button>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setHint(null) }} disabled={!game.canUndo}><Undo aria-hidden="true" focusable="false" /><span>{t('bd.undo')}</span></button>
         </div>
         {done && (
           <SolvedCard title={t('lo.win.title')}>
             <p>{t('lo.win.body', { n: game.moves })}</p>
+            <SoloRecord game="lights" keyName={daily ? `${level}-daily` : level} />
             <div className="button-row"><Button onClick={() => fresh(level)}>{t('bd.again')}</Button></div>
           </SolvedCard>
         )}

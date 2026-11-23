@@ -4,7 +4,8 @@ import { t, type StringKey } from '../../../../shared/i18n'
 import { Button } from '../../../../shared/ui/Button'
 import { Lightbulb, Undo } from '../../../../shared/ui/icons'
 import { MoreLinks } from '../Parts'
-import { useRoving } from './board/shared'
+import { usePref, useRoving, useSoloRecord } from './board/shared'
+import { SoloRecord } from './board/SoloRecord'
 import { useCardGame } from './cards/useCardGame'
 import { GameHelp, LevelBar, SolvedCard } from './parts'
 
@@ -19,8 +20,8 @@ const pos = (b: PegBoard, i: number): [number, number] => {
 
 /** Peg solitaire on three boards: jump a peg over a neighbour into an empty hole and take the peg jumped. Leave one. Hints come from a real search, so they always lead to a win. */
 export function PegScreen() {
-  const [board, setBoard] = useState<PegBoard>('english')
-  const game = useCardGame(() => start('english'))
+  const [board, setBoard] = usePref<PegBoard>('peg', 'board', PEG_BOARDS, 'english')
+  const game = useCardGame(() => start(board))
   const pegs = game.state
   const [from, setFrom] = useState<number | null>(null)
   const [hint, setHint] = useState<Jump | null>(null)
@@ -31,6 +32,7 @@ export function PegScreen() {
   const won = isWon(pegs)
   const stuck = isStuck(board, pegs)
   const width = board === 'triangle' ? L.rows : L.cols
+  useSoloRecord('peg', board, won ? 'win' : stuck ? 'loss' : null, game.moves)
   const targets = from === null ? [] : moves.filter((m) => m.from === from)
 
   const newGame = (b: PegBoard) => { setBoard(b); game.restart(start(b)); setFrom(null); setHint(null); setNote('') }
@@ -79,6 +81,7 @@ export function PegScreen() {
         {(won || stuck) && (
           <SolvedCard title={t(`peg.result.${rating(left)}` as StringKey)}>
             <p>{t(won ? (isPerfect(board, pegs) ? 'peg.result.perfect' : 'peg.result.won') : 'peg.result.stuck', { n: left })}</p>
+            <SoloRecord game="peg" keyName={board} />
             <div className="button-row"><Button onClick={() => newGame(board)}>{t('bd.again')}</Button></div>
           </SolvedCard>
         )}
