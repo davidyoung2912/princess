@@ -71,6 +71,8 @@ public interface IChatGroupStore
     Task<ChatGroupInviteRow?> GetInviteAsync(Guid publicId, CancellationToken ct);
     /// <summary>The invitations waiting for the person, or for a child they are guardian of, newest first. Not those from someone the person blocked.</summary>
     Task<List<ChatGroupInviteRow>> ListInvitesForAsync(long userId, CancellationToken ct);
+    /// <summary>The invitations the person sent that are still waiting for an answer, newest first.</summary>
+    Task<List<ChatGroupInviteRow>> ListSentInvitesAsync(long inviterId, CancellationToken ct);
     /// <summary>Closes a waiting invitation, only if it is still in one of <paramref name="from"/>. False when it was not.</summary>
     Task<bool> SetInviteStatusAsync(long id, string[] from, string to, DateTime now, CancellationToken ct);
     /// <summary>How many invitations the person sent were accepted or declined and not yet seen by them.</summary>
@@ -207,6 +209,16 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
               AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks bl WHERE bl.UserId = i.InviteeId AND bl.BlockedUserId = i.InviterId)
             ORDER BY i.CreatedAt DESC, i.Id DESC
             """, new { userId }, null, ct))).ToList();
+    }
+
+    public async Task<List<ChatGroupInviteRow>> ListSentInvitesAsync(long inviterId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatGroupInviteRow>(Sql.Cmd(InviteSelect + """
+
+            WHERE i.InviterId = @inviterId AND i.Status IN ('pending','awaitingGuardian')
+            ORDER BY i.CreatedAt DESC, i.Id DESC
+            """, new { inviterId }, null, ct))).ToList();
     }
 
     public async Task<int> CountAnswersAsync(long inviterId, CancellationToken ct)

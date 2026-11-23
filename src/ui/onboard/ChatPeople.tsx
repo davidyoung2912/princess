@@ -2,7 +2,7 @@ import { NicknameField } from '../NicknameField'
 import { ChatLooks } from './ChatLooks'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import type { ChatConnection, ChatSettings, ChatSms } from '../../api/chatTypes'
+import type { ChatConnection, ChatGroupInvite, ChatSettings, ChatSms } from '../../api/chatTypes'
 import { needsPhone, smsReason } from '../../domain/chatSms'
 import { waitingCount } from '../../domain/chatConnections'
 import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
@@ -30,6 +30,16 @@ export function RequestsBanner({ onOpen }: { onOpen: () => void }) {
   const count = (list.data ? waitingCount(list.data) : 0) + (invites.data?.length ?? 0)
   if (count === 0) return null
   return <Banner kind="info" title={t('people.banner', { count })} action={<Button variant="secondary" onClick={onOpen}>{t('people.bannerOpen')}</Button>} />
+}
+
+/** The banner for the sender: "1 invitation waiting for an answer", one tap to the page that lists them. */
+export function SentBanner({ onOpen }: { onOpen: () => void }) {
+  const list = useMine(() => api.chatConnections.list())
+  const sent = useMine(() => api.chatGroups.sentInvites())
+  useChatLive(() => { list.retry(); sent.retry() })
+  const count = (list.data?.outgoing.length ?? 0) + (sent.data?.length ?? 0)
+  if (count === 0) return null
+  return <Banner kind="info" title={t('people.sent', { count })} action={<Button variant="secondary" onClick={onOpen}>{t('people.sentOpen')}</Button>} />
 }
 
 /** The People page, or with `?invitations=1` the Chat Invitations page. */
@@ -64,11 +74,13 @@ function Invitations() {
           <>
             {c.approvals.length > 0 && <Group id="approvals" rows={c.approvals} render={(r) => <Approval row={r} onDone={done} />} />}
             {c.incoming.length > 0 && <Group id="incoming" rows={c.incoming} render={(r) => <Incoming row={r} onDone={done} />} />}
+            {c.outgoing.length > 0 && <Group id="outgoing" rows={c.outgoing} render={(r) => <Outgoing row={r} onDone={done} />} />}
           </>
         )}
       </Load>
       <GroupInvites onDone={done} />
-      {loaded && count === 0 && <p>{t('invitations.none')}</p>}
+      <SentGroupInvites onDone={done} />
+      {loaded && count === 0 && (list.data?.outgoing.length ?? 0) === 0 && <p>{t('invitations.none')}</p>}
       <p><Link to="/chat">{t('invitations.back')}</Link></p>
     </section>
   )
@@ -88,7 +100,7 @@ function ChatSettingsPage() {
   )
 }
 
-function Group({ id, rows, render }: { id: 'approvals' | 'incoming'; rows: readonly ChatConnection[]; render: (row: ChatConnection) => React.ReactNode }) {
+function Group({ id, rows, render }: { id: 'approvals' | 'incoming' | 'outgoing'; rows: readonly ChatConnection[]; render: (row: ChatConnection) => React.ReactNode }) {
   return (
     <section aria-labelledby={`people-${id}`} data-tour="chat-people">
       <h3 id={`people-${id}`}>{th(`people.g.${id}` as StringKey)}</h3>
@@ -111,6 +123,49 @@ function Incoming({ row, onDone }: { row: ChatConnection; onDone: (note: string)
         <Button variant="tertiary" disabled={answer.busy} onClick={() => void answer.run(false, true)}>{t('people.block')}<span className="visually-hidden"> {row.name}</span></Button>
       </div>
       <ActionError error={answer.error} />
+    </>
+  )
+}
+
+/** An invitation the guest sent that has not been answered yet: who it is for, and a way to take it back. */
+function Outgoing({ row, onDone }: { row: ChatConnection; onDone: (note: string) => void }) {
+  const cancel = useAction(async () => { await api.chatConnections.cancel(row.id); onDone(t('people.cancelled', { name: row.name })) })
+  return (
+    <>
+      <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{t('people.outgoing', { name: row.name })}</strong></p>
+      <div className="button-row">
+        <Button variant="secondary" disabled={cancel.busy} onClick={() => void cancel.run()}>{t('people.cancel')}<span className="visually-hidden"> {row.name}</span></Button>
+      </div>
+      <ActionError error={cancel.error} />
+    </>
+  )
+}
+
+/** The group invitations the guest sent that nobody has answered yet, each with a way to take it back. The other person's list drops it at once. */
+function SentGroupInvites({ onDone }: { onDone: (note: string) => void }) {
+  const sent = useMine(() => api.chatGroups.sentInvites())
+  useChatLive(() => sent.retry())
+  const rows = sent.data ?? []
+  if (rows.length === 0) return null
+  return (
+    <section aria-labelledby="people-sentgroups">
+      <h3 id="people-sentgroups">{th('people.g.sentGroups')}</h3>
+      <ul className="plain-list">
+        {rows.map((r) => <li key={r.id}><Card><SentGroupInvite row={r} onDone={(note) => { sent.retry(); onDone(note) }} /></Card></li>)}
+      </ul>
+    </section>
+  )
+}
+
+function SentGroupInvite({ row, onDone }: { row: ChatGroupInvite; onDone: (note: string) => void }) {
+  const cancel = useAction(async () => { await api.chatGroups.revokeSent(row.id); onDone(t('people.cancelled', { name: row.from })) })
+  return (
+    <>
+      <p className="person-line"><ChatAvatar avatar={row.fromAvatar} name={row.from} small /><strong>{t('people.sentGroup', { name: row.from, group: row.groupName })}</strong></p>
+      <div className="button-row">
+        <Button variant="secondary" disabled={cancel.busy} onClick={() => void cancel.run()}>{t('people.cancel')}<span className="visually-hidden"> {row.from}</span></Button>
+      </div>
+      <ActionError error={cancel.error} />
     </>
   )
 }

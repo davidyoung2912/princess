@@ -619,10 +619,21 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
                    CAST(CASE WHEN lm.Photo IS NULL OR lm.DeletedAt IS NOT NULL THEN 0 ELSE 1 END AS bit) AS LastPhoto, CAST(CASE WHEN lm.DeletedAt IS NULL THEN 0 ELSE 1 END AS bit) AS LastDeleted, lm.[At] AS LastAt, lm.Urgency AS LastUrgency,
                    (SELECT MAX(x.[At]) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId = me.UserId) AS LastMineAt,
                    (SELECT MAX(x.[At]) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId IS NOT NULL AND x.FromUserId <> me.UserId) AS LastTheirsAt,
+                   (SELECT COUNT(*) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL) AS MessageCount,
+                   (SELECT COUNT(*) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId = me.UserId) AS MineCount,
+                   (SELECT COUNT(*) FROM dbo.ChatPins p WHERE p.GroupId = g.Id) AS PinCount,
+                   (SELECT COUNT(*) FROM dbo.ChatGroupMembers o WHERE o.GroupId = g.Id AND o.Status = 'active' AND o.UserId <> me.UserId AND mm.Id IS NOT NULL) AS LastMineTo,
+                   (SELECT COUNT(*) FROM dbo.ChatMessageDeliveries d WHERE d.MessageId = mm.Id) AS LastMineDelivered,
+                   (SELECT COUNT(*) FROM dbo.ChatGroupMembers o JOIN dbo.UserPrefs ou ON ou.UserId = o.UserId AND ou.ReceiptsOn = 1
+                    WHERE o.GroupId = g.Id AND o.Status = 'active' AND o.UserId <> me.UserId AND mm.Id IS NOT NULL AND o.LastReadMessageId >= mm.Id AND ISNULL(mep.ReceiptsOn, 0) = 1) AS LastMineSeen,
+                   (SELECT COUNT(*) FROM dbo.ChatMessages w WHERE g.Kind = 'stanley' AND w.GroupId = g.Id AND w.DeletedAt IS NULL AND w.SupersededAt IS NULL AND w.Urgency IN ('important','urgent')
+                      AND NOT EXISTS (SELECT 1 FROM dbo.ChatMessageAcks a WHERE a.MessageId = w.Id AND a.UserId = me.UserId)) AS WaitingAck,
                    (SELECT COUNT(*) FROM dbo.ChatMessages m
                     WHERE m.GroupId = g.Id AND m.IsSystem = 0 AND ISNULL(m.FromUserId, 0) <> me.UserId AND NOT (m.FromUserId IS NULL AND g.Kind <> 'stanley' AND me.StanleyMuted = 1) AND (g.Kind <> 'stanley' OR m.DeletedAt IS NULL) AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}) AS Unread
             FROM dbo.ChatGroupMembers me
             JOIN dbo.ChatGroups g ON g.Id = me.GroupId
+            LEFT JOIN dbo.UserPrefs mep ON mep.UserId = me.UserId
+            OUTER APPLY (SELECT TOP 1 x.Id FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId = me.UserId ORDER BY x.Id DESC) mm
             OUTER APPLY (SELECT TOP 1 m.Id, m.FromUserId, m.[Text], m.Photo, m.[At], m.Urgency, m.DeletedAt FROM dbo.ChatMessages m WHERE m.GroupId = g.Id AND (g.Kind <> 'stanley' OR (m.IsSystem = 0 AND m.DeletedAt IS NULL)) AND {Window} ORDER BY m.Id DESC) lm
             OUTER APPLY (SELECT TOP 1 x.Persona, x.Subtitle FROM dbo.ChatMessages x WHERE g.Kind = 'stanley' AND x.GroupId = g.Id AND x.Persona IS NOT NULL ORDER BY x.Id DESC) sp
             WHERE me.UserId = @userId AND me.Status = 'active'

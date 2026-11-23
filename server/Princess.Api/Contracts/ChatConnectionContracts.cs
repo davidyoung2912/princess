@@ -63,6 +63,7 @@ public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? LastTheirsAt = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Owner = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Leader = false,
+    int MessageCount = 0, int MineCount = 0, int PinCount = 0, int LastMineTo = 0, int LastMineDelivered = 0, int LastMineSeen = 0, int WaitingAck = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OwnerName = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OwnerAvatar = null);
 

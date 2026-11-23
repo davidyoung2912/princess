@@ -854,7 +854,7 @@ button.chat-quote { cursor: pointer; }
 .conv__time { font-weight: 700; }
 
 /* The time on the newest message received in a chat is bold, read or not. */
-.chat-msg:not(.chat-msg--mine, .chat-msg--system, .chat-msg--deleted, .chat-typing-card):not(:has(~ .chat-msg:not(.chat-msg--mine, .chat-msg--system, .chat-msg--deleted, .chat-typing-card))) .chat-msg__time { font-weight: 700; }
+.chat-msg:not(.chat-msg--mine, .chat-msg--system, .chat-msg--deleted, .chat-typing-card):not(:has(~ .chat-msg:not(.chat-msg--mine, .chat-msg--system, .chat-msg--deleted, .chat-typing-card))) .chat-msg__time { font-weight: 800; color: var(--text); }
 .conv-actions { margin-block-start: var(--space-5); }
 .chat-typing-card { scroll-margin-block-end: var(--space-6); }
 .leave-chat { margin-block: var(--space-3) var(--space-4); }
@@ -866,3 +866,5 @@ button.chat-quote { cursor: pointer; }
 .chat-msg--stanley .button-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 0; }
 .chat-msg--stanley .btn { min-height: 2.5rem; width: auto; flex: 0 0 auto; }
 .chat-msg--stanley > .btn, .chat-msg--stanley .chat-notice-offers > .btn { justify-self: start; }
+.conv__time { font-weight: 800; color: var(--text); }
+.conv__time { font-family: inherit; font-size: inherit; font-weight: 800; }

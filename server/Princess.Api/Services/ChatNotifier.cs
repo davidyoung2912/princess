@@ -111,6 +111,12 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     /// A plain event for the guest to read and acknowledge (a request was declined, someone left their chat group or personal chat). The same words are in their Stanley thread; this nudges an open app, which shows
     /// them as a popup that stays until Got it, and sends the phone alert when no app answers (<paramref name="phone"/> false when another alert for the same event already does).
     /// </summary>
+    /// <summary>
+    /// Something about the person's invitations changed (one was taken back). An open app is nudged so its lists and badge are read again; there is no phone alert, because there is nothing to act on.
+    /// </summary>
+    public Task ChangedAsync(long userId, CancellationToken ct) =>
+        Deliver(userId, "changed", new PushNotice($"chat:changed:{userId}:{Guid.NewGuid():N}", "chat", "chat", false, 40, "/chat", "", "", []), false, ct);
+
     public Task InfoAsync(long userId, string key, string title, string body, CancellationToken ct, bool phone = true) =>
         Deliver(userId, "info", new PushNotice(key, "chatEvent", "chat", false, 45, "/chat", title, body, []), phone, ct);
 

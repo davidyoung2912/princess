@@ -330,14 +330,18 @@ main.signin { margin-inline: auto; }
 
 /* The chat notice (docs/chat-plan.md, phase 8): top of the screen inside the safe area, clear of the tab bar and the page's own actions. */
 .chat-toast-region { position: fixed; z-index: 45; bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); inset-inline: var(--space-3); display: flex; justify-content: center; pointer-events: none; }
-.chat-toast { pointer-events: auto; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2) var(--space-3); align-items: center; width: min(100%, 24rem); padding: var(--space-2) var(--space-3); font-size: var(--fs-small, 0.875rem); line-height: 1.35; background: var(--bg); color: var(--text); border: 2px solid var(--primary); border-radius: var(--radius-card); box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.2); animation: chat-toast-in 0.2s ease-out; }
+.chat-toast { position: relative; pointer-events: auto; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2) var(--space-3); align-items: center; width: min(100%, 24rem); padding: var(--space-2) var(--space-3); font-size: var(--fs-small, 0.875rem); line-height: 1.35; background: var(--bg); color: var(--text); border: 2px solid var(--primary); border-radius: var(--radius-card); box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.2); animation: chat-toast-in 0.2s ease-out; }
 .chat-toast__icon { color: var(--primary); }
 .chat-toast--info { border-color: var(--teal); }
 .chat-toast--info .chat-toast__icon { color: var(--teal); }
 .chat-toast__text { margin: 0; overflow-wrap: break-word; min-width: 0; }
 .chat-toast__label { font-weight: 700; }
 .chat-toast__actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; justify-content: flex-end; grid-column: 1 / -1; }
-.chat-toast__close { display: inline-grid; place-items: center; min-width: 2.75rem; min-height: 2.75rem; background: none; border: 0; color: inherit; cursor: pointer; border-radius: 50%; }
+.chat-toast__close { position: absolute; inset-block-start: var(--space-1); inset-inline-end: var(--space-1); display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; padding: 0; background: var(--bg-subtle, var(--bg)); border: 1px solid var(--border); color: var(--text-muted, inherit); cursor: pointer; border-radius: 50%; }
+.chat-toast__close svg { width: 0.875rem; height: 0.875rem; }
+.chat-toast__close:hover, .chat-toast__close:focus-visible { color: var(--text); border-color: var(--primary); }
+.chat-toast__text { padding-inline-end: var(--space-5); }
+.chat-toast .btn { min-height: 2.25rem; padding-inline: var(--space-4); }
 @keyframes chat-toast-in { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
 @media (max-width: 30rem) { .chat-toast { grid-template-columns: auto 1fr; } .chat-toast__actions { grid-column: 1 / -1; justify-content: flex-start; } }
 .chat-toast__main { display: block; width: 100%; padding: var(--space-2) 0; background: none; border: 0; color: inherit; font: inherit; text-align: start; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; }
@@ -483,7 +487,7 @@ main.signin { margin-inline: auto; }
 .code-boxes__box { flex: 1 1 0; min-width: 0; padding-inline: 0; text-align: center; font-size: var(--fs-title, 1.5rem); font-variant-numeric: tabular-nums; }
 
 /* Stanley's joke of the day under the tip card on Home: teal, with his laughing head. */
-.says { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--teal-tint); color: var(--text); border-left: 0.5rem solid var(--teal); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+.says { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--plum-tint); color: var(--text); border-left: 0.5rem solid var(--plum, var(--primary)); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
 .says__icon { width: 3rem; height: 3rem; border-radius: 50%; }
 .says__body { min-width: 0; }
 .says__title { margin: 0; font-weight: 700; }

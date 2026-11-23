@@ -6,7 +6,7 @@ import { api } from '../runtime'
 import { chatChanged } from '../hooks/useChatSummary'
 import { unackedUrgent } from '../domain/chatUrgency'
 import { Button } from './Button'
-import { Chat, Info, OctagonAlert, X } from './icons'
+import { Info, MessagesSquare, OctagonAlert, X } from './icons'
 
 /**
  * A small notice centred at the bottom of the screen for a chat request or message that arrived while the guest is elsewhere in the app. It never takes focus and has no sound,
@@ -126,7 +126,7 @@ function Toast({ notice, onClose }: { notice: ChatNotice; onClose: () => void })
     <div
       ref={box} className="chat-toast" role="group" aria-label={t('notice.label')}
     >
-      <Chat className="chat-toast__icon" aria-hidden="true" />
+      <MessagesSquare className="chat-toast__icon" aria-hidden="true" />
       <p className="chat-toast__text">
         <button type="button" className="chat-toast__main" onClick={() => go(target)}><span className="chat-toast__label">{t('notice.label')}</span> {text}</button>
       </p>

@@ -257,6 +257,9 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         if (!ChatConnectionRules.IsWaiting(row.Status)) throw ApiException.Conflict("answered");
         if (!await store.SetStatusAsync(row.Id, [ChatConnectionRules.AwaitingGuardian, ChatConnectionRules.Pending], ChatConnectionRules.Cancelled, row.GuardianUserId, row.GuardianFor, false, await clock.NowAsync(actor, ct), ct))
             throw ApiException.Conflict("answered");
+        // The other person's open app is nudged so the request leaves their list and the badge drops at once (and their guardian's, for a child).
+        await notifier.ChangedAsync(row.TargetId, ct);
+        if (row.GuardianUserId is long guardian && guardian != actor.Id) await notifier.ChangedAsync(guardian, ct);
     }
 
     /// <summary>Either person leaves a personal chat. The chat is deleted for both, and the other person's open app is told so it leaves their list.</summary>

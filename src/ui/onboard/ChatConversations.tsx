@@ -229,11 +229,23 @@ function AwayPeople({ rows, onChange }: { rows: readonly ChatConversation[]; onC
 /** One row of the list: who, the last line, an urgency word, the mute and closed tags, and the unread count. */
 /** The numbers on a card: when it was started and by whom, how many are in it, and when each side last wrote. */
 function ChatStats({ c, shipTime }: { c: ChatConversation; shipTime: (at: number) => string }) {
-  const lines = [
+  const messages = c.messageCount ?? 0
+  const stanley = isStanleyChat(c)
+  // How the newest message you wrote has travelled: reached, then read (read only where both sides share receipts).
+  const travelled = !stanley && c.lastMineTo ? (c.lastMineSeen ? t('conv.stat.seen', { seen: c.lastMineSeen, count: c.lastMineTo }) : c.lastMineDelivered ? t('conv.stat.delivered', { delivered: c.lastMineDelivered, count: c.lastMineTo }) : t('conv.stat.sent')) : null
+  const lines = stanley ? [
+    c.startedAt ? t('conv.stat.started', { time: shipTime(c.startedAt) }) : null,
+    t('conv.stat.messages', { count: messages }),
+    c.waitingAck ? t('conv.stat.waiting', { count: c.waitingAck }) : t('conv.stat.allConfirmed'),
+  ] : [
     c.startedAt ? (c.ownerName && !c.permanent ? t('conv.stat.startedBy', { time: shipTime(c.startedAt), name: c.ownerName }) : t('conv.stat.started', { time: shipTime(c.startedAt) })) : null,
     t('conv.stat.people', { count: c.members.length + 1 }),
     c.lastMineAt ? t('conv.stat.mine', { time: shipTime(c.lastMineAt) }) : t('conv.stat.mineNever'),
     c.lastTheirsAt ? t('conv.stat.theirs', { time: shipTime(c.lastTheirsAt) }) : t('conv.stat.theirsNever'),
+    t('conv.stat.messagesMine', { count: messages, mine: c.mineCount ?? 0 }),
+    travelled,
+    c.pinCount ? t('conv.stat.pinned', { count: c.pinCount }) : null,
+    c.unread > 0 ? t('conv.stat.unread', { count: c.unread }) : null,
   ].filter(Boolean)
   return <span className="conv__stats muted">{lines.join(' · ')}</span>
 }
@@ -263,7 +275,7 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, onLeave, s
             ? <span className="conv__last conv__typing" role="status"><span className="chat-typing__dots chat-typing__dots--small" aria-hidden="true"><i /><i /><i /></span><span className="muted">{typingText(typers)}</span></span>
             : <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>}
           {tags.length > 0 && <span className="conv__tags muted">{tags.join(' · ')}</span>}
-          {!c.permanent && c.kind !== 'stanley' && !c.room && <ChatStats c={c} shipTime={shipTime} />}
+          {!c.room && <ChatStats c={c} shipTime={shipTime} />}
         </span>
         {c.unread > 0 && (
           <span className="conv__unread">

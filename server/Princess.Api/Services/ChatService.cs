@@ -67,6 +67,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             StartedAt: Shipboard.Ms(m.CreatedAt),
             LastMineAt: (m as ChatConversationRow)?.LastMineAt is { } lm ? Shipboard.Ms(lm) : null,
             LastTheirsAt: (m as ChatConversationRow)?.LastTheirsAt is { } lt ? Shipboard.Ms(lt) : null,
+            MessageCount: (m as ChatConversationRow)?.MessageCount ?? 0, MineCount: (m as ChatConversationRow)?.MineCount ?? 0, PinCount: (m as ChatConversationRow)?.PinCount ?? 0,
+            LastMineTo: (m as ChatConversationRow)?.LastMineTo ?? 0, LastMineDelivered: (m as ChatConversationRow)?.LastMineDelivered ?? 0, LastMineSeen: (m as ChatConversationRow)?.LastMineSeen ?? 0, WaitingAck: (m as ChatConversationRow)?.WaitingAck ?? 0,
             Owner: m.Kind == ChatConversationRules.Group && m.CreatedByUserId == actor.Id,
             Leader: m.Kind == ChatConversationRules.Direct && m.CreatedByUserId == actor.Id,   // the starter of a personal chat: badge only, they can still leave it
             OwnerName: owner is null ? null : ShortName(owner), OwnerAvatar: owner?.Avatar);

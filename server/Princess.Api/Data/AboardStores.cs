@@ -241,6 +241,15 @@ public sealed class ChatConversationRow : ChatMemberRow
     /// <summary>The last message was deleted for everyone (its text is then empty here).</summary>
     public bool LastDeleted { get; set; }
     public int Unread { get; set; }
+    /// <summary>Summary for the card: messages in the chat (people and Stanley, not system lines or deleted ones) and how many are the caller's; pins; and for the caller's newest message how many other members have it delivered and read (0 unless both sides share receipts).</summary>
+    public int MessageCount { get; set; }
+    public int MineCount { get; set; }
+    public int PinCount { get; set; }
+    public int LastMineTo { get; set; }
+    public int LastMineDelivered { get; set; }
+    public int LastMineSeen { get; set; }
+    /// <summary>The permanent Stanley chat only: notices that ask for Got it and have not had it.</summary>
+    public int WaitingAck { get; set; }
 }
 
 /// <summary>One message found by a search or read for an export (phase 9): only what a list of words needs, never a photo, card, reaction or quote.</summary>

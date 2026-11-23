@@ -25,7 +25,7 @@ import { ChatToast } from './ChatToast'
 import { chatBadge } from '../domain/chatConnections'
 import { accessAt, activeTabKey, areaAt, isChatPath, earlierAt, navTabs, shellArea, tabAtPath, tabScreenIds } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
-import { CalendarCheck, Help, MessagesSquare, Search } from './icons'
+import { CalendarCheck, Help, Search } from './icons'
 import { actionWords } from '../routes/pageTitle'
 import { SCREEN_ICONS } from './screenIcons'
 import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
@@ -239,18 +239,13 @@ export function Shell() {
               {dot && <span className="stanley-dot" aria-hidden="true" />}
             </button>
           )}
-          <Link to="/chat" className="topbar__chat" aria-label={chatCount > 0 ? `${t('route.chat')}. ${t('people.tabBadge', { count: chatCount })}` : t('route.chat')} aria-current={isChatPath(pathname) ? 'page' : undefined}>
-            <MessagesSquare aria-hidden="true" />
-            {someoneTyping && <span className="topbar__typing chat-typing__dots chat-typing__dots--small" role="status" aria-label={t('conv.typing.many')}><i /><i /><i /></span>}
-            {chatCount > 0 && <span className="topbar__count" aria-hidden="true">{chatCount > 9 ? '9+' : chatCount}</span>}
-          </Link>
           <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
             <Help aria-hidden="true" />
             <span>{th('help.button')}</span>
           </button>
           <MyAvatarLink className="topbar__logo" />
         </header>
-        <TestBar chatCount={chatCount} menu={<PhoneMenu chatCount={chatCount} stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
+        <TestBar chatCount={chatCount} typing={someoneTyping} menu={<PhoneMenu chatCount={chatCount} stanleyOff={stanleyOff} dot={dot} onStanley={() => { dismissDot(); setStanleyOpen(true) }} onHelp={() => setHelpOpen(true)} />} />
       </div>
       <nav className="tabs no-print" data-tour="nav" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
         <MyAvatarLink className="tabs__logo" />

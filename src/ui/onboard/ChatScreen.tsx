@@ -20,7 +20,7 @@ import { Baby, Headset, MessageSquareMore, Search, Users, type LucideIcon } from
 import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
-import { RequestsBanner } from './ChatPeople'
+import { RequestsBanner, SentBanner } from './ChatPeople'
 import { Conversations } from './ChatConversations'
 import { canFindPeople, canUseGuestServices } from '../../domain/chatKeep'
 import { conversationFromSearch } from '../../domain/chatThread'
@@ -54,6 +54,7 @@ export function ChatScreen() {
       {params.get('gone') === '1' && <Banner kind="info" title={t('chat.goneTitle')}><p>{t('chat.goneBody')}</p></Banner>}
       {!service && <Card info><p>{t('chat.beforeBooking')}</p></Card>}
       {people && <RequestsBanner onOpen={() => { void nav('/chat/people?invitations=1') }} />}
+      {people && <SentBanner onOpen={() => { void nav('/chat/people?invitations=1') }} />}
       <Conversations />
       <section aria-labelledby="chat-more-h" data-tour="chat-more">
         <h2 id="chat-more-h">{heading('chat.more.title')}</h2>

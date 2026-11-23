@@ -41,6 +41,10 @@ public static class ChatGroupEndpoints
         chat.MapGet("/group-invites", async (ICurrentUser me, ChatGroupService svc, CancellationToken ct) => Results.Ok(await svc.InvitesAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Group invitations waiting for the caller (incoming), and for a child the caller is guardian of (approval). Each shows the group name and the inviter's short name, never who else is in it.");
 
+        chat.MapGet("/group-invites/sent", async (ICurrentUser me, ChatGroupService svc, CancellationToken ct) => Results.Ok(await svc.SentInvitesAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The group invitations the caller sent that nobody has answered yet (kind outgoing; `from` is who it is for).");
+        chat.MapDelete("/group-invites/{id:guid}", async (Guid id, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.RevokeSentAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
+            .WithSummary("The inviter takes back an unanswered invitation; the invitee's list drops it. 404 not yours; 409 answered.");
         chat.MapPost("/group-invites/{id:guid}/respond", async (Guid id, ChatGroupRespondBody body, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.RespondAsync(await me.LoadAsync(ct), id, body, ct); return Results.NoContent(); })
             .WithSummary("Accepts or declines an invitation (a guardian answers for a child; their yes is the acceptance). A decline is quiet: nobody is told. 409 answered|expired|full, 404 for anyone else.");
     }

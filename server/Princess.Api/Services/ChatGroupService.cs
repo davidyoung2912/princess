@@ -68,7 +68,28 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var row = await store.GetInviteAsync(inviteId, ct);
         if (row is null || row.GroupId != group.Id) throw ApiException.NotFound("invite");
         if (!await store.SetInviteStatusAsync(row.Id, [ChatGroupRules.Pending, ChatGroupRules.AwaitingGuardian], ChatGroupRules.Cancelled, await clock.NowAsync(actor, ct), ct)) throw ApiException.Conflict("answered");
+        await TellTakenBackAsync(row, ct);
     }
+
+    /// <summary>The inviter takes back an invitation that has not been answered, from the main chat page. 404 for anyone else's; 409 once answered.</summary>
+    public async Task RevokeSentAsync(UserRecord actor, Guid inviteId, CancellationToken ct)
+    {
+        var row = await store.GetInviteAsync(inviteId, ct);
+        if (row is null || row.InviterId != actor.Id) throw ApiException.NotFound("invite");
+        if (!await store.SetInviteStatusAsync(row.Id, [ChatGroupRules.Pending, ChatGroupRules.AwaitingGuardian], ChatGroupRules.Cancelled, await clock.NowAsync(actor, ct), ct)) throw ApiException.Conflict("answered");
+        await TellTakenBackAsync(row, ct);
+    }
+
+    /// <summary>The invitee's (and a guardian's) open app is nudged so the invitation leaves their list and the badge drops at once.</summary>
+    private async Task TellTakenBackAsync(ChatGroupInviteRow row, CancellationToken ct)
+    {
+        await notifier.ChangedAsync(row.InviteeId, ct);
+        if (row.GuardianUserId is long guardian) await notifier.ChangedAsync(guardian, ct);
+    }
+
+    /// <summary>The invitations the caller sent that nobody has answered yet.</summary>
+    public async Task<List<ChatGroupInviteDto>> SentInvitesAsync(UserRecord actor, CancellationToken ct) =>
+        [.. (await store.ListSentInvitesAsync(actor.Id, ct)).Select(r => new ChatGroupInviteDto(r.PublicId, "outgoing", r.GroupName, ChatConnectionRules.ShortName(r.InviteeFirst, r.InviteeLast), null, null, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt), r.InviteeAvatar))];
 
     public async Task RemoveAsync(UserRecord actor, Guid id, ChatGroupRemoveBody? body, CancellationToken ct)
     {

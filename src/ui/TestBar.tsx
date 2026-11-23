@@ -42,13 +42,13 @@ const tourMark = (to: string): string | undefined => ({ '/chat': 'chat', '/today
  * The ship date with the guest's stage under it (the stage opens the stage welcome page). For demo accounts only, the date and a time block (whose clock it is under it) open a
  * picker that moves the testing date, which changes the guest's stage and what every screen shows. Demo accounts only.
  */
-export function TestBar({ menu, chatCount = 0 }: { menu?: ReactNode; chatCount?: number }) {
+export function TestBar({ menu, chatCount = 0, typing = false }: { menu?: ReactNode; chatCount?: number; typing?: boolean }) {
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
   if (!context) return null
-  return <TestBarBody isDemo={context.isDemo === true} menu={menu} chatCount={chatCount} />
+  return <TestBarBody isDemo={context.isDemo === true} menu={menu} chatCount={chatCount} typing={typing} />
 }
 
-function TestBarBody({ isDemo, menu, chatCount }: { isDemo: boolean; menu?: ReactNode; chatCount: number }) {
+function TestBarBody({ isDemo, menu, chatCount, typing }: { isDemo: boolean; menu?: ReactNode; chatCount: number; typing: boolean }) {
   const position = useJourneyPosition()
   const now = useNow()
   const { pathname } = useLocation()
@@ -148,6 +148,7 @@ function TestBarBody({ isDemo, menu, chatCount }: { isDemo: boolean; menu?: Reac
           {AT_LINKS.map(({ to, Icon, label }) => (
             <Link key={to} to={to} data-tour={tourMark(to)} className={isExplorerButton(to) ? 'testbar__at-link testbar__at-link--explorer' : 'testbar__at-link'} aria-label={to === '/chat' && chatCount > 0 ? `${t(label)}. ${t('people.tabBadge', { count: chatCount })}` : t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined} onClick={reveal} onFocus={reveal}>
               <Icon aria-hidden="true" />
+              {to === '/chat' && typing && <span className="topbar__typing chat-typing__dots chat-typing__dots--small" role="status" aria-label={t('conv.typing.many')}><i /><i /><i /></span>}
               {to === '/chat' && chatCount > 0 && <span className="testbar__count" aria-hidden="true">{chatCount > 9 ? '9+' : chatCount}</span>}
             </Link>
           ))}

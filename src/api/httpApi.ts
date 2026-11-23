@@ -310,6 +310,8 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     delete: async (id) => { await send('delete', `/me/chat/groups/${seg(id)}`) },
     leave: async (id) => { await send('post', `/me/chat/groups/${seg(id)}/leave`) },
     invites: () => get('/me/chat/group-invites'),
+    sentInvites: () => get('/me/chat/group-invites/sent'),
+    revokeSent: async (id) => { await send('delete', `/me/chat/group-invites/${seg(id)}`) },
     respond: async (id, accept) => { await send('post', `/me/chat/group-invites/${seg(id)}/respond`, { accept }) },
   }
   const chatRooms: HttpGroups['chatRooms'] = {

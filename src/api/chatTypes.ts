@@ -184,6 +184,15 @@ export interface ChatConversation {
   owner?: boolean
   /** The person who started this personal chat: shown with the Leader badge, and (unlike a group's leader) free to leave it. */
   leader?: boolean
+  /** Card summary: messages in the chat and how many are yours, pins, and for your newest message how many others it went to, reached and were read by (read counts only where both sides share receipts). Absent when zero. */
+  messageCount?: number
+  mineCount?: number
+  pinCount?: number
+  lastMineTo?: number
+  lastMineDelivered?: number
+  lastMineSeen?: number
+  /** The Stanley chat only: notices still waiting for your Got it. */
+  waitingAck?: number
   /** A made group or private chat only: who started it, and their chosen avatar (absent for initials). */
   ownerName?: string
   ownerAvatar?: string
@@ -513,7 +522,7 @@ export interface ChatGroup { id: string; name: string; members: ChatGroupMember[
 /** `incoming` is for the guest; `approval` is for a child the guest is guardian of (`childId`, `childName`). `from` is the inviter's short name. */
 export interface ChatGroupInvite {
   id: string
-  kind: 'incoming' | 'approval'
+  kind: 'incoming' | 'approval' | 'outgoing'
   groupName: string
   from: string
   childId: string | null
@@ -547,6 +556,10 @@ export interface ChatGroupsApi {
   delete(id: string): Promise<void>
   leave(id: string): Promise<void>
   invites(): Promise<ChatGroupInvite[]>
+  /** The invitations you sent that nobody has answered yet (`from` is who each is for). */
+  sentInvites(): Promise<ChatGroupInvite[]>
+  /** Takes back one of them; the other person's list drops it. Rejects `conflict` once answered. */
+  revokeSent(id: string): Promise<void>
   /** A decline is quiet. Rejects `conflict` (`answered`, `expired`, `full`) or `notFound`. */
   respond(id: string, accept: boolean): Promise<void>
 }
