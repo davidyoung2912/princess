@@ -13,7 +13,7 @@ export interface Hints {
 export const EMPTY_HINTS: Hints = { tips: {}, tour: [], tourOn: true }
 
 /** The most pages and tour steps kept, and the longest id: the same limits the server checks. */
-export const HINTS_MAX_PAGES = 400, HINTS_MAX_STEPS = 120, HINTS_MAX_ID = 40
+export const HINTS_MAX_PAGES = 400, HINTS_MAX_STEPS = 200, HINTS_MAX_ID = 40
 
 const validId = (id: string): boolean => id.length > 0 && id.length <= HINTS_MAX_ID && /^[A-Za-z0-9._-]+$/.test(id)
 

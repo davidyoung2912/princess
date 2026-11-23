@@ -1,11 +1,21 @@
 import type { Rng } from './cards'
 import type { Skill } from './search'
+import { stepsOf, type Handicap } from './handicap'
 
 /** Hex on an n by n rhombus of hexagons. Red joins the top and bottom edges, Blue joins left and right; players alternate colouring an empty hex, and the first to join their sides wins (there is never a draw). */
 export type HexSizeId = 'small' | 'medium' | 'large'
 export const SIZES: Record<HexSizeId, number> = { small: 7, medium: 9, large: 11 }
 export const SIZE_IDS: readonly HexSizeId[] = ['small', 'medium', 'large']
 export interface Hex { n: number; cells: (0 | 1 | 2)[]; turn: 1 | 2; last: number | null; winner: 0 | 1 | 2; moves: number; /** The winning chain. */ chain: number[] }
+
+/** A head start for red (the player): one or two hexagons already claimed in the middle. */
+export function withHandicap(g: Hex, h: Handicap): Hex {
+  const cells = g.cells.slice()
+  const m = Math.floor(g.n / 2)
+  const spots = [m * g.n + m, (m - 1) * g.n + m].slice(0, stepsOf(h))
+  for (const i of spots) cells[i] = 1
+  return { ...g, cells, moves: g.moves + spots.length }
+}
 
 export const start = (n: number): Hex => ({ n, cells: Array(n * n).fill(0), turn: 1, last: null, winner: 0, moves: 0, chain: [] })
 

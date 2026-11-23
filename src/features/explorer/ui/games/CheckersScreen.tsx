@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { N, apply, chooseMove, countOf, legalMoves, sideOf, start, type Checkers } from '../../../games/domain/checkers'
+import { N, apply, chooseMove, countOf, legalMoves, sideOf, start, withHandicap, type Checkers } from '../../../games/domain/checkers'
+import { HANDICAPS, type Handicap } from '../../../games/domain/handicap'
 import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t } from '../../../../shared/i18n'
 import { OPENINGS, useComputerTurn, useHint, usePref, useRoving, type Opening } from './board/shared'
@@ -10,6 +11,9 @@ import { useCardGame } from './cards/useCardGame'
 export function CheckersScreen() {
   const [skill, setSkill] = usePref<Skill>('checkers', 'skill', SKILL_LIST, 'captain')
   const [opening, setOpening] = usePref<Opening>('checkers', 'opening', OPENINGS, 'you')
+  const [handicap, setHandicap] = usePref<Handicap>('checkers', 'handicap', HANDICAPS, 'none')
+  const [quickPref, setQuickPref] = usePref<'full' | 'quick'>('checkers', 'length', ['full', 'quick'], 'full')
+  const quick = quickPref === 'quick'
   const hint = useHint<Checkers, number[]>()
   const [started, setStarted] = useState(false)
   const game = useCardGame<Checkers>(start)
@@ -29,12 +33,12 @@ export function CheckersScreen() {
   }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m) game.commit(apply(g, m)) })
   const { root, props } = useRoving(N, 64, pick)
-  const reset = () => { game.restart(opening === 'you' ? start() : { ...start(), turn: 2 }); setFrom(null); hint.reset() }
+  const reset = () => { const b = withHandicap(start(), handicap, quick); game.restart(opening === 'you' ? b : { ...b, turn: 2 }); setFrom(null); hint.reset() }
   const trail = new Set(g.last)
 
   return (
     <VsShell
-      game="checkers" name="checkers" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      variant={`${handicap !== 'none' ? `+${handicap}` : ''}${quick ? '+quick' : ''}`} handicap={{ value: handicap, onChange: setHandicap }} quick={{ value: quick, onChange: (q) => setQuickPref(q ? 'quick' : 'full') }} game="checkers" name="checkers" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       status={mine ? t(forced ? 'ck.jump' : 'bd.yourTurn') : t('bd.thinking')} thinking={!mine && !over}
       result={over ? { title: t(g.winner === 1 ? 'bd.win' : g.winner === 2 ? 'bd.lose' : 'bd.draw'), body: t('ck.final', { a: countOf(g, 1), b: countOf(g, 2) }), outcome: g.winner === 1 ? 'win' : g.winner === 2 ? 'loss' : 'draw' } : null}
       meta={<span>{t('ck.count', { a: countOf(g, 1), b: countOf(g, 2) })}</span>}

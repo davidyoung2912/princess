@@ -16,7 +16,7 @@ export function TourFit({ view, busy, onAdd }: { view: ExcursionsView; busy: boo
   const [fit, setFit] = useState<FitAnswers | null>(null)
   const matches = fit ? fitTours(view.offers, fit) : []
   return (
-    <section aria-labelledby="fit-h">
+    <section aria-labelledby="fit-h" data-tour="exx-fit">
       <h2 id="fit-h">{th('exc.fit.title')}</h2>
       <p>{t('exc.fit.intro')}</p>
       <div className="filters">

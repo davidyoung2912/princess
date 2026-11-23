@@ -12,7 +12,7 @@ const kindLabels = (): Record<string, string> => Object.fromEntries(Object.entri
 
 /** The Entertainment Explorer: the show rooms, music lounges, pool decks, Princess Live! and the casino, each with what is on there next. Nothing here is booked, so there is no reservations list. */
 export function EntertainmentExplorerScreen() {
-  return <ExplorerPage kind="entertainment" basePath={BASE} kindLabels={kindLabels()} />
+  return <ExplorerPage kind="entertainment" tour="ent-shows" basePath={BASE} kindLabels={kindLabels()} />
 }
 
 /** One entertainment venue: its hours for the day and everything on there, each with a toggle that adds it to your plan. */

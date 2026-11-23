@@ -1,5 +1,6 @@
 import { search, type Skill } from './search'
 import type { Rng } from './cards'
+import { stepsOf, type Handicap } from './handicap'
 
 /**
  * Breakthrough: each side starts with two rows of pawns. A pawn steps one square straight ahead onto an empty square, or diagonally ahead onto an empty square or an enemy pawn (capturing it).
@@ -16,6 +17,13 @@ export function start(n: number): Breakthrough {
   for (let c = 0; c < n; c++) { cells[c] = 2; cells[n + c] = 2; cells[(n - 1) * n + c] = 1; cells[(n - 2) * n + c] = 1 }
   return { n, cells, turn: 1, winner: 0, last: null }
 }
+/** A head start for white (the player): the computer starts without one or two back-row pawns. */
+export function withHandicap(g: Breakthrough, h: Handicap): Breakthrough {
+  const cells = g.cells.slice()
+  for (const c of [1, g.n - 2].slice(0, stepsOf(h))) cells[c] = 0
+  return { ...g, cells }
+}
+
 export function legalMoves(g: Breakthrough): Move[] {
   if (g.winner) return []
   const { n } = g

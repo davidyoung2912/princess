@@ -7,9 +7,9 @@ import type { Skill } from './search'
 export const CATS = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes', 'fullHouse', 'fourKind', 'littleStraight', 'bigStraight', 'choice', 'yacht'] as const
 export type Cat = (typeof CATS)[number]
 export type Card = (number | null)[]
-export interface Yacht { dice: number[]; held: boolean[]; rollsLeft: number; rolled: boolean; cards: [Card, Card]; turn: 0 | 1 }
+export interface Yacht { /** How many turns each side takes (twelve, or six in a quick game). */ rounds: number; dice: number[]; held: boolean[]; rollsLeft: number; rolled: boolean; cards: [Card, Card]; turn: 0 | 1 }
 
-export const start = (): Yacht => ({ dice: [1, 1, 1, 1, 1], held: Array(5).fill(false), rollsLeft: 3, rolled: false, cards: [Array(12).fill(null), Array(12).fill(null)], turn: 0 })
+export const start = (rounds = 12): Yacht => ({ rounds, dice: [1, 1, 1, 1, 1], held: Array(5).fill(false), rollsLeft: 3, rolled: false, cards: [Array(12).fill(null), Array(12).fill(null)], turn: 0 })
 
 const counts = (d: readonly number[]): number[] => { const c = Array(7).fill(0); for (const x of d) c[x]++; return c }
 const sum = (d: readonly number[]) => d.reduce((a, b) => a + b, 0)
@@ -30,7 +30,7 @@ export function scoreOf(cat: Cat, d: readonly number[]): number {
   }
 }
 export const total = (card: Card): number => card.reduce<number>((a, b) => a + (b ?? 0), 0)
-export const isOver = (g: Yacht): boolean => g.cards.every((c) => c.every((x) => x !== null))
+export const isOver = (g: Yacht): boolean => g.cards.every((c) => c.filter((x) => x !== null).length >= g.rounds)
 export const open = (card: Card): Cat[] => CATS.filter((_, i) => card[i] === null)
 export const winner = (g: Yacht): 0 | 1 | 2 => { const a = total(g.cards[0]), b = total(g.cards[1]); return a === b ? 0 : a > b ? 1 : 2 }
 

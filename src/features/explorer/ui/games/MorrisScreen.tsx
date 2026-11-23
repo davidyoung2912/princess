@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { XY, POINTS, apply, canFly, chooseMove, destinations, legalMoves, onBoard, start, total, type Morris } from '../../../games/domain/morris'
+import { XY, POINTS, startQuick, apply, canFly, chooseMove, destinations, legalMoves, onBoard, start, total, type Morris } from '../../../games/domain/morris'
 import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t } from '../../../../shared/i18n'
 import { OPENINGS, useComputerTurn, useHint, usePref, useRoving, type Opening } from './board/shared'
@@ -10,6 +10,8 @@ import { useCardGame } from './cards/useCardGame'
 export function MorrisScreen() {
   const [skill, setSkill] = usePref<Skill>('morris', 'skill', SKILL_LIST, 'captain')
   const [opening, setOpening] = usePref<Opening>('morris', 'opening', OPENINGS, 'you')
+  const [quickPref, setQuickPref] = usePref<'full' | 'quick'>('morris', 'length', ['full', 'quick'], 'full')
+  const quick = quickPref === 'quick'
   const hint = useHint<Morris, number[]>()
   const [started, setStarted] = useState(false)
   const game = useCardGame<Morris>(start)
@@ -32,13 +34,13 @@ export function MorrisScreen() {
   }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m) game.commit(apply(g, m)) })
   const { root, props } = useRoving(7, 49, (i) => { const p = XY.findIndex(([x, y]) => y * 7 + x === i); if (p >= 0) pick(p) })
-  const reset = () => { game.restart(opening === 'you' ? start() : { ...start(), turn: 2 }); setFrom(null); hint.reset() }
+  const reset = () => { const b = quick ? startQuick() : start(); game.restart(opening === 'you' ? b : { ...b, turn: 2 }); setFrom(null); hint.reset() }
   const status = g.removing && mine ? t('mr.remove') : !mine ? t('bd.thinking') : g.toPlace[0] > 0 ? t('mr.place', { n: g.toPlace[0] }) : canFly(g, 1) ? t('mr.fly') : t('mr.slide')
   const removable = new Set(g.removing && mine ? moves.flatMap((m) => (m.kind === 'remove' ? [m.at] : [])) : [])
 
   return (
     <VsShell
-      game="morris" name="morris" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      variant={quick ? '+quick' : ''} quick={{ value: quick, onChange: (q) => setQuickPref(q ? 'quick' : 'full') }} game="morris" name="morris" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       status={status} thinking={!mine && !over}
       result={over ? { title: t(g.winner === 1 ? 'bd.win' : 'bd.lose'), body: t('mr.final', { a: total(g, 1), b: total(g, 2) }), outcome: g.winner === 1 ? 'win' : 'loss' } : null}
       meta={<span>{t('mr.men', { a: total(g, 1), b: total(g, 2) })}</span>}

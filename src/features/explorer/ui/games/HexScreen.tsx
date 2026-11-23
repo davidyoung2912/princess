@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SIZES, SIZE_IDS, chooseMove, place, start, type Hex, type HexSizeId } from '../../../games/domain/hex'
+import { SIZES, SIZE_IDS, chooseMove, place, start, withHandicap, type Hex, type HexSizeId } from '../../../games/domain/hex'
+import { HANDICAPS, type Handicap } from '../../../games/domain/handicap'
 import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t, type StringKey } from '../../../../shared/i18n'
 import { LevelBar } from './parts'
@@ -15,6 +16,7 @@ export function HexScreen() {
   const [skill, setSkill] = usePref<Skill>('hex', 'skill', SKILL_LIST, 'captain')
   const [size, setSize] = usePref<HexSizeId>('hex', 'size', SIZE_IDS, 'small')
   const [opening, setOpening] = usePref<Opening>('hex', 'opening', OPENINGS, 'you')
+  const [handicap, setHandicap] = usePref<Handicap>('hex', 'handicap', HANDICAPS, 'none')
   const hint = useHint<Hex, number>()
   const n = SIZES[size]
   const [started, setStarted] = useState(false)
@@ -25,7 +27,7 @@ export function HexScreen() {
   const pick = (i: number) => { if (!mine) return; const next = place(g, i); if (next) game.commit(next) }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m !== null) { const next = place(g, m); if (next) game.commit(next) } })
   const { root, props } = useRoving(g.n, g.n * g.n, pick)
-  const reset = () => { game.restart(opening === 'you' ? start(n) : { ...start(n), turn: 2 }); hint.reset() }
+  const reset = () => { const b0 = withHandicap(start(n), handicap); const b = handicap === 'none' ? b0 : { ...b0, turn: 2 as const }; game.restart(opening === 'you' ? b : { ...b, turn: 2 }); hint.reset() }
 
   // Pointy-topped hexagons of radius 1; each row shifts half a hexagon right.
   const cx = (i: number) => SQ3 * ((i % g.n) + Math.floor(i / g.n) / 2) + SQ3 / 2 + 0.6
@@ -36,7 +38,7 @@ export function HexScreen() {
 
   return (
     <VsShell
-      game="hex" name="hex" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      variant={handicap !== 'none' ? `+${handicap}` : ''} handicap={{ value: handicap, onChange: setHandicap }} game="hex" name="hex" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       options={<LevelBar name="hex-size" legend={t('hx.size.label')} levels={SIZE_IDS.map((s) => ({ id: s, label: `${t(NAMES[s])} ${SIZES[s]}×${SIZES[s]}` }))} level={size} onLevel={setSize} />}
       status={t(mine ? 'bd.yourTurn' : 'bd.thinking')} thinking={!mine && !over}
       result={over ? { title: t(g.winner === 1 ? 'bd.win' : 'bd.lose'), body: t('hx.final', { n: g.moves }), outcome: g.winner === 1 ? 'win' : 'loss' } : null}

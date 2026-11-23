@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SIZES, SIZE_IDS, apply, chooseMove, countOf, legalMoves, start, type Breakthrough, type BreakSizeId } from '../../../games/domain/breakthrough'
+import { SIZES, SIZE_IDS, apply, chooseMove, countOf, legalMoves, start, withHandicap, type Breakthrough, type BreakSizeId } from '../../../games/domain/breakthrough'
+import { HANDICAPS, type Handicap } from '../../../games/domain/handicap'
 import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t, type StringKey } from '../../../../shared/i18n'
 import { LevelBar } from './parts'
@@ -19,6 +20,7 @@ export function BreakthroughScreen() {
   const g = game.state
   const n = g.n
   const [from, setFrom] = useState<number | null>(null)
+  const [handicap, setHandicap] = usePref<Handicap>('breakthrough', 'handicap', HANDICAPS, 'none')
   const hint = useHint<Breakthrough, number[]>()
   const over = g.winner !== 0
   const mine = !over && g.turn === 1
@@ -33,12 +35,12 @@ export function BreakthroughScreen() {
   }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m) game.commit(apply(g, m)) })
   const { root, props } = useRoving(n, n * n, pick)
-  const reset = () => { game.restart(opening === 'you' ? start(SIZES[size]) : { ...start(SIZES[size]), turn: 2 }); setFrom(null); hint.reset() }
+  const reset = () => { const b = withHandicap(start(SIZES[size]), handicap); game.restart(opening === 'you' ? b : { ...b, turn: 2 }); setFrom(null); hint.reset() }
   const h = hint.of(g)
 
   return (
     <VsShell
-      game="breakthrough" name="breakthrough" skill={skill} onSkill={setSkill} opening={opening} onOpening={setOpening} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      variant={handicap !== 'none' ? `+${handicap}` : ''} handicap={{ value: handicap, onChange: setHandicap }} game="breakthrough" name="breakthrough" skill={skill} onSkill={setSkill} opening={opening} onOpening={setOpening} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       options={<LevelBar name="breakthrough-size" legend={t('bt.size.label')} levels={SIZE_IDS.map((s) => ({ id: s, label: `${t(NAMES[s])} ${SIZES[s]}×${SIZES[s]}` }))} level={size} onLevel={setSize} />}
       status={t(mine ? 'bd.yourTurn' : 'bd.thinking')} thinking={!mine && !over}
       result={over ? { title: t(g.winner === 1 ? 'bd.win' : 'bd.lose'), body: t('bt.final', { a: countOf(g, 1), b: countOf(g, 2) }), outcome: g.winner === 1 ? 'win' : 'loss' } : null}

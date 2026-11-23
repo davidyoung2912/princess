@@ -51,7 +51,7 @@ export function ShipExplorerScreen() {
             {ship.facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
           </dl>
           {highlights.length > 0 && (
-            <section id="sx-hl" tabIndex={-1} aria-labelledby="sx-hl-h">
+            <section id="sx-hl" tabIndex={-1} aria-labelledby="sx-hl-h" data-tour="sx-hl">
               <h2 id="sx-hl-h"><PillIcon heading label={th('discover.onboard')} />{th('discover.onboard')}</h2>
               <ul className="card-grid">
                 {highlights.map((h) => <li key={h.title} className="card"><h3>{h.title}</h3><p>{h.body}</p></li>)}
@@ -83,7 +83,7 @@ export function ShipExplorerScreen() {
           )}
           {isSun && (
             <div id="sx-acc" tabIndex={-1}>
-            <Card info labelledBy="sx-acc-h">
+            <Card info labelledBy="sx-acc-h" tour="sx-acc">
               <h2 id="sx-acc-h"><PillIcon heading label={th('discover.accessibility')} />{th('discover.accessibility')}</h2>
               <ul>{SHIP_ACCESSIBILITY.map((x) => <li key={x}>{x}</li>)}</ul>
             </Card>

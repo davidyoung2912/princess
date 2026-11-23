@@ -1,5 +1,6 @@
 import { search, type Skill } from './search'
 import type { Rng } from './cards'
+import { stepsOf, type Handicap } from './handicap'
 
 /**
  * English draughts (checkers) on an 8 by 8 board, twelve men each, played on the dark squares. Men move one square diagonally forward; kings go both ways. A jump over an enemy piece
@@ -17,6 +18,17 @@ export function start(): Checkers {
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if ((r + c) % 2 === 1) board[r * N + c] = r < 3 ? 2 : r > 4 ? 1 : 0
   return { board, turn: 1, winner: 0, last: [], quiet: 0 }
 }
+/** A head start for red (the player): the computer starts without one or two of its men. A quick game drops both back rows, leaving eight men each. */
+export function withHandicap(g: Checkers, h: Handicap, quick = false): Checkers {
+  const board = g.board.slice()
+  if (quick) for (let c = 0; c < N; c++) { board[c] = 0; board[(N - 1) * N + c] = 0 }
+  // The computer's men that go, from the middle of its front row (row 2 on a full board, row 1 in a quick game).
+  const row = quick ? 1 : 2
+  const spots = [row * N + (row % 2 === 0 ? 3 : 2), row * N + (row % 2 === 0 ? 5 : 4)]
+  for (const i of spots.slice(0, stepsOf(h))) board[i] = 0
+  return { ...g, board }
+}
+
 export const sideOf = (p: Piece): 0 | 1 | 2 => (p === 1 || p === 3 ? 1 : p === 2 || p === 4 ? 2 : 0)
 const isKing = (p: Piece) => p === 3 || p === 4
 const dirsOf = (p: Piece): number[] => (isKing(p) ? [-1, 1] : p === 1 ? [-1] : [1])

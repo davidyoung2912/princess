@@ -8,6 +8,9 @@ import { MoreLinks } from '../Parts'
 import { CardCredits, CardTable, Single, Stack, type StackCard } from './cards/CardParts'
 import { cardName } from './cards/cardArt'
 import { useCardGame } from './cards/useCardGame'
+import { DealBar } from './cards/DealBar'
+import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
+import { seededRng } from '../../../games/domain/cards'
 import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
 import { useGameClock } from './gameHooks'
 
@@ -18,7 +21,8 @@ interface Shown { text: string; from?: Sel; to?: number; deal?: boolean }
 /** Spider: build down in any suit, but only a run of one suit moves together; a complete King to Ace run of one suit leaves the table. Nothing is stored. */
 export function SpiderScreen() {
   const [level, setLevel] = useState<SpiderLevel>('one')
-  const game = useCardGame<Spider>(() => deal('one'))
+  const [dealNo, setDealNo] = useState(randomDealNumber)
+  const game = useCardGame<Spider>(() => deal('one', seededRng(dealNo)))
   const g = game.state
   const [sel, setSel] = useState<Sel | null>(null)
   const [hint, setHint] = useState<Shown | null>(null)
@@ -27,7 +31,7 @@ export function SpiderScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won)
 
   const act = (next: Spider) => { game.commit(next); setSel(null); setHint(null); setNote('') }
-  const newDeal = (lv = level) => { game.restart(deal(lv)); setSel(null); setHint(null); setNote(''); resetClock() }
+  const newDeal = (lv = level, no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); resetClock() }
 
   const tryMove = (from: Sel, to: number): boolean => {
     if (!canMove(g, from.col, from.index, to)) return false
@@ -81,6 +85,7 @@ export function SpiderScreen() {
         <LevelBar name="spider-level" legend={t('sudoku.level.label')} levels={SPIDER_LEVELS.map((l) => ({ id: l, label: t(LEVEL_KEYS[l]) }))} level={level} onLevel={(l) => { setLevel(l); newDeal(l) }}>
           <Button variant="secondary" onClick={() => newDeal()}>{t('sp.new')}</Button>
         </LevelBar>
+        <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n)} />
 
         <CardTable cols={10} fresh={game.moves === 0}>
           <p className="pc-hud">

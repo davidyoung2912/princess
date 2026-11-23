@@ -8,6 +8,9 @@ import { Lightbulb, Undo } from '../../../../shared/ui/icons'
 import { MoreLinks } from '../Parts'
 import { CardCredits, CardTable, CardView } from './cards/CardParts'
 import { CARD_RATIO, cardName } from './cards/cardArt'
+import { DealBar } from './cards/DealBar'
+import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
+import { seededRng } from '../../../games/domain/cards'
 import { useCardGame } from './cards/useCardGame'
 import { usePanZoom } from './cards/usePanZoom'
 import { GameClock, GameHelp, HintBox, SolvedCard } from './parts'
@@ -29,7 +32,8 @@ interface Shown { text: string; gap: number; from: number }
  * Three rounds, then the locked cards add up to your score. The board is bigger than a phone, so it pans and pinch-zooms. Nothing is stored.
  */
 export function GapsScreen() {
-  const game = useCardGame<Gaps>(() => newGame())
+  const [dealNo, setDealNo] = useState(randomDealNumber)
+  const game = useCardGame<Gaps>(() => newGame(seededRng(dealNo)))
   const g = game.state
   const [picking, setPicking] = useState<number | null>(null)
   const [held, setHeld] = useState<number | null>(null)
@@ -55,8 +59,8 @@ export function GapsScreen() {
     clear()
     reveal(from) // the gap moves to where the card was
   }
-  const newDeal = () => { game.restart(newGame()); clear(); resetClock() }
-  const shuffle = () => { game.restart(nextRound(g)); clear() }
+  const newDeal = (no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(newGame(seededRng(n))); clear(); resetClock() }
+  const shuffle = () => { game.restart(nextRound(g, seededRng(dealNo * 7 + g.round))); clear() }
 
   const tapGap = (i: number) => {
     if (pz.dragged() || over || between) return
@@ -106,8 +110,9 @@ export function GapsScreen() {
       <div className="cg">
         <div className="game-bar">
           <p className="gp-round" role="status">{t('gp.round', { n: g.round, of: MAX_ROUNDS })}</p>
-          <Button variant="secondary" onClick={newDeal}>{t('gp.new')}</Button>
+          <Button variant="secondary" onClick={() => newDeal()}>{t('gp.new')}</Button>
         </div>
+        <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0 || g.round > 1} onGo={newDeal} />
 
         <CardTable cols={13}>
           <p className="pc-hud">
@@ -174,7 +179,7 @@ export function GapsScreen() {
         {over && (
           <SolvedCard title={won ? t('gp.won') : t('gp.over')}>
             <p>{won ? t('gp.wonBody', { score: points, time: clock(seconds), round: g.round }) : t('gp.overBody', { score: points, max: MAX_SCORE, locked: lockedN })}</p>
-            <div className="button-row"><Button onClick={newDeal}>{t('gp.new')}</Button></div>
+            <div className="button-row"><Button onClick={() => newDeal()}>{t('gp.new')}</Button></div>
           </SolvedCard>
         )}
 

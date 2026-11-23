@@ -33,6 +33,8 @@ export interface Morris {
   last: number | null
   winner: 0 | 1 | 2
 }
+/** A quick game gives each side six men to place instead of nine. */
+export const startQuick = (): Morris => ({ ...start(), toPlace: [6, 6] })
 export const start = (): Morris => ({ board: Array<Man>(POINTS).fill(0), turn: 1, toPlace: [9, 9], removing: false, last: null, winner: 0 })
 
 export type Move = { kind: 'place'; to: number } | { kind: 'move'; from: number; to: number } | { kind: 'remove'; at: number }

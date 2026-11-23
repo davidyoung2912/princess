@@ -28,7 +28,7 @@ export function SpaExplorerScreen() {
   if (params.get('book')) return <BookPage />
   return (
     <ExplorerPage
-      kind="spa" basePath={BASE} kindLabels={kindLabels()}
+      kind="spa" tour="spa-list" basePath={BASE} kindLabels={kindLabels()}
       above={({ data, state }) => (
         <Saved copy={view}>
           {(v) => (
@@ -47,7 +47,7 @@ export function SpaExplorerScreen() {
 /** Whether the guest can book a treatment, the cancellation rule and the party limit. */
 function SpaBooking({ view }: { view: SpaView }) {
   const { stage } = useExplorerStage()
-  return <BookingCard model={spaBookingCard(view, stage)} labelledBy="spa-book-h" />
+  return <BookingCard model={spaBookingCard(view, stage)} labelledBy="spa-book-h" tour="spa-book" />
 }
 
 /** One spa venue: its hours, its treatments, what is on there and your appointments. */

@@ -794,3 +794,21 @@
 .bd-ycell--hint { border-style: solid; box-shadow: 0 0 0 2px #f2b632; }
 .bd-ycell:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .bd-ydie, .bd-stick, .bd-tilebox { transition: none; } }
+
+/* numbered deals */
+.cg-deal { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); justify-content: center; }
+.cg-deal__no { font-weight: 700; }
+.cg-deal__go { display: flex; gap: var(--space-2); align-items: center; }
+.cg-deal__input { width: 7.5em; min-height: var(--target-min); padding: 0 var(--space-2); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-button); background: var(--bg); color: inherit; font: inherit; }
+
+/* games explorer sections */
+.gx-nav { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0; }
+.gx-chip--nav { display: inline-flex; align-items: center; gap: var(--space-2); }
+.gx-chip__n { display: inline-grid; place-items: center; min-width: 1.5em; padding: 0 0.4em; border-radius: 999px; background: var(--border); font-size: var(--fs-caption); font-weight: 700; }
+.gx-group { scroll-margin-top: var(--space-4); }
+.gx-group__head { margin-bottom: var(--space-3); }
+.gx-group__head::after { content: ''; display: block; width: 6rem; height: 4px; margin-top: var(--space-2); border-radius: 2px; background: linear-gradient(90deg, var(--pink), var(--gold)); }
+.gx-group__h { margin: 0; color: var(--sec); outline: none; }
+.gx-group__icon { width: 1.3em; height: 1.3em; margin-inline-end: 0.4em; vertical-align: -0.2em; color: var(--sec); }
+.gx-group__body { margin: var(--space-1) 0 0; color: var(--text-muted); }
+.gx-group__h:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; border-radius: 4px; }

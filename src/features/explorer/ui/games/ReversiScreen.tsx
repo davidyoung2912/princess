@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { N, chooseMove, counts, flipsFor, isOver, legalMoves, play, start, winner, type Reversi } from '../../../games/domain/reversi'
+import { N, chooseMove, withHandicap, counts, flipsFor, isOver, legalMoves, play, start, winner, type Reversi } from '../../../games/domain/reversi'
+import { HANDICAPS, type Handicap } from '../../../games/domain/handicap'
 import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t } from '../../../../shared/i18n'
 import { OPENINGS, useComputerTurn, useHint, usePref, useRoving, type Opening } from './board/shared'
@@ -10,6 +11,7 @@ import { useCardGame } from './cards/useCardGame'
 export function ReversiScreen() {
   const [skill, setSkill] = usePref<Skill>('reversi', 'skill', SKILL_LIST, 'captain')
   const [opening, setOpening] = usePref<Opening>('reversi', 'opening', OPENINGS, 'you')
+  const [handicap, setHandicap] = usePref<Handicap>('reversi', 'handicap', HANDICAPS, 'none')
   const hint = useHint<Reversi, number>()
   const [started, setStarted] = useState(false)
   const game = useCardGame<Reversi>(start)
@@ -24,12 +26,12 @@ export function ReversiScreen() {
   const pick = (i: number) => { if (mine && legal.includes(i)) apply(i) }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m !== null) apply(m) })
   const { root, props } = useRoving(N, 64, pick)
-  const reset = () => { game.restart(opening === 'you' ? start() : { ...start(), turn: 2 }); setFlipped([]); hint.reset() }
+  const reset = () => { const b = withHandicap(start(), handicap); game.restart(opening === 'you' ? b : { ...b, turn: 2 }); setFlipped([]); hint.reset() }
   const w = winner(g)
 
   return (
     <VsShell
-      game="reversi" name="reversi" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      variant={handicap !== 'none' ? `+${handicap}` : ''} handicap={{ value: handicap, onChange: setHandicap }} game="reversi" name="reversi" opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       status={g.passed ? t(g.passed === 1 ? 'rv.pass.you' : 'rv.pass.cpu') : t(mine ? 'bd.yourTurn' : 'bd.thinking')} thinking={!mine && !over}
       result={over ? { title: t(w === 1 ? 'bd.win' : w === 2 ? 'bd.lose' : 'bd.draw'), body: t('rv.final', { a: c.black, b: c.white }), outcome: w === 1 ? 'win' : w === 2 ? 'loss' : 'draw' } : null}
       meta={<><span>{t('rv.black', { n: c.black })}</span><span>{t('rv.white', { n: c.white })}</span></>}

@@ -77,7 +77,7 @@ export function SpaReservations({ venues, day, venueId, view, scope = 'day' }: P
   if (!venueId) {
     const mine = all.filter((a) => a.day === day)
     return (
-      <section aria-labelledby="exp-res-h">
+      <section aria-labelledby="exp-res-h" data-tour="spa-res">
         <h2 id="exp-res-h">{headingCase(t('spa.mine'))}</h2>
         <p>{mine.length > 0 ? t('spa.summary', { count: mine.length, list: mine.map((a) => `${line(a)} (${title(a.venueId)})`).join(' · ') }) : t('spa.none')}</p>
         <div className="button-row">

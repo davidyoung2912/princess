@@ -82,7 +82,7 @@ export function SpaEditor({ view, venues, venueId: fixedVenue, treatmentId: star
           </select>
         </div>
         <GuestPicker legend={t('spa.who')} party={view.party} value={guests} onChange={setGuests} hint={t('spa.whoHint', { max: view.maxParty })} />
-        <fieldset className="slot-card">
+        <fieldset className="slot-card" data-tour="book-time">
           <legend>{t('spa.time')}</legend>
           {slots.data ? (slots.data.length === 0 ? <p className="muted">{t('spa.noTimes')}</p> : (
             <ul className="slot-grid">

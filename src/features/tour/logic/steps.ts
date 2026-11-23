@@ -1,7 +1,16 @@
 import type { Side } from './placement'
 
+/**
+ * The guides the tour is divided into: the screen's frame, Home, the Stage overview, the pages every Explorer shares, each Explorer, a venue's page, the booking
+ * pages, the game screen and, last, the one-off cards for the other pages (which are not a guide: they are not counted, and are skipped together).
+ */
+export const GUIDE_IDS = ['app', 'home', 'stage', 'explorer', 'ship', 'dining', 'entertainment', 'activities', 'exercise', 'shopping', 'spa', 'excursions', 'games', 'venue', 'booking', 'gameshell', 'pages'] as const
+export type GuideId = (typeof GUIDE_IDS)[number]
+
 /** One stop on the first-visit tour: a part of the screen (found by its `data-tour` mark), what it is called and what to say about it. */
 export interface TourStep {
+  /** Which guide the step belongs to. A guide is the set of cards for one page or Explorer: it is counted ("2/4") and skipped on its own. */
+  guide: GuideId
   /** Stable id, saved on the device once the guest has said Got It!. */
   id: string
   /** The `data-tour` value of the part of the screen to point at. */
@@ -16,11 +25,8 @@ export interface TourStep {
   page?: boolean
 }
 
-/**
- * The tour, in the order it is told. Each step's words are `tour.<id>.title` and `tour.<id>.body`. A step whose part of the screen is not
- * showing at this size or on this page is passed over (and shown later if it turns up, such as the tip card on a page that has one).
- */
-export const TOUR_STEPS: readonly TourStep[] = [
+/** Every step, in the order it is told, before it is given its guide (see `TOUR_STEPS`). */
+const RAW_STEPS: readonly Omit<TourStep, 'guide'>[] = [
   { id: 'date', target: 'date', side: 'bottom', icon: 'date' },
   { id: 'chat', target: 'chat', side: 'bottom', icon: 'chat' },
   { id: 'today', target: 'today', side: 'bottom', icon: 'today' },
@@ -36,6 +42,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'help', target: 'help', side: 'right', icon: 'help' },
   { id: 'menu', target: 'menu', side: 'bottom', icon: 'menu' },
   // The steps below are about the content of one page each. They wait until the guest reaches that page, and run top to bottom there.
+  { id: 'homeLanding', target: 'home-landing', side: 'bottom', icon: 'today', page: true },
   { id: 'homeNext', target: 'home-next', side: 'bottom', icon: 'today', page: true },
   { id: 'homeShortcuts', target: 'home-shortcuts', side: 'bottom', icon: 'pin', page: true },
   { id: 'homeTiles', target: 'home-tiles', side: 'top', icon: 'nav', page: true },
@@ -142,10 +149,51 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'photoSched', target: 'sched-h', side: 'bottom', icon: 'pin', page: true },
   { id: 'gamesDaily', target: 'daily-h', side: 'bottom', icon: 'list', page: true },
   { id: 'pkgIncluded', target: 'incl-h', side: 'bottom', icon: 'cart', page: true },
+  // The Stage overview, a venue's page, the booking pages and the game screen each have a guide of their own.
+  { id: 'stageMap', target: 'welcome-map', side: 'bottom', icon: 'itinerary', page: true },
+  { id: 'stageNeed', target: 'welcome-need', side: 'top', icon: 'list', page: true },
+  { id: 'stageSteps', target: 'welcome-steps', side: 'top', icon: 'clock', page: true },
+  { id: 'venueHours', target: 'venue-hours', side: 'bottom', icon: 'clock', page: true },
+  { id: 'venueMenu', target: 'venue-menu', side: 'top', icon: 'food', page: true },
+  { id: 'venueEvents', target: 'venue-events', side: 'top', icon: 'today', page: true },
+  { id: 'bookParty', target: 'book-party', side: 'bottom', icon: 'people', page: true },
+  { id: 'bookTime', target: 'book-time', side: 'bottom', icon: 'clock', page: true },
+  { id: 'vsSkill', target: 'vs-skill', side: 'bottom', icon: 'list', page: true },
+  { id: 'vsHandicap', target: 'vs-handicap', side: 'bottom', icon: 'list', page: true },
+  { id: 'vsTurn', target: 'vs-turn', side: 'bottom', icon: 'today', page: true },
+  { id: 'vsTools', target: 'vs-tools', side: 'top', icon: 'help', page: true },
+  { id: 'vsHelp', target: 'game-help', side: 'top', icon: 'help', page: true },
+  { id: 'dealBar', target: 'cg-deal', side: 'bottom', icon: 'list', page: true },
+  // One or two cards for each Explorer, which wait until the guest opens it.
+  { id: 'shipHighlights', target: 'sx-hl', side: 'bottom', icon: 'ship', page: true },
+  { id: 'shipAccess', target: 'sx-acc', side: 'top', icon: 'help', page: true },
+  { id: 'diningBook', target: 'dine-book', side: 'bottom', icon: 'food', page: true },
+  { id: 'diningRes', target: 'dine-res', side: 'bottom', icon: 'clock', page: true },
+  { id: 'diningDiet', target: 'dine-diet', side: 'bottom', icon: 'food', page: true },
+  { id: 'diningList', target: 'dine-list', side: 'top', icon: 'food', page: true },
+  { id: 'entShows', target: 'ent-shows', side: 'top', icon: 'explorers', page: true },
+  { id: 'actPlaces', target: 'act-places', side: 'top', icon: 'explorers', page: true },
+  { id: 'exClasses', target: 'ex-classes', side: 'top', icon: 'explorers', page: true },
+  { id: 'shopList', target: 'shop-list', side: 'top', icon: 'cart', page: true },
+  { id: 'spaBook', target: 'spa-book', side: 'bottom', icon: 'clock', page: true },
+  { id: 'spaRes', target: 'spa-res', side: 'bottom', icon: 'clock', page: true },
+  { id: 'spaList', target: 'spa-list', side: 'top', icon: 'explorers', page: true },
+  { id: 'exxBook', target: 'exx-book', side: 'bottom', icon: 'ship', page: true },
+  { id: 'exxFit', target: 'exx-fit', side: 'bottom', icon: 'anchor', page: true },
+  { id: 'exxList', target: 'exx-list', side: 'top', icon: 'pin', page: true },
+  { id: 'gxFilters', target: 'gx-filters', side: 'bottom', icon: 'search', page: true },
+  { id: 'gxNav', target: 'gx-nav', side: 'bottom', icon: 'list', page: true },
+  { id: 'gxMulti', target: 'gx-multi', side: 'top', icon: 'people', page: true },
 ]
 
-/** The steps about the screen's frame, which are counted ("3/14") and can be finished in one go; the page steps are not. */
-export const GENERAL_STEPS: readonly TourStep[] = TOUR_STEPS.filter((s) => !s.page)
+/** The guide each page step belongs to; a page step not listed here is one of the one-off cards for the other pages. */
+const GUIDE_OF: Readonly<Record<string, GuideId>> = { homeLanding: 'home', homeNext: 'home', homeShortcuts: 'home', homeTiles: 'home', stageMap: 'stage', stageNeed: 'stage', stageSteps: 'stage', expClock: 'explorer', expList: 'explorer', expPin: 'explorer', shipJump: 'ship', shipHighlights: 'ship', shipAccess: 'ship', diningBook: 'dining', diningRes: 'dining', diningDiet: 'dining', diningList: 'dining', entShows: 'entertainment', actPlaces: 'activities', exClasses: 'exercise', shopList: 'shopping', spaBook: 'spa', spaRes: 'spa', spaList: 'spa', exxBook: 'excursions', exxFit: 'excursions', exxList: 'excursions', gxFilters: 'games', gxNav: 'games', gxMulti: 'games', venueHours: 'venue', venueMenu: 'venue', venueEvents: 'venue', bookParty: 'booking', bookTime: 'booking', vsSkill: 'gameshell', vsHandicap: 'gameshell', vsTurn: 'gameshell', vsTools: 'gameshell', vsHelp: 'gameshell', dealBar: 'gameshell' }
+
+/** The tour, in the order it is told. Each step's words are `tour.<id>.title` and `tour.<id>.body`. A step whose part of the screen is not showing at this size or on this page is passed over (and shown later if it turns up, such as the tip card on a page that has one). */
+export const TOUR_STEPS: readonly TourStep[] = RAW_STEPS.map((x) => ({ ...x, guide: x.page ? (GUIDE_OF[x.id] ?? 'pages') : 'app' }))
+
+/** The steps of one guide, in the order they are told. */
+export const stepsOfGuide = (guide: GuideId): readonly TourStep[] => TOUR_STEPS.filter((x) => x.guide === guide)
 
 /** The first step not yet seen whose target can be shown now (`visible` says so), or null when there is none. */
 export function nextStep(seen: readonly string[], visible: (target: string) => boolean): TourStep | null {

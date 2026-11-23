@@ -79,7 +79,7 @@ export function ReservationEditor({ view, venues, venueId: fixedVenue, day: star
           </select>
         </div>
         {!moving && <GuestPicker legend={t('dine.party')} party={view.party} value={guests} onChange={setGuests} hint={t('dine.partyHint', { max: MAX_PARTY })} />}
-        <fieldset className="slot-card">
+        <fieldset className="slot-card" data-tour="book-time">
           <legend>{t('dine.time')}</legend>
           {slots.data ? (
             <ul className="slot-grid">

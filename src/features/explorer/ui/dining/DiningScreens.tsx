@@ -38,7 +38,7 @@ export function DiningExplorerScreen() {
   if (params.get('reserve')) return <ReservePage />
   return (
     <ExplorerPage
-      kind="dining" basePath={BASE} kindLabels={kindLabels()}
+      kind="dining" tour="dine-list" basePath={BASE} kindLabels={kindLabels()}
       above={({ data, state }) => (
         <Saved copy={view}>
           {(v) => (
@@ -57,7 +57,7 @@ export function DiningExplorerScreen() {
 /** Whether the guest can reserve, and why not when they cannot (window, plan, seating, meals left). */
 function DiningBooking({ view }: { view: DiningView }) {
   const { stage } = useExplorerStage()
-  return <BookingCard model={diningBookingCard(view, stage)} labelledBy="dine-book-h" />
+  return <BookingCard model={diningBookingCard(view, stage)} labelledBy="dine-book-h" tour="dine-book" />
 }
 
 /** One place to eat or drink: its menu for the day, its events and your reservations there. */

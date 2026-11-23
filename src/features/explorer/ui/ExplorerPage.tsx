@@ -36,10 +36,12 @@ interface ExplorerPageProps {
   kindLabels: Record<string, string>
   /** What goes between the date controls and the venue list: the guest's reservations, for the Explorers that take them. */
   above?: (c: ExplorerContext) => ReactNode
+  /** The `data-tour` mark of this Explorer's own guide card, put on its list of places. */
+  tour?: string
 }
 
 /** The page every Explorer shares: header card, ship clock, date controls, anything the Explorer puts above the list, filters, and the venue cards with pinned venues first. */
-export function ExplorerPage({ kind, basePath, kindLabels, above }: ExplorerPageProps) {
+export function ExplorerPage({ kind, basePath, kindLabels, above, tour }: ExplorerPageProps) {
   const state = useExplorerDay()
   const copy = useExplorerData(kind, state.day)
   return (
@@ -53,7 +55,7 @@ export function ExplorerPage({ kind, basePath, kindLabels, above }: ExplorerPage
             <HappeningNow data={data} currentDay={state.currentDay} now={state.nowAt} basePath={basePath} />
             <WhatChanged data={data} now={state.nowAt} basePath={basePath} />
             {above?.({ data, state, reload: copy.retry })}
-            <VenueList data={data} state={state} basePath={basePath} kindLabels={kindLabels} onChanged={copy.retry} />
+            <div data-tour={tour}><VenueList data={data} state={state} basePath={basePath} kindLabels={kindLabels} onChanged={copy.retry} /></div>
           </>
         )}
       </Saved>

@@ -116,7 +116,7 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
         <p className="muted">{v.deckLabel}</p>
         <ShipDayInfo state={state} />
         {(venue.hours.windows.length > 0 || staffedText(venue.hours)) && (
-          <div className="venue-hours">
+          <div className="venue-hours" data-tour="venue-hours">
             {venue.hours.windows.length > 0 && <p><TimeOfDayIcon time={venue.hours.windows[0][0]} /> <span>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</span></p>}
             {staffedText(venue.hours) && <p className="muted">{t('exp.venue.staffed', { hours: staffedText(venue.hours) })}</p>}
             <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
@@ -139,7 +139,7 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
           )}
         </section>
       )}
-      <section aria-labelledby="exp-ev-h">
+      <section aria-labelledby="exp-ev-h" data-tour="venue-events">
         <h2 id="exp-ev-h">{headingCase(t('exp.venue.events'))}</h2>
         <p role="status" className="visually-hidden">{plan.announcement}</p>
         {plan.failed && <p role="alert" className="field__error">{t('exp.plan.failed')}</p>}

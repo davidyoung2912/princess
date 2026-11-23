@@ -10,6 +10,9 @@ import { CardCredits, CardTable, CardView, Single } from './cards/CardParts'
 import { cardName } from './cards/cardArt'
 import { CARD_RATIO } from './cards/cardArt'
 import { useCardGame } from './cards/useCardGame'
+import { DealBar } from './cards/DealBar'
+import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
+import { seededRng } from '../../../games/domain/cards'
 import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
 import { useGameClock } from './gameHooks'
 
@@ -20,7 +23,8 @@ const samePick = (a: Pick | null, b: Pick): boolean => !!a && a.kind === b.kind 
 /** Pyramid: remove Kings, and pairs of uncovered cards that add up to 13. Nothing is stored. */
 export function PyramidScreen() {
   const [level, setLevel] = useState<PyramidLevel>('classic')
-  const game = useCardGame<Pyramid>(() => deal('classic'))
+  const [dealNo, setDealNo] = useState(randomDealNumber)
+  const game = useCardGame<Pyramid>(() => deal('classic', seededRng(dealNo)))
   const g = game.state
   const [sel, setSel] = useState<Pick | null>(null)
   const [hint, setHint] = useState<{ text: string; picks: Pick[] } | null>(null)
@@ -30,7 +34,7 @@ export function PyramidScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won)
 
   const act = (next: Pyramid) => { game.commit(next); setSel(null); setHint(null); setNote('') }
-  const newDeal = (lv = level) => { game.restart(deal(lv)); setSel(null); setHint(null); setNote(''); resetClock() }
+  const newDeal = (lv = level, no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); resetClock() }
 
   const tap = (p: Pick) => {
     if (won) return
@@ -69,6 +73,7 @@ export function PyramidScreen() {
         <LevelBar name="pyramid-level" legend={t('sudoku.level.label')} levels={PYRAMID_LEVELS.map((l) => ({ id: l, label: t(LEVEL_KEYS[l]) }))} level={level} onLevel={(l) => { setLevel(l); newDeal(l) }}>
           <Button variant="secondary" onClick={() => newDeal()}>{t('py.new')}</Button>
         </LevelBar>
+        <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n)} />
 
         <CardTable cols={7} fresh={game.moves === 0}>
           <p className="pc-hud">

@@ -1,4 +1,4 @@
-import { TOUR_STEPS } from '../../features/tour/logic/steps'
+import { stepsOfGuide, TOUR_STEPS, type GuideId } from '../../features/tour/logic/steps'
 import { markTourIn, resetTourIn } from './hintsState'
 import { getHints, hintsLoaded, subscribeHints, updateHints } from './hints'
 
@@ -18,6 +18,9 @@ export function markTourStep(id: string): void { updateHints((h) => markTourIn(h
 
 /** Skips the rest of the tour: every step counts as seen. */
 export function skipTour(): void { updateHints((h) => markTourIn(h, TOUR_STEPS.map((s) => s.id))) }
+
+/** Skips the rest of one guide, and only that guide: every step in it counts as seen. */
+export function skipGuide(guide: GuideId): void { updateHints((h) => markTourIn(h, stepsOfGuide(guide).map((s) => s.id))) }
 
 /** Brings the whole tour back. */
 export function resetTour(): void { updateHints(resetTourIn) }

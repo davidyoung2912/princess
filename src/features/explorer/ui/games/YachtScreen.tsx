@@ -17,6 +17,8 @@ export function YachtScreen() {
   const [started, setStarted] = useState(false)
   const game = useCardGame<Yacht>(start)
   const g = game.state
+  const [quickPref, setQuickPref] = usePref<'full' | 'quick'>('yacht', 'length', ['full', 'quick'], 'full')
+  const quick = quickPref === 'quick'
   const hint = useHint<Yacht, { held: boolean[]; cat: Cat | null }>()
   const over = isOver(g)
   const mine = !over && g.turn === 0
@@ -24,7 +26,7 @@ export function YachtScreen() {
   const mineOpen = open(g.cards[0])
 
   useComputerTurn(started && !over && g.turn === 1, skill, g, () => game.commit(act(g, choose(g, skill))))
-  const reset = () => { game.restart({ ...start(), turn: opening === 'you' ? 0 : 1 }); hint.reset() }
+  const reset = () => { game.restart({ ...start(quick ? 6 : 12), turn: opening === 'you' ? 0 : 1 }); hint.reset() }
   const w = winner(g)
   const a = total(g.cards[0]), b = total(g.cards[1])
 
@@ -36,7 +38,7 @@ export function YachtScreen() {
 
   return (
     <VsShell
-      game="yacht" name="yacht" skill={skill} onSkill={setSkill} opening={opening} onOpening={setOpening} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      variant={quick ? '+quick' : ''} quick={{ value: quick, onChange: (q) => setQuickPref(q ? 'quick' : 'full') }} game="yacht" name="yacht" skill={skill} onSkill={setSkill} opening={opening} onOpening={setOpening} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       status={!mine ? t('ya.cpu') : !g.rolled ? t('ya.roll') : g.rollsLeft > 0 ? t('ya.keep', { n: g.rollsLeft }) : t('ya.score')} thinking={!mine && !over}
       result={over ? { title: t(w === 1 ? 'bd.win' : w === 2 ? 'bd.lose' : 'bd.draw'), body: t('ya.final', { a, b }), outcome: w === 1 ? 'win' : w === 2 ? 'loss' : 'draw' } : null}
       meta={<span>{t('db.score', { a, b })}</span>}

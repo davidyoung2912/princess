@@ -1,5 +1,6 @@
 import { search, type Skill } from './search'
 import type { Rng } from './cards'
+import { stepsOf, type Handicap } from './handicap'
 
 /** Reversi (Othello): 8 by 8, black and white discs. A move must trap a line of the opponent's discs between the new disc and one of your own, and those discs flip. A side with no move passes; the game ends when neither can move. */
 export const N = 8
@@ -7,6 +8,13 @@ export type Disc = 0 | 1 | 2 // empty, black, white
 export interface Reversi { board: Disc[]; turn: 1 | 2; last: number | null; /** The side that just had to pass, if any. */ passed: 0 | 1 | 2 }
 
 const DIRS: [number, number][] = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]
+
+/** A head start for black (the player): one or two corner discs, which can never be flipped. */
+export function withHandicap(g: Reversi, h: Handicap): Reversi {
+  const board = g.board.slice()
+  for (const c of [0, 63].slice(0, stepsOf(h))) board[c] = 1
+  return { ...g, board }
+}
 
 export function start(): Reversi {
   const board = Array<Disc>(64).fill(0)

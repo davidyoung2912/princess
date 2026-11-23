@@ -92,7 +92,7 @@ public static class StateRules
     }
 
     /// <summary>The most pages and tour steps <c>hints</c> remembers, and the longest id.</summary>
-    public const int HintsMaxPages = 400, HintsMaxSteps = 120, HintsMaxId = 40;
+    public const int HintsMaxPages = 400, HintsMaxSteps = 200, HintsMaxId = 40;
 
     /// <summary>
     /// The problem for a <c>hints</c> document: <c>{ tips: { "&lt;page id&gt;": count }, tour: [ "&lt;step id&gt;" ], tourOn: true }</c> (the tour is on unless <c>tourOn</c> is false), the page tips and first-visit tour steps the guest has dismissed.

@@ -74,7 +74,7 @@ export function DiningReservations({ venues, day, venueId, view, scope = 'day' }
 
   const mine = all.filter((r) => r.day === day)
   return (
-    <section aria-labelledby="exp-res-h">
+    <section aria-labelledby="exp-res-h" data-tour="dine-res">
       <h2 id="exp-res-h">{headingCase(t('exp.res.title'))}</h2>
       <p>{mine.length > 0 ? t('exp.res.summary', { count: mine.length, list: mine.map(line).join(' · ') }) : t('exp.res.none')}</p>
       <div className="button-row">

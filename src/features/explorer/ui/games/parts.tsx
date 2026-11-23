@@ -9,6 +9,9 @@ import { SendDialog } from '../../../onboard/ui/SendDialog'
 import { headingCase, t } from '../../../../shared/i18n'
 import { Ask, Clock, X } from '../../../../shared/ui/icons'
 import { MessageSquarePlus } from 'lucide-react'
+import { useSettings } from '../../../../shared/hooks/useSettings'
+import { playCue } from '../../../../shared/sound/cues'
+import { BUZZ, buzz } from '../../../../shared/settings/haptics'
 
 /** The pieces every game shares, so the games look and behave the same: How to Play, clock, level picker, hint box and solved card. */
 
@@ -20,7 +23,7 @@ export function GameClock({ seconds, label }: { seconds: number; label: string }
 /** The collapsible How to Play panel shown under the game. */
 export function GameHelp({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <details className="game-help">
+    <details className="game-help" data-tour="game-help">
       <summary><Ask aria-hidden="true" focusable="false" />{headingCase(title)}</summary>
       {children}
     </details>
@@ -72,9 +75,16 @@ function BeatLine() {
 }
 
 /** The result card shown when a game ends. It takes focus when it appears so a screen reader reads it. */
-export function SolvedCard({ title, children }: { title: string; children: ReactNode }) {
+export function SolvedCard({ title, tone = 'win', children }: { title: string; /** How it ended, for the sound and buzz: a bright two-note click for a win, a low tick for a loss, a soft click for a draw. */ tone?: 'win' | 'loss' | 'draw'; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => { ref.current?.focus() }, [])
+  const [settings] = useSettings()
+  useEffect(() => {
+    ref.current?.focus()
+    playCue(tone === 'win' ? 'success' : tone === 'loss' ? 'no' : 'confirm', settings)
+    buzz(settings, tone === 'win' ? BUZZ.moment : BUZZ.tick)
+    // Once, when the card appears.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   return (
     <div ref={ref} tabIndex={-1} className="game-result">
       <Card info>

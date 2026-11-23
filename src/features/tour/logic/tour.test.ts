@@ -4,9 +4,9 @@ import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { en } from '../../../shared/i18n/locales/en'
 import { getHints } from '../../../shared/settings/hints'
-import { loadTourSeen, markTourStep, resetTour, skipTour } from '../../../shared/settings/tour'
+import { loadTourSeen, markTourStep, resetTour, skipGuide, skipTour } from '../../../shared/settings/tour'
 import { placeCard, sideOrder, spotlight } from './placement'
-import { GENERAL_STEPS, nextStep, TOUR_STEPS } from './steps'
+import { GUIDE_IDS, nextStep, stepsOfGuide, TOUR_STEPS } from './steps'
 
 const view = { width: 1000, height: 700 }
 const card = { width: 300, height: 160 }
@@ -73,8 +73,21 @@ describe('tour steps', () => {
     const missing = TOUR_STEPS.filter((s) => s.page).filter((s) => !new RegExp(`(data-tour|tour)=(\\{[^}]*)?["']${s.target}["']`).test(code) ).map((s) => s.id)
     expect(missing).toEqual([])
   })
+  it('gives every step a guide, and keeps each guide in one block of related cards', () => {
+    expect(TOUR_STEPS.every((x) => (GUIDE_IDS as readonly string[]).includes(x.guide))).toBe(true)
+    expect(stepsOfGuide('app').every((x) => !x.page)).toBe(true)
+    for (const g of GUIDE_IDS) expect(en[`tour.guide.${g}` as keyof typeof en]).toBeTruthy()
+    for (const g of GUIDE_IDS.filter((x) => x !== 'pages')) expect(stepsOfGuide(g).length, g).toBeGreaterThan(0)
+  })
+  it('skips one guide without touching the others', () => {
+    resetTour()
+    skipGuide('dining')
+    const seen = loadTourSeen()
+    expect(stepsOfGuide('dining').every((x) => seen.includes(x.id))).toBe(true)
+    expect(stepsOfGuide('spa').some((x) => seen.includes(x.id))).toBe(false)
+    resetTour()
+  })
   it('counts only the frame steps, and keeps every id within what the account can store', () => {
-    expect(GENERAL_STEPS.every((s) => !s.page)).toBe(true)
-    expect(TOUR_STEPS.length).toBeLessThanOrEqual(120)
+        expect(TOUR_STEPS.length).toBeLessThanOrEqual(190)
   })
 })

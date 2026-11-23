@@ -1,11 +1,20 @@
 import { search, type Skill } from './search'
 import type { Rng } from './cards'
+import { stepsOf, type Handicap } from './handicap'
 
 /** Connect Four: drop discs into a seven-column, six-row grid; they fall to the lowest empty slot. First to line up four, across, up or diagonally, wins. */
 export const COLS = 7
 export const ROWS = 6
 export interface C4 { cells: (0 | 1 | 2)[]; turn: 1 | 2; winner: 0 | 1 | 2 | 3; line: number[]; last: number | null; moves: number }
 export const start = (): C4 => ({ cells: Array(COLS * ROWS).fill(0), turn: 1, winner: 0, line: [], last: null, moves: 0 })
+/** A head start for red (the player): one or two discs already on the bottom row, in the middle columns. */
+export function withHandicap(g: C4, h: Handicap): C4 {
+  const cells = g.cells.slice()
+  const cols = [3, 2].slice(0, stepsOf(h))
+  for (const c of cols) cells[(ROWS - 1) * COLS + c] = 1
+  return { ...g, cells, moves: g.moves + cols.length }
+}
+
 /** The row a disc would land in for `col` (0 is the top), or -1 if the column is full. */
 export const landing = (cells: readonly number[], col: number): number => { for (let r = ROWS - 1; r >= 0; r--) if (cells[r * COLS + col] === 0) return r; return -1 }
 export const legalMoves = (g: C4): number[] => (g.winner ? [] : Array.from({ length: COLS }, (_, c) => c).filter((c) => landing(g.cells, c) >= 0))

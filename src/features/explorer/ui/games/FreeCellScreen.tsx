@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CELLS_OF, FREECELL_LEVELS, autoStep, bestDest, canAutoFinish, canMove, cardsOf, deal, hint as findHint, isRun, isWon, maxMovable, move, randomDeal, type Dst, type FreeCell, type FreeCellLevel, type Src } from '../../../games/domain/freecell'
+import { CELLS_OF, FREECELL_LEVELS, autoStep, bestDest, canAutoFinish, canMove, cardsOf, deal, hint as findHint, isRun, isWon, maxMovable, move, randomDeal, type Dst, type FreeCell, type FreeCellLevel, type Src, DEAL_COUNT, UNSOLVABLE_DEAL } from '../../../games/domain/freecell'
 import { SUIT_NAMES } from '../../../games/domain/cards'
 import { clock } from '../../../games/domain/sudoku'
 import { startVisibleInterval } from '../../../../shared/hooks/visibleInterval'
@@ -10,6 +10,7 @@ import { MoreLinks } from '../Parts'
 import { CardCredits, CardTable, Single, Stack, type StackCard } from './cards/CardParts'
 import { cardName } from './cards/cardArt'
 import { useCardGame } from './cards/useCardGame'
+import { DealBar } from './cards/DealBar'
 import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
 import { useGameClock } from './gameHooks'
 
@@ -31,7 +32,6 @@ export function FreeCellScreen() {
 
   const act = (next: FreeCell) => { game.commit(next); setSel(null); setHint(null); setNote('') }
   const newDeal = (lv = level, number?: number) => { game.restart(deal(lv, number ?? randomDeal())); setSel(null); setHint(null); setNote(''); setFinishing(false); resetClock() }
-  const replay = () => newDeal(level, g.dealNumber)
 
   useEffect(() => {
     if (!finishing) return
@@ -92,10 +92,10 @@ export function FreeCellScreen() {
           <Button variant="secondary" onClick={() => newDeal()}>{t('fc.new')}</Button>
         </LevelBar>
 
+        <DealBar number={g.dealNumber} max={DEAL_COUNT} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n === UNSOLVABLE_DEAL ? n + 1 : n)} />
         <CardTable cols={8} fresh={game.moves === 0}>
           <p className="pc-hud">
             <GameClock seconds={seconds} label={t('sudoku.time')} />
-            <span>{t('fc.deal', { n: g.dealNumber })}</span>
             <span>{t('cd.moves', { n: game.moves })}</span>
           </p>
           <div className="pc-row">
@@ -139,10 +139,9 @@ export function FreeCellScreen() {
           </SolvedCard>
         )}
 
-        <div className="cg-tools" style={{ '--tools': canAutoFinish(g) ? 4 : 3 } as React.CSSProperties}>
+        <div className="cg-tools" style={{ '--tools': canAutoFinish(g) ? 3 : 2 } as React.CSSProperties}>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setSel(null); setHint(null) }} disabled={!game.canUndo || finishing}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={won || finishing}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <button type="button" className="sd-tool" onClick={replay} disabled={game.moves === 0}><span>{t('fc.replay')}</span></button>
           {canAutoFinish(g) && <button type="button" className="sd-tool" onClick={() => setFinishing(true)} disabled={finishing}><span>{t('cd.finish')}</span></button>}
         </div>
         <GameHelp title={t('sudoku.help.title')}>

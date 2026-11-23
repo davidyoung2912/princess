@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { chooseMove, place, start, SIZE_OF, type Five, type FiveMode } from '../../../games/domain/fiveRow'
+import { chooseMove, place, start, withHandicap, SIZE_OF, type Five, type FiveMode } from '../../../games/domain/fiveRow'
+import { HANDICAPS, type Handicap } from '../../../games/domain/handicap'
 import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t } from '../../../../shared/i18n'
 import { OPENINGS, useComputerTurn, useHint, usePref, useRoving, type Opening } from './board/shared'
@@ -11,6 +12,9 @@ function FiveRow({ mode }: { mode: FiveMode }) {
   const n = SIZE_OF[mode]
   const [skill, setSkill] = usePref<Skill>(mode, 'skill', SKILL_LIST, 'captain')
   const [opening, setOpening] = usePref<Opening>(mode, 'opening', OPENINGS, 'you')
+  const [handicap, setHandicap] = usePref<Handicap>(mode, 'handicap', HANDICAPS, 'none')
+  const [quickPref, setQuickPref] = usePref<'full' | 'quick'>(mode, 'length', ['full', 'quick'], 'full')
+  const quick = mode === 'pente' && quickPref === 'quick'
   const hint = useHint<Five, number>()
   const [started, setStarted] = useState(false)
   const game = useCardGame<Five>(() => start(mode))
@@ -20,13 +24,13 @@ function FiveRow({ mode }: { mode: FiveMode }) {
   const pick = (i: number) => { if (!mine) return; const next = place(g, i); if (next) game.commit(next) }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m !== null) { const next = place(g, m); if (next) game.commit(next) } })
   const { root, props } = useRoving(n, n * n, pick)
-  const reset = () => { game.restart(opening === 'you' ? start(mode) : { ...start(mode), turn: 2 }); hint.reset() }
+  const reset = () => { const b = withHandicap(start(mode), handicap, quick); game.restart(opening === 'you' ? b : { ...b, turn: 2 }); hint.reset() }
   const hoshi = mode === 'pente' ? [3, 9, 15] : [3, 7, 11]
   const star = (i: number) => hoshi.includes(i % n) && hoshi.includes(Math.floor(i / n))
 
   return (
     <VsShell
-      game={mode} name={mode} opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      variant={`${handicap !== 'none' ? `+${handicap}` : ''}${quick ? '+quick' : ''}`} handicap={{ value: handicap, onChange: setHandicap }} quick={mode === 'pente' ? { value: quick, onChange: (q) => setQuickPref(q ? 'quick' : 'full') } : undefined} game={mode} name={mode} opening={opening} onOpening={setOpening} skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       status={t(mine ? 'bd.yourTurn' : 'bd.thinking')} thinking={!mine && !over}
       result={over ? { title: t(g.winner === 1 ? 'bd.win' : g.winner === 2 ? 'bd.lose' : 'bd.draw'), body: (mode === 'pente' ? t('pn.final', { n: g.moves }) : t('gm.final', { n: g.moves })), outcome: g.winner === 1 ? 'win' : g.winner === 2 ? 'loss' : 'draw' } : null}
       meta={mode === 'pente' ? <span>{t('pn.captures', { a: g.captures[0], b: g.captures[1] })}</span> : <span>{t('gm.moves', { n: g.moves })}</span>}

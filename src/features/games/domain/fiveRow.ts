@@ -1,5 +1,6 @@
 import { type Rng } from './cards'
 import type { Skill } from './search'
+import { stepsOf, type Handicap } from './handicap'
 
 /**
  * Gomoku and Pente on a square line board. Players alternate placing a stone on an empty point; five (or more) in a row wins. Pente adds captures: a move that closes
@@ -20,9 +21,21 @@ export interface Five {
   /** Stones removed by the last move (Pente). */
   removed: number[]
   moves: number
+  /** Pairs that win a game of Pente (five, or three in a quick game). */
+  captureWin: number
 }
 
-export const start = (mode: FiveMode): Five => ({ mode, n: SIZE_OF[mode], cells: Array(SIZE_OF[mode] ** 2).fill(0), turn: 1, last: null, captures: [0, 0], winner: 0, line: [], removed: [], moves: 0 })
+/** A head start for black (the player): one or two extra stones near the middle, placed before white moves. A quick game of Pente is won with three captured pairs. */
+export function withHandicap(g: Five, h: Handicap, quick = false): Five {
+  const cells = g.cells.slice()
+  const m = Math.floor(g.n / 2)
+  const spots = [m * g.n + m, (m + 1) * g.n + m + 1].slice(0, stepsOf(h))
+  for (const i of spots) cells[i] = 1
+  const first: Five = spots.length ? { ...g, cells, moves: spots.length, turn: 2, last: spots[spots.length - 1] } : g
+  return { ...first, captureWin: quick && g.mode === 'pente' ? 3 : 5 }
+}
+
+export const start = (mode: FiveMode): Five => ({ mode, n: SIZE_OF[mode], cells: Array(SIZE_OF[mode] ** 2).fill(0), turn: 1, last: null, captures: [0, 0], winner: 0, line: [], removed: [], moves: 0, captureWin: 5 })
 
 const AXES: [number, number][] = [[0, 1], [1, 0], [1, 1], [1, -1]]
 const ALL: [number, number][] = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]]
@@ -63,7 +76,7 @@ export function place(g: Five, i: number): Five | null {
   let winner: Five['winner'] = 0
   let line: number[] = []
   for (const ax of AXES) { const r = runAt(cells, n, i, turn, ax); if (r.len >= 5) { winner = turn; line = r.line; break } }
-  if (!winner && g.mode === 'pente' && captures[turn - 1] >= 5) winner = turn
+  if (!winner && g.mode === 'pente' && captures[turn - 1] >= g.captureWin) winner = turn
   const moves = g.moves + 1
   if (!winner && cells.every((x) => x !== 0)) winner = 3
   return { ...g, cells, turn: (3 - turn) as 1 | 2, last: i, captures, winner, line, removed, moves }

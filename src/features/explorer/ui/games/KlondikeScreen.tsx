@@ -10,6 +10,9 @@ import { MoreLinks } from '../Parts'
 import { CardCredits, CardTable, CardView, Single, Stack, type StackCard } from './cards/CardParts'
 import { cardName } from './cards/cardArt'
 import { useCardGame } from './cards/useCardGame'
+import { DealBar } from './cards/DealBar'
+import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
+import { seededRng } from '../../../games/domain/cards'
 import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
 import { useGameClock } from './gameHooks'
 
@@ -19,7 +22,8 @@ const sameSource = (a: Source | null, b: Source): boolean => !!a && JSON.stringi
 /** Klondike ("Solitaire"). Tap a card, then where it should go; tap it again to send it to its best place. Nothing is stored. */
 export function KlondikeScreen() {
   const [level, setLevel] = useState<KlondikeLevel>('draw1')
-  const game = useCardGame<Klondike>(() => deal('draw1'))
+  const [dealNo, setDealNo] = useState(randomDealNumber)
+  const game = useCardGame<Klondike>(() => deal('draw1', seededRng(dealNo)))
   const g = game.state
   const [sel, setSel] = useState<Source | null>(null)
   const [hint, setHint] = useState<{ text: string; h: Hint } | null>(null)
@@ -29,7 +33,7 @@ export function KlondikeScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won)
 
   const act = (next: Klondike) => { game.commit(next); setSel(null); setHint(null); setNote('') }
-  const newDeal = (lv = level) => { game.restart(deal(lv)); setSel(null); setHint(null); setNote(''); setFinishing(false); resetClock() }
+  const newDeal = (lv = level, no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); setFinishing(false); resetClock() }
 
   /* "Finish" moves every remaining card home, one at a time. */
   useEffect(() => {
@@ -105,6 +109,7 @@ export function KlondikeScreen() {
         <LevelBar name="klondike-level" legend={t('sudoku.level.label')} levels={KLONDIKE_LEVELS.map((l) => ({ id: l, label: t(LEVEL_KEYS[l]) }))} level={level} onLevel={(l) => { setLevel(l); newDeal(l) }}>
           <Button variant="secondary" onClick={() => newDeal()}>{t('kl.new')}</Button>
         </LevelBar>
+        <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n)} />
 
         <CardTable cols={7} fresh={game.moves === 0}>
           <p className="pc-hud">

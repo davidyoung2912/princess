@@ -35,7 +35,7 @@ export function DiningControls({ kinds, kindLabels, filter, onFilter, sort, onSo
         {DINING_PROMPTS.map((p) => <Chip key={p} pressed={filter.prompt === p} onToggle={() => set({ prompt: filter.prompt === p ? null : p })}>{t(PROMPT[p])}</Chip>)}
         {anyKidsMenu && <Chip pressed={filter.kidsMenu} onToggle={() => set({ kidsMenu: !filter.kidsMenu })}>{t('exp.dining.kidsMenu')}</Chip>}
       </div>
-      <div role="group" aria-label={t('exp.dining.diet.label')} className="chip-row">
+      <div data-tour="dine-diet" role="group" aria-label={t('exp.dining.diet.label')} className="chip-row">
         {DIET_MARKS.map((d) => <Chip key={d} pressed={filter.diet === d} onToggle={() => set({ diet: filter.diet === d ? null : d })}>{t(`exp.dining.diet.${d}` as StringKey)}</Chip>)}
       </div>
       {filter.diet !== null && <p className="muted">{t('exp.dining.diet.note')}</p>}

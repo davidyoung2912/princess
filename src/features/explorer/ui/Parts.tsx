@@ -159,7 +159,7 @@ export function MenuPanel({ shipId, venueId, menus, diets, avoid = [], day, curr
   const flagsUsed = usedFlags(menus)
   const hasMarks = menus.some((m) => m.courses.some((c) => c.dishes.some((d) => (d.marks?.length ?? 0) > 0)))
   return (
-    <section aria-labelledby="exp-menu-h">
+    <section aria-labelledby="exp-menu-h" data-tour="venue-menu">
       <h2 id="exp-menu-h">{headingCase(t('exp.menu.title'))}</h2>
       {diets.length > 0 && <div className="chip-row"><Chip pressed={onlyMine} onToggle={() => setOnlyMine(!onlyMine)}>{t('exp.menu.suits')}</Chip></div>}
       {ask.length > 0 && <p className="muted">{t('exp.menu.ask')}</p>}

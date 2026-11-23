@@ -14,7 +14,7 @@ export function StageLanding() {
   const { stage, day } = useJourneyPosition()
   const where = day?.kind === 'daysToDeparture' ? t('land.toBoarding', { count: day.days }) : null
   return (
-    <Card hero labelledBy="landing-h">
+    <Card hero labelledBy="landing-h" tour="home-landing">
       <span className="landing-pose calm-hide"><StanleyPose pose={poseForStage(stage)} size={72} /></span>
       <p className="muted">{t('land.label')}{where && <> · {where}</>}</p>
       <h2 id="landing-h" className="card__title">{th(`land.title.${stage}` as StringKey)}</h2>

@@ -2,9 +2,9 @@ import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { t } from '../i18n'
 import type { StringKey } from '../i18n'
 import { startVisibleInterval } from '../hooks/visibleInterval'
-import { loadTourOn, loadTourSeen, markTourStep, skipTour, subscribeTour, tourReady } from '../settings/tour'
+import { loadTourOn, loadTourSeen, markTourStep, skipGuide, subscribeTour, tourReady } from '../settings/tour'
 import { resetTourScroll, scrollIntoViewTracked } from '../../features/tour/logic/scroll'
-import { GENERAL_STEPS, nextStep, TOUR_STEPS, type TourStep } from '../../features/tour/logic/steps'
+import { nextStep, stepsOfGuide, type GuideId, type TourStep } from '../../features/tour/logic/steps'
 import { Button } from './Button'
 import { TOUR_ICONS } from './tourIcons'
 
@@ -50,11 +50,15 @@ export function Tour({ paused = false }: { paused?: boolean }) {
   }, [step])
   useEffect(() => { if (!on) resetTourScroll() }, [on])
   if (!step || paused || !ready || !on) return null
-  // The frame steps are counted among themselves ("3/14"); a step about one page's content has no count, and always offers Skip.
-  const index = GENERAL_STEPS.findIndex((s) => s.id === step.id)
-  const left = TOUR_STEPS.filter((s) => !seen.includes(s.id)).length
-  return <TourCard key={step.id} step={step} count={step.page ? null : `${index + 1}/${GENERAL_STEPS.length}`} last={!step.page && left <= 1} />
+  // A guide's cards are counted among themselves ("3/4"), and Skip ends that guide only. The one-off cards for the other pages are not a guide: no count, and Skip is always offered.
+  const mine = stepsOfGuide(step.guide)
+  const counted = step.guide !== 'pages' && mine.length > 1
+  const left = mine.filter((s) => !seen.includes(s.id)).length
+  return <TourCard key={step.id} step={step} count={counted ? `${mine.findIndex((s) => s.id === step.id) + 1}/${mine.length}` : null} last={step.guide !== 'pages' && left <= 1} />
 }
+
+/** The guide's name, for the card's footer. */
+const guideName = (guide: GuideId): string => t(`tour.guide.${guide}` as StringKey)
 
 function TourCard({ step, count, last }: { step: TourStep; count: string | null; last: boolean }) {
   const titleId = useId()
@@ -75,8 +79,8 @@ function TourCard({ step, count, last }: { step: TourStep; count: string | null;
       <p className="tour__head"><Icon className="tour__icon" aria-hidden="true" /><strong id={titleId} className="tour__title">{t(`tour.${step.id}.title` as StringKey)}</strong></p>
       <p className="tour__text">{t(`tour.${step.id}.body` as StringKey)}</p>
       <div className="tour__foot">
-        {count ? <span className="tour__count" aria-label={t('tour.count.label', { n: count.split('/')[0]!, total: count.split('/')[1]! })}>{count}</span> : <span className="tour__count" />}
-        {!last && <button type="button" className="tour__skip" onClick={skipTour}>{t('tour.skip')}</button>}
+        {count ? <span className="tour__count" aria-label={t('tour.guide.count', { guide: guideName(step.guide), n: count.split('/')[0]!, total: count.split('/')[1]! })}>{guideName(step.guide)} · {count}</span> : <span className="tour__count" />}
+        {!last && <button type="button" className="tour__skip" onClick={() => skipGuide(step.guide)}>{t('tour.skip')}</button>}
         <Button variant="secondary" className="tour__got" onClick={() => markTourStep(step.id)}>{t('tip.gotIt')}</Button>
       </div>
     </aside>

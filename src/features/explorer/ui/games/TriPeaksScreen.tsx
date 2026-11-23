@@ -8,6 +8,9 @@ import { MoreLinks } from '../Parts'
 import { CardBack, CardCredits, CardTable, CardView, Single } from './cards/CardParts'
 import { CARD_RATIO, cardName } from './cards/cardArt'
 import { useCardGame } from './cards/useCardGame'
+import { DealBar } from './cards/DealBar'
+import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
+import { seededRng } from '../../../games/domain/cards'
 import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
 import { useGameClock } from './gameHooks'
 
@@ -17,7 +20,8 @@ const ROW_STEP = 0.62 // how far each row sits below the one above, in card widt
 /** TriPeaks: clear three peaks by taking cards one rank above or below the waste card. Nothing is stored. */
 export function TriPeaksScreen() {
   const [level, setLevel] = useState<TriLevel>('classic')
-  const game = useCardGame<TriPeaks>(() => deal('classic'))
+  const [dealNo, setDealNo] = useState(randomDealNumber)
+  const game = useCardGame<TriPeaks>(() => deal('classic', seededRng(dealNo)))
   const g = game.state
   const [hint, setHint] = useState<{ text: string; card: number | null } | null>(null)
   const [note, setNote] = useState('')
@@ -26,7 +30,7 @@ export function TriPeaksScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won && !stuck)
 
   const act = (next: TriPeaks) => { game.commit(next); setHint(null); setNote('') }
-  const newDeal = (lv = level) => { game.restart(deal(lv)); setHint(null); setNote(''); resetClock() }
+  const newDeal = (lv = level, no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setHint(null); setNote(''); resetClock() }
 
   const tap = (i: number) => {
     if (won || stuck) return
@@ -51,6 +55,7 @@ export function TriPeaksScreen() {
         <LevelBar name="tripeaks-level" legend={t('sudoku.level.label')} levels={TRI_LEVELS.map((l) => ({ id: l, label: t(LEVEL_KEYS[l]) }))} level={level} onLevel={(l) => { setLevel(l); newDeal(l) }}>
           <Button variant="secondary" onClick={() => newDeal()}>{t('tp.new')}</Button>
         </LevelBar>
+        <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n)} />
 
         <CardTable cols={10} fresh={game.moves === 0}>
           <p className="pc-hud">

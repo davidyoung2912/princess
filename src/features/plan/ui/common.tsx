@@ -20,7 +20,7 @@ export function PlanError({ error }: { error: ApiError | null }) {
 /** Who is going: one checkbox per person on the booking. */
 export function GuestPicker({ legend, party, value, onChange, disabled, hint }: { legend: string; party: readonly PartyMember[]; value: readonly PersonaId[]; onChange: (next: PersonaId[]) => void; disabled?: boolean; hint?: string }) {
   return (
-    <fieldset className="plain-fieldset">
+    <fieldset className="plain-fieldset" data-tour="book-party">
       <legend>{legend}</legend>
       {hint && <p className="field__hint">{hint}</p>}
       {party.map((g) => (

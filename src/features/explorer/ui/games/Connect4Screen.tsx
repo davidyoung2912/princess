@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { COLS, ROWS, chooseMove, drop, legalMoves, start, type C4 } from '../../../games/domain/connect4'
+import { COLS, ROWS, chooseMove, drop, legalMoves, start, withHandicap, type C4 } from '../../../games/domain/connect4'
+import { HANDICAPS, type Handicap } from '../../../games/domain/handicap'
 import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t } from '../../../../shared/i18n'
 import { OPENINGS, useComputerTurn, useHint, usePref, type Opening } from './board/shared'
@@ -13,6 +14,7 @@ export function Connect4Screen() {
   const [started, setStarted] = useState(false)
   const game = useCardGame<C4>(start)
   const g = game.state
+  const [handicap, setHandicap] = usePref<Handicap>('connect4', 'handicap', HANDICAPS, 'none')
   const hint = useHint<C4, number>()
   const over = g.winner !== 0
   const mine = !over && g.turn === 1
@@ -20,12 +22,12 @@ export function Connect4Screen() {
 
   const play = (col: number) => { const next = drop(g, col); if (next) game.commit(next) }
   useComputerTurn(started && !over && g.turn === 2, skill, g, () => { const m = chooseMove(g, skill); if (m !== null) play(m) })
-  const reset = () => { game.restart(opening === 'you' ? start() : { ...start(), turn: 2 }); hint.reset() }
+  const reset = () => { const b0 = withHandicap(start(), handicap); const b = handicap === 'none' ? b0 : { ...b0, turn: 2 as const }; game.restart(opening === 'you' ? b : { ...b, turn: 2 }); hint.reset() }
   const h = hint.of(g)
 
   return (
     <VsShell
-      game="connect4" name="connect4" skill={skill} onSkill={setSkill} opening={opening} onOpening={setOpening} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
+      variant={handicap !== 'none' ? `+${handicap}` : ''} handicap={{ value: handicap, onChange: setHandicap }} game="connect4" name="connect4" skill={skill} onSkill={setSkill} opening={opening} onOpening={setOpening} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       status={t(mine ? 'bd.yourTurn' : 'bd.thinking')} thinking={!mine && !over}
       result={over ? { title: t(g.winner === 1 ? 'bd.win' : g.winner === 2 ? 'bd.lose' : 'bd.draw'), body: t('c4.final', { n: g.moves }), outcome: g.winner === 1 ? 'win' : g.winner === 2 ? 'loss' : 'draw' } : null}
       meta={<span>{t('gm.moves', { n: g.moves })}</span>}

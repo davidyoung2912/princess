@@ -67,7 +67,7 @@ function StageWelcomeStage() {
         <p className="welcome__eyebrow">{t(first ? 'welcome.eyebrowFirst' : 'welcome.eyebrow')}</p>
         <h2 className="welcome__title">{words(stage, 'title')}</h2>
       </header>
-      <nav aria-label={t('welcome.map')}>
+      <nav aria-label={t('welcome.map')} data-tour="welcome-map">
         <ol className="welcome__map">
           {c.previous && <li className="welcome__stage"><span className="welcome__tag">{t('welcome.previous')}</span>{stageName(c.previous)}</li>}
           <li className="welcome__stage welcome__stage--now" aria-current="step"><span className="welcome__tag">{t('welcome.now')}</span>{stageName(stage)}</li>
@@ -87,7 +87,7 @@ function StageWelcomeStage() {
         <h2 id="welcome-focus-h"><PillIcon heading label={th('welcome.h.focus')} id="welcome-focus" />{th('welcome.h.focus')}</h2>
         <p>{words(stage, 'focus')}</p>
       </section>
-      <section id="welcome-need" aria-labelledby="welcome-need-h">
+      <section id="welcome-need" aria-labelledby="welcome-need-h" data-tour="welcome-need">
         <h2 id="welcome-need-h"><PillIcon heading label={th('welcome.h.need')} id="welcome-need" />{th('welcome.h.need')}</h2>
         <p>{words(stage, 'needIntro')}</p>
         <ul className="welcome__needs">
@@ -113,7 +113,7 @@ function StageWelcomeStage() {
         <h2 id="welcome-lead-h"><PillIcon heading label={c.next ? th('welcome.h.leadTo', { next: words(stage, 'nextName') }) : th('welcome.h.leadEnd')} id="welcome-lead" />{c.next ? th('welcome.h.leadTo', { next: words(stage, 'nextName') }) : th('welcome.h.leadEnd')}</h2>
         <p>{words(stage, 'lead')}</p>
       </section>
-      <section id="welcome-steps" aria-labelledby="welcome-steps-h">
+      <section id="welcome-steps" aria-labelledby="welcome-steps-h" data-tour="welcome-steps">
         <h2 id="welcome-steps-h"><PillIcon heading label={th('welcome.h.progress')} id="welcome-steps" />{th('welcome.h.progress')}</h2>
         <p className="muted">{t('welcome.progress', { done: doneCount, total: steps.length })}</p>
         <ol className="welcome__steps">

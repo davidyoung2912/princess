@@ -226,13 +226,13 @@ function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDa
       <ReadOnly canDo={view.canBook} />
       <PlanError error={cart.error} />
       <CreditBanner view={view} />
-      <BookingCard model={excursionBookingCard(view, stage)} labelledBy="exx-book-h" />
+      <BookingCard model={excursionBookingCard(view, stage)} labelledBy="exx-book-h" tour="exx-book" />
       <StanleyTourCompare sailingId={sailing.id} />
       <ExcursionCart view={view} reload={reload} headingId="exx-cart-h" />
       <TourFit view={view} busy={cart.busy} onAdd={(o) => void cart.pick(o)} />
       <ReservationScope scope={scope} onChange={setScope} />
       {scope === 'trip' ? <TripTours view={view} state={state} reload={reload} /> : <MyDay view={view} day={state.day} reload={reload} />}
-      {scope === 'day' && <section aria-labelledby="exx-list-h">
+      {scope === 'day' && <section aria-labelledby="exx-list-h" data-tour="exx-list">
         <h2 id="exx-list-h">{headingCase(t('exx.list'))}</h2>
         {today.length === 0 ? (
           <>
