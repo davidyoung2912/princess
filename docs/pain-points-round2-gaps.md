@@ -2,6 +2,26 @@
 
 Started 2026-11-23. Each phase adds its leftovers here. G-01 (pilot banner) was dropped by the owner: the app is a prototype and the UX sits on backend frameworks that mask real-world specifics. Verification for every phase: `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build` only (project rules); nothing was walked on a device.
 
+## Round 2 list, in priority order
+
+Detail for each item is in the phase sections below. "Owner" means it needs a decision, people or a device, not code.
+
+| # | Item | Why now | Size | Needs |
+| ---: | --- | --- | :---: | --- |
+| 1 | Device walk: airplane mode on the ten must-work screens, measures B1 to B9, Maria / Daniel / Gerald / Linda walkthroughs, screen reader | Only thing that can lift any row to A+ | Owner | A phone and people |
+| 2 | Compile and check the server: `dotnet build` after the `Problems.cs` trace-id change | Uncompiled edit sits in the repo | S | .NET (not run here) |
+| 3 | Trip switcher so Home follows the chosen trip | Lowest single row (D) | M | Server current-trip override |
+| 4 | Per-person permissions (in party, sees plans, may message, location) | Largest travel-party gap | L | Server work |
+| 5 | Party picker in dining; decided poll becomes a booking request | Closes dining and party together | M | Booking API shape |
+| 6 | Reservations in the global search index; search-success events | Lifts navigation and measures | S | none |
+| 7 | "Take me there" on reservation rows (carry the venue's map place on bookings) | Finishes R6 | S | none |
+| 8 | Screenshot redaction and a status/"who will answer" on report rows | Finishes support | M | none |
+| 9 | Port pack and party plans in the cruise download; port choice; scheduled retry | Finishes offline | M | none |
+| 10 | Fleet measure: consent-gated task-funnel event and server table; baseline sessions | Makes the metrics real | M | Owner and server |
+| 11 | Per-source "what is fresh" list; one legend for the six status labels | Cross-cutting trust | S | none |
+| 12 | OceanNow re-check (cart across reload, ETA wording); test-notification button; iOS install guidance | Not covered this pass | S | none |
+| 13 | Device location sharing | Owner: not yet | L | Owner decision |
+
 ## R1 Continuity
 
 Built: scroll position remembered per history entry and restored on Back (`src/routes/scrollMemory.ts`, `Shell.tsx`); filters mirrored into the address on dining and activity explorers, excursions, ports, venues and the day planner (`useMirrorParams`); saving or un-saving with no signal is held and sent on reconnect (`src/data/favouriteQueue.ts`).

@@ -4,7 +4,7 @@ Status: **Proposed 2026-11-23; built overnight 2026-11-23 to 24 (see the update 
 
 ## Update 2026-11-24: after the overnight pass (R1 to R8)
 
-Phases R1 to R8 were run in one pass, with G-01 dropped by the owner. Each phase has its own commit; what could not be closed is in `docs/pain-points-round2-gaps.md`. Nothing was walked on a device, so no row is A+. The original sections below are kept as first written.
+Phases R1 to R8 were run in one pass, with G-01 dropped by the owner. Each phase has its own commit; what could not be closed is in `docs/pain-points-round2-gaps.md`. Nothing was walked on a device, so no row is A+. Section 3 now carries the new grade on each changed requirement, as `**new** (was old)` with a "Pass update" note; rows without one are unchanged. The scoreboard in section 2 and the section 3 headings still show the first grades. The ordered round 2 list is at the top of `docs/pain-points-round2-gaps.md`. The pain-point grades in the table below are my estimate from what was built, not a re-check of every row (13, OceanNow, was not touched).
 
 ### Corrections to the first read
 
@@ -48,8 +48,8 @@ Reading the code more closely while building showed I had under-graded several r
 | 13 | OceanNow | B+ | **B+** | Not re-checked this pass: cart across a reload, ETA wording |
 | 14 | Support | B+ | **A-** | No screenshot redaction; reports show no status |
 | 5.x | Cross-cutting principles | B+ | **B+** | One legend for the six labels; privacy scopes per person |
-| 9 | Stanley | A- | **A-** | Unchanged |
-| 8 | Metrics | C+ | **B-** | No fleet measure, no baseline sessions |
+| 9s | Stanley's role | A- | **A-** | Unchanged |
+| 8m | Metrics | C+ | **B-** | No fleet measure, no baseline sessions |
 
 **Overall: A- in the main, with four areas at B+.** The shortest path to A+ is not more code: it is the device walk, then the open items above, in the order given in the round 2 list.
 
@@ -105,19 +105,19 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 
 | Req | Requirement | Grade | Evidence and gap |
 | --- | --- | :---: | --- |
-| 1.1 | Show every active and upcoming cruise | **C+** | One sailing at a time; no trip switcher found (search for switcher/multiple trips: nothing). Gap: trip list and switcher in the header and on Me. |
-| 1.2 | Guided booking association with distinct states | **B-** | `FindPassScreen` takes booking number plus last name. Not found: states for duplicate association, owned by another profile, support required. Gap: a linking flow with those six named states and a next step for each. |
-| 1.3 | Explain what is needed to link | **B** | Sign-in flows exist (†). Gap: a "what you need" panel plus a specific reason on every failure. |
-| 1.4 | Keep trip context across navigation and refresh | **B** | Session and selected sailing persist (†). Scroll and list state do not (see 6.1). |
+| 1.1 | Show every active and upcoming cruise | **B+** (was C+) | One sailing at a time; no trip switcher found (search for switcher/multiple trips: nothing). Gap: trip list and switcher in the header and on Me. **Pass update:** `/me/trips` already lists every booking. Still missing: a switcher that makes Home follow the chosen trip (needs a server-wide current-trip override). |
+| 1.2 | Guided booking association with distinct states | **A-** (was B-) | `FindPassScreen` takes booking number plus last name. Not found: states for duplicate association, owned by another profile, support required. Gap: a linking flow with those six named states and a next step for each. **Pass update:** `/me/trips` and Find my pass already had five distinct failures (`format`, `noMatch`, `alreadyLinked`, `review`, `supervised`). |
+| 1.3 | Explain what is needed to link | **B+** (was B) | Sign-in flows exist (†). Gap: a "what you need" panel plus a specific reason on every failure. **Pass update:** Failures now give a specific reason; a single "what you need" panel is still open. |
+| 1.4 | Keep trip context across navigation and refresh | **B+** (was B) | Session and selected sailing persist (†). Scroll and list state do not (see 6.1). **Pass update:** R1: scroll, filters and held changes survive back and refresh. |
 | 1.5 | Persistent sync indicator with named states | **A-** | `SyncChip` shows updated-at, offline-since, pending count, "unavailable", "not linked". Speaks only when stale. Gap: one global place to see all states at once. |
 | 1.6 | Last refresh per data type | **B+** | Each saved copy carries its own `savedAt`; the "Saved" label shows it. Gap: a single "What is fresh" list (booking, dining, excursions, check-in, folio, schedule). |
 | 1.7 | No stale value shown as current | **A** | `offlineDay.test.ts` fails the build if a screen shows a kept copy without its age. |
 | 1.8 | Idempotent actions: pending, reference, check before retry | **A-** | `Idempotency-Key` on booking and payment writes (`src/api/http.ts`, `BookingService`). Gap: UI wording "checking whether it went through" before allowing a retry after timeout. |
 | 1.9 | Action history | **A-** | `/me/activity`, `/me/ledger`, trust ledger (nothing can be removed). Gap: show "server accepted / confirmation returned" per row (†). |
-| 1.10 | Recovery paths for common failures | **B** | `/me/fix-it` guided flows, `/home/delayed`. Gap: map each named failure (wrong profile, duplicate, not found, eligibility, server down, incomplete record) to a flow. |
-| 1.11 | Say when the source is down; keep entered data | **B+** | `useDraft`, `ClearDraft`, outbox, "unavailable" chip. Gap: drafts for every long form, not only chat. |
+| 1.10 | Recovery paths for common failures | **B+** (was B) | `/me/fix-it` guided flows, `/home/delayed`. Gap: map each named failure (wrong profile, duplicate, not found, eligibility, server down, incomplete record) to a flow. **Pass update:** R2: named failures carry a support reference; two error paths only. |
+| 1.11 | Say when the source is down; keep entered data | **A-** (was B+) | `useDraft`, `ClearDraft`, outbox, "unavailable" chip. Gap: drafts for every long form, not only chat. **Pass update:** R1: favourite changes saved offline are held and sent on reconnect. |
 | 1.12 | Consistent web and app identity | **B** | Same web app everywhere, so no split. Sign-up, recovery, MFA were open server items in the gap analysis (ACT-01). |
-| E.1 | One primary action, one status | **B+** | Consistent `Card` and `StatusBadge` pattern (†). |
+| E.1 | One primary action, one status | **B-** (was B+) | Consistent `Card` and `StatusBadge` pattern (†). **Pass update:** Still no party picker in dining; a decided poll does not become a request (round 2). |
 | E.2 | Plain language first, reference ID second | **B+** | `DiagnosticsSettings`, problem log (†). Gap: show the reference ID on every error. |
 | E.3 | Keep screen state on failure | **B-** | Error boundary exists; no evidence list and scroll state survive a failure. |
 | E.4 | Confirmed vs saved idea | **A-** | `StatusBadge`, "saved" vs "booked" separation (†). |
@@ -128,14 +128,14 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 
 | Req | Requirement | Grade | Evidence and gap |
 | --- | --- | :---: | --- |
-| A.1 | Create a named party | **A-** | `chatGroups.create(name, people)`; Party screen for notes and invites. Two concepts (Party vs chat group) is confusing. |
-| A.2 | Invite by link, QR, email, share sheet | **B+** | QR and copy-link hand-off codes with 15 min / 1 h / 24 h lives (`shareCodes.ts`); Party screen uses email only. Gap: one invite sheet offering all four, plus the OS share sheet (`navigator.share`). |
+| A.1 | Create a named party | **A-** | `chatGroups.create(name, people)`; Party screen for notes and invites. Two concepts (Party vs chat group) is confusing. **Pass update:** R5: the Travel party hub joins people and groups; the two concepts are now explained together. |
+| A.2 | Invite by link, QR, email, share sheet | **A-** (was B+) | QR and copy-link hand-off codes with 15 min / 1 h / 24 h lives (`shareCodes.ts`); Party screen uses email only. Gap: one invite sheet offering all four, plus the OS share sheet (`navigator.share`). **Pass update:** R5: one invitation sheet with QR, link, OS share and email. |
 | A.3 | Join with own account, no booking numbers | **A-** | `SharesApi.accept` returns joined / awaitingGuardian / requested / connected. |
 | A.4 | Cross-cabin and cross-booking, with identity checks | **B+** | Connections (`ChatConnection`) work across bookings; identity verification is mocked. |
 | A.5 | One person in several groups | **A** | Chat groups are many-to-many. |
 | A.6 | Invitation state (invited, accepted, declined, expired, pending verification) | **A-** | `ChatGroupInvite`, `waiting`, `needsGuardian`, revoke. "Pending identity verification" not distinct. |
 | A.7 | Leave and remove | **A** | `leave`, `remove`, `revokeInvite`. |
-| B.1 | Separate permissions: in party / sees plans / may message / sees location | **C+** | Separate switches exist for findable, preview, DND (`ChatSettings`); not the four-way split. Gap: a per-person permission sheet. |
+| B.1 | Separate permissions: in party / sees plans / may message / sees location | **B-** (was C+) | Separate switches exist for findable, preview, DND (`ChatSettings`); not the four-way split. Gap: a per-person permission sheet. **Pass update:** R5 states what connecting allows. Per-person four-way permissions need server work (round 2). |
 | B.2 to B.5 | Location off by default, time-bounded, hide from some | **D** | Browser geolocation is used only in `DeviceTools` for the guest's own use. No shared location. Gap: see G-07; a deliberate, bounded design. |
 | B.6 | No sensitive data in group by default | **B+** | Avatar and first-name-last-initial rules in bundles; share code scope (†). |
 | B.7 | Guardian-managed child accounts | **A** | `ChatGuardianApi`, children list, supervised flags, release-scorecard C3. |
@@ -145,11 +145,11 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | C.5 | Conflict detection and group alternative | **B+** | `ChatBoard.clashes`, `planChange` (†). |
 | C.6 | Share a port plan | **A-** | `portParty`, bundle type `portDay`. |
 | C.7 | One-tap "running late / meet there / back onboard" | **A-** | `draftMessage({kind:'late'|'meet'})`, back-aboard notice. |
-| C.8 | Share a meeting place from a ship map | **B+** | `ChatPlace` bundle with deck and section; not tied to a map pin. |
+| C.8 | Share a meeting place from a ship map | **A-** (was B+) | `ChatPlace` bundle with deck and section; not tied to a map pin. **Pass update:** R6: meeting-point cards link to the deck map. |
 | D.1 to D.7 | DMs, groups, unread, pins, linked cards, queued offline, retention | **A-** | `ChatPin`, `ChatCard`, outbox, `ChatKeep`. Retention was open (MSG-05). |
 | E.1 | Choose party members for dining without booking numbers | **C+** | Dining flow (†) does not appear to take a party. Gap: G-05. |
 | E.2 to E.4 | Show who is in a reservation; keep booking permission separate | **B** | Reservation guests exist; party membership does not grant purchase rights (†). |
-| M | Meetup actions: meet here, find the group, who's going, port rendezvous, back onboard | **B+** | Meet-ups, back-aboard, ashore lists exist; "find the group" directions do not. |
+| M | Meetup actions: meet here, find the group, who's going, port rendezvous, back onboard | **A-** (was B+) | Meet-ups, back-aboard, ashore lists exist; "find the group" directions do not. **Pass update:** R6: "Take me there" on meeting-point cards; the ask-for-the-group status is still open. |
 
 **To A+:** make **Party** a labelled destination (today it is `/plan/party`, `/plan/family-link`, plus chat groups); merge the two group concepts behind one invite sheet; add the per-person four-way permission sheet; add time-bounded location *sharing of a named place* first (see G-07); take the group into dining.
 
@@ -161,10 +161,10 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | 2 | Date, time, duration, place, status, party, reference | **B+** | `ReservationsScreen`, `Timeline` has time, title, detail, status (†). |
 | 3 | Group by day and port, one order | **B+** | Day screens exist (†). |
 | 4 | Confirmed vs saved vs tentative vs invited | **B+** | `StatusBadge`, chat plan vs booking (†). |
-| 5 | Filters | **B-** | Not found on the reservations list. |
-| 6 | Agenda and detail view | **B** | Day and list exist; no compact agenda toggle. |
-| 7 | Open detail, return to same place | **C+** | Scroll reset on every route change (`Shell.tsx:222`). |
-| 8 | Searchable wallet by venue, date, guest, number | **C+** | Global search index covers venues, events, tours, ports; not reservations (`searchIndex.ts`). |
+| 5 | Filters | **A-** (was B-) | Not found on the reservations list. **Pass update:** R3: kind chips, search and URL-backed state. |
+| 6 | Agenda and detail view | **A-** (was B) | Day and list exist; no compact agenda toggle. **Pass update:** R3: compact view toggle. |
+| 7 | Open detail, return to same place | **A-** (was C+) | Scroll reset on every route change (`Shell.tsx:222`). **Pass update:** R1: scroll memory on back. |
+| 8 | Searchable wallet by venue, date, guest, number | **B+** (was C+) | Global search index covers venues, events, tours, ports; not reservations (`searchIndex.ts`). **Pass update:** R3: search by venue, day, date and reference on the list, and a search link to it. Reservations are still not in the global index. |
 | 9 | Cancelled and changed look different | **A** | `Timeline` has changed and cancelled states that never silently disappear (OB-08). |
 | 10 | Source and update time per item | **B+** | Copy age per screen, not per item. |
 | 11 | Overlap warning before confirming | **B+** | `program.ts`, `planChange.ts` conflict logic. |
@@ -181,20 +181,20 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | Req | Requirement | Grade | Evidence and gap |
 | --- | --- | :---: | --- |
 | C.1 | Auto-cache sailing, ports, times, guides, reservations, party, deck plans, schedule, embark, emergency, notes | **B+** | Must-work-offline kinds are asserted by test: pass, program, dining, folio, muster, emergency, embark, portDay, receipt, health. Copies are kept **when viewed**, not fetched ahead. Deck plans and venue directory ship in the app bundle. |
-| D.1 | "Download my cruise" action | **D+** | No such action found. `OfflineCapsule` shows what is kept and a test result. Gap: G-02. |
+| D.1 | "Download my cruise" action | **B+** (was D+) | No such action found. `OfflineCapsule` shows what is kept and a test result. Gap: G-02. **Pass update:** R4: "Download my cruise" with choices, estimate, progress and retry, plus a Home reminder near sailing. Port pack and party plans not in it. |
 | D.2 | Show size and storage | **B+** | `readStorageReport` uses `navigator.storage.estimate`; persistence request. |
-| D.3 | Choose ports to download | **C** | `CapsulePrefs` choose kinds, not ports. |
+| D.3 | Choose ports to download | **B-** (was C) | `CapsulePrefs` choose kinds, not ports. **Pass update:** R4 chooses items, not ports; port choice open. |
 | D.4 | Prefer text over images | **B** | Art is CacheFirst, 80 entries, 90 days. |
-| D.5 | Progress and completeness | **C** | Not found. |
+| D.5 | Progress and completeness | **A-** (was C) | Not found. **Pass update:** R4: per-item progress and a summary. |
 | D.6 | Refresh action | **B** | Pull and refresh per screen (†). |
-| D.7 | Last sync and failed sections | **B-** | Per-copy age; no failed-section list. |
+| D.7 | Last sync and failed sections | **A-** (was B-) | Per-copy age; no failed-section list. **Pass update:** R4: a failed-item list with retry. |
 | P.1 | App shell works offline | **A-** | Workbox precache plus `navigateFallback`; not device-verified. |
 | P.2 | Cached data immediately, no spinner | **A-** | `useSavedCopy` (†). |
 | P.3 | "Saved on this device" label | **A** | `Saved`, `SyncChip` required by test. |
 | P.4 | Stale warning | **A** | Per-kind `maxAgeFor` (schedule 3 days, pass the trip). |
 | P.5 | "Connect to update" | **B+** | `OfflineNote` states per screen what works offline (`offlineContract`). |
 | P.6 | Keep local notes and drafts | **B+** | `useDraft`, reminders, diary. |
-| P.7 | Queue low-risk changes | **B** | Outbox queues chat and service requests only, with backoff. Favourites and notes do not queue. |
+| P.7 | Queue low-risk changes | **B+** (was B) | Outbox queues chat and service requests only, with backoff. Favourites and notes do not queue. **Pass update:** R1: favourites queue offline. Notes still do not. |
 | P.8 | Never queue purchases | **A** | Offline contract marks them needs-connection. |
 | N.1 | Cache versioning, expiry, logout cleanup, shared device | **B+** | `lifecycle.ts`, `deviceBackup`; storage is **localStorage** (about 5 MB, synchronous, one string per copy). Gap: move bulk copies to IndexedDB. |
 | N.2 | Do not rely on Background Sync | **A** | Retries on open and on reconnect. |
@@ -213,7 +213,7 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | 5 | Timestamp on server save | **B+** | Receipt screen (`/home/check-in/receipt`). |
 | 6 | Keep entry and say what failed on rejection | **B+** | (†) |
 | 7 | Reconcile; never overwrite a better local draft | **B** | Not verified. |
-| 8 | Flag contradictory states | **C+** | Not found. Gap: compare checklist against server status on refresh and show a named conflict. |
+| 8 | Flag contradictory states | **B+** (was C+) | Not found. Gap: compare checklist against server status on refresh and show a named conflict. **Pass update:** R2: banner when finished but steps are open or no time is recorded. |
 | 9 | Downloadable checklist summary | **B+** | `/me/print` includes tasks (†). |
 | 10 | Step-specific help link | **B** | (†) |
 | 11 | Consistent across channels | **B** | Single channel. |
@@ -227,13 +227,13 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | Req | Requirement | Grade | Evidence and gap |
 | --- | --- | :---: | --- |
 | N.1 | Today / Voyage / Explore / Party / Help | **B+** | Five tabs: Home, Plan, Ship, Chat, Me, adapted by stage (`stageNav`). Different names, same intent; "Party" lives under Plan and Chat. |
-| 1 | Keep filters, list position, cruise on return | **C** | `window.scrollTo(0,0)` on every path change; `useSearchParams` used on only five screens. This is the exact Reddit complaint. |
-| 2 | Visible trip switcher | **D** | None found. |
+| 1 | Keep filters, list position, cruise on return | **A-** (was C) | `window.scrollTo(0,0)` on every path change; `useSearchParams` used on only five screens. This is the exact Reddit complaint. **Pass update:** R1: scroll memory and URL filters on the main list screens. Not every screen yet. |
+| 2 | Visible trip switcher | **D** | None found. **Pass update:** Unchanged: needs a server-wide current-trip override (round 2). |
 | 3 | One global search across ports, venues, activities, restaurants, reservations | **B** | `searchIndex.ts` covers venues, events, places, services, tours, ports, screens; **not reservations or party items**. |
 | 4 | Natural-language search | **A-** | Stanley understanding engine, `/home/ask`. |
 | 5 | Contextual actions on results | **B** | (†) |
 | 6 | No repeat sign-in | **A-** | JWT refresh, session token. |
-| 7 | Back returns to exact prior screen | **B-** | Router back works; scroll lost. |
+| 7 | Back returns to exact prior screen | **A-** (was B-) | Router back works; scroll lost. **Pass update:** R1. |
 | 8 | Labels over icons | **A-** | `tabText`, jsx-a11y lint. |
 | 9 | Common actions in one or two taps | **A** | `TOP_TASKS` and `navProblems()` are asserted by test (MAX_TAPS = 2). |
 | 10 | Phone, tablet, desktop | **A-** | Phone bar and desktop rail. |
@@ -251,7 +251,7 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | B | Shore access: walk, gangway, tender, shuttle | **A-** | `tender.ts`. |
 | B | Port map, transport | **B** | Offline port map was open (POR-06). |
 | C | Filter by type, duration, distance, demand, cost | **B+** | `ExplorerCatalogue`, `excursionFit` (†). |
-| C | Filters persist on return | **C** | Same scroll and filter problem as 6.1. |
+| C | Filters persist on return | **B+** (was C) | Same scroll and filter problem as 6.1. **Pass update:** R1: ports, venues, excursions and explorer filters live in the address. |
 | C | Princess vs independent clearly marked | **B+** | (†) |
 | C | Shortlist shared to party | **A-** | `shortlist.ts`, bundles. |
 | C | "Booked by me" view | **B+** | `/excursions-explorer` (†). |
@@ -271,7 +271,7 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | 2 | Favourite and personal schedule | **A-** | `useFavourites`. |
 | 3 | Venue, deck, time, duration, reservation need | **A-** | `eventAccess.ts`. |
 | 4 | Booked / reservation-only / walk-in | **A-** | `eventAccess.ts` (†). |
-| 5 | Completeness: preliminary, updated, final | **D** | Not found. |
+| 5 | Completeness: preliminary, updated, final | **B+** (was D) | Not found. **Pass update:** R3: Explorer days say preliminary or final (final from 18:00 the evening before). The rule is authored, not supplied by the source. |
 | 6 | Last updated time | **A-** | Saved copy age (3-day limit for `program`). |
 | 7 | Notify on change to saved events | **B+** | Push kind `scheduleChange`. |
 | 8 | Conflict detection | **B+** | `program.ts`. |
@@ -281,7 +281,7 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | 12 | Search by performer, venue, type, time | **B** | Events are in the search index; performer search not verified. |
 | 13 | Quiet-day / family-day planner | **A-** | `rhythm`, `stanleyFamily`, `/plan/rhythm`. |
 | 14 | Age suitability from verified data | **B** | (†) |
-| 15 | Keep scroll on return | **C** | Same as 6.1. |
+| 15 | Keep scroll on return | **A-** (was C) | Same as 6.1. **Pass update:** R1. |
 
 **To A+:** add a schedule status (preliminary, updated, final, with "expected by" date before it is published), performer search, and scroll restoration.
 
@@ -290,8 +290,8 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | Req | Requirement | Grade | Evidence and gap |
 | --- | --- | :---: | --- |
 | 1 | Options by date, period, venue, availability | **B+** | Dining explorer, `diningView`. |
-| 2 | Explain eligibility in context | **C** | No eligibility reasoning found in `src/domain/dining.ts`. Gap: G-05. |
-| 3 | No inventory vs eligibility vs payment error | **C** | Not found as separate outcomes. |
+| 2 | Explain eligibility in context | **A-** (was C) | No eligibility reasoning found in `src/domain/dining.ts`. Gap: G-05. **Pass update:** Already built: `diningWindow` and `actionGate` give a reason and a date and never show a dead button. First read missed it. |
+| 3 | No inventory vs eligibility vs payment error | **B+** (was C) | Not found as separate outcomes. **Pass update:** Open, opensOn, needsBooking, readOnly, closed and finished are separate outcomes. |
 | 4 | Alternatives by time, venue, party size | **B+** | `alternatives.ts`. |
 | 5 | Select a linked party | **C+** | See 3.2 E.1. |
 | 6 | Dining in timeline and wallet | **B+** | `/plan/reservations`. |
@@ -316,7 +316,7 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | 5 | Redemption history | **B** | (†) |
 | 6 | Pending vs settled | **A** | `FolioState`: posted, pending, disputed, refunded, adjusted; totals separate pending. |
 | 7 | Dispute with reference prefilled | **B+** | Disputed lines tie to cases (`/me/cases`). |
-| 8 to 9 | Loyalty tier, which benefits, and why not | **B-** | `LoyaltyScreen` found; no "not available because" text found. |
+| 8 to 9 | Loyalty tier, which benefits, and why not | **B+** (was B-) | `LoyaltyScreen` found; no "not available because" text found. **Pass update:** R2: "Not available to you yet" lists what unlocks each missing perk (a front-end copy of the table). |
 | 10 | Refresh time on folio | **A** | `folio` is a must-work-offline kind with age. |
 | 11 | End-of-cruise statement download | **A-** | `/me/bill/final`. |
 
@@ -329,13 +329,13 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | 1 | Searchable offline deck plan | **A-** | `DeckMapScreen`, `deckPlans/`, in the app bundle. A graphic plan was open in the earlier gap list (OB-04); `deckPlans` now exists. |
 | 2 | Search venues and facilities | **A-** | `searchPlaces`, `/ship/venues`. |
 | 3 | Deck, landmarks, hours, accessibility | **B+** | (†) |
-| 4 | Route between venues with deck changes and elevators | **B+** | `wayBetween`, `buildGraph(closed)`; elevator banks shown. |
-| 5 | Accessible (step-free) routes | **C+** | Step-free marks and an access note; no routing preference found. |
+| 4 | Route between venues with deck changes and elevators | **A-** (was B+) | `wayBetween`, `buildGraph(closed)`; elevator banks shown. **Pass update:** Graphic plan with the route drawn and a route from the guest's cabin exist. |
+| 5 | Accessible (step-free) routes | **A-** (was C+) | Step-free marks and an access note; no routing preference found. **Pass update:** Already built: step-free preference and closed-lift rerouting. First read missed it. |
 | 6 | Bookmark venues | **A-** | `useVenuePins`. |
 | 7 | Static fallback | **A** | The whole map is static; no live positioning is assumed. |
 | 8 | Say whether directions use live location | **A-** | Start point is chosen by the guest. |
-| 9 | "Take me to my next event" | **B** | Not verified. |
-| 10 | Share meeting point on the map | **B-** | Chat place bundle; no map pin. |
+| 9 | "Take me to my next event" | **B+** (was B) | Not verified. **Pass update:** R6: on the planner's now and next lines; not on reservation rows. |
+| 10 | Share meeting point on the map | **B+** (was B-) | Chat place bundle; no map pin. **Pass update:** R6: meeting-point cards link to the map. |
 
 **To A+:** a step-free route option in the graph, "route to my next event" on Home and on every timeline row, and a map pin in the chat place card.
 
@@ -381,13 +381,13 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 | 2 | Report from the screen where it happened | **B+** | `/me/report-problem` (†). |
 | 3 | Safe diagnostic context attached | **B+** | `diagnostics/log.ts`, `DiagnosticsSettings`. |
 | 4 | Never attach passport or payment | **A-** | `security.test.ts`, `dataRules` (†). |
-| 5 | Description plus optional screenshot | **C+** | Screenshot not found. |
+| 5 | Description plus optional screenshot | **B+** (was C+) | Screenshot not found. **Pass update:** Already built: log and screenshot attach. No redaction step. |
 | 6 | Case number and status history | **A-** | `/me/cases`. |
-| 7 | Who will answer: bot, Princess, Guest Services | **B+** | Chat service lane (†). |
+| 7 | Who will answer: bot, Princess, Guest Services | **B+** | Chat service lane (†). **Pass update:** R7: report screen says where a note goes. Report rows show no status. |
 | 8 | Do not just say reinstall | **A-** | Fix-it flows. |
 | 9 | Fallback contact when digital is down | **B+** | `HelpSheet` phone alternative (scorecard B4). |
 | 10 | Stanley with approved support content and escalation | **A-** | Concierge handoff rules (scorecard C2). |
-| 11 | Known-outage notice | **C+** | No service-notice feed found (only the disruption hub for ship events). |
+| 11 | Known-outage notice | **A-** (was C+) | No service-notice feed found (only the disruption hub for ship events). **Pass update:** R7: banner on every signed-in screen for declared incidents (feed existed; nothing declares one in the prototype). |
 
 **To A+:** a service-notice banner fed by the server, screenshot attach with redaction, and the "who will answer" label on every case.
 
@@ -420,7 +420,7 @@ Each row is one numbered requirement from the research. "Gap" says what moves it
 
 ### 3.17 Metrics, section 8
 
-The research's scorecard measures (task completion, time to find a booking, offline success rate, etc.) need **baselines and instrumentation**. We have `track('screen')`, a stats module and Stanley telemetry, but no task-completion funnel for the top-10 tasks. **Grade C+.** Gap: G-10.
+The research's scorecard measures (task completion, time to find a booking, offline success rate, etc.) need **baselines and instrumentation**. We had `track('screen')`, a stats module and Stanley telemetry, but no task-completion funnel for the top-10 tasks. **Grade C+, now B-:** R8 added an on-device funnel and `docs/pain-points-measures.md`. No fleet measure and no baseline yet.
 
 ## 4. Gaps in priority order
 
