@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { Camera, Check, ShieldAlert, ShieldCheck, X } from 'lucide-react'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
@@ -24,11 +24,20 @@ export function MessageSafety({ messageId, from, name, onBlocked }: { messageId:
   const [sent, setSent] = useState(false)
   const report = useAction(async () => { await api.aboard.chat.report(messageId, reason); setSent(true) })
   const block = useAction(async () => { await api.aboard.chat.block(from, true); onBlocked() })
+  // Opening the panel (or its answer) makes the card taller: bring the whole card into view in the history, and nothing moves if it already fits.
+  const panel = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const card = panel.current?.closest('.chat-msg')
+    if (!card) return
+    const frame = window.requestAnimationFrame(() => card.scrollIntoView({ block: 'nearest', behavior: 'auto' }))
+    return () => window.cancelAnimationFrame(frame)
+  }, [open, sent, report.error, block.error])
   return (
     <>
       <button type="button" className="chat-act chat-act--icon" aria-expanded={open} aria-label={`${t('safe.more')} ${who}`} title={t('safe.more')} onClick={() => setOpen(!open)}><ShieldAlert aria-hidden="true" /></button>
       {open && (
-        <div className="chat-safety">
+        <div className="chat-safety" ref={panel}>
           {sent ? <p role="status">{t('safe.reported')}</p> : (
             <div className="field">
               <FieldLabel htmlFor={`rsn-${messageId}`} help={t('helptip.reportReason')}>{t('safe.reason')}</FieldLabel>

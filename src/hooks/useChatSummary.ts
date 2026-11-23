@@ -28,14 +28,16 @@ export const isChatLive = (): boolean => live
 export const chatChanged = (): void => { if (typeof window !== 'undefined') window.dispatchEvent(new Event(CHANGED)) }
 
 /** Runs `onChange` when the server says something changed in chat (a request, an answer, later a message). The screen refetches; the nudge carries no data. */
-export function useChatLive(onChange: () => void): void {
+export function useChatLive(onChange: () => void, own = false): void {
   const latest = useRef(onChange)
   useEffect(() => { latest.current = onChange })
   useEffect(() => {
     const run = () => latest.current()
     window.addEventListener(LIVE, run)
-    return () => window.removeEventListener(LIVE, run)
-  }, [])
+    // `own`: also when this device changed chat itself (a group deleted, an invitation answered), so a banner that lists such things drops it at once.
+    if (own) window.addEventListener(CHANGED, run)
+    return () => { window.removeEventListener(LIVE, run); if (own) window.removeEventListener(CHANGED, run) }
+  }, [own])
 }
 
 /** Runs `onTyping` with the conversation (32 hex digits) when the server says someone is typing there. Typing is a nudge of its own: it never reloads the numbers or the thread. */

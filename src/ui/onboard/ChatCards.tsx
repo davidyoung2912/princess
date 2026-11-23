@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { requestGreeting } from '../../chat/greet'
+import { getContext, subscribeContext } from '../../account/context'
 import { AtSign } from 'lucide-react'
 import type { ChatCard, ChatConversation, ChatMessage, ChatPin, ChatShareables } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
@@ -46,10 +48,17 @@ export function CardMessage({ card }: { card: ChatCard }) {
 /** A message's words with each `@Name` in strong type; a screen reader still reads it as ordinary words. */
 export function MessageWords({ text, mentionsYou }: { text: string; mentionsYou?: boolean }) {
   const parts = mentionParts(text)
+  const me = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.name ?? ''
   return (
     <p>
       {mentionsYou && <span className="visually-hidden">{t('mention.youLabel')}. </span>}
-      {parts.map((p, i) => (p.mention ? <strong key={i} className="chat-mention">{p.text}</strong> : <span key={i}>{p.text}</span>))}
+      {parts.map((p, i) => {
+        if (!p.mention) return <span key={i}>{p.text}</span>
+        const who = p.text.slice(1)
+        // Someone else's @name is a link: it starts a message to them, like tapping their picture. Your own name, and Stanley's, stay plain bold words.
+        if (who === me || who === 'Stanley') return <strong key={i} className="chat-mention">{p.text}</strong>
+        return <button key={i} type="button" className="chat-mention chat-mention--link" aria-label={t('chat.greet', { name: who })} onClick={() => requestGreeting(who)}>{p.text}</button>
+      })}
     </p>
   )
 }

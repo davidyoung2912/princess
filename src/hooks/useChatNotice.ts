@@ -23,8 +23,8 @@ export function useChatNotice(summary: ChatSummary | null): { notice: ChatNotice
     const a = arrivals(prev.current, summary)
     prev.current = summary
     if (a.requests + a.messages === 0 || !may.current) return
-    void Promise.all([a.requests > 0 ? api.chatConnections.list() : null, a.messages > 0 ? api.chatConversations.list() : null])
-      .then(([connections, conversations]) => { const n = chooseNotice(a, connections, conversations); if (n && may.current) setNotice(n) }, () => undefined)
+    void Promise.all([a.requests > 0 ? api.chatConnections.list() : null, a.messages > 0 ? api.chatConversations.list() : null, a.requests > 0 ? api.chatGroups.invites().catch(() => null) : null])
+      .then(([connections, conversations, invites]) => { const n = chooseNotice(a, connections, conversations, invites); if (n && may.current) setNotice(n) }, () => undefined)
   }, [summary])
   // An unacknowledged urgent message stays until "Got it" and ignores calm mode and the pop-ups setting. The summary says which conversations; the list says who.
   const [urgent, setUrgent] = useState<ChatNotice | null>(null)

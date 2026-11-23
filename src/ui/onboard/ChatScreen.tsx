@@ -1,3 +1,4 @@
+import { BeforeBookingNote } from './BeforeBooking'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
 import type { ServiceThread } from '../../api/types'
@@ -52,7 +53,7 @@ export function ChatScreen() {
     <div className="page">
       <p>{t('chat.free')}</p>
       {params.get('gone') === '1' && <Banner kind="info" title={t('chat.goneTitle')}><p>{t('chat.goneBody')}</p></Banner>}
-      {!service && <Card info><p>{t('chat.beforeBooking')}</p></Card>}
+      {!service && <BeforeBookingNote />}
       {people && <RequestsBanner onOpen={() => { void nav('/chat/people?invitations=1') }} />}
       {people && <SentBanner onOpen={() => { void nav('/chat/people?invitations=1') }} />}
       <Conversations />

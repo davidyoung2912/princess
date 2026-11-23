@@ -63,7 +63,9 @@ public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? LastTheirsAt = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Owner = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Leader = false,
-    int MessageCount = 0, int MineCount = 0, int PinCount = 0, int LastMineTo = 0, int LastMineDelivered = 0, int LastMineSeen = 0, int WaitingAck = 0,
+    int MessageCount = 0, int MineCount = 0, int PinCount = 0, int LastMineTo = 0, int LastMineDelivered = 0, int LastMineSeen = 0, int WaitingAck = 0, int PhotoCount = 0, int DayCount = 0, int MentionsYou = 0, int TopCount = 0, int WaitingInvites = 0, int OnlineOthers = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? AvgReplySeconds = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? BusyHour = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? TopName = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OwnerName = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OwnerAvatar = null);
 

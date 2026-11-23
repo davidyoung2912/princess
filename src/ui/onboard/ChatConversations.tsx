@@ -48,7 +48,7 @@ import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { Depart, OctagonAlert, TriangleAlert } from '../icons'
-import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, Users, UserPlus, UserMinus, Info, X, Footprints, type LucideIcon } from 'lucide-react'
+import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Filter, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, Users, UserPlus, UserMinus, Info, X, Footprints, type LucideIcon } from 'lucide-react'
 
 /** A small icon for each quick reply; the words are its label. */
 const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
@@ -70,7 +70,7 @@ import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWr
 import { askBefore, showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
 import { ChatAvatar, GreetFace, MyChatAvatar } from './ChatLooks'
-import { subscribeGreeting, withGreeting } from '../../chat/greet'
+import { requestGreeting, subscribeGreeting, takePendingGreeting, withGreeting } from '../../chat/greet'
 import { EmojiPicker } from './ChatEmoji'
 import { insertEmoji, wantsEmojiPicker } from '../../domain/chatEmoji'
 import { chatFeedback } from '../../domain/chatFeedback'
@@ -226,20 +226,45 @@ function AwayPeople({ rows, onChange }: { rows: readonly ChatConversation[]; onC
   )
 }
 
+/** Choose one or more people to show only their messages in the history (the others stay on the server; clearing the filter brings everything back). */
+function SenderFilter({ people, mine, picked, onChange }: { people: readonly MentionPerson[]; mine: string; picked: readonly string[]; onChange: (next: string[]) => void }) {
+  const [open, setOpen] = useState(false)
+  const everyone: MentionPerson[] = [{ id: mine, name: t('chat.you') }, ...people]
+  const toggle = (id: string) => onChange(picked.includes(id) ? picked.filter((p) => p !== id) : [...picked, id])
+  return (
+    <div className="sender-filter">
+      <div className="button-row">
+        <Button variant="secondary" icon={Filter} aria-expanded={open} onClick={() => setOpen((v) => !v)}>{picked.length > 0 ? t('sfilter.buttonOn', { count: picked.length }) : t('sfilter.button')}</Button>
+        {picked.length > 0 && <Button variant="tertiary" icon={X} onClick={() => onChange([])}>{t('sfilter.clear')}</Button>}
+      </div>
+      {open && (
+        <div role="group" aria-label={t('sfilter.label')} className="chip-row sender-filter__chips">
+          {everyone.map((p) => <Chip key={p.id} pressed={picked.includes(p.id)} onToggle={() => toggle(p.id)}>{p.name}</Chip>)}
+        </div>
+      )}
+      {picked.length > 0 && <p className="muted" role="status">{t('sfilter.note', { names: everyone.filter((p) => picked.includes(p.id)).map((p) => p.name).join(', ') })}</p>}
+    </div>
+  )
+}
+
 /** The button in an open group that shows the same members dialog as the icon on the group's card. */
 function MembersButton({ chat, shipTime }: { chat: { id: string; name: string }; shipTime: (at: number) => string }) {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Button variant="secondary" icon={Users} onClick={() => setOpen(true)}>{t('gmem.title')}</Button>
-      {open && <GroupMembers chat={chat} shipTime={shipTime} onClose={() => setOpen(false)} />}
+      <div className="button-row"><Button variant="secondary" icon={Users} onClick={() => setOpen(true)}>{t('gmem.title')}</Button></div>
+      {open && <GroupMembers chat={chat} shipTime={shipTime} onClose={() => setOpen(false)} onGreet={requestGreeting} />}
     </>
   )
 }
 
+/** A usual reply time in words: "under a minute", "about 4 min", "about 2 hr". */
+const replyTime = (seconds: number): string =>
+  seconds < 60 ? t('conv.stat.replyUnder') : seconds < 3600 ? t('conv.stat.replyMin', { count: Math.round(seconds / 60) }) : t('conv.stat.replyHr', { count: Math.max(1, Math.round(seconds / 3600)) })
+
 /** One row of the list: who, the last line, an urgency word, the mute and closed tags, and the unread count. */
 /** The numbers on a card: when it was started and by whom, how many are in it, and when each side last wrote. */
-function ChatStats({ c, shipTime }: { c: ChatConversation; shipTime: (at: number) => string }) {
+export function ChatStats({ c, shipTime }: { c: ChatConversation; shipTime: (at: number) => string }) {
   const messages = c.messageCount ?? 0
   const stanley = isStanleyChat(c)
   // How the newest message you wrote has travelled: reached, then read (read only where both sides share receipts).
@@ -250,7 +275,10 @@ function ChatStats({ c, shipTime }: { c: ChatConversation; shipTime: (at: number
   ] : [
     [c.startedAt ? (c.ownerName && !c.permanent ? t('conv.stat.startedBy', { time: shipTime(c.startedAt), name: c.ownerName }) : t('conv.stat.started', { time: shipTime(c.startedAt) })) : null, t('conv.stat.people', { count: c.members.length + 1 })],
     [c.lastMineAt ? t('conv.stat.mine', { time: shipTime(c.lastMineAt) }) : t('conv.stat.mineNever'), c.lastTheirsAt ? t('conv.stat.theirs', { time: shipTime(c.lastTheirsAt) }) : t('conv.stat.theirsNever')],
-    [t('conv.stat.messagesMine', { count: messages, mine: c.mineCount ?? 0 }), travelled, c.pinCount ? t('conv.stat.pinned', { count: c.pinCount }) : null, c.unread > 0 ? t('conv.stat.unread', { count: c.unread }) : null],
+    [t('conv.stat.messagesMine', { count: messages, mine: c.mineCount ?? 0 }), c.photoCount ? t('conv.stat.photos', { count: c.photoCount }) : null, travelled, c.pinCount ? t('conv.stat.pinned', { count: c.pinCount }) : null],
+    [c.dayCount ? t('conv.stat.day', { count: c.dayCount }) : t('conv.stat.quiet'), c.topName && c.members.length > 1 ? t('conv.stat.top', { name: c.topName, count: c.topCount ?? 0 }) : null, c.waitingInvites ? t('conv.stat.invites', { count: c.waitingInvites }) : null],
+    [c.members.length > 0 ? t('conv.stat.online', { online: 1 + (c.onlineOthers ?? 0), total: c.members.length + 1 }) : null, c.avgReplySeconds !== undefined && messages >= 4 ? t('conv.stat.reply', { time: replyTime(c.avgReplySeconds) }) : null, c.busyHour !== undefined && messages >= 8 ? t('conv.stat.busy', { time: shipTime(Date.UTC(2000, 0, 1, c.busyHour)).replace(/:00\b/, '') }) : null],
+    [c.mentionsYou ? t('conv.stat.mentions', { count: c.mentionsYou }) : null, c.unread > 0 ? t('conv.stat.unread', { count: c.unread }) : null],
   ]).map((r) => r.filter(Boolean).join(' · ')).filter(Boolean)
   return <span className="conv__stats muted">{rows.map((r) => <span key={r} className="conv__stat-line">{r}</span>)}</span>
 }
@@ -300,7 +328,7 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, onLeave, s
           {canLeave && <button type="button" className="conv__tool conv__tool--danger" onClick={() => onLeave(c)} aria-label={t('conv.tool.leave', { name: c.name })} title={t('conv.tool.leave', { name: c.name })}><Depart aria-hidden="true" /></button>}
         </span>
       )}
-      {members && <GroupMembers chat={c} shipTime={shipTime} onClose={() => setMembers(false)} />}
+      {members && <GroupMembers chat={c} shipTime={shipTime} onClose={() => setMembers(false)} onGreet={(name) => { onOpen(c.id); requestGreeting(name) }} />}
     </li>
   )
 }
@@ -427,6 +455,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const lastRead = useRef<string | null>(null)
   const first = useRef(true)
   const mine = me?.id ?? ''
+  const [senders, setSenders] = useState<string[]>([])
 
   const latestAnswer = useRef<ChatThread | null>(null)
   const load = useCallback(async () => {
@@ -743,10 +772,19 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     if (!box) return
     const next = withGreeting(text, name).slice(0, MAX_TEXT)
     if (next !== text) { setText(next); setCaret(next.length) }
+    // The history goes to its newest message, and the box takes the focus.
+    const log = logBox.current
+    if (log) log.scrollTop = log.scrollHeight
     box.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
     requestAnimationFrame(() => { box.focus({ preventScroll: true }); box.setSelectionRange(next.length, next.length) })
   })
   useEffect(() => subscribeGreeting(runGreet), [runGreet])
+  // A greeting asked for from the members list on the chat list waits for this conversation to be ready.
+  useEffect(() => {
+    if (phase !== 'ready') return
+    const name = takePendingGreeting()
+    if (name) requestAnimationFrame(() => runGreet(name))
+  }, [phase, runGreet])
   // Photos attached to the draft go out together with its words when the guest presses Send.
   const [askTerms, setAskTerms] = useState(false)
   const acceptTerms = useAction(async () => { await api.chatConnections.acceptPhotoTerms(); setAskTerms(false); void sendDraftPhotos.run() })
@@ -806,7 +844,9 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     return <GoneFromChat id={id} owner={owner} onBack={onBack} />
   }
   const dividerId = dividerBefore(messages, firstUnread)
-  const shownMessages = heldReactions.length === 0 ? messages : messages.map((m) => heldReactions.reduce((acc, j) => (j.messageId === m.id ? withReactions(acc, setMyReaction(acc.reactions, j.emoji)) : acc), m))
+  const reacted = heldReactions.length === 0 ? messages : messages.map((m) => heldReactions.reduce((acc, j) => (j.messageId === m.id ? withReactions(acc, setMyReaction(acc.reactions, j.emoji)) : acc), m))
+  // Filtering by sender shows only what the chosen people wrote (nothing of Stanley's or the system lines).
+  const shownMessages = senders.length === 0 ? reacted : reacted.filter((m) => !m.stanley && !m.system && senders.includes(m.from))
   const queued = pendingFor(id, outbox.items).filter((q) => !messages.some((m) => m.id === q.id))
   const bubbles: PendingMessage[] = [...sending, ...queued.filter((q) => !sending.some((s) => s.id === q.id))]
   const name = conversation?.name ?? ''
@@ -825,7 +865,9 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {conversation && conversation.kind !== 'direct' && !permanent && !room && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
+      {conversation && !permanent && !room && conversation.kind !== 'stanley' && <ChatStats c={conversation} shipTime={shipTime} />}
       {conversation?.kind === 'group' && <MembersButton chat={conversation} shipTime={shipTime} />}
+      {conversation && (conversation.kind === 'group' || conversation.kind === 'party') && (conversation.people?.length ?? 0) > 0 && <SenderFilter people={conversation.people ?? []} mine={mine} picked={senders} onChange={setSenders} />}
       {back && !offline && <p className="muted">{t('conv.backOnShip', { names: back })}</p>}
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
@@ -1160,7 +1202,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged, 
       <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
       <p><strong>{noticeHeadline(m.text)}</strong></p>
       {body && <p>{body}</p>}
-      {state !== 'active' && <p className="muted">{t(state === 'superseded' ? (n.lane === 'suggestion' ? 'stanley.moment.putAway' : 'stanley.notice.superseded') : 'stanley.notice.expired')}</p>}
+      {state === 'superseded' && <p className="muted">{t(n.lane === 'suggestion' ? 'stanley.moment.putAway' : 'stanley.notice.superseded')}</p>}
       {link && (n.actions ?? []).length === 0 && <div className="button-row"><LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton></div>}
       {state === 'active' && onChanged && n.lane === 'suggestion' && <MomentButtons m={m} conversationId={conversationId} onChanged={onChanged} />}
       {state === 'active' && onChanged && <ChatNoticeOffers m={m} conversationId={conversationId} onChanged={onChanged} />}

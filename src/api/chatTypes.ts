@@ -197,6 +197,18 @@ export interface ChatConversation {
   lastMineSeen?: number
   /** The Stanley chat only: notices still waiting for your Got it. */
   waitingAck?: number
+  /** More context: pictures shared, messages in the last 24 hours, unread messages that name you, the most active writer and how many they wrote, and (the leader) invitations still waiting. Absent when zero. */
+  photoCount?: number
+  dayCount?: number
+  mentionsYou?: number
+  topName?: string
+  topCount?: number
+  waitingInvites?: number
+  /** How many of the other members have the app open right now (this server only). */
+  onlineOthers?: number
+  /** How long a reply usually takes, in seconds, and the hour (0-23, UTC) with the most messages; absent when there is not enough to say. */
+  avgReplySeconds?: number
+  busyHour?: number
   /** A made group or private chat only: who started it, and their chosen avatar (absent for initials). */
   ownerName?: string
   ownerAvatar?: string
@@ -549,7 +561,7 @@ export interface ChatGroupsApi {
   /** Creator only. Rejects `invalid` (`name`, `blocked`) or `forbidden` (`creator`). */
   rename(id: string, name: string): Promise<ChatGroup>
   /** Creator only. Rejects `invalid` (`person`, `notConnected`, `noGuardian`), `forbidden` (`creator`) or `conflict` (`full`). */
-  invite(id: string, personIds: string[]): Promise<ChatGroup>
+  invite(id: string, personIds: string[], invitePersonIds?: string[]): Promise<ChatGroup>
   /** An admin: only admins post, or everyone again. Rejects `forbidden` (`admin`). */
   setAnnouncementOnly(id: string, on: boolean): Promise<ChatGroup>
   /** Creator only; never themself. */

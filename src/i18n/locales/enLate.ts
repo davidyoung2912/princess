@@ -6085,7 +6085,6 @@ export const enLate = {
   'stanley.moment.topic.onboard': 'On board',
   'stanley.moment.topic.remember': 'After the cruise',
   'stanley.notice.superseded': 'Replaced by a newer message.',
-  'stanley.notice.expired': 'No longer needed.',
   'stanley.notice.open': 'Open',
   'stanley.notice.needsTitle': 'Needs you',
   'stanley.notice.needsBody': 'Notices you have not confirmed yet.',

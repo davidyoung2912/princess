@@ -622,6 +622,12 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
                    (SELECT COUNT(*) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL) AS MessageCount,
                    (SELECT COUNT(*) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId = me.UserId) AS MineCount,
                    (SELECT COUNT(*) FROM dbo.ChatPins p WHERE p.GroupId = g.Id) AS PinCount,
+                   (SELECT COUNT(*) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND (x.Photo IS NOT NULL OR x.ExtraPhotos > 0)) AS PhotoCount,
+                   (SELECT COUNT(*) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.[At] > DATEADD(HOUR, -24, SYSUTCDATETIME())) AS DayCount,
+                   (SELECT COUNT(*) FROM dbo.ChatMentions mn JOIN dbo.ChatMessages x ON x.Id = mn.MessageId WHERE mn.UserId = me.UserId AND x.GroupId = g.Id AND x.DeletedAt IS NULL AND x.Id > ISNULL(me.LastReadMessageId, 0)) AS MentionsYou,
+                   rp.AvgReplySeconds AS AvgReplySeconds, bh.BusyHour AS BusyHour,
+                   tt.TopName AS TopName, ISNULL(tt.TopCount, 0) AS TopCount,
+                   CASE WHEN g.Kind = 'group' AND g.CreatedByUserId = me.UserId THEN (SELECT COUNT(*) FROM dbo.ChatGroupInvites gi WHERE gi.GroupId = g.Id AND gi.Status IN ('pending','awaitingGuardian')) ELSE 0 END AS WaitingInvites,
                    (SELECT COUNT(*) FROM dbo.ChatGroupMembers o WHERE o.GroupId = g.Id AND o.Status = 'active' AND o.UserId <> me.UserId AND mm.Id IS NOT NULL) AS LastMineTo,
                    (SELECT COUNT(*) FROM dbo.ChatMessageDeliveries d WHERE d.MessageId = mm.Id) AS LastMineDelivered,
                    (SELECT COUNT(*) FROM dbo.ChatGroupMembers o JOIN dbo.UserPrefs ou ON ou.UserId = o.UserId AND ou.ReceiptsOn = 1
@@ -636,6 +642,13 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             OUTER APPLY (SELECT TOP 1 x.Id FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId = me.UserId ORDER BY x.Id DESC) mm
             OUTER APPLY (SELECT TOP 1 m.Id, m.FromUserId, m.[Text], m.Photo, m.[At], m.Urgency, m.DeletedAt FROM dbo.ChatMessages m WHERE m.GroupId = g.Id AND (g.Kind <> 'stanley' OR (m.IsSystem = 0 AND m.DeletedAt IS NULL)) AND {Window} ORDER BY m.Id DESC) lm
             OUTER APPLY (SELECT TOP 1 x.Persona, x.Subtitle FROM dbo.ChatMessages x WHERE g.Kind = 'stanley' AND x.GroupId = g.Id AND x.Persona IS NOT NULL ORDER BY x.Id DESC) sp
+            OUTER APPLY (SELECT TOP 1 tu.ChatName AS TopName, COUNT(*) AS TopCount FROM dbo.ChatMessages x JOIN dbo.Users tu ON tu.Id = x.FromUserId WHERE g.Kind IN ('group','party') AND x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL GROUP BY tu.ChatName ORDER BY COUNT(*) DESC, tu.ChatName) tt
+            OUTER APPLY (SELECT CAST(AVG(CAST(q.Gap AS BIGINT)) AS INT) AS AvgReplySeconds
+                         FROM (SELECT m.FromUserId, LAG(m.FromUserId) OVER (ORDER BY m.Id) AS PrevFrom, DATEDIFF(SECOND, LAG(m.[At]) OVER (ORDER BY m.Id), m.[At]) AS Gap
+                               FROM dbo.ChatMessages m WHERE g.Kind IN ('group','direct','party') AND m.GroupId = g.Id AND m.IsSystem = 0 AND m.DeletedAt IS NULL AND m.FromUserId IS NOT NULL) q
+                         WHERE q.PrevFrom IS NOT NULL AND q.PrevFrom <> q.FromUserId AND q.Gap BETWEEN 0 AND 86400) rp
+            OUTER APPLY (SELECT TOP 1 DATEPART(HOUR, m.[At]) AS BusyHour FROM dbo.ChatMessages m WHERE g.Kind IN ('group','direct','party') AND m.GroupId = g.Id AND m.IsSystem = 0 AND m.DeletedAt IS NULL
+                         GROUP BY DATEPART(HOUR, m.[At]) ORDER BY COUNT(*) DESC, DATEPART(HOUR, m.[At])) bh
             WHERE me.UserId = @userId AND me.Status = 'active'
             ORDER BY CASE WHEN g.Kind = 'stanley' THEN 0 ELSE 1 END, ISNULL(lm.[At], g.CreatedAt) DESC, g.Id DESC
             """, new { userId }, null, ct))).ToList();

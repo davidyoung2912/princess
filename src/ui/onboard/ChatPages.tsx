@@ -1,10 +1,10 @@
+import { BeforeBookingNote } from './BeforeBooking'
 import { Link } from 'react-router'
 import { useNavigate } from 'react-router'
 import { canFindPeople, canUseGuestServices } from '../../domain/chatKeep'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { t } from '../../i18n'
-import { Card } from '../Card'
 import { People } from './ChatPeople'
 import { Rooms } from './ChatRooms'
 import { ChatSearch } from './ChatSearch'
@@ -18,7 +18,7 @@ function Gate({ need, children }: { need: 'people' | 'service'; children: React.
   if (ok) return <div className="page">{children}</div>
   return (
     <div className="page">
-      <Card info><p>{t('chat.beforeBooking')}</p></Card>
+      <BeforeBookingNote />
       <p><Link to="/chat">{t('chat.backToChat')}</Link></p>
     </div>
   )

@@ -3,14 +3,15 @@ import { greetingFor, requestGreeting, subscribeGreeting, withGreeting } from '.
 
 describe('chat greeting', () => {
   it('greets by first name', () => {
-    expect(greetingFor('Maria Lopez')).toBe('Hey Maria, ')
+    expect(greetingFor('Maria L.')).toBe('Hey @Maria L., ')
     expect(greetingFor('  Stanley ')).toBe('Hey Stanley, ')
+    expect(greetingFor('chattymom')).toBe('Hey @chattymom, ')
     expect(greetingFor('')).toBe('')
   })
 
   it('fills an empty box and leaves typed words alone', () => {
-    expect(withGreeting('', 'Maria')).toBe('Hey Maria, ')
-    expect(withGreeting('   ', 'Maria')).toBe('Hey Maria, ')
+    expect(withGreeting('', 'Maria')).toBe('Hey @Maria, ')
+    expect(withGreeting('   ', 'Maria')).toBe('Hey @Maria, ')
     expect(withGreeting('See you at 6', 'Maria')).toBe('See you at 6')
     expect(withGreeting('', '')).toBe('')
   })

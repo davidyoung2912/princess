@@ -112,14 +112,20 @@ function Toast({ notice, onClose }: { notice: ChatNotice; onClose: () => void })
     if (!notice.requestId) return
     setBusy(true)
     try {
-      const c = await api.chatConnections.respond(notice.requestId, true)
-      chatChanged()
-      setDone({ to: c.conversationId ? `/chat?c=${encodeURIComponent(c.conversationId)}` : '/chat' })
+      if (notice.group) {
+        await api.chatGroups.respond(notice.requestId, true)
+        chatChanged()
+        setDone({ to: '/chat' })
+      } else {
+        const c = await api.chatConnections.respond(notice.requestId, true)
+        chatChanged()
+        setDone({ to: c.conversationId ? `/chat?c=${encodeURIComponent(c.conversationId)}` : '/chat' })
+      }
     } catch { setDone('failed') } finally { setBusy(false) }
   }
   const text = done === 'failed' ? t('notice.failed')
-    : done ? t('notice.accepted', { name: notice.name })
-    : notice.kind === 'request' ? t('notice.request', { name: notice.name })
+    : done ? (notice.group ? t('notice.joined', { group: notice.group }) : t('notice.accepted', { name: notice.name }))
+    : notice.kind === 'request' ? (notice.group ? t('notice.groupInvite', { name: notice.name, group: notice.group }) : t('notice.request', { name: notice.name }))
     : notice.count > 1 ? t('notice.messages', { count: notice.count, name: notice.name }) : t('notice.message', { name: notice.name })
   const target = done && done !== 'failed' ? done.to : noticePath(notice)
   return (

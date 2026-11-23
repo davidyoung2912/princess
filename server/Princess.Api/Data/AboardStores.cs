@@ -250,6 +250,16 @@ public sealed class ChatConversationRow : ChatMemberRow
     public int LastMineSeen { get; set; }
     /// <summary>The permanent Stanley chat only: notices that ask for Got it and have not had it.</summary>
     public int WaitingAck { get; set; }
+    /// <summary>More context for the card: pictures shared, messages in the last 24 hours, unread messages that name the caller, the most active writer (and how many they wrote), and for the leader the invitations still waiting.</summary>
+    public int PhotoCount { get; set; }
+    public int DayCount { get; set; }
+    public int MentionsYou { get; set; }
+    public string? TopName { get; set; }
+    public int TopCount { get; set; }
+    public int WaitingInvites { get; set; }
+    /// <summary>How long a reply usually takes (seconds between a message and the next one from someone else, within a day), and the hour (UTC) with the most messages. Null when there is not enough to say.</summary>
+    public int? AvgReplySeconds { get; set; }
+    public int? BusyHour { get; set; }
 }
 
 /// <summary>One message found by a search or read for an export (phase 9): only what a list of words needs, never a photo, card, reaction or quote.</summary>

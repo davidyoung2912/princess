@@ -12,6 +12,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
+import { useShipTime } from './shipTime'
 import { DialogHeader } from '../DialogHeader'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
@@ -174,18 +175,20 @@ export function LeaveChat({ chat, onClose, onLeft }: { chat: { id: string; kind:
 }
 
 /** Who is in a chat group: each person with their avatar, role, when they joined, how much they have written and when they last used the app. */
-export function GroupMembers({ chat, shipTime, onClose }: { chat: { id: string; name: string }; shipTime: (at: number) => string; onClose: () => void }) {
+export function GroupMembers({ chat, shipTime, onClose, onGreet }: { chat: { id: string; name: string }; shipTime: (at: number) => string; onClose: () => void; /** Tapping another member's picture: the dialog closes and the chat opens with "Hey @Name, " in its message box. */ onGreet?: (name: string) => void }) {
   const group = useMine(() => api.chatGroups.get(chat.id), [chat.id])
   return (
     <Dialog title={t('gmem.title')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('gmem.title')} subtext={chat.name} icon={Users} onClose={onClose} />}>
       <Load state={group}>
         {(g) => (
           <>
-            <p className="muted">{t('gmem.count', { count: g.members.length, max: g.max })}</p>
+            <p className="muted">{t('gmem.count', { count: g.members.length })}</p>
             <ul className="gmem" aria-label={t('gmem.title')}>
               {g.members.map((m) => (
                 <li key={m.id} className="gmem__row">
-                  <ChatAvatar avatar={m.avatar} name={m.name} />
+                  {m.you || !onGreet
+                    ? <ChatAvatar avatar={m.avatar} name={m.name} />
+                    : <button type="button" className="greet-face gmem__face" aria-label={t('chat.greet', { name: m.name })} onClick={() => { onClose(); onGreet(m.name) }}><ChatAvatar avatar={m.avatar} name={m.name} /></button>}
                   <div className="gmem__body">
                     <p className="gmem__name"><strong>{m.you ? t('gmem.you', { name: m.name }) : m.name}</strong>{m.creator ? <span className="tag tag--good">{t('cgroup.status.leader')}</span> : m.admin ? <span className="tag">{t('gmem.admin')}</span> : null}</p>
                     <p className="muted gmem__line">{m.lastMessageAt ? t('gmem.lastMessage', { time: shipTime(m.lastMessageAt) }) : t('gmem.noMessages')}{m.messages ? ` · ${t('gmem.messages', { count: m.messages })}` : ''}</p>
@@ -207,7 +210,6 @@ export function GroupMembers({ chat, shipTime, onClose }: { chat: { id: string; 
           </>
         )}
       </Load>
-      <div className="button-row"><Button variant="secondary" onClick={onClose}>{t('gmem.close')}</Button></div>
     </Dialog>
   )
 }
@@ -242,7 +244,7 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
   const [note, setNote] = useState('')
   const done = (text: string) => { setNote(text); group.retry(); onChanged(); chatChanged() }
   const rename = useAction(async () => { const clean = cleanGroupName(name ?? ''); if (clean) { await api.chatGroups.rename(id, clean); setName(null); done(t('cgroup.renamed')) } })
-  const invite = useAction(async () => { await api.chatGroups.invite(id, picked); setPicked([]); done(t('cgroup.invited', { count: picked.length })) })
+  const invite = useAction(async (found: string[]) => { const count = picked.length + found.length; await api.chatGroups.invite(id, picked, found); setPicked([]); done(t('cgroup.invited', { count })) })
   const remove = useAction(async (personId: string, who: string) => { await api.chatGroups.remove(id, personId); done(t('cgroup.removed', { name: who })) })
   const revoke = useAction(async (inviteId: string, who: string) => { await api.chatGroups.revokeInvite(id, inviteId); done(t('cgroup.revoked', { name: who })) })
   const leave = useAction(async () => { await api.chatGroups.leave(id); chatChanged(); onLeft() })
@@ -292,10 +294,11 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
                   <Button type="submit" disabled={rename.busy || cleanGroupName(name ?? '') === null || name === g.name}>{t('cgroup.renameSave')}</Button>
                 </form>
                 <Problem error={rename.error} />
-                <AddPeople group={g} connections={connections} picked={picked} setPicked={setPicked} busy={invite.busy} onInvite={() => void invite.run()} />
+                <AddPeople group={g} connections={connections} picked={picked} setPicked={setPicked} busy={invite.busy} onInvite={(found) => invite.run(found)} />
                 <Problem error={invite.error} />
               </>
             )}
+            <GroupFacts g={g} />
             <p className="muted">{t('cgroup.history')}</p>
             {!g.isCreator && <Button variant="secondary" onClick={() => setLeaving(true)}>{t('cgroup.leave')}</Button>}
             {g.isCreator && <Button variant="secondary" icon={Trash2} onClick={() => setDeleting(true)}>{t('cgroup.deleteChat')}</Button>}
@@ -317,14 +320,75 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
   )
 }
 
+/** The group at a glance, for its management page: who started it and when, how many are in or invited, how much has been said and by whom, and who was last in the app. */
+function GroupFacts({ g }: { g: ChatGroup }) {
+  const shipTime = useShipTime()
+  const leader = g.members.find((m) => m.creator)
+  const total = g.members.reduce((n, m) => n + (m.messages ?? 0), 0)
+  const top = g.members.filter((m) => (m.messages ?? 0) > 0).sort((a, b) => (b.messages ?? 0) - (a.messages ?? 0))[0]
+  const lastWriter = g.members.filter((m) => m.lastMessageAt).sort((a, b) => (b.lastMessageAt ?? 0) - (a.lastMessageAt ?? 0))[0]
+  const lastSeen = g.members.filter((m) => !m.you && m.lastActiveAt).sort((a, b) => (b.lastActiveAt ?? 0) - (a.lastActiveAt ?? 0))[0]
+  const lines = [
+    [leader?.joinedAt ? t('gfact.started', { time: shipTime(leader.joinedAt), name: leader.you ? t('gfact.you') : leader.name }) : null, t('conv.stat.people', { count: g.members.length })],
+    [g.waiting.length > 0 ? t('conv.stat.invites', { count: g.waiting.length }) : null, g.announcementOnly ? t('gfact.leaderOnly') : t('gfact.everyoneWrites')],
+    [t('conv.stat.messages', { count: total }), top ? t('conv.stat.top', { name: top.you ? t('gfact.you') : top.name, count: top.messages ?? 0 }) : null],
+    [lastWriter?.lastMessageAt ? t('gfact.lastWrote', { name: lastWriter.you ? t('gfact.you') : lastWriter.name, time: shipTime(lastWriter.lastMessageAt) }) : t('gfact.noMessages'), lastSeen?.lastActiveAt ? t('gfact.lastSeen', { name: lastSeen.name, time: shipTime(lastSeen.lastActiveAt) }) : null],
+  ].map((r) => r.filter(Boolean).join(' · ')).filter(Boolean)
+  return <p className="muted conv__stats">{lines.map((l) => <span key={l} className="conv__stat-line">{l}</span>)}</p>
+}
+
 function AddPeople({ group, connections, picked, setPicked, busy, onInvite }: {
-  group: ChatGroup; connections: ReturnType<typeof useMine<ChatConnections>>; picked: string[]; setPicked: (p: string[]) => void; busy: boolean; onInvite: () => void
+  group: ChatGroup; connections: ReturnType<typeof useMine<ChatConnections>>; picked: string[]; setPicked: (p: string[]) => void; busy: boolean; onInvite: (found: string[]) => Promise<unknown>
 }) {
   const people = invitable(everyone(connections.data), group)
+  // Anyone not yet a contact is found by searching, as on the New Chat Group page, and invited together with the people ticked above.
+  const [found, setFound] = useState<ChatPerson[]>([])
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<ChatPerson[]>([])
+  const [nobody, setNobody] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const taken = new Set([...group.members.map((m) => m.id), ...group.waiting.map((w) => w.personId)])
+  const search = useAction(async () => {
+    const clean = cleanQuery(query)
+    if (!clean) { setSearchError(t('people.searchHint')); return }
+    setSearchError('')
+    const got = (await api.chatConnections.search(clean)).filter((p) => !taken.has(p.id))
+    setNobody(got.length === 0)
+    setResults((old) => [...got, ...old.filter((o) => !got.some((g) => g.id === o.id))])
+    setQuery('')
+  })
+  const addable = results.filter((p) => !found.some((f) => f.id === p.id) && !people.some((c) => c.personId === p.id))
+  const total = picked.length + found.length
   return (
     <div>
       <PickPeople people={people} picked={picked} onToggle={(id) => setPicked(togglePicked(picked, id))} legend={t('cgroup.add')} />
-      {people.length > 0 && <Button variant="secondary" disabled={busy || picked.length === 0} onClick={onInvite}>{t('cgroup.addSend')}</Button>}
+      <h3 className="gmem__sub">{headingCase(t('cgroup.findTitle'))}</h3>
+      <p className="muted">{t('cgroup.findBody')}</p>
+      <Field label={t('people.search')} value={query} maxLength={254} autoComplete="off" error={searchError || undefined} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void search.run() } }} />
+      <div className="button-row"><Button type="button" variant="secondary" disabled={search.busy} onClick={() => void search.run()}>{t('cgroup.findGo')}</Button></div>
+      <ActionError error={search.error} />
+      {nobody && <p className="muted find-note">{t('cgroup.findNone')}</p>}
+      {addable.length > 0 && (
+        <ul className="plain-list">
+          {addable.map((p) => (
+            <li key={p.id}>
+              <span className="person-line"><ChatAvatar avatar={p.avatar} name={p.name} small /><strong>{p.name}</strong></span>
+              <Button type="button" variant="secondary" onClick={() => setFound((x) => [...x, p])}>{t('cgroup.findAdd')}<span className="visually-hidden"> {p.name}</span></Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {found.length > 0 && (
+        <ul className="plain-list">
+          {found.map((p) => (
+            <li key={p.id}>
+              <span className="person-line"><ChatAvatar avatar={p.avatar} name={p.name} small /><strong>{p.name}</strong> <span className="muted">{t('cgroup.status.pending')}</span></span>
+              <Button type="button" variant="secondary" icon={Trash2} onClick={() => setFound((x) => x.filter((f) => f.id !== p.id))}>{t('cgroup.findDrop')}<span className="visually-hidden"> {p.name}</span></Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="button-row group-add__send"><Button disabled={busy || total === 0} onClick={() => void onInvite(found.map((f) => f.id)).then(() => setFound([]), () => undefined)}>{t('cgroup.addSend')}</Button></div>
     </div>
   )
 }

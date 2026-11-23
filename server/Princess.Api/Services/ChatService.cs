@@ -12,7 +12,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, ChatTypingTracker typing, ChatShareService share, ChatRoomService rooms, StanleyReminderService? reminders = null, ChatAskQueue? askQueue = null)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, ChatTypingTracker typing, ChatShareService share, ChatRoomService rooms, StanleyReminderService? reminders = null, ChatAskQueue? askQueue = null, Realtime.RealtimeState? presence = null)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -69,6 +69,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             LastTheirsAt: (m as ChatConversationRow)?.LastTheirsAt is { } lt ? Shipboard.Ms(lt) : null,
             MessageCount: (m as ChatConversationRow)?.MessageCount ?? 0, MineCount: (m as ChatConversationRow)?.MineCount ?? 0, PinCount: (m as ChatConversationRow)?.PinCount ?? 0,
             LastMineTo: (m as ChatConversationRow)?.LastMineTo ?? 0, LastMineDelivered: (m as ChatConversationRow)?.LastMineDelivered ?? 0, LastMineSeen: (m as ChatConversationRow)?.LastMineSeen ?? 0, WaitingAck: (m as ChatConversationRow)?.WaitingAck ?? 0,
+            PhotoCount: (m as ChatConversationRow)?.PhotoCount ?? 0, DayCount: (m as ChatConversationRow)?.DayCount ?? 0, MentionsYou: (m as ChatConversationRow)?.MentionsYou ?? 0, TopName: (m as ChatConversationRow)?.TopName, TopCount: (m as ChatConversationRow)?.TopCount ?? 0, WaitingInvites: (m as ChatConversationRow)?.WaitingInvites ?? 0,
+            OnlineOthers: roomy || presence is null ? 0 : members.Count(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active && presence.IsConnected(p.PublicId)),
+            AvgReplySeconds: (m as ChatConversationRow)?.AvgReplySeconds, BusyHour: (m as ChatConversationRow)?.BusyHour,
             Owner: m.Kind == ChatConversationRules.Group && m.CreatedByUserId == actor.Id,
             Leader: m.Kind == ChatConversationRules.Direct && m.CreatedByUserId == actor.Id,   // the starter of a personal chat: badge only, they can still leave it
             OwnerName: owner is null ? null : ShortName(owner), OwnerAvatar: owner?.Avatar);

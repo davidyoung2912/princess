@@ -856,7 +856,7 @@ button.chat-quote { cursor: pointer; }
 .conv__time { font-weight: 700; }
 
 /* The time on the newest message received in a chat is bold, read or not. */
-.chat-msg:not(.chat-msg--mine, .chat-msg--system, .chat-msg--deleted, .chat-typing-card):not(:has(~ .chat-msg:not(.chat-msg--mine, .chat-msg--system, .chat-msg--deleted, .chat-typing-card))) .chat-msg__time { font-weight: 800; color: var(--text); }
+.chat-msg:not(.chat-msg--mine, .chat-msg--deleted, .chat-typing-card):not(:has(~ .chat-msg:not(.chat-msg--mine, .chat-msg--deleted, .chat-typing-card))) .chat-msg__time { font-weight: 800; color: var(--text); }
 .conv-actions { margin-block-start: var(--space-5); }
 .chat-typing-card { scroll-margin-block-end: var(--space-6); }
 .leave-chat { margin-block: var(--space-3) var(--space-4); }
@@ -895,3 +895,15 @@ button.chat-quote { cursor: pointer; }
 .chat-mention-pick:hover, .chat-mention-pick:focus-visible { background: var(--primary); color: var(--on-primary, #fff); }
 .chat-mention-pick__dot { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: var(--primary); color: var(--on-primary, #fff); font-size: var(--fs-caption); }
 .chat-mention-pick:hover .chat-mention-pick__dot, .chat-mention-pick:focus-visible .chat-mention-pick__dot { background: var(--bg); color: var(--primary); }
+/* The same tilt and glow on the pictures in the group members list (the other members' pictures are buttons that open the chat with a greeting). */
+.gmem__face { margin-inline-end: 0; }
+.gmem__face .conv__avatar { transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease); }
+.gmem__face:is(:hover, :focus-visible) .conv__avatar { transform: scale(1.12) rotate(-6deg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent), 0 0 12px color-mix(in srgb, var(--primary) 60%, transparent); }
+@media (prefers-reduced-motion: reduce) { .gmem__face .conv__avatar { transition: none; } .gmem__face:is(:hover, :focus-visible) .conv__avatar { transform: none; } }
+:root[data-motion='reduced'] .gmem__face:is(:hover, :focus-visible) .conv__avatar { transform: none; }
+/* Add people on a group's edit page: room around the search box, the buttons and the note under them. */
+.group-add__send { margin-block: var(--space-4) var(--space-3); }
+.gmem__sub + .muted + .field, .gmem__sub + .muted { margin-bottom: var(--space-2); }
+.before-booking__actions { display: flex; justify-content: flex-end; margin-top: var(--space-3); }
+.chat-mention--link { padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; cursor: pointer; }
+.chat-mention--link:hover, .chat-mention--link:focus-visible { color: var(--primary); text-decoration-style: solid; }

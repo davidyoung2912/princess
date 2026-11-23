@@ -7,7 +7,7 @@ namespace Princess.Api.Contracts;
 public sealed record ChatGroupCreateBody(string? Name, List<Guid>? PersonIds, List<Guid>? InvitePersonIds = null);
 
 /// <summary>Invite more people to a group. Only its creator may.</summary>
-public sealed record ChatGroupInviteBody(List<Guid>? PersonIds);
+public sealed record ChatGroupInviteBody(List<Guid>? PersonIds, List<Guid>? InvitePersonIds = null);
 
 public sealed record ChatGroupRenameBody(string? Name);
 

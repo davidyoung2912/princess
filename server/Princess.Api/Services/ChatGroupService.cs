@@ -40,12 +40,14 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
     {
         var group = await CreatorGroupAsync(actor, id, ct);
         var ids = Distinct(actor, body?.PersonIds);
-        if (ids.Count == 0) throw ApiException.Invalid("person");
+        var foundIds = Distinct(actor, body?.InvitePersonIds).Where(f => !ids.Contains(f)).ToList();   // people found by searching, who are not contacts yet
+        if (ids.Count + foundIds.Count == 0) throw ApiException.Invalid("person");
         var now = await clock.NowAsync(actor, ct);
         await store.ExpireAsync(actor.Id, now, ct);
         var members = await store.ListActiveAsync(group.Id, ct);
         var waiting = await store.ListWaitingAsync(group.Id, ct);
         var fresh = (await ConnectedAsync(actor, ids, ct)).Where(u => members.All(m => m.UserId != u.Id) && waiting.All(w => w.InviteeId != u.Id)).ToList();
+        fresh.AddRange((await FoundAsync(actor, foundIds, ct)).Where(u => members.All(m => m.UserId != u.Id) && waiting.All(w => w.InviteeId != u.Id)));
         if (!ChatGroupRules.Fits(members.Count, waiting.Count, fresh.Count)) throw ApiException.Conflict("full");
         await InviteAllAsync(actor, group, fresh, now, ct);
         return await ViewAsync(actor, group, ct);

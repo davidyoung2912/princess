@@ -1,5 +1,5 @@
 /** When and what the in-app chat notice shows (docs/chat-plan.md, phase 8). Framework-free. */
-import type { ChatConnection, ChatConnections, ChatConversation, ChatMessage, ChatSummary } from '../api/chatTypes'
+import type { ChatConnection, ChatConnections, ChatConversation, ChatGroupInvite, ChatMessage, ChatSummary } from '../api/chatTypes'
 import { noticeBody, noticeHeadline } from './stanleyThread'
 
 export interface ChatNotice {
@@ -20,6 +20,8 @@ export interface ChatNotice {
   messageId?: string
   /** For an informative notice about a chat that still exists for the guest: that conversation's id, so the notice stays quiet while they are looking at it. */
   about?: string | null
+  /** A request that is an invitation to a chat group: the group's name (the notice's `requestId` is the invitation, answered through the group routes). */
+  group?: string
 }
 
 export interface Arrivals { requests: number; messages: number }
@@ -55,10 +57,15 @@ export const mayNotifyUrgent = (path: string): boolean => path !== '/chat' && !p
 const newest = <T extends { at: number }>(rows: readonly T[]): T | null => rows.reduce<T | null>((best, r) => (!best || r.at > best.at ? r : best), null)
 
 /** The notice for what arrived: a request wins over a message because it needs an answer. Null when nothing visible matches (a muted chat, a closed one, text sent by me). */
-export function chooseNotice(a: Arrivals, connections: ChatConnections | null, conversations: readonly ChatConversation[] | null): ChatNotice | null {
-  if (a.requests > 0 && connections) {
-    const mine = newest(connections.incoming)
+export function chooseNotice(a: Arrivals, connections: ChatConnections | null, conversations: readonly ChatConversation[] | null, invites: readonly ChatGroupInvite[] | null = null): ChatNotice | null {
+  if (a.requests > 0 && (connections || invites)) {
+    const mine = connections ? newest(connections.incoming) : null
+    const invite = invites ? newest(invites.filter((i) => i.kind === 'incoming')) : null
+    // Whichever arrived last: a request from a person, or an invitation to a chat group.
+    if (invite && (!mine || invite.at > mine.at)) return { key: `invite:${invite.id}`, kind: 'request', name: invite.from, count: 1, requestId: invite.id, conversationId: null, group: invite.groupName }
     if (mine) return request(mine, true)
+  }
+  if (a.requests > 0 && connections) {
     const child = newest(connections.approvals)
     if (child) return request(child, false)
   }

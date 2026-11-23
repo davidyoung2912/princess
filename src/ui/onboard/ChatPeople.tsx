@@ -26,7 +26,7 @@ import type { ApiError } from '../../api/errors'
 export function RequestsBanner({ onOpen }: { onOpen: () => void }) {
   const list = useMine(() => api.chatConnections.list())
   const invites = useMine(() => api.chatGroups.invites())
-  useChatLive(() => { list.retry(); invites.retry() })
+  useChatLive(() => { list.retry(); invites.retry() }, true)
   const count = (list.data ? waitingCount(list.data) : 0) + (invites.data?.length ?? 0)
   if (count === 0) return null
   return <Banner kind="info" title={t('people.banner', { count })} action={<Button variant="secondary" onClick={onOpen}>{t('people.bannerOpen')}</Button>} />
@@ -36,7 +36,7 @@ export function RequestsBanner({ onOpen }: { onOpen: () => void }) {
 export function SentBanner({ onOpen }: { onOpen: () => void }) {
   const list = useMine(() => api.chatConnections.list())
   const sent = useMine(() => api.chatGroups.sentInvites())
-  useChatLive(() => { list.retry(); sent.retry() })
+  useChatLive(() => { list.retry(); sent.retry() }, true)
   const count = (list.data?.outgoing.length ?? 0) + (sent.data?.length ?? 0)
   if (count === 0) return null
   return <Banner kind="info" title={t('people.sent', { count })} action={<Button variant="secondary" onClick={onOpen}>{t('people.sentOpen')}</Button>} />
@@ -144,7 +144,7 @@ function Outgoing({ row, onDone }: { row: ChatConnection; onDone: (note: string)
 /** The group invitations the guest sent that nobody has answered yet, each with a way to take it back. The other person's list drops it at once. */
 function SentGroupInvites({ onDone }: { onDone: (note: string) => void }) {
   const sent = useMine(() => api.chatGroups.sentInvites())
-  useChatLive(() => sent.retry())
+  useChatLive(() => sent.retry(), true)
   const rows = sent.data ?? []
   if (rows.length === 0) return null
   return (

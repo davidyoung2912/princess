@@ -42,6 +42,12 @@ describe('chooseNotice', () => {
     const child = chooseNotice({ requests: 1, messages: 0 }, { ...none, approvals: [conn({ id: 'a1', kind: 'approval' })] }, [])
     expect(child).toMatchObject({ kind: 'request', requestId: null })
   })
+  it('shows an invitation to a chat group as a request that can be accepted', () => {
+    const invite = { id: 'gi1', kind: 'incoming' as const, groupName: 'funny jokes', from: 'chattydad', childId: null, childName: null, at: 9, expiresAt: 99 }
+    expect(chooseNotice({ requests: 1, messages: 0 }, none, [], [invite])).toMatchObject({ kind: 'request', requestId: 'gi1', name: 'chattydad', group: 'funny jokes' })
+    expect(chooseNotice({ requests: 1, messages: 0 }, { ...none, incoming: [conn({ at: 20 })] }, [], [invite])).toMatchObject({ requestId: 'r1' })
+    expect(chooseNotice({ requests: 1, messages: 0 }, none, [], [{ ...invite, kind: 'approval' as const }])).toBeNull()
+  })
   it('names the newest unmuted unread conversation and skips muted, closed and own', () => {
     const list = [convo({ id: 'old', at: 1, name: 'A' }), convo({ id: 'new', at: 5, name: 'B' }), convo({ id: 'muted', at: 9, muted: true }), convo({ id: 'mine', at: 8, mine: true })]
     expect(chooseNotice({ requests: 0, messages: 1 }, null, list)).toMatchObject({ kind: 'message', conversationId: 'new', name: 'B' })
