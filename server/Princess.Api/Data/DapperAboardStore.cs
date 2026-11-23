@@ -1038,7 +1038,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], IsSystem, [At]) VALUES (@groupId, @userId, @text, 1, @at)", new { groupId, userId, text, at }, null, ct));
     }
 
-    public async Task<ChatMessageRow> AddGroupStanleyMessageAsync(long groupId, string text, bool system, DateTime at, CancellationToken ct)
+    public async Task<ChatMessageRow> AddGroupStanleyMessageAsync(long groupId, string text, bool system, DateTime at, CancellationToken ct, IReadOnlyList<long>? mentions = null)
     {
         await using var c = await db.OpenAsync(ct);
         var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
@@ -1046,7 +1046,10 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             OUTPUT inserted.Id, inserted.PublicId
             VALUES (@groupId, NULL, @text, @system, @at)
             """, new { groupId, text, system, at }, null, ct));
-        return new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = 0, Text = text, At = at, IsSystem = system, Urgency = "normal" };
+        var who = mentions is { Count: > 0 } ? mentions.ToArray() : [];
+        if (who.Length > 0)
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatMentions (MessageId, UserId) SELECT @id, UserId FROM dbo.ChatGroupMembers WHERE GroupId = @groupId AND Status = 'active' AND UserId IN @who", new { id, groupId, who }, null, ct));
+        return new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = 0, Text = text, At = at, IsSystem = system, Urgency = "normal", Mentions = [.. who] };
     }
 
     public async Task<string?> FindExtraPhotoAsync(long messageId, int position, CancellationToken ct)

@@ -151,7 +151,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
                 // A relayed notice asks for Got it when it is critical or important; the guest sees whether they have, and a replaced or expired one no longer asks.
                 var asks = notice is not null && ChatUrgencyRules.CanAck(m.Urgency, m.IsSystem, false, true) && !notice.Expired && !notice.Superseded;
                 messages.Add(new ChatMessageDto(m.PublicId, Guid.Empty, m.Text, Shipboard.Ms(m.At), FromName: StanleyPersonaRules.Name, System: m.IsSystem, Stanley: true, Subtitle: m.Subtitle,
-                    Urgency: notice is null ? null : Flag(m.Urgency), Acked: asks ? m.AckedBy.Contains(actor.Id) : null, Notice: notice));
+                    Urgency: notice is null ? null : Flag(m.Urgency), Acked: asks ? m.AckedBy.Contains(actor.Id) : null, Notice: notice,
+                    MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()]));
                 continue;
             }
             if (publicOf(m.FromUserId) is not { } from) continue;

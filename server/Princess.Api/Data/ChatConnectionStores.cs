@@ -76,6 +76,9 @@ public interface IChatConnectionStore
     Task<bool> HasBlockedAsync(long blocker, long blocked, CancellationToken ct);
     /// <summary>The person's chat choices: whether others can find them by name, and whether a notice may show the message text.</summary>
     Task<(bool Findable, bool ShowPreview, bool Typing)> GetSettingsAsync(long userId, CancellationToken ct);
+    /// <summary>Whether the guest has accepted the photo-sharing terms.</summary>
+    Task<bool> PhotoTermsAcceptedAsync(long userId, CancellationToken ct);
+    Task AcceptPhotoTermsAsync(long userId, DateTime now, CancellationToken ct);
     Task SetSettingsAsync(long userId, bool findable, bool showPreview, bool typing, CancellationToken ct);
     /// <summary>Hide me, in one transaction: turns off being found, ends every agreed connection and withdraws every waiting request the person sent or was sent. Returns how many connections it closed.</summary>
     Task<int> HideAsync(long userId, DateTime now, CancellationToken ct);
@@ -273,6 +276,22 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
         await using var c = await db.OpenAsync(ct);
         var row = await c.QuerySingleOrDefaultAsync<(bool Findable, bool ShowPreview, bool Typing)?>(Sql.Cmd("SELECT ChatFindable, ChatShowPreview, ChatTyping FROM dbo.UserPrefs WHERE UserId = @userId", new { userId }, null, ct));
         return row ?? (true, false, true);
+    }
+
+    public async Task<bool> PhotoTermsAcceptedAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.UserPrefs WHERE UserId = @userId AND ChatPhotoTermsAt IS NOT NULL", new { userId }, null, ct)) > 0;
+    }
+
+    public async Task AcceptPhotoTermsAsync(long userId, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.UserPrefs WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            WHEN MATCHED AND t.ChatPhotoTermsAt IS NULL THEN UPDATE SET ChatPhotoTermsAt = @now
+            WHEN NOT MATCHED THEN INSERT (UserId, ChatPhotoTermsAt) VALUES (@userId, @now);
+            """, new { userId, now }, null, ct));
     }
 
     public async Task SetSettingsAsync(long userId, bool findable, bool showPreview, bool typing, CancellationToken ct)

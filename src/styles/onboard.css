@@ -276,7 +276,8 @@ button.chat-quote { cursor: pointer; }
 .chat-poll__row label { grid-column: 1 / -1; }
 .chat-rsvp { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block: var(--space-2); }
 .chat-mention { font-weight: 700; }
-.chat-msg--mention { border-inline-end: 4px solid var(--primary); }
+.chat-msg--mention, .chat-msg--stanley.chat-msg--mention, .chat-msg--system.chat-msg--mention { background: var(--gold-tint); border-color: var(--gold, var(--border)); border-inline-end: 4px solid var(--gold, var(--primary)); }
+.chat-msg--mention .chat-mention { font-weight: 800; }
 .chat-msg--pinned { border-block-start: 3px double var(--primary); }
 .chat-pins { margin: var(--space-3) 0; padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--sky-tint); }
 .chat-pins__title { margin: 0 0 var(--space-1); font-size: var(--fs-caption); }
@@ -716,7 +717,7 @@ button.chat-quote { cursor: pointer; }
 .composer__actions > .btn { min-height: var(--target-min); padding-inline: var(--space-4); }
 .composer__actions > .chat-attach { min-height: 2.25rem; padding-inline: var(--space-3); font-size: var(--fs-caption); }
 /* Wider screens have the room to put Photos and Send side by side; a phone stacks them so the message box keeps the width. */
-@media (min-width: 640px) { .composer--chat > .composer__actions { flex-direction: row; align-items: flex-end; } }
+@media (min-width: 640px) { .composer--chat > .composer__actions { flex-direction: column; align-items: stretch; } }
 .chat-attach:disabled { opacity: 0.6; cursor: progress; }
 
 /* Photos attached to the message being written. */
@@ -878,8 +879,19 @@ button.chat-quote { cursor: pointer; }
 .chat-msg--system { text-align: start; border: 1px solid var(--border); border-radius: var(--radius, 0.75rem); padding: var(--space-2) var(--space-3); background: var(--sky-tint); box-shadow: none; }
 .chat-msg--system > p { display: flex; align-items: center; gap: var(--space-2); margin: 0; }
 .chat-msg--system .chat-msg__meta { margin-bottom: var(--space-1); }
-.chat-msg--system .chat-msg__system-text { align-items: flex-start; }
+.chat-msg--system .chat-msg__system-text { display: flex; gap: var(--space-2); align-items: flex-start; }
+.chat-msg--system .chat-msg__system-text p { margin: 0; }
 .chat-msg--system .lucide { flex: none; width: 1.1rem; height: 1.1rem; }
 .chat-msg--system .chat-msg__time { margin-inline-start: auto; font-size: var(--fs-caption); }
 .chat-msg--system-joined { background: var(--success-tint); border-color: var(--success, var(--border)); }
 .chat-msg--system-gone { background: var(--gold-tint); border-color: var(--gold, var(--border)); }
+/* A record of what you did yourself (no Got it): the same solid card and heavy blue edge as a confirmed chat-change notice, never the dashed look of an expired one. */
+.chat-msg--stanley.chat-msg--note { background: var(--sky-tint); border-style: solid; border-color: var(--border); border-inline-start-color: var(--primary); border-inline-start-width: 4px; }
+/* The @ picker: a titled tray with a pill per person, a round initial and the name as it will read in the message. */
+.chat-mentions { background: var(--gold-tint); border-color: var(--gold, var(--border)); }
+.chat-mentions__title { display: flex; align-items: center; gap: var(--space-1); margin: 0 0 var(--space-2); font-size: var(--fs-caption); font-weight: 700; }
+.chat-mentions__title svg { width: 1rem; height: 1rem; }
+.chat-mention-pick { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.25rem; padding: 0.2rem var(--space-3) 0.2rem 0.25rem; border: 1px solid var(--primary); border-radius: 999px; background: var(--bg); color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+.chat-mention-pick:hover, .chat-mention-pick:focus-visible { background: var(--primary); color: var(--on-primary, #fff); }
+.chat-mention-pick__dot { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: var(--primary); color: var(--on-primary, #fff); font-size: var(--fs-caption); }
+.chat-mention-pick:hover .chat-mention-pick__dot, .chat-mention-pick:focus-visible .chat-mention-pick__dot { background: var(--bg); color: var(--primary); }

@@ -245,19 +245,19 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         if (result is not null) throw ApiException.Conflict("answered");
         await notifier.GroupAnsweredAsync(row.InviterId, row.PublicId, who, row.GroupName, true, ct);
         // The person who said yes (not a guardian answering for a child) is thanked by Stanley inside the group they joined.
-        if (asInvitee) await ThanksAsync(row.GroupId, who, now, ct);
+        if (asInvitee) await ThanksAsync(row.GroupId, who, row.InviteeId, now, ct);
         await WelcomeAsync(row.GroupId, row.GroupName, now, ct);
     }
 
     /// <summary>Stanley's thank-you in the group, as his own message. Held back in the same cases as his welcome: no child in the group, his help off there, or his chat route switched off. A failure never undoes the join.</summary>
-    private async Task ThanksAsync(long groupId, string who, DateTime now, CancellationToken ct)
+    private async Task ThanksAsync(long groupId, string who, long inviteeId, DateTime now, CancellationToken ct)
     {
         if (!options.Value.Switches.Chat) return;
         try
         {
             var members = await store.ListActiveAsync(groupId, ct);
             if (members.Any(m => m.IsSupervised) || await stanley.IsOffAsync(groupId, ct)) return;
-            await chat.AddGroupStanleyMessageAsync(groupId, ChatHostRules.AcceptThanks(who), false, now, ct);
+            await chat.AddGroupStanleyMessageAsync(groupId, ChatHostRules.AcceptThanks(who), false, now, ct, [inviteeId]);
         }
         catch (Exception e) when (e is not OperationCanceledException) { }
     }
@@ -273,7 +273,7 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         {
             var members = await store.ListActiveAsync(groupId, ct);
             if (!ChatHostRules.ShouldWelcome(members.Count == 2, false) || members.Any(m => m.IsSupervised) || await stanley.IsOffAsync(groupId, ct)) return;
-            await chat.AddGroupStanleyMessageAsync(groupId, ChatHostRules.GroupWelcome(groupName), true, now, ct);
+            await chat.AddGroupStanleyMessageAsync(groupId, ChatHostRules.GroupWelcome(groupName, Short(members[0])), true, now, ct, [members[0].UserId]);
         }
         catch (Exception e) when (e is not OperationCanceledException) { }
     }

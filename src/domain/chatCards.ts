@@ -68,10 +68,16 @@ export function mentionQuery(text: string, caret: number): { start: number; quer
   return m ? { start: before.length - m[2].length - 1, query: m[2] } : null
 }
 
-/** People whose first name starts with what was typed (case and accents aside), in the order given, at most `limit`. An empty query lists everyone. */
+/**
+ * People whose name (the nickname they chose, or their username when they have none) starts with what was typed, case and accents aside, then those that contain it, in the order given, at most `limit`.
+ * An empty query lists everyone.
+ */
 export function matchPeople(people: readonly MentionPerson[], query: string, limit = 6): MentionPerson[] {
-  const q = query.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
-  return people.filter((p) => p.name.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().startsWith(q)).slice(0, limit)
+  const plain = (s: string): string => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+  const q = plain(query)
+  const starts = people.filter((p) => plain(p.name).startsWith(q))
+  const within = q === '' ? [] : people.filter((p) => !plain(p.name).startsWith(q) && plain(p.name).includes(q))
+  return [...starts, ...within].slice(0, limit)
 }
 
 /** The text with the `@word` at `start` (up to the caret) replaced by `@Name `, and where the caret goes. */
@@ -100,7 +106,7 @@ export interface TextPart { text: string; mention: boolean }
 /** The text cut into plain parts and `@Name` parts, so a name can be drawn in strong type and a screen reader still reads it as words. */
 export function mentionParts(text: string): TextPart[] {
   const parts: TextPart[] = []
-  const re = /@[\p{L}][\p{L}'-]*(?: \p{L}\.)?/gu
+  const re = /@[\p{L}][\p{L}\p{N}_'-]*(?: \p{L}\.)?/gu
   let last = 0
   for (const m of text.matchAll(re)) {
     if (m.index > last) parts.push({ text: text.slice(last, m.index), mention: false })

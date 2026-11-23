@@ -46,6 +46,12 @@ public static class ChatConnectionEndpoints
         chat.MapGet("/settings", async (ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SettingsAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("The caller's chat choices: whether other guests can find them by name (on unless turned off), and whether a notice may show message text (off unless turned on).");
 
+        chat.MapGet("/photo-terms", async (ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(new { accepted = await svc.PhotoTermsAsync(await me.LoadAsync(ct), ct) }))
+            .WithSummary("Whether the caller has accepted the photo-sharing terms shown the first time they send a photo in chat.");
+
+        chat.MapPost("/photo-terms", async (ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => { await svc.AcceptPhotoTermsAsync(await me.LoadAsync(ct), ct); return Results.NoContent(); })
+            .WithSummary("Records that the caller accepted the photo-sharing terms. Asked once; accepting again changes nothing.");
+
         chat.MapPut("/settings", async (ChatSettingsDto body, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SetSettingsAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Saves the caller's chat choices and returns them. The chat nickname is not part of this; it has its own route.");
 

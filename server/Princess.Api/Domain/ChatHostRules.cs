@@ -24,10 +24,10 @@ public static class ChatHostRules
     public static string RoomWelcome(string roomName, string rules) => $"Welcome to {roomName}. House rules: {rules}";
 
     /// <summary>The line Stanley posts when a made group first opens with him switched on: no names, no plans.</summary>
-    public static string GroupWelcome(string groupName) => $"Welcome to {groupName}. I can help you plan something together when you ask. Tap my name to mute me.";
+    public static string GroupWelcome(string groupName, string? to = null) => $"Welcome to {groupName}{(to is null ? "" : $", @{to}")}. I can help you plan something together when you ask. Tap my name to mute me.";
 
     /// <summary>Stanley's thank-you inside the chat a guest has just accepted an invitation into (a group or a personal chat). It names only the guest's short name and makes no promise beyond saying hello.</summary>
-    public static string AcceptThanks(string who) => $"Thanks for accepting this invite, {who}! It's lovely to have you here. Say hello whenever you're ready, and I'm around if you'd like a hand planning something together.";
+    public static string AcceptThanks(string who) => $"Thanks for accepting this invite, @{who}! It's lovely to have you here. Say hello whenever you're ready, and I'm around if you'd like a hand planning something together.";
 
     /// <summary>Whether to post a welcome: once per room per member's first join, and never where the member muted Stanley for the room.</summary>
     public static bool ShouldWelcome(bool firstJoin, bool stanleyMutedHere) => firstJoin && !stanleyMutedHere;

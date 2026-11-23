@@ -3565,6 +3565,9 @@ IF COL_LENGTH(N'dbo.UserPrefs', N'ChatAvatar') IS NULL
   ALTER TABLE dbo.UserPrefs ADD ChatAvatar NVARCHAR(30) NULL CONSTRAINT FK_UserPrefs_ChatAvatars FOREIGN KEY REFERENCES dbo.ChatAvatars (Id);
 IF COL_LENGTH(N'dbo.UserPrefs', N'ChatTyping') IS NULL
   ALTER TABLE dbo.UserPrefs ADD ChatTyping BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatTyping DEFAULT 1;
+-- When the guest accepted the photo-sharing terms shown the first time they send a photo in chat (null until then).
+IF COL_LENGTH(N'dbo.UserPrefs', N'ChatPhotoTermsAt') IS NULL
+  ALTER TABLE dbo.UserPrefs ADD ChatPhotoTermsAt DATETIME2(0) NULL;
 GO
 -- Chat phase 3 (docs/chat-features-research.md, section 11): typed messages and cards, pins and mentions.
 -- Kind is text (the default), card or place. Payload is the server-built JSON of a card or place: names, times and places only, never a price, folio, cabin or booking number.

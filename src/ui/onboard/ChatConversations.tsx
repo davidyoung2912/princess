@@ -55,7 +55,7 @@ const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes
 import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
 import { ClearDraft } from '../ClearDraft'
-import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
+import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, PhotoTermsDialog, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 import { DeleteChat, GroupMembers, GroupPage, LeaveChat, NewGroupPage } from './ChatGroups'
 import { LeavePersonalChat, NewPersonalChatPage } from './ChatPersonal'
@@ -748,6 +748,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   })
   useEffect(() => subscribeGreeting(runGreet), [runGreet])
   // Photos attached to the draft go out together with its words when the guest presses Send.
+  const [askTerms, setAskTerms] = useState(false)
+  const acceptTerms = useAction(async () => { await api.chatConnections.acceptPhotoTerms(); setAskTerms(false); void sendDraftPhotos.run() })
   const sendDraftPhotos = useAction(async () => {
     const [first, ...more] = draftPhotos
     if (!first) return
@@ -761,7 +763,11 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   })
   const cancelDraft = () => { if (typingSentAt.current !== null) { typingSentAt.current = null; api.chatConversations.typingStop(id).catch(() => undefined) }; setText(''); setDraftPhotos([]); setReplyTo(null); setLevel('normal'); setProblem(null) }
   const submit = async (quick?: string) => {
-    if (quick === undefined && draftPhotos.length > 0) { void sendDraftPhotos.run(); return }
+    if (quick === undefined && draftPhotos.length > 0) {
+      // The first photo a guest ever sends asks them to accept the photo terms; the draft stays put until they do.
+      void api.chatConnections.photoTerms().then((accepted) => { if (accepted) void sendDraftPhotos.run(); else setAskTerms(true) }, () => { void sendDraftPhotos.run() })
+      return
+    }
     const body = (quick ?? text).trim()
     if (!body) return
     setProblem(null)
@@ -944,6 +950,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           {!room ? <PhotoAttach photos={draftPhotos} onChange={setDraftPhotos}><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></PhotoAttach> : <div className="composer__actions"><Button type="submit" disabled={(!text.trim() && draftPhotos.length === 0) || sendDraftPhotos.busy}>{t('chat.send')}</Button></div>}
           <ClearDraft show={text.trim() !== '' || draftPhotos.length > 0} onClear={cancelDraft} />
           <DraftPhotos photos={draftPhotos} onChange={setDraftPhotos} />
+          {askTerms && <PhotoTermsDialog busy={acceptTerms.busy} failed={acceptTerms.error !== null && acceptTerms.error !== undefined} onProceed={() => void acceptTerms.run().catch(() => undefined)} onCancel={() => setAskTerms(false)} />}
           <ActionError error={sendDraftPhotos.error} />
           {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">
             {QUICK_REPLY_KEYS.map((k) => { const Icon = QUICK_ICONS[k]; return <button key={k} type="button" className="chat-quick__btn" aria-label={t(`conv.quick.${k}`)} title={t(`conv.quick.${k}`)} onClick={() => void submit(t(`conv.quick.${k}`))}><Icon aria-hidden="true" /></button> })}
@@ -1148,7 +1155,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged, 
   const link = state === 'active' ? safeNoticePath(n.path) : null
   const body = noticeBody(m.text)
   return (
-    <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}${m.acked === true ? ' chat-msg--seen' : ''}`}>
+    <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}${m.acked === true ? ' chat-msg--seen' : ''}${n.kind === 'chatNote' ? ' chat-msg--note' : ''}`}>
       {m.acked !== true && <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>}
       <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
       <p><strong>{noticeHeadline(m.text)}</strong></p>
@@ -1169,17 +1176,17 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     // A change of group status: someone joined (green), left or was removed (amber), or a plain note such as Stanley's welcome (blue).
     const change = /\bjoined\b/i.test(m.text) ? 'joined' : /\b(left|removed)\b/i.test(m.text) ? 'gone' : 'note'
     const Icon = change === 'joined' ? UserPlus : change === 'gone' ? UserMinus : Info
-    return <li className={`chat-msg chat-msg--system chat-msg--system-${change}`}><p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.comment')}</strong><span className="chat-msg__time">{shipTime(m.at)}</span></p>
-      <p className="chat-msg__system-text"><Icon aria-hidden="true" /><span>{m.text}</span></p></li>
+    return <li className={`chat-msg chat-msg--system chat-msg--system-${change}${m.mentionsYou ? ' chat-msg--mention' : ''}`}><p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.comment')}</strong><span className="chat-msg__time">{shipTime(m.at)}</span></p>
+      <div className="chat-msg__system-text"><Icon aria-hidden="true" /><MessageWords text={m.text} mentionsYou={m.mentionsYou} /></div></li>
   }
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
     const n = m.notice
     if (!n) {
       return (
-        <li className="chat-msg chat-msg--stanley">
+        <li className={m.mentionsYou ? 'chat-msg chat-msg--stanley chat-msg--mention' : 'chat-msg chat-msg--stanley'}>
           <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.comment')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
-          <p>{m.text}</p>
+          <MessageWords text={m.text} mentionsYou={m.mentionsYou} />
           {ask && <GroupStanleyPills question={ask} />}
           {onDelete && kind === 'stanley' && <DeleteStanleyMessage onDelete={() => onDelete(m.id)} />}
         </li>

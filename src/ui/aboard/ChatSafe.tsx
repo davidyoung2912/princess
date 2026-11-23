@@ -1,5 +1,7 @@
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
-import { Camera, ShieldAlert, X } from 'lucide-react'
+import { Camera, Check, ShieldAlert, ShieldCheck, X } from 'lucide-react'
+import { Dialog } from '../Dialog'
+import { DialogHeader } from '../DialogHeader'
 import { FieldLabel } from '../Field'
 import { MAX_PHOTO_BYTES, PHOTO_MIN_AGE, PHOTO_TYPES, REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import type { PersonaId } from '../../domain/people'
@@ -131,5 +133,25 @@ export function DraftPhotos({ photos, onChange }: { photos: readonly StagedPhoto
         ))}
       </ul>
     </div>
+  )
+}
+
+/** The terms shown once, the first time a guest sends a photo in chat: what photos are for, what to avoid, and what is not allowed. Proceed records the acceptance; Cancel leaves the photo in the draft. */
+export function PhotoTermsDialog({ busy, failed, onProceed, onCancel }: { busy: boolean; failed: boolean; onProceed: () => void; onCancel: () => void }) {
+  const banned = ['pterms.no.people', 'pterms.no.explicit', 'pterms.no.harm', 'pterms.no.private', 'pterms.no.rights', 'pterms.no.spam'] as const
+  return (
+    <Dialog title={t('pterms.title')} onClose={onCancel} header={(titleId) => <DialogHeader titleId={titleId} title={t('pterms.title')} subtext={t('pterms.subtitle')} icon={ShieldCheck} onClose={onCancel} />}>
+      <p>{t('pterms.intro')}</p>
+      <h3 className="pterms__sub">{t('pterms.noHeading')}</h3>
+      <ul className="pterms__list">
+        {banned.map((k) => <li key={k}>{t(k)}</li>)}
+      </ul>
+      <p className="muted">{t('pterms.outro')}</p>
+      {failed && <p role="alert" className="field__error">{t('pterms.failed')}</p>}
+      <div className="button-row">
+        <Button icon={Check} disabled={busy} onClick={onProceed}>{t('pterms.proceed')}</Button>
+        <Button variant="secondary" icon={X} onClick={onCancel}>{t('pterms.cancel')}</Button>
+      </div>
+    </Dialog>
   )
 }

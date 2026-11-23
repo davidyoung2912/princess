@@ -544,7 +544,8 @@ public interface IChatStore
     /// Stanley speaks in a conversation between people (docs/chat-stanley-plan.md, 3.5): a message with no sender (<c>FromUserId</c> is null, so <see cref="ChatMessageRow.FromStanley"/>). With <paramref name="system"/> it is a short status line
     /// ("Stanley needs a minute"), never unread and never announced; otherwise it is an answer, counted and told like any message. Returns the stored row.
     /// </summary>
-    Task<ChatMessageRow> AddGroupStanleyMessageAsync(long groupId, string text, bool system, DateTime at, CancellationToken ct);
+    /// <summary>Stanley's message in a group. <paramref name="mentions"/> are the members it is aimed at (the card is highlighted for them and nobody else).</summary>
+    Task<ChatMessageRow> AddGroupStanleyMessageAsync(long groupId, string text, bool system, DateTime at, CancellationToken ct, IReadOnlyList<long>? mentions = null);
     /// <summary>One message the person may read in the conversation (their window, not from someone they blocked), or null.</summary>
     Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct);
     /// <summary>The photo after the first of a message (<paramref name="position"/> 1 is the second photo); null when there is none. The caller has already checked the message is readable.</summary>

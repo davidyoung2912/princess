@@ -653,9 +653,9 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 
     public readonly HashSet<(long GroupId, long UserId)> StanleyMuted = [];
 
-    public Task<ChatMessageRow> AddGroupStanleyMessageAsync(long groupId, string text, bool system, DateTime at, CancellationToken ct)
+    public Task<ChatMessageRow> AddGroupStanleyMessageAsync(long groupId, string text, bool system, DateTime at, CancellationToken ct, IReadOnlyList<long>? mentions = null)
     {
-        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = 0, Text = text, At = at, IsSystem = system };
+        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = 0, Text = text, At = at, IsSystem = system, Mentions = [.. mentions ?? []] };
         Messages.Add(new Stored(groupId, row, null));
         return Task.FromResult(row);
     }

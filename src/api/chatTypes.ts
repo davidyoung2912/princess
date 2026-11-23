@@ -110,6 +110,10 @@ export interface ChatConnectionsApi {
   /** Saves the topics switched off. Rejects `invalid` (`topics`). */
   saveStanleyPrefs(topicsOff: string[]): Promise<StanleyChatPrefs>
   saveSettings(settings: ChatSettings): Promise<ChatSettings>
+  /** Whether the guest has accepted the photo-sharing terms (shown the first time they send a photo). */
+  photoTerms(): Promise<boolean>
+  /** Records that they accepted the terms. */
+  acceptPhotoTerms(): Promise<void>
   /** Sets the chat nickname (empty clears it). Rejects with `invalid` when it is not allowed. */
   saveNickname(nickname: string): Promise<ChatSettings>
   sms(): Promise<ChatSms>

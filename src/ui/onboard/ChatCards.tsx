@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { AtSign } from 'lucide-react'
 import type { ChatCard, ChatConversation, ChatMessage, ChatPin, ChatShareables } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { cardLink, cardSummary, cleanNote, isExpired, matchPeople, mentionParts, MAX_PINS, NOTE_MAX, sortPlaces, sortShareables, type MentionPerson } from '../../domain/chatCards'
@@ -80,8 +81,9 @@ export function MentionList({ people, query, onPick }: { people: readonly Mentio
   return (
     <div className="chat-mentions" role="group" aria-label={t('mention.list')}>
       <p role="status" className="visually-hidden">{t('mention.found', { count: found.length })}</p>
+      <p className="chat-mentions__title" aria-hidden="true"><AtSign />{t('mention.list')}</p>
       <ul>
-        {found.map((p) => <li key={p.id}><button type="button" className="chat-act" onClick={() => onPick(p)}>@{p.name}</button></li>)}
+        {found.map((p) => <li key={p.id}><button type="button" className="chat-mention-pick" onClick={() => onPick(p)}><span className="chat-mention-pick__dot" aria-hidden="true">{p.name.slice(0, 1).toUpperCase()}</span>@{p.name}</button></li>)}
       </ul>
     </div>
   )

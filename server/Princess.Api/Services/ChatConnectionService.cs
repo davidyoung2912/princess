@@ -67,6 +67,11 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         return new(findable, preview, typing, actor.ChatNickname ?? "");
     }
 
+    /// <summary>Whether the guest has already accepted the photo-sharing terms (asked once, the first time they send a photo).</summary>
+    public Task<bool> PhotoTermsAsync(UserRecord actor, CancellationToken ct) => store.PhotoTermsAcceptedAsync(actor.Id, ct);
+
+    public async Task AcceptPhotoTermsAsync(UserRecord actor, CancellationToken ct) => await store.AcceptPhotoTermsAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
+
     public async Task<ChatSettingsDto> SetSettingsAsync(UserRecord actor, ChatSettingsDto? body, CancellationToken ct)
     {
         if (body is null) throw ApiException.Invalid("settings");
@@ -241,7 +246,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
             try
             {
                 if (await chat.GetMemberAsync(actor.Id, chatId, ct) is { } member)
-                    await chat.AddGroupStanleyMessageAsync(member.GroupId, ChatHostRules.AcceptThanks(ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast)), false, now, ct);
+                    await chat.AddGroupStanleyMessageAsync(member.GroupId, ChatHostRules.AcceptThanks(ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast)), false, now, ct, [actor.Id]);
             }
             catch (Exception e) when (e is not OperationCanceledException) { }
         }
