@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { ChatSummary } from '../api/chatTypes'
-import { API_URL, api, auth } from '../runtime'
+import { HUB_URL, api, auth } from '../runtime'
 import { startVisibleInterval } from './visibleInterval'
 import { requestsWaiting, shouldAck } from '../domain/chatNotice'
 import { closeSettledChatNotices } from '../push/browser'
@@ -109,7 +109,7 @@ export function useChatSummary(enabled: boolean): ChatSummary | null {
       else if (poll === null) poll = startVisibleInterval(load, POLL_MS)
     }
     const hub = createHubConnection({
-      url: () => hubUrl(API_URL, window.location.href, auth.accessToken()),
+      url: () => hubUrl(HUB_URL, window.location.href, auth.accessToken()),
       onEvent: (target, args) => {
         if (target !== 'chatChanged') return
         const id = (args[0] as { id?: unknown } | undefined)?.id

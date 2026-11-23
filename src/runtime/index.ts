@@ -74,6 +74,12 @@ const session = () => safe(() => sessionStorage)
 /** The server's address: `VITE_API_URL`, or `/api/v1` (the Vite proxy in development). There is no other mode; the server must be running. */
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || '/api/v1'
 
+/**
+ * Where the live chat socket connects. Normally the API address; a host that forwards `/api` to the server (Vercel does, so the sign-in cookie is
+ * first-party) cannot forward a WebSocket, so `VITE_HUB_URL` names the server's own address for it (the socket carries its access token in the query).
+ */
+export const HUB_URL: string = (import.meta.env.VITE_HUB_URL as string | undefined)?.trim() || API_URL
+
 export const auth = createHttpAuthProvider({ baseUrl: API_URL, storage: session(), persistent: local(), channel })
 const http = auth.http
 
@@ -509,7 +515,7 @@ async function getWithRetry(path: string): Promise<unknown> {
 /** Wakes a cold server and its database connection while the guest is still on the sign-in form. Fire and forget: the answer is never read, so no CORS is needed. */
 export function warmServer(): void {
   if (!/^https?:\/\//i.test(API_URL) || typeof fetch === 'undefined') return
-  try { void fetch(`${new URL(API_URL).origin}/health/db`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {}) } catch { /* not worth a failure */ }
+  try { void fetch(`${new URL(HUB_URL).origin}/health/db`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {}) } catch { /* not worth a failure */ }
 }
 
 function loadTables(): void {

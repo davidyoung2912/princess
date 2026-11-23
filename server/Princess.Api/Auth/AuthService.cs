@@ -12,7 +12,7 @@ namespace Princess.Api.Auth;
 public interface IAuthService
 {
     Task<SessionResponse> LoginAsync(LoginRequest request, string? userAgent, string? ip, CancellationToken ct);
-    Task<SessionResponse> RefreshAsync(RefreshRequest request, string? userAgent, string? ip, CancellationToken ct);
+    Task<SessionResponse> RefreshAsync(RefreshRequest request, string? userAgent, string? ip, CancellationToken ct, bool sharedCookie = false);
     Task LogoutAsync(UserRecord user, LogoutRequest request, CancellationToken ct);
     /// <summary>Ends every session this person has, on every device, this one included.</summary>
     Task LogoutEverywhereAsync(UserRecord user, CancellationToken ct);
@@ -91,7 +91,7 @@ public sealed class AuthService(
         return await IssueAsync(user, familyId, refreshTokenId: null, userAgent, ip, ct);
     }
 
-    public async Task<SessionResponse> RefreshAsync(RefreshRequest request, string? userAgent, string? ip, CancellationToken ct)
+    public async Task<SessionResponse> RefreshAsync(RefreshRequest request, string? userAgent, string? ip, CancellationToken ct, bool sharedCookie = false)
     {
         if (string.IsNullOrEmpty(request.RefreshToken) || request.RefreshToken.Length > 200) throw ApiException.Invalid();
 
@@ -99,6 +99,8 @@ public sealed class AuthService(
         var record = await refreshTokens.FindByHashAsync(tokens.HashRefreshToken(request.RefreshToken), ct) ?? throw BadRefreshToken();
         // Ended on purpose (signed out, ended from another device, or retired for a newer sign-in): the app tells the person why, and nothing was copied.
         if (record.RevokedAt is not null && record.UsedAt is null) throw ApiException.Unauthenticated("sessionEnded");
+        // Two tabs share one cookie, so both can ask with the same token a moment apart; the loser is told to ask again (the winner's cookie has arrived by then) instead of ending the session.
+        if (sharedCookie && record.UsedAt is { } used && record.RevokedAt is null && now - used < TimeSpan.FromSeconds(10)) throw ApiException.Conflict("refreshRaced");
         // A spent token coming back means it was copied: end the whole family, the thief's and the owner's.
         if (record.UsedAt is not null || record.RevokedAt is not null)
         {

@@ -7,14 +7,14 @@ const memory = () => {
   return { m, getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) }
 }
 const user = (email: string | null = 'maya@demo.princess.example') => ({ id: 'u1', accountNumber: '4100000001', email, firstName: 'Maya', lastName: 'Harper', role: 'guest', tier: 'none', isDemo: true })
-const session = (n: number, email?: string | null) => ({ accessToken: `a${n}`, expiresAt: 0, refreshToken: `r${n}`, refreshExpiresAt: 0, user: user(email) })
+const session = (n: number, email?: string | null) => ({ accessToken: `a${n}`, expiresAt: 0, refreshToken: '', refreshExpiresAt: 0, user: user(email) })
 const reply = (status: number, body?: unknown) => new Response(body === undefined ? null : JSON.stringify(body), { status })
 
-interface Call { url: string; method: string; auth: string | null; body: string | null }
+interface Call { url: string; method: string; auth: string | null; body: string | null; cookie: string | null; credentials?: RequestCredentials }
 function server(handler: (c: Call) => Response | Promise<Response>) {
   const calls: Call[] = []
   const f = (async (url: string, init: RequestInit) => {
-    const c = { url, method: init.method ?? 'GET', auth: (init.headers as Record<string, string>).authorization ?? null, body: (init.body as string | undefined) ?? null }
+    const c = { url, method: init.method ?? 'GET', auth: (init.headers as Record<string, string>).authorization ?? null, body: (init.body as string | undefined) ?? null, cookie: (init.headers as Record<string, string>)['x-princess-cookie'] ?? null, credentials: init.credentials }
     calls.push(c)
     return handler(c)
   }) as unknown as typeof fetch
@@ -73,7 +73,9 @@ describe('createHttpAuthProvider', () => {
     expect(got).toMatchObject({ method: 'password', signedInAt: 7 })
     expect(JSON.stringify(got)).not.toContain('a1')
     expect(auth.accessToken()).toBe('a1')
-    expect(storage.m.get(REFRESH_KEY)).toBe('r1')
+    expect(storage.m.get(REFRESH_KEY)).toBe('1')
+    expect(JSON.stringify([...storage.m.values()])).not.toMatch(/r1/)
+    expect(s.calls[0]).toMatchObject({ cookie: 'session', credentials: 'include' })
     expect(JSON.parse(s.calls[0].body!).identifier).toBe('maya@demo.princess.example')
     expect(s.calls[0].auth).toBeNull()
     expect(n).toBe(1)
@@ -84,30 +86,40 @@ describe('createHttpAuthProvider', () => {
   })
   it('restores from the refresh token after a reload, and drops a refused one', async () => {
     const storage = memory()
-    storage.setItem(REFRESH_KEY, 'r1')
+    storage.setItem(REFRESH_KEY, '1')
     const ok = make(() => reply(200, session(2, 'priya@demo.princess.example')), storage)
     expect(await ok.auth.restore()).toBe(true)
     expect(ok.auth.current()?.user?.email).toBe('priya@demo.princess.example')
-    expect(storage.m.get(REFRESH_KEY)).toBe('r2')
+    expect(storage.m.get(REFRESH_KEY)).toBe('1')
+    expect(JSON.parse(ok.s.calls[0].body!)).toEqual({})
+    expect(ok.s.calls[0].cookie).toBe('session')
     const bad = make(() => reply(401), memory())
     bad.storage.setItem(REFRESH_KEY, 'stale')
     expect(await bad.auth.restore()).toBe(false)
     expect(bad.storage.m.has(REFRESH_KEY)).toBe(false)
     expect(await make(() => reply(200, session(1))).auth.restore()).toBe(false)
   })
+  it('asks again once when another tab spent the shared cookie a moment ago', async () => {
+    const storage = memory()
+    storage.setItem(REFRESH_KEY, '1')
+    let n = 0
+    const { auth, s } = make(() => (++n === 1 ? reply(409, { title: 'refreshRaced' }) : reply(200, session(2))), storage)
+    expect(await auth.restore()).toBe(true)
+    expect(s.calls.filter((c) => c.url.endsWith('/auth/refresh'))).toHaveLength(2)
+  })
   it('keeps the refresh token through a network failure', async () => {
     const storage = memory()
-    storage.setItem(REFRESH_KEY, 'r1')
+    storage.setItem(REFRESH_KEY, '1')
     const { auth } = make(() => reply(503), storage)
     expect(await auth.restore()).toBe(false)
-    expect(storage.m.get(REFRESH_KEY)).toBe('r1')
+    expect(storage.m.get(REFRESH_KEY)).toBe('1')
   })
   it('signs out locally even when the server call fails, and revokes when it can', async () => {
     const { auth, storage, s } = make((c) => (c.url.endsWith('/logout') ? reply(204) : reply(200, session(1))))
     await auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
     await auth.signOut()
     expect(s.calls.at(-1)).toMatchObject({ url: '/api/v1/auth/logout', auth: 'Bearer a1' })
-    expect(JSON.parse(s.calls.at(-1)!.body!)).toEqual({ refreshToken: 'r1' })
+    expect(JSON.parse(s.calls.at(-1)!.body!)).toEqual({})
     expect(auth.current()).toBeNull()
     expect(auth.accessToken()).toBeNull()
     expect(storage.m.has(REFRESH_KEY)).toBe(false)
@@ -149,7 +161,7 @@ describe('createHttpAuthProvider', () => {
     const a = make((c) => (c.url.endsWith('/sessions/list') ? reply(200, devices) : c.method === 'DELETE' ? reply(204) : reply(200, session(1))))
     await a.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
     expect(await a.auth.account!.listDevices()).toEqual(devices)
-    expect(a.s.calls.at(-1)).toMatchObject({ url: '/api/v1/auth/sessions/list', method: 'POST', body: '{"refreshToken":"r1"}' })
+    expect(a.s.calls.at(-1)).toMatchObject({ url: '/api/v1/auth/sessions/list', method: 'POST', body: '{}', cookie: 'session' })
     await a.auth.account!.signOutDevice('9')
     expect(a.s.calls.at(-1)).toMatchObject({ url: '/api/v1/auth/sessions/9', method: 'DELETE' })
     expect(a.auth.current()).not.toBeNull()
@@ -221,11 +233,13 @@ describe('remember me', () => {
     await a.signIn(login)
     expect(device.m.has(REFRESH_KEY)).toBe(false)
     await a.signIn({ ...login, remember: true })
-    expect(device.m.get(REFRESH_KEY)).toBe('r1')
-    // A new app start: empty tab storage, token still on the device.
+    expect(device.m.get(REFRESH_KEY)).toBe('1')
+    expect(s.calls.at(-1)?.cookie).toBe('persist')
+    // A new app start: empty tab storage, marker still on the device.
     const b = createHttpAuthProvider({ baseUrl: '', storage: memory(), persistent: device, fetch: s.f })
     expect(await b.restore()).toBe(true)
-    expect(device.m.get(REFRESH_KEY)).toBe('r2')
+    expect(device.m.get(REFRESH_KEY)).toBe('1')
+    expect(s.calls.at(-1)?.cookie).toBe('persist')
     await b.signOut()
     expect(device.m.has(REFRESH_KEY)).toBe(false)
   })

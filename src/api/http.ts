@@ -31,6 +31,8 @@ export interface RequestOptions {
   idempotent?: boolean
   /** The key itself. Set by `request` once per call, so the resend after a silent refresh carries the same one. */
   idempotencyKey?: string
+  /** Extra request headers (the sign-in calls ask for the refresh cookie this way). */
+  headers?: Record<string, string>
 }
 
 export interface Http {
@@ -84,6 +86,7 @@ export function createHttp(opts: HttpOptions): Http {
     if (o.raw) headers['content-type'] = o.raw.type
     else if (o.body !== undefined) headers['content-type'] = 'application/json'
     if (o.idempotencyKey) headers['idempotency-key'] = o.idempotencyKey
+    if (o.headers) Object.assign(headers, o.headers)
     const token = o.anonymous ? null : opts.token()
     if (token) headers.authorization = `Bearer ${token}`
     const timeout = new AbortController()
@@ -91,7 +94,7 @@ export function createHttp(opts: HttpOptions): Http {
     const onAbort = () => timeout.abort()
     o.signal?.addEventListener('abort', onAbort)
     try {
-      return await doFetch(url, { method, headers, body: o.raw ?? (o.body === undefined ? undefined : JSON.stringify(o.body)), signal: timeout.signal })
+      return await doFetch(url, { method, headers, credentials: 'include', body: o.raw ?? (o.body === undefined ? undefined : JSON.stringify(o.body)), signal: timeout.signal })
     } catch {
       throw new ApiError(o.signal?.aborted ? 'network' : timeout.signal.aborted ? 'timeout' : 'network')
     } finally {

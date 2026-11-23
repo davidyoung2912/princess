@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": false,
-  "rewrites": [{ "source": "/((?!assets/|\\.well-known/)[^.]*)", "destination": "/index.html" }],
+  "rewrites": [{ "source": "/api/:path*", "destination": "https://princessvoyages.runasp.net/api/:path*" }, { "source": "/((?!assets/|\\.well-known/)[^.]*)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/(.*)",

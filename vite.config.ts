@@ -13,12 +13,12 @@ function mapFrame(key: string): string {
   return key ? " frame-src https://www.google.com/maps/embed/" : ''
 }
 
-const cspFor = (apiUrl: string, mapKey = ''): string => [
+const cspFor = (apiUrl: string, mapKey = '', hubUrl = ''): string => [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://*.princess.com${apiImages(apiUrl)}`,
-  `connect-src 'self'${apiOrigin(apiUrl)}`,
+  `connect-src 'self'${apiOrigin(apiUrl)}${hubUrl && hubUrl !== apiUrl ? apiOrigin(hubUrl) : ''}`,
   "worker-src 'self'",
   "manifest-src 'self'",
   "object-src 'none'",
@@ -41,11 +41,11 @@ function apiOrigin(apiUrl: string): string {
   } catch { return '' }
 }
 
-const contentSecurityPolicy = (apiUrl: string, mapKey: string): Plugin => ({
+const contentSecurityPolicy = (apiUrl: string, mapKey: string, hubUrl: string): Plugin => ({
   name: 'content-security-policy',
   apply: 'build',
   transformIndexHtml: () => [
-    { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: cspFor(apiUrl, mapKey) }, injectTo: 'head-prepend' },
+    { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: cspFor(apiUrl, mapKey, hubUrl) }, injectTo: 'head-prepend' },
     { tag: 'meta', attrs: { name: 'referrer', content: 'no-referrer' }, injectTo: 'head-prepend' },
   ],
 })
@@ -84,7 +84,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    contentSecurityPolicy(loadEnv(mode, process.cwd(), 'VITE_').VITE_API_URL?.trim() ?? '', loadEnv(mode, process.cwd(), 'VITE_').VITE_GOOGLE_MAPS_EMBED_KEY?.trim() ?? ''),
+    contentSecurityPolicy(loadEnv(mode, process.cwd(), 'VITE_').VITE_API_URL?.trim() ?? '', loadEnv(mode, process.cwd(), 'VITE_').VITE_GOOGLE_MAPS_EMBED_KEY?.trim() ?? '', loadEnv(mode, process.cwd(), 'VITE_').VITE_HUB_URL?.trim() ?? ''),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],

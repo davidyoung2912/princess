@@ -3,16 +3,20 @@ import { createHttp, type Http } from '../api/http'
 import { isApiError } from '../api/errors'
 import { AuthError, type AuthMethod, type DeviceSession, type ReviewItem, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'
 
-/** Per-tab storage for the refresh token (see the token decision in docs/backend-plan.md, Phase 12). */
+/**
+ * Where a signed-in marker is kept. The refresh token itself is an httpOnly cookie the server sets, so script never sees it; this key only says
+ * "a session probably exists", so the app knows to try restoring it (see docs/backend-plan.md, Phase 12).
+ */
 export const REFRESH_KEY = 'princess:refresh'
+const SESSION_MARKER = '1'
 
 type KeyValue = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
 export interface HttpAuthOptions {
   baseUrl: string
-  /** Per-tab storage for the refresh token. The access token never leaves memory. */
+  /** Per-tab storage for the signed-in marker. The access token never leaves memory and the refresh token is an httpOnly cookie. */
   storage: KeyValue | null
-  /** Long-lived device storage for "Remember me": holds the refresh token so the next app start skips the sign-in page. */
+  /** Long-lived device storage for "Remember me": holds the marker (and the server makes the cookie last) so the next app start skips the sign-in page. */
   persistent?: KeyValue | null
   fetch?: typeof fetch
   now?: () => number
@@ -26,12 +30,13 @@ interface WireUser {
 /** Set when the server ended this device's session on purpose; the sign-in page reads and clears it. */
 export const SESSION_ENDED = 'princess.sessionEnded'
 
-interface WireSession { accessToken: string; expiresAt: number; refreshToken: string; refreshExpiresAt: number; user: WireUser }
+/** `refreshToken` is empty: the server keeps it in its cookie. */
+interface WireSession { accessToken: string; expiresAt: number; refreshToken?: string; refreshExpiresAt: number; user: WireUser }
 
 /**
  * The real identity provider: email or account number plus password against `/auth/login`. The access token (15 minutes)
- * lives only in memory. The refresh token (30 days, single use) is kept in per-tab session storage, so a reload
- * restores the session and closing the tab ends it; an httpOnly cookie would need the API to set it and is a later option.
+ * lives only in memory. The refresh token (single use) is an httpOnly cookie set by the API, so injected script cannot read it; it lasts
+ * for the browser session, or for its full life when the guest chose to be remembered.
  */
 export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { http: Http } {
   const now = opts.now ?? Date.now
@@ -41,6 +46,8 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
   const readKey = (kv: KeyValue | null | undefined): string | null => { try { return kv?.getItem(REFRESH_KEY) ?? null } catch { return null } }
   /** True when this device was told to remember the sign-in (the token sits in device storage). */
   let remember = readKey(opts.persistent) !== null
+  /** Asks the server to keep the refresh token in its cookie: for the browser session, or longer when remembered. */
+  const cookieHeaders = (): Record<string, string> => ({ 'x-princess-cookie': remember ? 'persist' : 'session' })
   const storedToken = () => readKey(opts.storage) ?? readKey(opts.persistent)
 
   const notify = () => listeners.forEach((l) => l())
@@ -54,7 +61,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
   }
   const take = (w: WireSession, method: AuthMethod = 'password'): Session => {
     access = w.accessToken
-    store(w.refreshToken)
+    store(SESSION_MARKER)
     const user: SessionUser = { id: w.user.id, accountNumber: w.user.accountNumber, username: w.user.username, email: w.user.email, firstName: w.user.firstName, lastName: w.user.lastName, role: w.user.role, tier: w.user.tier, isDemo: w.user.isDemo, ...(w.user.needsReview ? { needsReview: true } : {}) }
     current = { signedInAt: now(), method, user }
     return current
@@ -70,10 +77,18 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
 
   let restoring: Promise<boolean> | null = null
   const restore = (): Promise<boolean> => (restoring ??= (async () => {
-    const token = storedToken()
-    if (!token) return current !== null
+    if (!storedToken()) return current !== null
     try {
-      take(await raw.post<WireSession>('/auth/refresh', { refreshToken: token }, { anonymous: true }))
+      let session: WireSession
+      try {
+        session = await raw.post<WireSession>('/auth/refresh', {}, { anonymous: true, headers: cookieHeaders() })
+      } catch (e) {
+        // Another tab spent the shared cookie a moment ago; its new cookie has arrived by now, so ask once more.
+        if (!(isApiError(e) && e.message === 'refreshRaced')) throw e
+        await new Promise((done) => setTimeout(done, 400))
+        session = await raw.post<WireSession>('/auth/refresh', {}, { anonymous: true, headers: cookieHeaders() })
+      }
+      take(session)
       notify()
       return true
     } catch (e) {
@@ -118,8 +133,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
         try { await raw.post('/auth/reset', { username: username.trim(), code: code.trim(), newPassword }, { anonymous: true }) } catch (e) { throw failure(e) }
       },
       async listDevices() {
-        const token = storedToken()
-        try { return await raw.post<DeviceSession[]>('/auth/sessions/list', { refreshToken: token }) } catch (e) { throw failure(e) }
+        try { return await raw.post<DeviceSession[]>('/auth/sessions/list', {}, { headers: cookieHeaders() }) } catch (e) { throw failure(e) }
       },
       async onlineNow() {
         try { return (await raw.get<{ count: number }>('/auth/sessions/online')).count } catch (e) { throw failure(e) }
@@ -134,14 +148,14 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
         try { await raw.post(`/admin/reviews/${encodeURIComponent(id)}/resolve`, { decision }) } catch (e) { throw failure(e) }
       },
       async changeCredentials(input) {
-        try { await raw.post('/auth/credentials', input) } catch (e) { throw failure(e) }
+        try { await raw.post('/auth/credentials', input, { headers: cookieHeaders() }) } catch (e) { throw failure(e) }
         // The server has ended every session, this one included.
         clear()
         notify()
         opts.channel?.post({ type: 'session' })
       },
       async signOutEverywhere() {
-        try { await raw.post('/auth/logout-all', {}) } catch (e) { throw failure(e) }
+        try { await raw.post('/auth/logout-all', {}, { headers: cookieHeaders() }) } catch (e) { throw failure(e) }
         clear()
         notify()
         opts.channel?.post({ type: 'session' })
@@ -151,8 +165,8 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       try {
         remember = c.remember === true
         const session = c.method === 'code'
-          ? take(await raw.post<WireSession>('/auth/magic/redeem', { username: c.username.trim(), code: c.code.trim() }, { anonymous: true }), 'code')
-          : take(await raw.post<WireSession>('/auth/login', { identifier: c.identifier.trim(), password: c.password }, { anonymous: true }))
+          ? take(await raw.post<WireSession>('/auth/magic/redeem', { username: c.username.trim(), code: c.code.trim() }, { anonymous: true, headers: cookieHeaders() }), 'code')
+          : take(await raw.post<WireSession>('/auth/login', { identifier: c.identifier.trim(), password: c.password }, { anonymous: true, headers: cookieHeaders() }))
         notify()
         opts.channel?.post({ type: 'session' })
         return session
@@ -161,10 +175,9 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       }
     },
     async signOut() {
-      const refreshToken = storedToken()
       const wasIn = access !== null
       try {
-        if (wasIn && refreshToken) await raw.post('/auth/logout', { refreshToken })
+        if (wasIn && storedToken()) await raw.post('/auth/logout', {}, { headers: cookieHeaders() })
       } catch { /* the server forgets it at expiry; signing out here must not fail */ }
       clear()
       notify()

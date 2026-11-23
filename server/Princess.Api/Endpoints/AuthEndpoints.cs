@@ -16,13 +16,13 @@ public static class AuthEndpoints
         var auth = api.MapGroup("/auth").WithTags("Auth");
 
         auth.MapPost("/login", async (LoginRequest body, IAuthService svc, HttpContext http, CancellationToken ct) =>
-                Results.Ok(await svc.LoginAsync(body, UserAgent(http), Ip(http), ct)))
+                Results.Ok(RefreshCookie.Apply(http, await svc.LoginAsync(body, UserAgent(http), Ip(http), ct))))
             .AllowAnonymous()
             .RequireRateLimiting(LoginLimiter)
             .WithSummary("Sign in with email or 10-digit account number plus password.");
 
         auth.MapPost("/register", async (RegisterRequest body, IAuthService svc, HttpContext http, CancellationToken ct) =>
-                Results.Ok(await svc.RegisterAsync(body, UserAgent(http), Ip(http), ct)))
+                Results.Ok(RefreshCookie.Apply(http, await svc.RegisterAsync(body, UserAgent(http), Ip(http), ct))))
             .AllowAnonymous()
             .RequireRateLimiting(LoginLimiter)
             .WithSummary("Create an account (adults only, with a phone number of 7 to 15 digits) and sign in. 409 usernameTaken when the username is in use; 409 possibleDuplicate when an adult account has the same name and date of birth, unless `confirmedDifferent` is true, in which case the account is made and flagged for a person at Guest Services to check.");
@@ -55,42 +55,45 @@ public static class AuthEndpoints
             .WithSummary("Email a one-time sign-in code. Always 204, whether or not the address has an account.");
 
         auth.MapPost("/magic/redeem", async (MagicRedeemRequest body, IAuthService svc, HttpContext http, CancellationToken ct) =>
-                Results.Ok(await svc.RedeemMagicAsync(body, UserAgent(http), Ip(http), ct)))
+                Results.Ok(RefreshCookie.Apply(http, await svc.RedeemMagicAsync(body, UserAgent(http), Ip(http), ct))))
             .AllowAnonymous()
             .RequireRateLimiting(LoginLimiter)
             .WithSummary("Sign in with the emailed code.");
 
         auth.MapPost("/refresh", async (RefreshRequest body, IAuthService svc, HttpContext http, CancellationToken ct) =>
-                Results.Ok(await svc.RefreshAsync(body, UserAgent(http), Ip(http), ct)))
+                Results.Ok(RefreshCookie.Apply(http, await svc.RefreshAsync(new RefreshRequest(RefreshCookie.Read(http, body.RefreshToken)), UserAgent(http), Ip(http), ct, RefreshCookie.Wanted(http)))))
             .AllowAnonymous()
             .RequireRateLimiting(LoginLimiter)
-            .WithSummary("Swap a refresh token for a new session. The old token is spent; replaying it ends the whole session family.");
+            .WithSummary("Swap a refresh token (in the body, or the httpOnly cookie when the client sends X-Princess-Cookie) for a new session. The old token is spent; replaying it ends the whole session family.");
 
-        auth.MapPost("/logout", async (LogoutRequest body, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
+        auth.MapPost("/logout", async (LogoutRequest body, ICurrentUser me, IAuthService svc, HttpContext http, CancellationToken ct) =>
             {
-                await svc.LogoutAsync(await me.LoadAsync(ct), body, ct);
+                await svc.LogoutAsync(await me.LoadAsync(ct), new LogoutRequest(RefreshCookie.Read(http, body.RefreshToken)), ct);
+                RefreshCookie.Clear(http);
                 return Results.NoContent();
             })
             .WithSummary("Revoke the session family of the given refresh token.");
 
-        auth.MapPost("/logout-all", async (ICurrentUser me, IAuthService svc, CancellationToken ct) =>
+        auth.MapPost("/logout-all", async (ICurrentUser me, IAuthService svc, HttpContext http, CancellationToken ct) =>
             {
                 // A booker viewing as a child must not end the child's own sessions.
                 if (me.ActorPublicId is not null) throw ApiException.Forbidden();
                 await svc.LogoutEverywhereAsync(await me.LoadAsync(ct), ct);
+                RefreshCookie.Clear(http);
                 return Results.NoContent();
             })
             .WithSummary("Sign out everywhere: ends every session and access token this person has, on every device, this one included. 403 on a view-as token.");
 
-        auth.MapPost("/credentials", async (ChangeCredentialsRequest body, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
+        auth.MapPost("/credentials", async (ChangeCredentialsRequest body, ICurrentUser me, IAuthService svc, HttpContext http, CancellationToken ct) =>
             {
                 if (me.ActorPublicId is not null) throw ApiException.Forbidden();
                 await svc.ChangeCredentialsAsync(await me.LoadAsync(ct), body, ct);
+                RefreshCookie.Clear(http);
                 return Results.NoContent();
             })
             .WithSummary("Change the username and/or password (the current password is required). 400 badPassword when it is wrong, 409 usernameTaken. Ends every session on every device, so the person signs in again. 403 on a view-as token.");
 
-        auth.MapPost("/sessions/list", async (SessionListRequest body, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
+        auth.MapPost("/sessions/list", async (SessionListRequest body, ICurrentUser me, IAuthService svc, HttpContext http, CancellationToken ct) =>
             {
                 if (me.ActorPublicId is not null) throw ApiException.Forbidden();
                 return Results.Ok(await svc.ListSessionsAsync(await me.LoadAsync(ct), body.RefreshToken, ct));

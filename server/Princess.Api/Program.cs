@@ -380,7 +380,7 @@ const string RemoteCorsOriginsOverride = "";
 var origins = RemoteCorsOriginsOverride.Length > 0
     ? RemoteCorsOriginsOverride.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
     : builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
-services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
+services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen(o =>
