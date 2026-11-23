@@ -131,7 +131,7 @@ describe('bundle coverage', () => {
 describe('game bundles', () => {
   const sent = { type: 'game.sudoku', v: 1, title: 'Sudoku', ref: 'game:sudoku:current', data: 'd=easy;p=0' }
   it('are in the registry for each shareable game and read their puzzle text and way of sending', () => {
-    for (const id of ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo']) expect(`game.${id}` in BUNDLE_TYPES).toBe(true)
+    for (const id of ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo', 'futoshiki', 'kenken', 'hitori']) expect(`game.${id}` in BUNDLE_TYPES).toBe(true)
     expect(gameOfBundle(sent)).toEqual({ game: 'sudoku', mode: 'current', data: 'd=easy;p=0' })
     expect(gameOfBundle({ ...sent, ref: 'game:binairo:current' })).toBeNull()
     expect(gameOfBundle({ ...sent, ref: 'game:sudoku:later' })).toBeNull()

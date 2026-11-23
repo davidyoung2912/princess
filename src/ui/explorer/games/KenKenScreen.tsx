@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Notes, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<KenKenTechnique, StringKey> = { naked: 'kenken.hint.naked', row: 'kenken.hint.row', column: 'kenken.hint.column', cage: 'kenken.hint.cage', cageRow: 'kenken.hint.cageRow', cageColumn: 'kenken.hint.cageColumn' }
@@ -19,11 +19,13 @@ interface ShownHint { text: string; cells: number[]; fill?: { index: number; val
  * KenKen: fill the grid so every row and column holds each digit once, and every bold cage makes its target with its operation. Every puzzle has one answer and can be solved without guessing. Nothing is stored.
  */
 export function KenKenScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generateKenKen('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('kenken')
+  const sent = incoming && incoming.shared.game === 'kenken' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? generateKenKen('easy'))
   const n = game.size
   const digits = useMemo(() => Array.from({ length: n }, (_, k) => k + 1), [n])
-  const [entries, setEntries] = useState<number[]>(() => Array(n * n).fill(0))
+  const [entries, setEntries] = useState<number[]>(() => sent?.entries ?? Array(n * n).fill(0))
   const [notes, setNotes] = useState<number[]>(() => Array(n * n).fill(0))
   const [history, setHistory] = useState<Snapshot[]>([])
   const [selected, setSelected] = useState<number | null>(null)
@@ -122,6 +124,7 @@ export function KenKenScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     const next = generateKenKen(level)
     setGame(next)
     setEntries(Array(next.size * next.size).fill(0))
@@ -165,6 +168,7 @@ export function KenKenScreen() {
         <LevelBar name="kenken-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: `${t(LEVEL_KEYS[d])} ${KENKEN_LEVELS[d].size}×${KENKEN_LEVELS[d].size}` }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} {n}×{n}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -230,6 +234,7 @@ export function KenKenScreen() {
           <button type="button" className="sd-tool" onClick={erase} disabled={selected === null}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" aria-pressed={pencil} onClick={() => setPencil((p) => !p)}><Notes aria-hidden="true" focusable="false" /><span>{t(pencil ? 'sudoku.notesOn' : 'sudoku.notesOff')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
+          <GameShare shared={{ game: 'kenken', puzzle: game, entries: entries, notes: [] }} title={t('gx.game.kenken.title')} />
         </div>
         <div className="sd-pad kk-pad" style={boardStyle} role="group" aria-label={t('sudoku.pad')}>
           {digits.map((d) => (

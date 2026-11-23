@@ -7,11 +7,14 @@
 import { connected, makeRules, neighbours, solveUniqueWithin, CLASSIC, DIAGONAL, DIFFICULTIES, type Cage, type Difficulty, type Puzzle } from './sudoku'
 import { logicSolve, killerConflicts } from './killer'
 import { BINAIRO_LEVELS, isValidBinairo, logicSolveBinairo, type BinairoPuzzle } from './binairo'
+import { FUTOSHIKI_LEVELS, futoshikiConflicts, logicSolveFutoshiki, type FutoshikiPuzzle } from './futoshiki'
+import { KENKEN_LEVELS, brokenCages, gridNeighbours, kenkenConflicts, logicSolveKenKen, type KCage, type KenKenPuzzle, type Op } from './kenken'
+import { BLANK, HITORI_LEVELS, isValidHitori, logicSolveHitori, type HitoriPuzzle } from './hitori'
 
 export type ShareMode = 'start' | 'current'
 
 /** The games that can be sent so far (the catalogue ids). */
-export const SHAREABLE_GAMES = ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo'] as const
+export const SHAREABLE_GAMES = ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo', 'futoshiki', 'kenken', 'hitori'] as const
 export type ShareableGame = (typeof SHAREABLE_GAMES)[number]
 export const isShareableGame = (id: string): id is ShareableGame => (SHAREABLE_GAMES as readonly string[]).includes(id)
 
@@ -19,10 +22,21 @@ export const isShareableGame = (id: string): id is ShareableGame => (SHAREABLE_G
 export const GAME_DATA_MAX = 4000
 export const GAME_DATA_CHARS = /^[A-Za-z0-9=;,]+$/
 
-/** A puzzle as it stands: for Sudoku `entries` are the digits placed by the player and `notes` the pencil marks (one 9-bit mask per cell); for Binairo only `entries`. */
+type SudokuGame = 'sudoku' | 'diagonal-sudoku' | 'jigsaw-sudoku' | 'killer-sudoku'
+
+/**
+ * A puzzle as it stands: for Sudoku `entries` are the digits placed by the player and `notes` the pencil marks (one 9-bit mask per cell); for the others only `entries`
+ * (for Hitori the marks, 0 blank, 1 shaded, 2 circled). Notes are not sent for Futoshiki and KenKen yet.
+ */
 export type SharedGame =
-  | { game: Exclude<ShareableGame, 'binairo'>; puzzle: Puzzle; entries: number[]; notes: number[] }
+  | { game: SudokuGame; puzzle: Puzzle; entries: number[]; notes: number[] }
   | { game: 'binairo'; puzzle: BinairoPuzzle; entries: number[]; notes: number[] }
+  | { game: 'futoshiki'; puzzle: FutoshikiPuzzle; entries: number[]; notes: number[] }
+  | { game: 'kenken'; puzzle: KenKenPuzzle; entries: number[]; notes: number[] }
+  | { game: 'hitori'; puzzle: HitoriPuzzle; entries: number[]; notes: number[] }
+
+/** A Sudoku-family puzzle (the ones that have rules, regions or cages and pencil notes). */
+export const isSudokuShare = (s: SharedGame): s is Extract<SharedGame, { game: SudokuGame }> => s.game.endsWith('sudoku')
 
 const VARIANT = { sudoku: 'classic', 'diagonal-sudoku': 'diagonal', 'jigsaw-sudoku': 'jigsaw', 'killer-sudoku': 'killer' } as const
 const CELLS = 81
@@ -45,6 +59,7 @@ const join = (m: Record<string, string | undefined>): string => Object.entries(m
 
 /** The text for a puzzle. `current` adds the digits the player has placed, and the pencil marks only when `withNotes`; `start` is the clues alone. */
 export function encodeGame(s: SharedGame, mode: ShareMode, withNotes = false): string {
+  if (s.game === 'futoshiki' || s.game === 'kenken' || s.game === 'hitori') return encodeGrid(s, mode)
   const p = s.puzzle
   const clues = p.puzzle
   const entries = clues.map((c, i) => (c !== 0 ? 0 : s.entries[i] ?? 0))
@@ -109,7 +124,7 @@ function cagesFrom(g: string, s: string): Cage[] | null {
   return groups.map((cells, k) => ({ cells, sum: sums[k] }))
 }
 
-function decodeSudoku(game: Exclude<ShareableGame, 'binairo'>, m: Map<string, string>): SharedGame | null {
+function decodeSudoku(game: SudokuGame, m: Map<string, string>): SharedGame | null {
   const d = m.get('d')
   const p = m.get('p')
   if (!isLevel(d) || p === undefined || !/^[0-9]{81}$/.test(p)) return null
@@ -156,13 +171,130 @@ function decodeBinairo(m: Map<string, string>): SharedGame | null {
   return { game: 'binairo', puzzle: { size, difficulty: d, puzzle: clues, solution }, entries, notes: Array(p.length).fill(0) }
 }
 
+const OP_LETTER: Record<Op, string> = { add: 'a', sub: 's', mul: 'm', div: 'd', given: 'g' }
+const LETTER_OP: Record<string, Op> = { a: 'add', s: 'sub', m: 'mul', d: 'div', g: 'given' }
+
+/** Futoshiki, KenKen and Hitori: the same `d=` level and `p=` digits as the others, plus what each game needs (`s` signs, `g`/`o`/`t` cages, `e` entries or marks). */
+function encodeGrid(s: Extract<SharedGame, { game: 'futoshiki' | 'kenken' | 'hitori' }>, mode: ShareMode): string {
+  const p = s.puzzle
+  const clues = s.game === 'hitori' ? s.puzzle.values.map((v) => v % 10) : (p as FutoshikiPuzzle | KenKenPuzzle).puzzle
+  const entries = s.game === 'hitori' ? s.entries : clues.map((c, i) => (c !== 0 ? 0 : s.entries[i] ?? 0))
+  const extra: Record<string, string | undefined> = {}
+  if (mode === 'current' && entries.some((v) => v !== 0)) extra.e = entries.join('')
+  if (s.game === 'futoshiki') return join({ d: p.difficulty, p: clues.join(''), s: s.puzzle.signs.flatMap((g) => [g.lo, g.hi]).join(','), ...extra })
+  if (s.game === 'kenken') {
+    const cages = s.puzzle.cages
+    const owner = Array<number>(clues.length).fill(0)
+    cages.forEach((c, k) => c.cells.forEach((i) => { owner[i] = k }))
+    return join({ d: p.difficulty, p: clues.join(''), g: owner.map((k) => k.toString(36).padStart(2, '0')).join(''), o: cages.map((c) => OP_LETTER[c.op]).join(''), t: cages.map((c) => c.target).join(','), ...extra })
+  }
+  return join({ d: p.difficulty, p: clues.join(''), ...extra })
+}
+
+/** The size of a square board from its cell count, when a game has a level of that size. */
+const sizeOf = (len: number, sizes: readonly number[]): number | null => {
+  const n = Math.round(Math.sqrt(len))
+  return n * n === len && sizes.includes(n) ? n : null
+}
+
+function readGridEntries(m: Map<string, string>, len: number, max: number, fixed: (i: number) => boolean): number[] | null {
+  const e = m.get('e')
+  if (e === undefined) return Array(len).fill(0)
+  if (e.length !== len || ![...e].every((c) => c >= '0' && c <= String(max))) return null
+  return [...e].map((c, i) => (fixed(i) ? 0 : Number(c)))
+}
+
+function decodeFutoshiki(m: Map<string, string>): SharedGame | null {
+  const d = m.get('d')
+  const p = m.get('p')
+  if (!isLevel(d) || p === undefined || !/^[0-9]+$/.test(p)) return null
+  const n = sizeOf(p.length, Object.values(FUTOSHIKI_LEVELS).map((l) => l.size))
+  if (n === null) return null
+  const clues = [...p].map(Number)
+  if (clues.some((c) => c > n)) return null
+  const raw = m.get('s') ?? ''
+  if (raw !== '' && !/^\d{1,2}(,\d{1,2})*$/.test(raw)) return null
+  const flat = raw === '' ? [] : raw.split(',').map(Number)
+  if (flat.length % 2 !== 0 || flat.length > n * n * 2) return null
+  const signs = []
+  for (let k = 0; k < flat.length; k += 2) {
+    const lo = flat[k]
+    const hi = flat[k + 1]
+    if (lo >= n * n || hi >= n * n || !gridNeighbours(lo, n).includes(hi)) return null
+    signs.push({ lo, hi })
+  }
+  const solution = logicSolveFutoshiki(clues, n, signs)
+  if (solution.some((v) => v === 0) || futoshikiConflicts(solution, n, signs).size > 0) return null
+  const entries = readGridEntries(m, p.length, n, (i) => clues[i] !== 0)
+  if (!entries) return null
+  return { game: 'futoshiki', puzzle: { size: n, difficulty: d, puzzle: clues, solution, signs }, entries, notes: Array(p.length).fill(0) }
+}
+
+function decodeKenKen(m: Map<string, string>): SharedGame | null {
+  const d = m.get('d')
+  const p = m.get('p')
+  const g = m.get('g')
+  const o = m.get('o')
+  const t = m.get('t')
+  if (!isLevel(d) || p === undefined || g === undefined || o === undefined || t === undefined || !/^[0-9]+$/.test(p) || !/^[0-9a-z]+$/.test(g)) return null
+  const n = sizeOf(p.length, Object.values(KENKEN_LEVELS).map((l) => l.size))
+  if (n === null || g.length !== p.length * 2 || !/^[asmdg]+$/.test(o) || !/^\d{1,4}(,\d{1,4})*$/.test(t)) return null
+  const clues = [...p].map(Number)
+  if (clues.some((c) => c > n)) return null
+  const targets = t.split(',').map(Number)
+  if (targets.length !== o.length || o.length > p.length) return null
+  const groups: number[][] = o.split('').map(() => [])
+  for (let i = 0; i < p.length; i++) {
+    const k = parseInt(g.slice(i * 2, i * 2 + 2), 36)
+    if (!groups[k]) return null
+    groups[k].push(i)
+  }
+  const cages: KCage[] = []
+  for (let k = 0; k < groups.length; k++) {
+    const cells = groups[k]
+    const op = LETTER_OP[o[k]]
+    if (cells.length === 0 || cells.length > Math.max(...Object.values(KENKEN_LEVELS).map((l) => l.maxCage)) || targets[k] < 1) return null
+    if ((op === 'given') !== (cells.length === 1) || ((op === 'sub' || op === 'div') && cells.length !== 2)) return null
+    const seen = new Set<number>([cells[0]])
+    const queue = [cells[0]]
+    while (queue.length) for (const nb of gridNeighbours(queue.pop()!, n)) if (cells.includes(nb) && !seen.has(nb)) { seen.add(nb); queue.push(nb) }
+    if (seen.size !== cells.length) return null
+    cages.push({ cells, op, target: targets[k] })
+  }
+  const solution = logicSolveKenKen(clues, n, cages)
+  if (solution.some((v) => v === 0) || kenkenConflicts(solution, n, cages).size > 0 || brokenCages(solution, cages).length > 0) return null
+  if (clues.some((c, i) => c !== 0 && c !== solution[i])) return null
+  const entries = readGridEntries(m, p.length, n, (i) => clues[i] !== 0)
+  if (!entries) return null
+  return { game: 'kenken', puzzle: { size: n, difficulty: d, puzzle: clues, solution, cages }, entries, notes: Array(p.length).fill(0) }
+}
+
+function decodeHitori(m: Map<string, string>): SharedGame | null {
+  const d = m.get('d')
+  const p = m.get('p')
+  if (!isLevel(d) || p === undefined || !/^[0-9]+$/.test(p)) return null
+  const n = sizeOf(p.length, Object.values(HITORI_LEVELS).map((l) => l.size))
+  if (n === null) return null
+  const values = [...p].map((c) => (c === '0' ? 10 : Number(c)))
+  if (values.some((v) => v > n)) return null
+  const solution = logicSolveHitori(values, Array(p.length).fill(BLANK), n, true)
+  if (solution.some((v) => v === BLANK) || !isValidHitori(values, solution, n)) return null
+  const entries = readGridEntries(m, p.length, 2, () => false)
+  if (!entries) return null
+  return { game: 'hitori', puzzle: { size: n, difficulty: d, values, solution }, entries, notes: Array(p.length).fill(0) }
+}
+
 /** The puzzle in some text for a game, or null when the text is not a solvable puzzle of that game. Never throws. */
 export function decodeGame(game: string, data: string): SharedGame | null {
   try {
     if (!isShareableGame(game)) return null
     const m = pairs(data)
     if (!m) return null
-    return game === 'binairo' ? decodeBinairo(m) : decodeSudoku(game, m)
+    if (game === 'binairo') return decodeBinairo(m)
+    if (game === 'futoshiki') return decodeFutoshiki(m)
+    if (game === 'kenken') return decodeKenKen(m)
+    if (game === 'hitori') return decodeHitori(m)
+    return decodeSudoku(game, m)
   } catch {
     return null
   }

@@ -44,12 +44,12 @@ public static class ChatBundleRules
     /// <summary>The games that can be sent, with their name and the number of cells (or sizes) a puzzle may have. The id is the catalogue id and the screen is <c>/games-explorer/&lt;id&gt;</c>.</summary>
     public static readonly Dictionary<string, string> Games = new()
     {
-        ["sudoku"] = "Sudoku", ["diagonal-sudoku"] = "Diagonal Sudoku", ["jigsaw-sudoku"] = "Jigsaw Sudoku", ["killer-sudoku"] = "Killer Sudoku", ["binairo"] = "Binairo",
+        ["sudoku"] = "Sudoku", ["diagonal-sudoku"] = "Diagonal Sudoku", ["jigsaw-sudoku"] = "Jigsaw Sudoku", ["killer-sudoku"] = "Killer Sudoku", ["binairo"] = "Binairo", ["futoshiki"] = "Futoshiki", ["kenken"] = "KenKen", ["hitori"] = "Hitori",
     };
 
     private static readonly string[] Levels = ["easy", "medium", "hard", "expert"];
 
-    /// <summary>The puzzle text: letters, digits, <c>=</c>, <c>;</c> and <c>,</c> only, a level, and the clues at a size the game has (81 cells, or 6, 8, 10 or 12 squared for Binairo).</summary>
+    /// <summary>The puzzle text: letters, digits, <c>=</c>, <c>;</c> and <c>,</c> only, a level, and the clues at a size the game has (81 cells; 6, 8, 10 or 12 squared for Binairo; 4 to 7 squared for Futoshiki and KenKen; 5, 6, 8 or 10 squared for Hitori).</summary>
     public static bool GameDataOk(string game, string? data)
     {
         if (data is not { Length: > 0 and <= GameDataMax } || !data.All(c => char.IsAsciiLetterOrDigit(c) || c is '=' or ';' or ',')) return false;
@@ -60,7 +60,13 @@ public static class ChatBundleRules
             if (at < 1 || !pairs.TryAdd(part[..at], part[(at + 1)..])) return false;
         }
         if (!pairs.TryGetValue("d", out var level) || !Levels.Contains(level) || !pairs.TryGetValue("p", out var clues) || !clues.All(char.IsAsciiDigit)) return false;
-        return game == "binairo" ? clues.Length is 36 or 64 or 100 or 144 : clues.Length == 81;
+        return game switch
+        {
+            "binairo" => clues.Length is 36 or 64 or 100 or 144,
+            "futoshiki" or "kenken" => clues.Length is 16 or 25 or 36 or 49,
+            "hitori" => clues.Length is 25 or 36 or 64 or 100,
+            _ => clues.Length == 81,
+        };
     }
 
     /// <summary>The bundle for a game puzzle, or null for a ref that is not <c>game:&lt;id&gt;:&lt;start|current&gt;</c>, an unknown game or puzzle text that fails <see cref="GameDataOk"/>.</summary>

@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<HitoriTechnique, StringKey> = {
@@ -23,10 +23,12 @@ const Mark = ({ mark }: { mark: number }) => <span className={mark === SHADED ? 
  * Every puzzle has one answer and can be solved without guessing. Nothing is stored.
  */
 export function HitoriScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generateHitori('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('hitori')
+  const sent = incoming && incoming.shared.game === 'hitori' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? generateHitori('easy'))
   const n = game.size
-  const [marks, setMarks] = useState<number[]>(() => Array(n * n).fill(BLANK))
+  const [marks, setMarks] = useState<number[]>(() => sent?.entries ?? Array(n * n).fill(BLANK))
   const [history, setHistory] = useState<number[][]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [hint, setHint] = useState<ShownHint | null>(null)
@@ -89,6 +91,7 @@ export function HitoriScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     const next = generateHitori(level)
     setGame(next)
     setMarks(Array(next.size * next.size).fill(BLANK))
@@ -129,6 +132,7 @@ export function HitoriScreen() {
         <LevelBar name="hitori-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: `${t(LEVEL_KEYS[d])} ${HITORI_LEVELS[d].size}×${HITORI_LEVELS[d].size}` }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} {n}×{n}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -182,6 +186,7 @@ export function HitoriScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && set(selected, BLANK)} disabled={selected === null || solved}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
+          <GameShare shared={{ game: 'hitori', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.hitori.title')} />
         </div>
         <div className="bn-pad" role="group" aria-label={t('hitori.pad')}>
           {[SHADED, CIRCLED].map((m) => (

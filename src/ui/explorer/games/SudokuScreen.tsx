@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { generateKiller, killerConflicts, killerDeadCells, nextKillerHint, type KillerHint, type KillerTechnique } from '../../../domain/games/killer'
 import { DIFFICULTIES, clock, colOf, conflicts, deadCells, generatePuzzle, isSolved, nextHint, regionEdges, rowOf, type Difficulty, type Rules, type Variant } from '../../../domain/games/sudoku'
+import { isSudokuShare } from '../../../domain/games/share'
 import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Notes, Undo } from '../../icons'
@@ -45,7 +46,7 @@ const ENGINES = {
 function SudokuGame({ variant }: { variant: Variant }) {
   const engine = ENGINES[variant]
   const { incoming, fromChat, leaveChat } = useIncomingGame(GAME_ID[variant])
-  const sent = incoming && incoming.shared.game !== 'binairo' ? incoming.shared : null
+  const sent = incoming && isSudokuShare(incoming.shared) ? incoming.shared : null
   const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
   const [game, setGame] = useState(() => sent?.puzzle ?? engine.generate('easy'))
   const rules = game.rules

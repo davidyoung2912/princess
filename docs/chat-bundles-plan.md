@@ -283,6 +283,8 @@ Rules for every phase (CLAUDE.md): English only; verify with `npm run test`, `np
 
 Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nonogram; Cruise Wordle (result pattern and word-list index, never the word as text), Word Search, Codeword, Minesweeper (decide whether the layout is sent; the payload is never rendered). Thumbnails per family. Worth splitting into two sessions if it runs long.
 
+> **Built 2026-11-23, part 1 only: Futoshiki, KenKen and Hitori** (front end checked with test, lint, tsc and build; C# written but not compiled or run). **Done:** `games/share.ts` encodes and decodes the three (digits plus `s` signs for Futoshiki, `g`/`o`/`t` cages for KenKen, `e` entries or marks; the solution is never sent and the receiver's own logic solver must finish the grid with no rule broken, else the text is refused), tests for round trips, cages, signs and nonsense; server `Games` table and clue sizes for the three; send from and open in the three screens, as for Binairo. **Not done (left for a later pass):** pencil notes for Futoshiki and KenKen are not sent; **still to do from B9:** Crossmath, Kakuro, Slitherlink, Nurikabe, Hashi, Nonogram, Cruise Wordle, Word Search, Codeword, Minesweeper, and thumbnails per family.
+
 ### B10: results, challenges and "played" counts
 
 - `SolvedCard` gets Send my result; **Beat it** opens the same puzzle with a target time; `ChatBundleOutcomes` and an outcome endpoint; "Solved by 3 of 5" counts, names only for people who chose to report. The same outcome table gives a decision card its "Done, how was it?" tally.
