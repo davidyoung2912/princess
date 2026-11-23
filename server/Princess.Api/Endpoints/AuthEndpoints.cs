@@ -97,6 +97,8 @@ public static class AuthEndpoints
             })
             .WithSummary("The devices this person is signed in on (name, first sign-in, last activity), most recent first. Send this device's refresh token to have it marked `current`. A POST so the token stays out of URLs and logs. 403 on a view-as token.");
 
+        auth.MapGet("/sessions/online", (ICurrentUser me, Realtime.RealtimeState state) => Results.Ok(new { count = state.Count(me.PublicId) }))
+            .WithSummary("How many app windows this person has open right now on this server (live connections, not sessions).");
         auth.MapDelete("/sessions/{id}", async (string id, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
             {
                 if (me.ActorPublicId is not null) throw ApiException.Forbidden();

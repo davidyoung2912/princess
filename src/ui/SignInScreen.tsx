@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type
 import { useNavigate } from 'react-router'
 import logo from '../assets/princess.webp'
 import { AuthError } from '../auth/provider'
+import { SESSION_ENDED } from '../auth/httpProvider'
+import { Banner } from './Banner'
 import { t, th } from '../i18n'
 import { auth, retryReference } from '../runtime'
 import { referenceState, subscribeReference } from '../domain/referenceStatus'
@@ -53,12 +55,15 @@ function PasswordSignIn({ go, fresh }: { go: (m: Mode) => void; fresh: { usernam
     }
   }
 
+  // Read once: a session the server ended on purpose says so here, then the note is gone.
+  const [ended] = useState(() => { try { const v = sessionStorage.getItem(SESSION_ENDED) === '1'; sessionStorage.removeItem(SESSION_ENDED); return v } catch { return false } })
   const problems = [missing.id, missing.pw, error].filter((x): x is string => !!x)
   return (
     <main className="page signin" id="main">
       <img className="signin__logo" src={logo} alt="Princess Voyages" width="512" height="512" />
       <h1>{th('signin.title')}</h1>
       <p>{t('signin.intro')}</p>
+      {ended && <Banner kind="info" title={t('signin.ended.title')}><p>{t('signin.ended.body')}</p></Banner>}
       <ErrorSummary title={t('signin.problems')} errors={problems} />
       <Card>
         <form onSubmit={(e) => void submit(e)} noValidate>

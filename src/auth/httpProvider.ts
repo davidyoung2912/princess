@@ -23,6 +23,9 @@ export interface HttpAuthOptions {
 interface WireUser {
   id: string; accountNumber: string; username: string; email: string | null; firstName: string | null; lastName: string | null; role: string; tier: string; isDemo: boolean; needsReview?: boolean
 }
+/** Set when the server ended this device's session on purpose; the sign-in page reads and clears it. */
+export const SESSION_ENDED = 'princess.sessionEnded'
+
 interface WireSession { accessToken: string; expiresAt: number; refreshToken: string; refreshExpiresAt: number; user: WireUser }
 
 /**
@@ -75,7 +78,11 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       return true
     } catch (e) {
       // A refused token is over for good; a network failure keeps it for the next try.
-      if (isApiError(e) && !e.retryable) { clear(); notify() }
+      if (isApiError(e) && !e.retryable) {
+        // Ended on purpose (signed out elsewhere, or retired for a newer sign-in): the sign-in page says so once.
+        if (e.message === 'sessionEnded') { try { sessionStorage.setItem(SESSION_ENDED, '1') } catch { /* storage blocked: no note */ } }
+        clear(); notify()
+      }
       return false
     }
   })().finally(() => { restoring = null }))
@@ -113,6 +120,9 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       async listDevices() {
         const token = storedToken()
         try { return await raw.post<DeviceSession[]>('/auth/sessions/list', { refreshToken: token }) } catch (e) { throw failure(e) }
+      },
+      async onlineNow() {
+        try { return (await raw.get<{ count: number }>('/auth/sessions/online')).count } catch (e) { throw failure(e) }
       },
       async signOutDevice(id) {
         try { await raw.delete(`/auth/sessions/${encodeURIComponent(id)}`) } catch (e) { throw failure(e) }

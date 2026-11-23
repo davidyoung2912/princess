@@ -13,7 +13,10 @@ public sealed class JwtOptions
     public string SigningKey { get; set; } = "";
     [Range(1, 1440)] public int AccessTokenMinutes { get; set; } = 15;
     [Range(1, 1440)] public int ViewAsTokenMinutes { get; set; } = 15;
-    [Range(1, 365)] public int RefreshTokenDays { get; set; } = 30;
+    /// <summary>How long a device may go unused before its session ends. Each refresh renews it, so this is an idle timeout, not a fixed lifetime.</summary>
+    [Range(1, 365)] public int RefreshTokenDays { get; set; } = 14;
+    /// <summary>How many devices one person can be signed in on. A new sign-in over the limit quietly ends the least recently active one; it is never refused.</summary>
+    [Range(1, 100)] public int MaxSessions { get; set; } = 8;
 }
 
 public sealed class AuthOptions

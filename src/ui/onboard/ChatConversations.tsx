@@ -177,7 +177,7 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
         )
       })())}
       {rows && <AwayPeople rows={rows} onChange={(id, on) => setRows((cur) => (cur ? cur.map((c) => (c.id === id ? { ...c, notifyAway: on } : c)) : cur))} />}
-      <p><Button variant="secondary" onClick={() => { void nav('/chat/c/personal') }}>{t('cpersonal.button')}</Button></p>
+      <p className="conv-actions"><Button variant="secondary" onClick={() => { void nav('/chat/c/personal') }}>{t('cpersonal.button')}</Button></p>
       <p><Button variant="secondary" onClick={() => { void nav('/chat/c/new') }}>{t('cgroup.new')}</Button></p>
       <DoNotDisturb />
     </section>
@@ -1149,7 +1149,7 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     if (!n) {
       return (
         <li className="chat-msg chat-msg--stanley">
-          <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
+          <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.comment')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
           <p>{m.text}</p>
           {ask && <GroupStanleyPills question={ask} />}
           {onDelete && kind === 'stanley' && <DeleteStanleyMessage onDelete={() => onDelete(m.id)} />}
@@ -1278,9 +1278,13 @@ function typingText(names: readonly string[]): string {
 
 /** The typing bubble: three dots that move (and sit still under reduced motion) and the words. The words are read once per burst through the thread's polite status, not here. */
 function TypingLine({ names }: { names: readonly string[] }) {
-  if (names.length === 0) return null
+  const ref = useRef<HTMLDivElement>(null)
+  const active = names.length > 0
+  // The card is forced fully into view when it appears, so it is never cut off at the edge of the thread or the screen.
+  useEffect(() => { if (active) ref.current?.scrollIntoView({ block: 'nearest' }) }, [active])
+  if (!active) return null
   return (
-    <div className="chat-msg chat-typing-card">
+    <div className="chat-msg chat-typing-card" ref={ref}>
       <p className="chat-msg__meta">
         {names.length === 1 && <ChatAvatar avatar={undefined} name={names[0]} small />}
         <strong>{names.length === 1 ? names[0] : t('conv.typing.many')}</strong>

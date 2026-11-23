@@ -852,3 +852,9 @@ button.chat-quote { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .chat-typing__dots i { animation: none; opacity: 0.7; } }
 :root[data-motion='reduced'] .chat-typing__dots i { animation: none; opacity: 0.7; }
 .conv__time { font-weight: 700; }
+
+/* The time on the newest message received in a chat is bold, read or not. */
+.chat-msg:not(.chat-msg--mine, .chat-msg--system, .chat-msg--deleted, .chat-typing-card):not(:has(~ .chat-msg:not(.chat-msg--mine, .chat-msg--system, .chat-msg--deleted, .chat-typing-card))) .chat-msg__time { font-weight: 700; }
+.conv-actions { margin-block-start: var(--space-5); }
+.chat-typing-card { scroll-margin-block-end: var(--space-6); }
+.leave-chat { margin-block: var(--space-3) var(--space-4); }

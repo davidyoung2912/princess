@@ -54,6 +54,8 @@ export interface AccountActions {
   changeCredentials(input: { currentPassword: string; newUsername?: string; newPassword?: string }): Promise<void>
   /** The devices this person is signed in on, this one marked `current` (IDN-01). */
   listDevices(): Promise<DeviceSession[]>
+  /** How many app windows this person has open right now (live connections, not sessions). */
+  onlineNow(): Promise<number>
   /** Signs one other device out. Fails, changing nothing, when the server cannot be reached. */
   signOutDevice(id: string): Promise<void>
   /** Administrators only: the accounts flagged as a possible duplicate, oldest first (IDN-03). Rejects for anyone else. */

@@ -128,7 +128,7 @@ export function LeavePersonalChat({ conversationId, name, onLeft }: { conversati
   const close = () => setAsking(false)
   return (
     <>
-      <Button variant="tertiary" icon={Trash2} onClick={() => setAsking(true)}>{t('cpersonal.leave')}</Button>
+      <p className="leave-chat"><Button variant="tertiary" icon={Trash2} onClick={() => setAsking(true)}>{t('cpersonal.leave')}</Button></p>
       {asking && (
         <Dialog title={t('cpersonal.leave.title')} onClose={close} header={(titleId) => <DialogHeader titleId={titleId} title={t('cpersonal.leave.title')} subtext={name} icon={Trash2} onClose={close} />}>
           <p>{t('cpersonal.leave.body', { name })}</p>

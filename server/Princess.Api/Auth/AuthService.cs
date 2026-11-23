@@ -97,7 +97,9 @@ public sealed class AuthService(
 
         var now = clock.UtcNow;
         var record = await refreshTokens.FindByHashAsync(tokens.HashRefreshToken(request.RefreshToken), ct) ?? throw BadRefreshToken();
-        // A spent or revoked token coming back means it was copied: end the whole family, the thief's and the owner's.
+        // Ended on purpose (signed out, ended from another device, or retired for a newer sign-in): the app tells the person why, and nothing was copied.
+        if (record.RevokedAt is not null && record.UsedAt is null) throw ApiException.Unauthenticated("sessionEnded");
+        // A spent token coming back means it was copied: end the whole family, the thief's and the owner's.
         if (record.UsedAt is not null || record.RevokedAt is not null)
         {
             await refreshTokens.RevokeFamilyAsync(record.UserId, record.FamilyId, now, ct);
@@ -338,6 +340,13 @@ public sealed class AuthService(
         else
         {
             await refreshTokens.InsertAsync(next, now, ct);
+            // Over the limit: the least recently active other devices are signed out, so a new sign-in is never turned away.
+            var open = await refreshTokens.ListSessionsAsync(user.Id, now, ct);
+            foreach (var extra in open.Where(s => s.FamilyId != familyId).Skip(Math.Max(0, jwt.Value.MaxSessions - 1)))
+            {
+                await refreshTokens.RevokeFamilyAsync(user.Id, extra.FamilyId, now, ct);
+                await Audit("auth.sessionRetired", AuditOutcome.Success, user, new { reason = "overLimit" }, ct);
+            }
         }
         return new SessionResponse(access.Token, Ms(access.ExpiresAt), refresh, Ms(expires), Me(user));
     }

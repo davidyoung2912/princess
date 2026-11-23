@@ -7,6 +7,14 @@ import { Card } from '../Card'
 import { Banner } from '../Banner'
 import { markSeen, newDevices, readSeen } from '../../auth/newDevices'
 
+const ago = (epoch: number): string => {
+  const mins = Math.round((Date.now() - epoch) / 60_000)
+  const f = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+  if (mins < 1) return f.format(0, 'minute')
+  if (mins < 60) return f.format(-mins, 'minute')
+  if (mins < 60 * 24) return f.format(-Math.round(mins / 60), 'hour')
+  return f.format(-Math.round(mins / 1440), 'day')
+}
 const when = (epoch: number): string => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(epoch)
 
 /** The devices signed in to this account, each with a sign-out of its own (IDN-01). */
@@ -16,9 +24,11 @@ export function DevicesCard() {
   const [outFailed, setOutFailed] = useState(false)
   const [done, setDone] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const [online, setOnline] = useState<number | null>(null)
   const [seen, setSeen] = useState<string[] | null>(() => readSeen())
 
   const [attempt, setAttempt] = useState(0)
+  useEffect(() => { void auth.account!.onlineNow().then(setOnline, () => undefined) }, [attempt])
   useEffect(() => {
     let live = true
     auth.account!.listDevices().then((list) => {
@@ -63,12 +73,14 @@ export function DevicesCard() {
           <p>{t('devices.new.body', { devices: fresh.map((x) => x.device).join(', '), date: when(Math.max(...fresh.map((x) => x.signedInAt))) })}</p>
         </Banner>
       )}
+      {devices && devices.length > 1 && <p role="status">{t('devices.others', { count: devices.length - 1 })}</p>}
+      {online !== null && online > 0 && <p className="muted">{t('devices.online', { count: online })}</p>}
       {devices && (
         <ul className="plain-list">
           {devices.map((d) => (
             <li key={d.id}>
               <p><strong>{d.device}</strong>{d.current && <> · {t('devices.thisDevice')}</>}</p>
-              <p className="muted">{t('devices.signedIn', { date: when(d.signedInAt) })} · {t('devices.lastActive', { date: when(d.lastActiveAt) })}</p>
+              <p className="muted">{t('devices.signedIn', { date: when(d.signedInAt) })} · {t('devices.lastActive', { date: ago(d.lastActiveAt) })}</p>
               {!d.current && (
                 <p><Button variant="secondary" onClick={() => { if (busy === null) void signOut(d) }}>{t('devices.signOut', { device: d.device })}</Button></p>
               )}

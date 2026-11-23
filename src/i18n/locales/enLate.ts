@@ -6039,6 +6039,7 @@ export const enLate = {
   'stanley.chat.noticesLink': 'Open notification settings',
   'stanley.chat.asked': 'You Asked',
   'stanley.chat.notification': 'Stanley Notification',
+  'stanley.chat.comment': 'Stanley',
   'notice.info.failed': 'That could not be saved. Try again.',
   'stanley.chat.delete': 'Delete this message',
   'stanley.chat.deleteAsk': 'Delete this message?',

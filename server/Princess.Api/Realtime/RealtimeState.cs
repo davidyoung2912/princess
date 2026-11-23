@@ -22,6 +22,9 @@ public sealed class RealtimeState
         else open.TryUpdate(user, n - 1, n);
     }
 
+    /// <summary>How many live connections (open app windows) the person has on this server.</summary>
+    public int Count(Guid user) => open.TryGetValue(user, out var n) ? n : 0;
+
     public bool IsConnected(Guid user) => open.TryGetValue(user, out var n) && n > 0;
 
     /// <summary>
