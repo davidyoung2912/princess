@@ -733,7 +733,13 @@ export interface AvatarChoice {
 export interface ShareCode { id: string; ref: string; expiresAt: number; scans: number; code?: string; path?: string }
 
 /** What a scan shows the receiver: the bundle rebuilt for their own sailing, who it is from (only for a guest on the same sailing) and the key Save uses. */
-export interface SharePreview { bundle: ChatBundle; from?: string; saveKey?: string }
+export interface SharePreview { bundle?: ChatBundle; from?: string; saveKey?: string; intro?: ShareIntro }
+
+/** A scan that introduces a group or a person instead of a bundle. `state`: `open` (the guest may act), `member`, `waiting`, `full`, `noGuardian`, `connected`, `asked` or `self`. */
+export interface ShareIntro { kind: 'invite' | 'connect'; name: string; state: string; members?: number }
+
+/** What Join or Send a connection request did. */
+export type ShareAccept = 'joined' | 'awaitingGuardian' | 'requested' | 'connected'
 
 export interface SharesApi {
   /** A public item's direct code (`type` and `ref`). Rejects `invalid` (`shareRef`) when the guest's sailing does not have it. */
@@ -746,4 +752,6 @@ export interface SharesApi {
   mine(): Promise<ShareCode[]>
   /** Stops one of the caller's codes at once. */
   stop(id: string): Promise<void>
+  /** Join (a group invite code) or send a connection request (a connect code): the ordinary invitation or request, with every existing rule. Rejects `notFound` for a stopped code, or `conflict` / `invalid` with the group's or connection's own reason. */
+  accept(code: string): Promise<{ status: ShareAccept }>
 }

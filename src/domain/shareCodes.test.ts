@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { directPath, handoffPath, lifeWords, parseSharePath, qrKindOf, receiveProblem, shareUrl, splitRef } from './shareCodes'
+import { acceptProblem, canAct, CONNECT_REF, directPath, handoffPath, inviteRef, isIntroRef, lifeWords, parseSharePath, qrKindOf, receiveProblem, shareUrl, splitRef } from './shareCodes'
 import { readCode } from './scanCode'
 
 describe('share codes', () => {
@@ -41,5 +41,28 @@ describe('share codes', () => {
 
   it('names the three lives', () => {
     expect([15, 60, 1440].map(lifeWords)).toEqual(['share.life.15', 'share.life.60', 'share.life.1440'])
+  })
+
+  it('shows a group invite or connect code as a handoff code, never a direct one', () => {
+    expect(qrKindOf(inviteRef('3f2a'))).toBe('handoff')
+    expect(qrKindOf(CONNECT_REF)).toBe('handoff')
+    expect(isIntroRef('venue:crown-grill')).toBe(false)
+    expect(isIntroRef('invite:')).toBe(false)
+  })
+
+  it('says what stopped a join or a request', () => {
+    expect(acceptProblem({ code: 'notFound' })).toBe('stopped')
+    expect(acceptProblem({ code: 'conflict', message: 'full' })).toBe('full')
+    expect(acceptProblem({ code: 'conflict', message: 'answered' })).toBe('already')
+    expect(acceptProblem({ code: 'conflict', message: 'alreadyAsked' })).toBe('already')
+    expect(acceptProblem({ code: 'invalid', message: 'noGuardian' })).toBe('noGuardian')
+    expect(acceptProblem({ code: 'conflict', message: 'cooldown' })).toBe('limit')
+    expect(acceptProblem({ code: 'network' })).toBe('failed')
+    expect(acceptProblem(null)).toBe('failed')
+  })
+
+  it('lets only an open state act', () => {
+    expect(canAct('open')).toBe(true)
+    for (const s of ['member', 'waiting', 'full', 'noGuardian', 'connected', 'asked', 'self']) expect(canAct(s)).toBe(false)
   })
 })

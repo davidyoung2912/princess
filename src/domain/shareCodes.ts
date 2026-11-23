@@ -13,8 +13,14 @@ export function splitRef(shareRef: string): { type: string; ref: string } | null
   return at > 0 && at < shareRef.length - 1 ? { type: shareRef.slice(0, at), ref: shareRef.slice(at + 1) } : null
 }
 
+/** A group invite code stores `invite:<group id>` (made by the group's creator); a connect code stores `connect:me` (the person who made it). Neither is a bundle, and both are handoff codes with a short life. */
+export const inviteRef = (groupId: string): string => `invite:${groupId}`
+export const CONNECT_REF = 'connect:me'
+export const isIntroRef = (shareRef: string): boolean => shareRef === CONNECT_REF || /^invite:.+/.test(shareRef)
+
 /** Whether a ref can be shown as a code: a type in the registry that is shared as a public (direct) item or a private (handoff) one. */
 export const qrKindOf = (shareRef: string): 'direct' | 'handoff' | null => {
+  if (isIntroRef(shareRef)) return 'handoff'
   const parts = splitRef(shareRef)
   return parts && parts.type in BUNDLE_TYPES ? BUNDLE_TYPES[parts.type]!.qr : null
 }
@@ -50,3 +56,18 @@ export function receiveProblem(error: unknown): 'stopped' | 'notOnSailing' | 'fa
 
 /** The words for how long a handoff code lasts. */
 export const lifeWords = (minutes: number): 'share.life.15' | 'share.life.60' | 'share.life.1440' => (minutes >= 1440 ? 'share.life.1440' : minutes >= 60 ? 'share.life.60' : 'share.life.15')
+
+/** What a failed Join or connection request means, as one of the sentences the receive sheet has. */
+export function acceptProblem(error: unknown): 'stopped' | 'full' | 'already' | 'noGuardian' | 'limit' | 'failed' {
+  const e = typeof error === 'object' && error !== null ? (error as { code?: unknown; message?: unknown }) : {}
+  const why = typeof e.message === 'string' ? e.message : ''
+  if (e.code === 'notFound') return 'stopped'
+  if (why === 'full') return 'full'
+  if (why === 'answered' || why === 'alreadyAsked' || why === 'connected') return 'already'
+  if (why === 'noGuardian') return 'noGuardian'
+  if (why === 'cooldown' || why === 'tooMany' || why === 'tooManyOpen' || why === 'notEligible') return 'limit'
+  return 'failed'
+}
+
+/** The sentence key for what a scanner's state allows: only `open` may act. */
+export const canAct = (state: string): boolean => state === 'open'

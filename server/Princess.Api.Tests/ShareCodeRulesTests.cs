@@ -52,4 +52,25 @@ public class ShareCodeRulesTests
         Assert.Null(ShareCodeRules.SaveKey("aurora", null));
         Assert.Null(ShareCodeRules.SaveKey(null, "venue:crown-grill"));
     }
+
+    [Fact]
+    public void AnIntroductionRefNamesAGroupOrThePersonWhoMadeIt()
+    {
+        var id = Guid.NewGuid();
+        Assert.Equal($"invite:{id}", ShareCodeRules.InviteRef(id));
+        Assert.Equal(id, ShareCodeRules.InviteGroup($"invite:{id}"));
+        foreach (var bad in new[] { null, "", "invite:", "invite:nope", $"invite:{Guid.Empty}", $"venue:{id}", $"invite {id}" }) Assert.Null(ShareCodeRules.InviteGroup(bad));
+        Assert.True(ShareCodeRules.IsConnectRef("connect:me"));
+        Assert.False(ShareCodeRules.IsConnectRef("connect:someone"));
+        Assert.True(ShareCodeRules.IsIntroduction("connect:me"));
+        Assert.True(ShareCodeRules.IsIntroduction($"invite:{id}"));
+        Assert.False(ShareCodeRules.IsIntroduction("venue:crown-grill"));
+    }
+
+    [Fact]
+    public void AnIntroductionIsNeverADirectCode()
+    {
+        Assert.Null(ShareCodeRules.DirectRef("invite", Guid.NewGuid().ToString()));
+        Assert.Null(ShareCodeRules.DirectRef("connect", "me"));
+    }
 }

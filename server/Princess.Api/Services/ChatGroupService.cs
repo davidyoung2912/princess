@@ -283,6 +283,49 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         catch (Exception e) when (e is not OperationCanceledException) { }
     }
 
+    /// <summary>
+    /// What a group invite code (docs/chat-bundles-plan.md, phase Q2) shows its scanner: the group, how many are in, and where the scanner stands (<c>open</c>, <c>member</c>, <c>waiting</c>, <c>full</c> or <c>noGuardian</c>). The
+    /// code names the group's creator, who must still be its creator and an adult; the scanner must be someone the creator's people search could show (same sailing, not blocked either way). Anyone else gets a plain 404.
+    /// </summary>
+    public async Task<(ChatGroupRow Group, int Members, string State)> InviteCodeViewAsync(UserRecord actor, UserRecord inviter, Guid groupId, CancellationToken ct)
+    {
+        var group = await store.GetForMemberAsync(inviter.Id, groupId, ct);
+        if (group is null || group.CreatedByUserId != inviter.Id || inviter.IsSupervised) throw ApiException.NotFound();
+        if (actor.Id != inviter.Id && !(await people.FindPeopleAsync(actor.Id, null, inviter.PublicId, 1, ct)).Any()) throw ApiException.NotFound();
+        if (actor.Id != inviter.Id && await store.HasBlockedAsync(inviter.Id, actor.Id, ct)) throw ApiException.NotFound();
+        await store.ExpireAsync(inviter.Id, await clock.NowAsync(inviter, ct), ct);
+        var members = await store.ListActiveAsync(group.Id, ct);
+        var waiting = await store.ListWaitingAsync(group.Id, ct);
+        var state = members.Any(m => m.UserId == actor.Id) ? "member"
+            : waiting.Any(w => w.InviteeId == actor.Id) ? "waiting"
+            : !ChatGroupRules.Fits(members.Count, waiting.Count, 1) ? "full"
+            : actor.IsSupervised && actor.BookerUserId is null ? "noGuardian"
+            : "open";
+        return (group, members.Count, state);
+    }
+
+    /// <summary>
+    /// The scanner taps Join. This is never a new way into a group: it makes the same invitation the creator could have sent (so the size cap, blocks and guardian approval all apply), and for an adult answers it yes at once
+    /// through the ordinary answer. A supervised child's invitation waits for their guardian, as any other. Returns <c>joined</c> or <c>awaitingGuardian</c>; 409 <c>full</c>, <c>answered</c> (already in or already invited).
+    /// </summary>
+    public async Task<string> JoinByCodeAsync(UserRecord actor, UserRecord inviter, Guid groupId, CancellationToken ct)
+    {
+        var (group, _, state) = await InviteCodeViewAsync(actor, inviter, groupId, ct);
+        if (state == "full") throw ApiException.Conflict("full");
+        if (state == "noGuardian") throw ApiException.Invalid("noGuardian");
+        if (state is "member" or "waiting") throw ApiException.Conflict("answered");
+        var now = await clock.NowAsync(actor, ct);
+        var status = ChatGroupRules.StatusFor(actor.IsSupervised);
+        var row = await store.InviteAsync(group.Id, inviter.Id, actor.Id, status, actor.IsSupervised ? actor.BookerUserId : null, now + ChatGroupRules.Lifetime, now, ct) ?? throw ApiException.Conflict("answered");
+        if (actor.IsSupervised)
+        {
+            await notifier.GroupApprovalAsync(actor.BookerUserId!.Value, row.PublicId, row.InviteeFirst, ct);
+            return "awaitingGuardian";
+        }
+        await RespondAsync(actor, row.PublicId, new(true), ct);
+        return "joined";
+    }
+
     // ---- helpers ----
 
     private static List<Guid> Distinct(UserRecord actor, List<Guid>? ids) =>

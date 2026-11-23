@@ -13,6 +13,8 @@ import { api } from '../../runtime'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
+import { ShowCode } from './ShowCode'
+import { CONNECT_REF } from '../../domain/shareCodes'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
@@ -90,10 +92,13 @@ function Invitations() {
 function ChatSettingsPage() {
   const settings = useMine(() => api.chatConnections.settings())
   const [note, setNote] = useState('')
+  const [coding, setCoding] = useState(false)
   return (
     <section aria-labelledby="chat-settings-h">
       <h2 id="chat-settings-h" className="visually-hidden">{t('chatSettings.title')}</h2>
       <p role="status" className="visually-hidden">{note}</p>
+      <Button variant="secondary" onClick={() => setCoding(true)}>{t('share.connect.show')}</Button>
+      {coding && <Dialog title={t('share.connect.title')} onClose={() => setCoding(false)}><ShowCode shareRef={CONNECT_REF} title={t('share.connect.title')} onBack={() => setCoding(false)} /></Dialog>}
       <TextBridge />
       <Settings state={settings} onHidden={() => { setNote(t('people.hidden')); chatChanged() }} />
     </section>

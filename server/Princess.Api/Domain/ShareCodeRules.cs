@@ -40,4 +40,19 @@ public static class ShareCodeRules
     /// <summary>The pin key that saves what a ref names on a ship (<c>venue:ship.venue</c>, as the venue pins use; a menu saves its restaurant), or null when it cannot be saved.</summary>
     public static string? SaveKey(string? shipId, string? shareRef) =>
         shipId is null ? null : ChatCardRules.ParseVenueRef(shareRef) is { } venue ? $"venue:{shipId}.{venue}" : ChatCardRules.ParseMenuRef(shareRef) is { } menu ? $"venue:{shipId}.{menu.VenueId}" : null;
+
+    /// <summary>The ref a group invite code stores (<c>invite:&lt;group id&gt;</c>), which only a made group's creator may make.</summary>
+    public static string InviteRef(Guid groupId) => $"invite:{groupId}";
+
+    /// <summary>The group a ref names when it is an invite ref, or null.</summary>
+    public static Guid? InviteGroup(string? shareRef) =>
+        shareRef is not null && shareRef.StartsWith("invite:", StringComparison.Ordinal) && Guid.TryParse(shareRef.AsSpan(7), out var id) && id != Guid.Empty ? id : null;
+
+    /// <summary>The ref a connect code stores: it names nobody but the person who made it.</summary>
+    public const string ConnectRef = "connect:me";
+
+    public static bool IsConnectRef(string? shareRef) => shareRef == ConnectRef;
+
+    /// <summary>Whether a ref is an invitation to a person or group rather than a bundle: such a code can be made only for an adult and never carries a note.</summary>
+    public static bool IsIntroduction(string? shareRef) => IsConnectRef(shareRef) || InviteGroup(shareRef) is not null;
 }

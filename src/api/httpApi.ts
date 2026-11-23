@@ -243,6 +243,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     create: (ref, minutes) => send('post', '/me/shares', { ref, minutes }),
     mine: () => get('/me/shares'),
     stop: async (id) => { await send('delete', `/me/shares/${seg(id)}`) },
+    accept: (code) => send('post', `/me/shares/${seg(code)}/accept`),
   }
   const chatConversations: HttpGroups['chatConversations'] = {
     list: () => get('/me/chat/conversations'),

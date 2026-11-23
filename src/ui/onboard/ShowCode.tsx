@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 import { Copy } from 'lucide-react'
 import { useAction } from '../../hooks/useAction'
 import type { ShareCode } from '../../api/chatTypes'
-import { directPath, handoffPath, LIFE_CHOICES, lifeWords, qrKindOf, shareUrl } from '../../domain/shareCodes'
+import { CONNECT_REF, isIntroRef, directPath, handoffPath, LIFE_CHOICES, lifeWords, qrKindOf, shareUrl } from '../../domain/shareCodes'
 import { t } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
@@ -46,7 +46,7 @@ export function ShowCode({ shareRef, title, onBack }: { shareRef: string; title:
       {url && (
         <>
           <QrCode text={url} label={t('share.qr.label', { title })} />
-          <p className="muted">{t(kind === 'direct' ? 'share.what.direct' : 'share.what.handoff', { title })}</p>
+          <p className="muted">{t(kind === 'direct' ? 'share.what.direct' : shareRef === CONNECT_REF ? 'share.what.connect' : isIntroRef(shareRef) ? 'share.what.invite' : 'share.what.handoff', { title })}</p>
           <p className="muted share-code__url">{url}</p>
           <Button variant="secondary" icon={Copy} onClick={() => void copy()}>{t('share.copy')}</Button>
           <p role="status" className={copied ? undefined : 'visually-hidden'}>{copied === 'yes' ? t('share.copied') : copied === 'no' ? t('share.copyFailed') : ''}</p>

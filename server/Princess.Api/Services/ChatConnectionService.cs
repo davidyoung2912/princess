@@ -120,6 +120,27 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         await groups.MarkAnswersSeenAsync(actor.Id, now, ct);
     }
 
+    /// <summary>
+    /// What a connect code (phase Q2) shows its scanner: the owner's first name and last initial and where things stand (<c>open</c>, <c>connected</c>, <c>asked</c> or <c>self</c>). Only someone the search could have shown is
+    /// found; anyone else, including a person who blocked the scanner, gets the same 404 as a stopped code.
+    /// </summary>
+    public async Task<(string Name, string State)> ConnectCodeViewAsync(UserRecord actor, UserRecord owner, CancellationToken ct)
+    {
+        var name = ChatConnectionRules.ShortName(owner.FirstName, owner.LastName);
+        if (actor.Id == owner.Id) return (name, "self");
+        if (!(await store.FindPeopleAsync(actor.Id, null, owner.PublicId, 1, ct)).Any()) throw ApiException.NotFound();
+        var open = await store.FindOpenBetweenAsync(actor.Id, owner.Id, ct);
+        return (name, open is null ? "open" : open.Status == ChatConnectionRules.Accepted ? "connected" : "asked");
+    }
+
+    /// <summary>The scanner taps Send a connection request: the ordinary request, with every rule it already has (eligibility, limits, cooldown, guardian approval). The owner still has to accept. A scan alone never reaches here.</summary>
+    public async Task<string> ConnectByCodeAsync(UserRecord actor, UserRecord owner, CancellationToken ct)
+    {
+        await ConnectCodeViewAsync(actor, owner, ct);
+        var made = await RequestAsync(actor, new(owner.PublicId), ct);
+        return made.ConversationId is not null ? "connected" : "requested";
+    }
+
     public async Task<ChatConnectionDto> RequestAsync(UserRecord actor, ChatRequestBody? body, CancellationToken ct)
     {
         if (body is null || body.ToUserId == Guid.Empty) throw ApiException.Invalid("person");

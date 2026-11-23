@@ -2,9 +2,11 @@ import { useId } from 'react'
 import { Pin } from 'lucide-react'
 import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
-import { parseSharePath, receiveProblem } from '../../domain/shareCodes'
+import { useState } from 'react'
+import { acceptProblem, canAct, parseSharePath, receiveProblem } from '../../domain/shareCodes'
+import type { ShareAccept } from '../../api/chatTypes'
 import { parseBundle } from '../../domain/chatBundles'
-import { t } from '../../i18n'
+import { t, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
 import { BundleCard } from '../onboard/BundleCard'
@@ -22,7 +24,10 @@ export function ReceiveSheet({ path, onDone }: { path: string; onDone: () => voi
   }, [path])
   const saved = useAsync(() => api.ahead.saved.list(), [path])
   const toggle = useAction((key: string) => api.ahead.saved.toggle(key), { quiet: true })
-  const bundle = preview.data ? parseBundle(preview.data.bundle) : null
+  const bundle = preview.data?.bundle ? parseBundle(preview.data.bundle) : null
+  const intro = preview.data?.intro
+  const [done, setDone] = useState<ShareAccept | null>(null)
+  const accept = useAction(async () => { if (target?.kind === 'code') setDone((await api.shares.accept(target.code)).status) }, { quiet: true })
   const key = preview.data?.saveKey
   const isSaved = key !== undefined && (saved.data ?? []).includes(key)
   const problem = preview.status === 'error' ? receiveProblem(preview.error) : null
@@ -35,6 +40,22 @@ export function ReceiveSheet({ path, onDone }: { path: string; onDone: () => voi
           <p>{t(problem === 'stopped' ? 'receive.stopped' : problem === 'notOnSailing' ? 'receive.notOnSailing' : 'receive.failed')}</p>
           {problem === 'failed' && <Button variant="secondary" onClick={preview.retry}>{t('scan.retry')}</Button>}
         </div>
+      )}
+      {intro && (
+        <>
+          <p className="muted">{preview.data?.from ? t('receive.from', { name: preview.data.from }) : t('receive.fromGuest')}</p>
+          <p className="chat-card__title">{intro.kind === 'invite' ? t('receive.invite.title', { name: intro.name }) : t('receive.connect.title', { name: intro.name })}</p>
+          {intro.kind === 'invite' && intro.members !== undefined && <p className="muted">{t('receive.invite.members', { count: intro.members })}</p>}
+          <p className="muted">{t(`receive.state.${done ?? intro.state}` as StringKey)}</p>
+          <div className="receive__actions">
+            {!done && canAct(intro.state) && (
+              <Button disabled={accept.busy} onClick={() => void accept.run()}>{t(intro.kind === 'invite' ? 'receive.invite.join' : 'receive.connect.send')}</Button>
+            )}
+            <Button variant="tertiary" onClick={onDone}>{t(intro.kind === 'invite' ? 'receive.decline' : 'receive.dismiss')}</Button>
+          </div>
+          {accept.error && <p role="alert" className="field__error">{t(`receive.accept.${acceptProblem(accept.error)}` as StringKey)}</p>}
+          <p role="status" className="visually-hidden">{done ? t(`receive.state.${done}` as StringKey) : ''}</p>
+        </>
       )}
       {bundle && (
         <>

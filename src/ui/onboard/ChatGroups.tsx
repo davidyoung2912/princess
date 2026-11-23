@@ -11,6 +11,8 @@ import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
 import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
+import { ShowCode } from './ShowCode'
+import { inviteRef } from '../../domain/shareCodes'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
@@ -259,6 +261,7 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
   useChatLive(() => { group.retry(); connections.retry() })
   const [leaving, setLeaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [coding, setCoding] = useState(false)
   const [name, setName] = useState<string | null>(null)
   const [picked, setPicked] = useState<string[]>([])
   const [note, setNote] = useState('')
@@ -317,6 +320,8 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
                   <Button type="submit" disabled={rename.busy || cleanGroupName(name ?? '') === null || name === g.name}>{t('cgroup.renameSave')}</Button>
                 </form>
                 <Problem error={rename.error} />
+                <Button variant="secondary" onClick={() => setCoding(true)}>{t('share.invite.show')}</Button>
+                {coding && <Dialog title={t('share.invite.title')} onClose={() => setCoding(false)}><ShowCode shareRef={inviteRef(id)} title={g.name} onBack={() => setCoding(false)} /></Dialog>}
                 <AddPeople group={g} connections={connections} picked={picked} setPicked={setPicked} busy={invite.busy} onInvite={(found) => invite.run(found)} />
                 <Problem error={invite.error} />
               </>
