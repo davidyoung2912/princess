@@ -290,8 +290,8 @@ main.signin { margin-inline: auto; }
   :root[data-calm='on'] :is(.card, .banner, .tip, .says, .stanley-card, .stanley-card2, .stanley-ask, .stanley-moment, .stanley-coach, .chat-card, .chat-poll, .chat-pins, .case, .slot-card, .today-strip__card, .dish, .order, .photo):is(:hover, :focus-within) { box-shadow: none; }
 }
 
-/* The note under the New Personal Chat search sits clear of the button above it. */
-.personal-note { margin-block-start: var(--space-5); }
+/* The notes under a guest search (the "no one was found" line, and the New Personal Chat note) sit clear of the button above them. */
+.personal-note, .find-note { margin-block-start: var(--space-5); }
 
 /* Traveller tip under the page header: yellow, with a lightbulb. The text keeps the normal text colour for contrast. */
 .page--tip { padding-block: var(--space-3) 0; }

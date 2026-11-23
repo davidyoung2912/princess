@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// The creator can invite, remove and rename; anyone can leave. A member reads only what was said from the moment they joined (the window in <see cref="ChatConversationRules.CanRead"/>).
 /// A group has 25 people at most, counting the creator and the invitations still waiting. A supervised child cannot make a group. Declines are quiet: the creator is never told who said no.
 /// </summary>
-public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IUserClock clock, ChatNotifier notifier, IChatStore chat, IChatStanleyStore stanley, IOptions<StanleyOptions> options, IChatConnectionStore people)
+public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IUserClock clock, ChatNotifier notifier, IChatStore chat, IChatStanleyStore stanley, IOptions<StanleyOptions> options, IChatConnectionStore people, StanleyNoticeRelay stanleyThread)
 {
     private static string Short(ChatGroupPersonRow p) => ChatConnectionRules.ShortName(p.FirstName, p.LastName);
 
@@ -115,7 +115,11 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var group = await MemberGroupAsync(actor, id, ct);
         if (group.CreatedByUserId == actor.Id) throw ApiException.Forbidden("leader");
         var me = (await store.ListActiveAsync(group.Id, ct)).First(m => m.UserId == actor.Id);
-        if (!await store.RemoveMemberAsync(group.Id, actor.Id, "left", ChatGroupRules.LeftLine(Short(me)), await clock.NowAsync(actor, ct), ct)) throw ApiException.NotFound();
+        var now = await clock.NowAsync(actor, ct);
+        if (!await store.RemoveMemberAsync(group.Id, actor.Id, "left", ChatGroupRules.LeftLine(Short(me)), now, ct)) throw ApiException.NotFound();
+        // The leader's Stanley thread says who left. One message per leaving (a person who rejoins and leaves again is told again).
+        if (group.CreatedByUserId is long leaderId && await users.FindByIdAsync(leaderId, ct) is { } leader)
+            await stanleyThread.TellAsync(leader, $"chat:left:{group.PublicId:N}:{actor.Id}:{now.Ticks}", "Someone left your chat group", $"{Short(me)} left “{group.Name}”.", now, ct);
     }
 
     /// <summary>Invitations waiting for the caller, and for children they are guardian of.</summary>

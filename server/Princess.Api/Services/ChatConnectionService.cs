@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// A child's request needs their guardian first, and a request to a child is answered by their guardian. The other person is told at once; if a request is to someone who blocked the
 /// sender it looks the same to the sender and is never delivered.
 /// </summary>
-public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore chat, IChatGroupStore groups, IUserStore users, IUserClock clock, ChatNotifier notifier, ChatKeepService eligibility)
+public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore chat, IChatGroupStore groups, IUserStore users, IUserClock clock, ChatNotifier notifier, ChatKeepService eligibility, StanleyNoticeRelay stanleyThread)
 {
     public async Task<List<ChatPersonDto>> SearchAsync(UserRecord actor, string? query, CancellationToken ct)
     {
@@ -159,6 +159,17 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         return View(actor.Id, row)!;
     }
 
+    /// <summary>
+    /// Adds the answer to the sender's permanent Stanley chat, so the thread (their one inbox) says the request was declined. It is one message per request, in Stanley's kind words, and names
+    /// only the other person's short name. Never fails the answer: the relay swallows and logs its own errors, and the People page still shows the answer either way.
+    /// </summary>
+    private async Task TellRequesterInStanleyAsync(ChatConnectionRow row, DateTime now, CancellationToken ct)
+    {
+        if (await users.FindByIdAsync(row.RequesterId, ct) is not { } requester) return;
+        var name = ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast);
+        await stanleyThread.TellAsync(requester, ChatConnectionRules.NoticeKey("declinedThread", row.PublicId), "Chat request declined", ChatStanleyVoice.Declined(name), now, ct);
+    }
+
     public async Task<ChatConnectionDto> RespondAsync(UserRecord actor, Guid id, ChatRespondBody? body, CancellationToken ct)
     {
         if (body is null) throw ApiException.Invalid("body");
@@ -187,7 +198,11 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
             if (body.Block) await chat.SetBlockAsync(blocker, other, true, ct);
             // The sender hears an answer, unless their own guardian was the one who said no (then it is for the guardian to explain).
             if (asGuardian && row.GuardianFor == "requester") await store.MarkAnswersSeenAsync(row.RequesterId, now, ct);
-            else await notifier.DeclinedAsync(row.RequesterId, row.PublicId, ct);
+            else
+            {
+                await notifier.DeclinedAsync(row.RequesterId, row.PublicId, ct);
+                await TellRequesterInStanleyAsync(row, now, ct);
+            }
             return Answer(actor.Id, (await store.GetAsync(id, ct))!);
         }
 
@@ -234,6 +249,12 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         if (!await store.EndAsync(row.Id, actor.Id, await clock.NowAsync(actor, ct), ct)) throw ApiException.Conflict("notConnected");
         var otherId = actor.Id == row.RequesterId ? row.TargetId : row.RequesterId;
         if (row.ConversationId is Guid conversationId) await notifier.PersonalChatEndedAsync(otherId, conversationId, ct);
+        // The person who asked is the leader of a personal chat: when the other person leaves, the leader's Stanley thread says so.
+        if (actor.Id == row.TargetId && await users.FindByIdAsync(row.RequesterId, ct) is { } leader)
+        {
+            var who = ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast);
+            await stanleyThread.TellAsync(leader, ChatConnectionRules.NoticeKey("personalLeft", row.PublicId), "Personal chat ended", $"{who} left your personal chat, so it has been removed.", await clock.NowAsync(actor, ct), ct);
+        }
     }
 
     // ---- shaping ----

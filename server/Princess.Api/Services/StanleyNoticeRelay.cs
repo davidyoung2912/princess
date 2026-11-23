@@ -50,6 +50,13 @@ public sealed class StanleyNoticeRelay(IChatStore store, ILogger<StanleyNoticeRe
         }
     }
 
+    /// <summary>
+    /// One plain message in the person's Stanley thread, once per <paramref name="key"/> (for example "Chat request declined"). Used by chat events that have no phone alert of their own to carry.
+    /// Like <see cref="RelayAsync"/> it never fails the caller.
+    /// </summary>
+    public Task<int> TellAsync(UserRecord user, string key, string title, string body, DateTime now, CancellationToken ct) =>
+        RelayAsync(user, [new PushNotice(key, "chatEvent", "chat", false, 40, "/chat", title, body, [])], now, ct);
+
     public async Task<int> RelayAsync(UserRecord actor, IReadOnlyList<PushNotice> notices, DateTime now, CancellationToken ct, bool offersOptedIn = false, bool seriousCaseOpen = false)
     {
         notices = [.. notices.Where(n => StanleyNoticeRules.OfferAllowed(n, offersOptedIn, seriousCaseOpen, actor.IsSupervised) && LaneOn(StanleyNoticeRules.LaneOf(n))

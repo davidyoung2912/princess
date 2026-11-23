@@ -105,7 +105,7 @@ export function NewGroupPage({ onCreated }: { onCreated: (group: ChatGroup) => v
           <Field label={t('people.search')} value={query} maxLength={254} autoComplete="off" error={searchError || undefined} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void search.run() } }} />
           <Button type="button" variant="secondary" disabled={search.busy} onClick={() => void search.run()}>{t('cgroup.findGo')}</Button>
           <ActionError error={search.error} />
-          {nobody && <p className="muted">{t('cgroup.findNone')}</p>}
+          {nobody && <p className="muted find-note">{t('cgroup.findNone')}</p>}
           {addable.length > 0 && (
             <ul className="plain-list">
               {addable.map((p) => (
