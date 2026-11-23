@@ -18,7 +18,7 @@ public sealed record ChatConnectionDto(Guid Id, string Kind, Guid PersonId, stri
 
 public sealed record ChatConnectionsDto(
     List<ChatConnectionDto> Connected, List<ChatConnectionDto> Incoming, List<ChatConnectionDto> Outgoing,
-    List<ChatConnectionDto> Answers, List<ChatConnectionDto> Approvals);
+    List<ChatConnectionDto> Answers, List<ChatConnectionDto> Approvals, List<ChatConnectionDto>? Previous = null);
 
 /// <summary>The numbers for a badge. <c>Unread</c> counts unread messages (phase 4; 0 until then).</summary>
 public sealed record ChatSummaryDto(int Incoming, int Approvals, int Answers, int NewlyConnected, int Unread, int UrgentUnacked, List<Guid> UrgentConversations, int InfoNotices = 0);
@@ -62,6 +62,7 @@ public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? LastMineAt = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? LastTheirsAt = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Owner = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Leader = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OwnerName = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OwnerAvatar = null);
 

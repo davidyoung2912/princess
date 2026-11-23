@@ -1,7 +1,7 @@
 import { NicknameField } from '../NicknameField'
 import { ChatLooks } from './ChatLooks'
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import type { ChatConnection, ChatSettings, ChatSms } from '../../api/chatTypes'
 import { needsPhone, smsReason } from '../../domain/chatSms'
 import { waitingCount } from '../../domain/chatConnections'
@@ -45,7 +45,10 @@ function Invitations() {
   useChatLive(() => { list.retry(); invites.retry() })
   const [note, setNote] = useState('')
   const refresh = () => { list.retry(); invites.retry(); chatChanged() }
-  const done = (text: string) => { setNote(text); refresh() }
+  const nav = useNavigate()
+  const waitingNow = (list.data ? waitingCount(list.data) : 0) + (invites.data?.length ?? 0)
+  // Answering the only invitation left has nothing more to show here: back to the main chat page at once.
+  const done = (text: string) => { setNote(text); refresh(); if (waitingNow <= 1) void nav('/chat') }
   // Opening the page is seeing any answers to requests the guest sent, so the Chat badge stops counting them.
   const answered = list.data ? list.data.answers.length + list.data.connected.filter((c) => c.isNew).length : 0
   useEffect(() => { if (answered > 0) void api.chatConnections.seen().then(chatChanged, () => undefined) }, [answered])

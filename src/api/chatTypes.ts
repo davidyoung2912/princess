@@ -33,6 +33,8 @@ export interface ChatConnections {
   outgoing: ChatConnection[]
   answers: ChatConnection[]
   approvals: ChatConnection[]
+  /** People you once agreed to chat with, whoever asked, with no block between you and no chat open now: still people you can invite to a group. */
+  previous?: ChatConnection[]
 }
 
 /** How much a message matters (docs/chat-urgency-plan.md). Only `urgent` breaks through do not disturb; only staff and a guardian of a child in the chat may send it. */
@@ -180,6 +182,8 @@ export interface ChatConversation {
   lastTheirsAt?: number
   /** You started this made group or private chat, so you can invite, remove people and delete it. Absent when not. */
   owner?: boolean
+  /** The person who started this personal chat: shown with the Leader badge, and (unlike a group's leader) free to leave it. */
+  leader?: boolean
   /** A made group or private chat only: who started it, and their chosen avatar (absent for initials). */
   ownerName?: string
   ownerAvatar?: string

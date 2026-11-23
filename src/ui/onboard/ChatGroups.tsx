@@ -1,6 +1,6 @@
 import { Check, Depart, Trash2, Users, X } from '../icons'
 import { useState } from 'react'
-import type { ChatConnections, ChatGroup, ChatGroupInvite, ChatPerson } from '../../api/chatTypes'
+import type { ChatConnection, ChatConnections, ChatGroup, ChatGroupInvite, ChatPerson } from '../../api/chatTypes'
 import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, togglePicked } from '../../domain/chatGroups'
 import { cleanQuery } from '../../domain/chatConnections'
 import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
@@ -24,6 +24,9 @@ function Problem({ error }: { error: ApiError | null }) {
   const why = groupProblem(error.code, error.message)
   return why === 'other' ? <ActionError error={error} /> : <p role="alert" className="field__error">{t(`cgroup.problem.${why}` as StringKey)}</p>
 }
+
+/** Everyone the guest can invite to a group: people they are chatting with now, and people who once accepted a request from them (and have not blocked them). */
+const everyone = (c: ChatConnections | null | undefined): ChatConnection[] => c ? [...c.connected, ...(c.previous ?? [])] : []
 
 /** The people the guest is connected with, as checkboxes to pick from. Each box is a native checkbox with the person's name as its label. */
 function PickPeople({ people, picked, onToggle, legend }: { people: readonly { personId: string; name: string; avatar?: string }[]; picked: readonly string[]; onToggle: (id: string) => void; legend: string }) {
@@ -72,10 +75,10 @@ export function NewGroupPage({ onCreated }: { onCreated: (group: ChatGroup) => v
     chatChanged()
     onCreated(group)
   })
-  const connected = new Set((connections.data?.connected ?? []).map((c) => c.personId))
+  const connected = new Set(everyone(connections.data).map((c) => c.personId))
   // Everyone chosen for the group, whether already a contact or just found: all of them get the invitation when the group is made.
   const chosen: ChatPerson[] = [
-    ...(connections.data?.connected ?? []).filter((c) => picked.includes(c.personId)).map((c) => ({ id: c.personId, name: c.name, relation: 'connected' as const, avatar: c.avatar })),
+    ...everyone(connections.data).filter((c) => picked.includes(c.personId)).map((c) => ({ id: c.personId, name: c.name, relation: 'connected' as const, avatar: c.avatar })),
     ...found,
   ]
   const drop = (id: string) => { setPicked((x) => x.filter((p) => p !== id)); setFound((x) => x.filter((f) => f.id !== id)) }
@@ -94,9 +97,9 @@ export function NewGroupPage({ onCreated }: { onCreated: (group: ChatGroup) => v
         <Card labelledBy="new-group-people-h">
           <h3 id="new-group-people-h">{headingCase(t('cgroup.pick'))}</h3>
           <Load state={connections}>
-            {(c) => c.connected.length === 0
+            {(c) => everyone(c).length === 0
               ? <p className="muted">{t('cgroup.nobody')}</p>
-              : <PickPeople people={c.connected} picked={picked} onToggle={(id) => setPicked((p) => togglePicked(p, id))} legend={t('cgroup.pickLegend')} />}
+              : <PickPeople people={everyone(c)} picked={picked} onToggle={(id) => setPicked((p) => togglePicked(p, id))} legend={t('cgroup.pickLegend')} />}
           </Load>
         </Card>
         <Card labelledBy="new-group-find-h">
@@ -277,7 +280,7 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
 function AddPeople({ group, connections, picked, setPicked, busy, onInvite }: {
   group: ChatGroup; connections: ReturnType<typeof useMine<ChatConnections>>; picked: string[]; setPicked: (p: string[]) => void; busy: boolean; onInvite: () => void
 }) {
-  const people = invitable(connections.data?.connected ?? [], group)
+  const people = invitable(everyone(connections.data), group)
   return (
     <div>
       <PickPeople people={people} picked={picked} onToggle={(id) => setPicked(togglePicked(picked, id))} legend={t('cgroup.add')} />

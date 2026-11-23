@@ -144,6 +144,7 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
             WHERE (
                     (c.Status IN ('awaitingGuardian','pending','accepted') AND (c.RequesterId = @userId OR c.TargetId = @userId OR c.GuardianUserId = @userId))
                  OR (c.Status = 'declined' AND c.RequesterId = @userId AND c.RequesterSeenAt IS NULL)
+                 OR (c.Status = 'ended' AND (c.RequesterId = @userId OR c.TargetId = @userId) AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks bl2 WHERE (bl2.UserId = c.TargetId AND bl2.BlockedUserId = c.RequesterId) OR (bl2.UserId = c.RequesterId AND bl2.BlockedUserId = c.TargetId)))   -- someone I once agreed to chat with, in either direction, with no block between us: still someone to invite
                   )
               AND NOT (c.TargetId = @userId AND c.GuardianUserId IS NULL AND EXISTS (SELECT 1 FROM dbo.ChatBlocks bl WHERE bl.UserId = @userId AND bl.BlockedUserId = c.RequesterId))
             ORDER BY c.CreatedAt DESC, c.Id DESC
@@ -211,8 +212,8 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
             """, new { id, now }, tx, ct));
         if (people is not { } p) return null;   // not waiting any more: somebody answered first
         var (groupId, groupPublicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
-            INSERT INTO dbo.ChatGroups (Name, Kind) OUTPUT INSERTED.Id, INSERTED.PublicId VALUES (N'Direct', 'direct')
-            """, null, tx, ct));
+            INSERT INTO dbo.ChatGroups (Name, Kind, CreatedByUserId) OUTPUT INSERTED.Id, INSERTED.PublicId VALUES (N'Direct', 'direct', @starter)
+            """, new { starter = p.RequesterId }, tx, ct));   // the person who started the chat is its leader
         await c.ExecuteAsync(Sql.Cmd("""
             INSERT INTO dbo.ChatGroupMembers (GroupId, UserId, Status, JoinedAt) VALUES (@groupId, @a, 'active', @now), (@groupId, @b, 'active', @now);
             UPDATE dbo.ChatConnections SET GroupId = @groupId WHERE Id = @id;

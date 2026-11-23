@@ -865,3 +865,4 @@ button.chat-quote { cursor: pointer; }
 .chat-msg--stanley .chat-notice-offers > p { flex-basis: 100%; margin: 0; }
 .chat-msg--stanley .button-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 0; }
 .chat-msg--stanley .btn { min-height: 2.5rem; width: auto; flex: 0 0 auto; }
+.chat-msg--stanley > .btn, .chat-msg--stanley .chat-notice-offers > .btn { justify-self: start; }

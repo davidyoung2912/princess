@@ -55,7 +55,10 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         var rows = await store.ListForUserAsync(actor.Id, ct);
         var all = rows.Select(r => (Row: r, Dto: View(actor.Id, r))).Where(x => x.Dto is not null).ToList();
         List<ChatConnectionDto> Of(string kind) => [.. all.Where(x => x.Dto!.Kind == kind).Select(x => x.Dto!)];
-        return new(Of("connected"), Of("incoming"), Of("outgoing"), Of("declined"), Of("approval"));
+        var connected = Of("connected");
+        // People this guest once agreed to chat with, whoever sent the request (and with no block between them) can still be invited to a group, whether or not a chat is open with them now. One entry per person.
+        var previous = Of("previous").Where(p => connected.All(c => c.PersonId != p.PersonId)).GroupBy(p => p.PersonId).Select(g => g.First()).ToList();
+        return new(connected, Of("incoming"), Of("outgoing"), Of("declined"), Of("approval"), previous);
     }
 
     public async Task<ChatSettingsDto> SettingsAsync(UserRecord actor, CancellationToken ct)
@@ -303,6 +306,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
             ChatConnectionRules.Pending when me == r.TargetId => Make("incoming"),
             ChatConnectionRules.Pending or ChatConnectionRules.AwaitingGuardian when mine => Make("outgoing"),
             ChatConnectionRules.Declined when mine => Make("declined"),
+            ChatConnectionRules.Ended when mine || me == r.TargetId => Make("previous"),
             _ => null,
         };
     }

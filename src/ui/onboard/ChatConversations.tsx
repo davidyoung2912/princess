@@ -135,7 +135,11 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
     fetchChatSummary().then((s) => setUrgentIds(s.urgentConversations), () => undefined)
     api.chatConnections.keeps().then(setKeeps, () => undefined)
     api.chatConversations.list().then(
-      (list) => { setRows(list); setFailed(false); saveList(chatStorage(), owner, list); tellDelivered(list) },
+      (list) => {
+        setRows(list); setFailed(false); saveList(chatStorage(), owner, list); tellDelivered(list)
+        // The list is the freshest word on what is unread: if it disagrees with the badge on the tab bar, the badge is read again now instead of waiting for the next nudge.
+        fetchChatSummary().then((s) => { if (s.unread !== list.reduce((n, c) => n + c.unread, 0)) chatChanged() }, () => undefined)
+      },
       () => setFailed(true),
     )
   }, [owner])
@@ -251,7 +255,7 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, onLeave, s
         <span className="conv__body">
           <span className="conv__top">
             <strong>{c.name}</strong>
-            {c.owner && <span className="tag tag--good">{t('cgroup.status.leader')}</span>}
+            {(c.owner || c.leader) && <span className="tag tag--good">{t('cgroup.status.leader')}</span>}
             {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
           </span>
           {level !== 'normal' && <UrgencyTag level={level} />}
@@ -991,7 +995,7 @@ const LANE_KEY = { critical: 'stanley.notice.lane.critical', important: 'stanley
 /** The strip at the top of Stanley's thread: critical and important notices still waiting for Got it, so a guest who scrolled past forty messages still sees what is outstanding. */
 function NeedsYouStrip({ messages, ackBusy, onAck }: { messages: ChatMessage[]; ackBusy: boolean; onAck: (messageId: string) => void }) {
   const now = useNow()
-  const waiting = needsYou(messages, now)
+  const waiting = needsYou(messages, now).filter((m) => !m.deleted && m.text.trim() !== '')   // a deleted notice has nothing left to confirm
   if (waiting.length === 0) return null
   return (
     <section className="chat-needs" aria-labelledby="needs-h">
@@ -1134,7 +1138,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged, 
       {link && (n.actions ?? []).length === 0 && <LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton>}
       {state === 'active' && onChanged && n.lane === 'suggestion' && <MomentButtons m={m} conversationId={conversationId} onChanged={onChanged} />}
       {state === 'active' && onChanged && <ChatNoticeOffers m={m} conversationId={conversationId} onChanged={onChanged} />}
-      {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
+      {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <div className="button-row"><Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button></div>)}
       {onDelete && <DeleteStanleyMessage onDelete={() => onDelete(m.id)} />}
     </li>
   )

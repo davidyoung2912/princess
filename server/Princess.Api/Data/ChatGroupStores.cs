@@ -161,7 +161,7 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
     {
         await using var c = await db.OpenAsync(ct);
         return await c.ExecuteScalarAsync<int>(Sql.Cmd("""
-            SELECT CASE WHEN EXISTS (SELECT 1 FROM dbo.ChatConnections WHERE Status = 'accepted' AND ((RequesterId = @a AND TargetId = @b) OR (RequesterId = @b AND TargetId = @a))) THEN 1 ELSE 0 END
+            SELECT CASE WHEN EXISTS (SELECT 1 FROM dbo.ChatConnections WHERE ((Status = 'accepted' AND ((RequesterId = @a AND TargetId = @b) OR (RequesterId = @b AND TargetId = @a))) OR (Status = 'ended' AND ((RequesterId = @a AND TargetId = @b) OR (RequesterId = @b AND TargetId = @a))))) THEN 1 ELSE 0 END
             """, new { a, b }, null, ct)) == 1;
     }
 
