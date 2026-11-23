@@ -169,6 +169,14 @@ public class ChatBundleRulesTests
         Assert.True(ChatBundleRules.GameDataOk("futoshiki", Clues(16)));
         Assert.True(ChatBundleRules.GameDataOk("hitori", Clues(100)));
         Assert.False(ChatBundleRules.GameDataOk("hitori", Clues(49)));
+        Assert.True(ChatBundleRules.GameDataOk("kakuro", Clues(81)));
+        Assert.True(ChatBundleRules.GameDataOk("slitherlink", Clues(49)));
+        Assert.False(ChatBundleRules.GameDataOk("slitherlink", Clues(81)));
+        Assert.True(ChatBundleRules.GameDataOk("hashi", Clues(4)));
+        Assert.True(ChatBundleRules.GameDataOk("crossmath", "d=easy;p=0711;k=vnoe"));
+        Assert.False(ChatBundleRules.GameDataOk("nurikabe", Clues(5)));
+        Assert.True(ChatBundleRules.GameDataOk("nonogram", "d=easy;p=10;r=1,2;c=1,2"));
+        Assert.False(ChatBundleRules.GameDataOk("nonogram", "d=easy;p=7;r=1;c=1"));
         Assert.False(ChatBundleRules.GameDataOk("sudoku", Clues() + ";x=" + new string('a', ChatBundleRules.GameDataMax)));
         Assert.False(ChatBundleRules.GameDataOk("sudoku", null));
         Assert.False(ChatBundleRules.GameDataOk("sudoku", "d=easy;p=" + new string('0', 80) + "x"));

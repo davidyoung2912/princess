@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<SlitherTechnique, StringKey> = {
@@ -27,11 +27,13 @@ interface ShownHint { text: string; edges: number[]; fill?: { edge: number; mark
  * Every puzzle has one answer and can be solved without guessing. Nothing is stored.
  */
 export function SlitherlinkScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generateSlitherlink('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('slitherlink')
+  const sent = incoming && incoming.shared.game === 'slitherlink' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? generateSlitherlink('easy'))
   const n = game.size
   const topo = topology(n)
-  const [marks, setMarks] = useState<number[]>(() => Array(topo.edgeDots.length).fill(BLANK))
+  const [marks, setMarks] = useState<number[]>(() => sent?.entries ?? Array(topo.edgeDots.length).fill(BLANK))
   const [history, setHistory] = useState<number[][]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [hint, setHint] = useState<ShownHint | null>(null)
@@ -109,6 +111,7 @@ export function SlitherlinkScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     const next = generateSlitherlink(level)
     setGame(next)
     setMarks(Array(next.solution.length).fill(BLANK))
@@ -158,6 +161,7 @@ export function SlitherlinkScreen() {
         <LevelBar name="slither-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: `${t(LEVEL_KEYS[d])} ${SLITHER_LEVELS[d].size}×${SLITHER_LEVELS[d].size}` }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} {n}×{n}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -240,6 +244,7 @@ export function SlitherlinkScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && set(selected, BLANK)} disabled={selected === null || solved}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
+          <GameShare shared={{ game: 'slitherlink', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.slitherlink.title')} />
         </div>
         <div className="bn-pad" role="group" aria-label={t('slither.pad')}>
           {[LINE, CROSS].map((m) => (

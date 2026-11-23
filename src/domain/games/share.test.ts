@@ -5,6 +5,12 @@ import { generateKiller } from './killer'
 import { generateFutoshiki } from './futoshiki'
 import { generateKenKen } from './kenken'
 import { generateHitori } from './hitori'
+import { blanksOf, generateCrossmath } from './crossmath'
+import { generateKakuro } from './kakuro'
+import { generateSlitherlink } from './slitherlink'
+import { generateNurikabe } from './nurikabe'
+import { generateHashi } from './hashi'
+import { generateNonogram } from './nonogram'
 import { generatePuzzle } from './sudoku'
 
 const seeded = (seed: number) => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32 }
@@ -26,6 +32,21 @@ const make = (game: (typeof SHAREABLE_GAMES)[number], random: () => number): Sha
     const puzzle = generateHitori('medium', random)
     return { game, puzzle, entries: puzzle.solution.map((m, i) => (i % 3 === 0 ? m : 0)), notes: [] }
   }
+  const every = (list: readonly number[]) => list.map((v, i) => (i % 3 === 0 ? v : 0))
+  if (game === 'crossmath') {
+    const puzzle = generateCrossmath('medium', random)
+    const e = Array<number>(puzzle.rows * puzzle.cols).fill(0)
+    blanksOf(puzzle).forEach((i, j) => { if (j % 2 === 0) e[i] = puzzle.solution[i] })
+    return { game, puzzle, entries: e, notes: [] }
+  }
+  if (game === 'kakuro') {
+    const puzzle = generateKakuro('easy', random)
+    return { game, puzzle, entries: every(puzzle.solution).map((v, i) => (puzzle.puzzle[i] === 0 ? v : 0)), notes: [] }
+  }
+  if (game === 'slitherlink') { const puzzle = generateSlitherlink('easy', random); return { game, puzzle, entries: every(puzzle.solution), notes: [] } }
+  if (game === 'nurikabe') { const puzzle = generateNurikabe('medium', random); return { game, puzzle, entries: every(puzzle.solution.map((w) => (w ? 1 : 2))), notes: [] } }
+  if (game === 'hashi') { const puzzle = generateHashi('medium', random); return { game, puzzle, entries: every(puzzle.solution), notes: [] } }
+  if (game === 'nonogram') { const puzzle = generateNonogram('medium', random); return { game, puzzle, entries: every(puzzle.solution), notes: [] } }
   const puzzle = game === 'killer-sudoku' ? generateKiller('easy', random) : generatePuzzle('easy', random, game === 'sudoku' ? 'classic' : game === 'diagonal-sudoku' ? 'diagonal' : 'jigsaw')
   puzzle.puzzle.forEach((c, i) => { if (c === 0 && i % 4 === 0) { entries[i] = puzzle.solution[i] } else if (c === 0 && i % 4 === 1) notes[i] = 0b101000101 })
   return { game, puzzle, entries, notes }
@@ -36,8 +57,8 @@ describe('game share round trip', () => {
     it(`${game}: start, current and notes come back as the same puzzle`, () => {
       const s = make(game, seeded(7))
       const start = decodeGame(game, encodeGame(s, 'start'))
-      if (game !== 'hitori') expect((start?.puzzle as { puzzle: number[] }).puzzle).toEqual((s.puzzle as { puzzle: number[] }).puzzle)
-      else expect((start?.puzzle as { values: number[] }).values).toEqual((s.puzzle as { values: number[] }).values)
+      const clueKey = ['puzzle', 'values', 'start', 'clues', 'rows'].find((k) => k in s.puzzle && Array.isArray((s.puzzle as unknown as Record<string, unknown>)[k]))!
+      expect((start?.puzzle as unknown as Record<string, unknown>)[clueKey]).toEqual((s.puzzle as unknown as Record<string, unknown>)[clueKey])
       expect(start?.puzzle.solution).toEqual(s.puzzle.solution)
       expect(start?.entries.every((v) => v === 0)).toBe(true)
       const current = decodeGame(game, encodeGame(s, 'current'))
@@ -78,6 +99,31 @@ describe('futoshiki, kenken and hitori', () => {
     expect(decodeGame('kenken', data.replace(/t=[\d,]+/, 't=1,1'))).toBeNull()
     expect(decodeGame('futoshiki', 'd=easy;p=0000000000000000;s=0,5')).toBeNull()
     expect(decodeGame('hitori', `d=easy;p=${'1'.repeat(25)}`)).toBeNull()
+  })
+})
+
+describe('crossmath, kakuro, slitherlink, nurikabe, hashi and nonogram', () => {
+  it('islands, runs and clues survive, and a puzzle that cannot be solved is refused', () => {
+    const h = make('hashi', seeded(8)) as Extract<SharedGame, { game: 'hashi' }>
+    const back = decodeGame('hashi', encodeGame(h, 'start')) as typeof h
+    expect(back.puzzle.islands).toEqual(h.puzzle.islands)
+    expect(back.puzzle.links).toEqual(h.puzzle.links)
+    const k = make('kakuro', seeded(8)) as Extract<SharedGame, { game: 'kakuro' }>
+    const kb = decodeGame('kakuro', encodeGame(k, 'start')) as typeof k
+    expect(kb.puzzle.runs.map((r) => r.sum)).toEqual(k.puzzle.runs.map((r) => r.sum))
+    expect(kb.puzzle.white).toEqual(k.puzzle.white)
+    const c = make('crossmath', seeded(8)) as Extract<SharedGame, { game: 'crossmath' }>
+    const cb = decodeGame('crossmath', encodeGame(c, 'start')) as typeof c
+    expect(cb.puzzle.equations.length).toBe(c.puzzle.equations.length)
+    expect(cb.puzzle.tray).toEqual(c.puzzle.tray)
+    expect(cb.puzzle.symbol).toEqual(c.puzzle.symbol)
+    expect(decodeGame('nonogram', 'd=easy;p=5;r=1,1,1,1,1;c=1,1,1,1,1')).toBeNull()
+    expect(decodeGame('nonogram', 'd=easy;p=5;r=9,9,9,9,9;c=1,1,1,1,1')).toBeNull()
+    expect(decodeGame('slitherlink', `d=easy;p=${'4'.repeat(25)}`)).toBeNull()
+    expect(decodeGame('nurikabe', 'd=easy;p=0505;i=0;v=3')).toBeNull()
+    expect(decodeGame('hashi', 'd=easy;p=0707;i=0,6;v=13')).toBeNull()
+    expect(decodeGame('kakuro', `d=easy;p=${'0'.repeat(36)};w=${'1'.repeat(36)};s=3`)).toBeNull()
+    expect(decodeGame('crossmath', 'd=easy;p=0707;k=' + 'v'.repeat(49) + ';y=;v=1;t=1')).toBeNull()
   })
 })
 

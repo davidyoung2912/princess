@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Lightbulb, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 
@@ -20,10 +20,12 @@ const DIRS: Record<string, [number, number]> = { ArrowLeft: [0, -1], ArrowRight:
  * Every puzzle can be solved by logic alone. Nothing is stored.
  */
 export function HashiScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState<HashiPuzzle>(() => generateHashi('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('hashi')
+  const sent = incoming && incoming.shared.game === 'hashi' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState<HashiPuzzle>(() => sent?.puzzle ?? generateHashi('easy'))
   const { rows, cols, islands, links } = game
-  const [counts, setCounts] = useState<number[]>(() => links.map(() => 0))
+  const [counts, setCounts] = useState<number[]>(() => sent?.entries ?? links.map(() => 0))
   const [history, setHistory] = useState<number[][]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [focused, setFocused] = useState(0)
@@ -168,6 +170,7 @@ export function HashiScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     const next = generateHashi(level)
     setGame(next)
     setCounts(next.links.map(() => 0))
@@ -198,6 +201,7 @@ export function HashiScreen() {
         <LevelBar name="hashi-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: `${t(LEVEL_KEYS[d])} ${HASHI_LEVELS[d].rows}×${HASHI_LEVELS[d].cols}` }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} {rows}×{cols}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -278,6 +282,7 @@ export function HashiScreen() {
         <div className="sd-tools bn-tools">
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
+          <GameShare shared={{ game: 'hashi', puzzle: game, entries: counts, notes: [] }} title={t('gx.game.hashi.title')} />
         </div>
         <GameHelp title={t('sudoku.help.title')}>
           <p>{t('hashi.help.1')}</p>

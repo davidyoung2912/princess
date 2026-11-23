@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<NurikabeTechnique, StringKey> = {
@@ -23,10 +23,12 @@ const Dot = () => <span className="nk-dot" aria-hidden="true" />
  * Every puzzle has one answer and can be solved without guessing. Nothing is stored.
  */
 export function NurikabeScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generateNurikabe('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('nurikabe')
+  const sent = incoming && incoming.shared.game === 'nurikabe' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? generateNurikabe('easy'))
   const { rows, cols } = game
-  const [marks, setMarks] = useState<number[]>(() => Array(rows * cols).fill(BLANK))
+  const [marks, setMarks] = useState<number[]>(() => sent?.entries ?? Array(rows * cols).fill(BLANK))
   const [history, setHistory] = useState<number[][]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [hint, setHint] = useState<ShownHint | null>(null)
@@ -91,6 +93,7 @@ export function NurikabeScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     const next = generateNurikabe(level)
     setGame(next)
     setMarks(Array(next.rows * next.cols).fill(BLANK))
@@ -131,6 +134,7 @@ export function NurikabeScreen() {
         <LevelBar name="nurikabe-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: `${t(LEVEL_KEYS[d])} ${NURIKABE_LEVELS[d].cols}×${NURIKABE_LEVELS[d].rows}` }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} {cols}×{rows}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -185,6 +189,7 @@ export function NurikabeScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && set(selected, BLANK)} disabled={selected === null || solved}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
+          <GameShare shared={{ game: 'nurikabe', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.nurikabe.title')} />
         </div>
         <div className="bn-pad" role="group" aria-label={t('nurikabe.pad')}>
           {[WALL, DOT].map((m) => (

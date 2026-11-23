@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<CrossmathTechnique, StringKey> = { one: 'crossmath.hint.one', fit: 'crossmath.hint.fit', tray: 'crossmath.hint.tray' }
@@ -16,9 +16,11 @@ interface ShownHint { text: string; cells: number[]; fill?: { index: number; val
 
 /** Crossmath: fill the blank squares with tray numbers so every equation across and down is true. Every puzzle has one answer and no guessing. Nothing is stored. */
 export function CrossmathScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generateCrossmath('easy'))
-  const [vals, setVals] = useState<number[]>(() => [...game.start])
+  const { incoming, fromChat, leaveChat } = useIncomingGame('crossmath')
+  const sent = incoming && incoming.shared.game === 'crossmath' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? generateCrossmath('easy'))
+  const [vals, setVals] = useState<number[]>(() => sent ? game.start.map((v, i) => v || sent.entries[i]) : [...game.start])
   const [history, setHistory] = useState<number[][]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [hint, setHint] = useState<ShownHint | null>(null)
@@ -94,6 +96,7 @@ export function CrossmathScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     const next = generateCrossmath(level)
     setGame(next)
     setVals([...next.start])
@@ -158,6 +161,7 @@ export function CrossmathScreen() {
         <LevelBar name="crossmath-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: t(LEVEL_KEYS[d]) }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} · {t('crossmath.signs', { signs: CROSSMATH_LEVELS[game.difficulty].signs.join(' ') })}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -212,6 +216,7 @@ export function CrossmathScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && clear(selected)} disabled={selected === null || solved || vals[selected] === 0}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
+          <GameShare shared={{ game: 'crossmath', puzzle: game, entries: vals.map((v, i) => (game.start[i] === 0 ? v : 0)), notes: [] }} title={t('gx.game.crossmath.title')} />
         </div>
         <div className="cm-tray" role="group" aria-label={t('crossmath.tray')}>
           {distinct.map((v) => (

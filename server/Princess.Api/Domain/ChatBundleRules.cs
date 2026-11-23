@@ -44,12 +44,12 @@ public static class ChatBundleRules
     /// <summary>The games that can be sent, with their name and the number of cells (or sizes) a puzzle may have. The id is the catalogue id and the screen is <c>/games-explorer/&lt;id&gt;</c>.</summary>
     public static readonly Dictionary<string, string> Games = new()
     {
-        ["sudoku"] = "Sudoku", ["diagonal-sudoku"] = "Diagonal Sudoku", ["jigsaw-sudoku"] = "Jigsaw Sudoku", ["killer-sudoku"] = "Killer Sudoku", ["binairo"] = "Binairo", ["futoshiki"] = "Futoshiki", ["kenken"] = "KenKen", ["hitori"] = "Hitori",
+        ["sudoku"] = "Sudoku", ["diagonal-sudoku"] = "Diagonal Sudoku", ["jigsaw-sudoku"] = "Jigsaw Sudoku", ["killer-sudoku"] = "Killer Sudoku", ["binairo"] = "Binairo", ["futoshiki"] = "Futoshiki", ["kenken"] = "KenKen", ["hitori"] = "Hitori", ["crossmath"] = "Crossmath", ["kakuro"] = "Kakuro", ["slitherlink"] = "Slitherlink", ["nurikabe"] = "Nurikabe", ["hashi"] = "Hashi", ["nonogram"] = "Nonogram",
     };
 
     private static readonly string[] Levels = ["easy", "medium", "hard", "expert"];
 
-    /// <summary>The puzzle text: letters, digits, <c>=</c>, <c>;</c> and <c>,</c> only, a level, and the clues at a size the game has (81 cells; 6, 8, 10 or 12 squared for Binairo; 4 to 7 squared for Futoshiki and KenKen; 5, 6, 8 or 10 squared for Hitori).</summary>
+    /// <summary>The puzzle text: letters, digits, <c>=</c>, <c>;</c> and <c>,</c> only, a level, and the clues at a size the game has (81 cells; 6, 8, 10 or 12 squared for Binairo; 4 to 7 squared for Futoshiki and KenKen; 5, 6, 8 or 10 squared for Hitori; 6, 8, 9 or 10 squared for Kakuro; 5, 7, 8 or 10 squared for Slitherlink; four digits of rows and columns for Crossmath, Nurikabe and Hashi; a size of 5, 8, 10 or 15 for Nonogram).</summary>
     public static bool GameDataOk(string game, string? data)
     {
         if (data is not { Length: > 0 and <= GameDataMax } || !data.All(c => char.IsAsciiLetterOrDigit(c) || c is '=' or ';' or ',')) return false;
@@ -65,6 +65,10 @@ public static class ChatBundleRules
             "binairo" => clues.Length is 36 or 64 or 100 or 144,
             "futoshiki" or "kenken" => clues.Length is 16 or 25 or 36 or 49,
             "hitori" => clues.Length is 25 or 36 or 64 or 100,
+            "kakuro" => clues.Length is 36 or 64 or 81 or 100,
+            "slitherlink" => clues.Length is 25 or 49 or 64 or 100,
+            "crossmath" or "nurikabe" or "hashi" => clues.Length == 4,
+            "nonogram" => clues is "5" or "8" or "10" or "15",
             _ => clues.Length == 81,
         };
     }
