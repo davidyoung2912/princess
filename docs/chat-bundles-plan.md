@@ -312,6 +312,8 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 
 > **Built 2026-11-23, part 5 (small): states review** (front end checked with test, lint, tsc and build; no server change). **Done:** the send dialog offers **Try again** when the chat list fails to load; the **I did it** toggle says when it could not be saved, and its count is a standing status region so a screen reader hears changes. **Not done (B11 part 6):** Stanley answers (server: admin confirm in made groups), naming the original sender of a forward (server), thumbnails, a fuller keyboard pass.
 
+> **Built 2026-11-23, part 6 (small): keyboard and status pass on the send dialog** (front end checked with test, lint, tsc and build; no server change). **Done:** a visible "Sending…" status while a send runs, the chat list is disabled meanwhile, and focus moves to Done once everything has gone. **Not done (B11 part 7):** Stanley answers (server: admin confirm in made groups), naming the original sender of a forward (server), thumbnails.
+
 ## 7. Risks
 
 - **Scope creep in B2 to B6.** Each planning object is built once, in a fixed order, and each phase is usable on its own.

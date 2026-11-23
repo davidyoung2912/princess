@@ -82,7 +82,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
             {item.subtitle && <p className="muted">{item.subtitle}</p>}
           </div>
         </section>
-        <p role="status" className={status ? undefined : 'visually-hidden'}>{status}</p>
+        <p role="status" className={status || busy ? undefined : 'visually-hidden'}>{busy ? t('senddlg.sending.now') : status}</p>
         {bad.map((o) => <p key={o.id} role="alert" className="field__error">{t('senddlg.failedOne', { name: o.name, reason: t(shareError(!o.ok ? o.error : null)) })}</p>)}
         {rows === null && !failed && <p role="status" className="muted">{t('conv.share.loading')}</p>}
         {failed && <><p role="alert" className="field__error">{t('conv.share.failed')}</p><Button variant="secondary" onClick={() => { setFailed(false); setAttempt((n) => n + 1) }}>{t('senddlg.retry')}</Button></>}
@@ -95,7 +95,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
                 <input id={`${ids}-find`} type="search" value={query} autoComplete="off" onChange={(e) => setQuery(e.target.value)} />
               </div>
             )}
-            <fieldset className="send-dialog__chats" aria-describedby={needPick ? `${ids}-pick` : undefined}>
+            <fieldset className="send-dialog__chats" disabled={busy} aria-describedby={needPick ? `${ids}-pick` : undefined}>
               <legend>{t('senddlg.to')}</legend>
               {shown.length === 0 && <p className="muted">{t('senddlg.noMatch')}</p>}
               <ul className="chat-share__list">
@@ -128,7 +128,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
             <Button disabled={busy} onClick={() => void run()}>{picked.length > 1 ? t('senddlg.sendMany', { count: picked.length }) : t('senddlg.send')}</Button>
           </>
         )}
-        {allDone && <Button onClick={onClose}>{t('senddlg.done')}</Button>}
+        {allDone && <Button autoFocus onClick={onClose}>{t('senddlg.done')}</Button>}
         {hasCode && <Button variant="secondary" onClick={() => setShowCode(true)}>{t('share.show')}</Button>}
       </div>
     </Dialog>
