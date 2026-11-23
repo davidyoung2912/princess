@@ -626,6 +626,8 @@ export const enCore = {
   'party.hub.perm.manage': 'Change who can find you in Chat settings.',
   'party.hub.perm.go': 'Chat settings',
   'party.hub.link': 'Your travel party',
+  'onb.takeMe': 'Take me there',
+  'card.place.take.label': 'Show {title} on the deck map',
   'error.reference': 'Reference for support: {ref}',
   'checkin.conflict.title': 'This check-in shows two different answers',
   'checkin.conflict.open': 'It says check-in is finished, but {count} steps still show as open below.',

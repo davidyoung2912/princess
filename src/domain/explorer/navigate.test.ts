@@ -36,3 +36,22 @@ describe('navigatePath and spotFromQuery', () => {
     expect(spotFromQuery(new URLSearchParams('deck=7&section=aft'))).toBeNull()
   })
 })
+
+describe('placeNavigatePath', () => {
+  it('opens the map at a listed place and says where it is', async () => {
+    const { PLACES } = await import('../deck')
+    const { placeNavigatePath } = await import('./navigate')
+    const p = PLACES[0]!
+    const path = placeNavigatePath(p.id)!
+    const q = new URLSearchParams(path.split('?')[1])
+    expect(path.startsWith('/ship/map?')).toBe(true)
+    expect(q.get('place')).toBe(p.id)
+    expect(q.get('deck')).toBe(String(p.deck))
+    expect(q.get('section')).toBe(p.section)
+    expect(q.get('to')).toBe(p.name)
+  })
+  it('has nowhere to go for an unknown place', async () => {
+    const { placeNavigatePath } = await import('./navigate')
+    expect(placeNavigatePath('nowhere')).toBeNull()
+  })
+})

@@ -6,6 +6,8 @@ import type { ChatCard, ChatConversation, ChatMessage, ChatPin, ChatShareables }
 import { isApiError } from '../../api/errors'
 import { cardLink, cardSummary, cleanNote, isExpired, matchPeople, mentionParts, MAX_PINS, NOTE_MAX, sortPlaces, sortShareables, type MentionPerson } from '../../domain/chatCards'
 import { newClientId } from '../../domain/chatThread'
+import { PLACES } from '../../domain/deck'
+import { placeNavigatePath } from '../../domain/explorer/navigate'
 import { clock12 } from '../../domain/planCard'
 import { useAction } from '../../hooks/useAction'
 import { useNow } from '../../hooks/useDemo'
@@ -30,6 +32,7 @@ export function CardMessage({ card }: { card: ChatCard }) {
   const place = card.type === 'place'
   const expired = place && isExpired(card, now)
   const link = cardLink(card)
+  const spot = place && !expired ? PLACES.find((p) => p.name === card.title) : undefined
   const when = [card.day !== undefined ? t('card.day', { day: card.day }) : '', card.time ? clock(card.time) : ''].filter(Boolean).join(', ')
   return (
     <div className={['chat-card', `chat-card--${card.type}`, expired && 'chat-card--spent'].filter(Boolean).join(' ')} role="group" aria-label={`${t(TYPE_KEY[card.type])}: ${cardSummary(card, clock)}`}>
@@ -39,6 +42,7 @@ export function CardMessage({ card }: { card: ChatCard }) {
       {when && <p>{when}</p>}
       {card.place && card.place !== card.title && <p>{card.place}</p>}
       {card.note && <p>{card.note}</p>}
+      {spot && <LinkButton to={placeNavigatePath(spot.id)!} variant="secondary" aria-label={t('card.place.take.label', { title: card.title })}>{t('onb.takeMe')}</LinkButton>}
       {place && card.expiresAt !== undefined && <p className="muted">{expired ? t('card.place.expired') : t('card.place.until', { time: shipTime(card.expiresAt) })}</p>}
       {!place && (link ? <LinkButton to={link} variant="secondary" aria-label={t('card.open.label', { title: card.title })}>{t('card.open')}</LinkButton> : <p className="muted">{t('card.gone')}</p>)}
     </div>

@@ -61,3 +61,15 @@ Open:
 - "Pending identity verification" is not a separate invitation state in the hub; waiting invitations are managed in Chat > People.
 - The hub is hidden to nobody: before a booking is confirmed the chat calls may refuse and the cards show a load error rather than an explanation.
 - Not walked on a phone.
+
+## R6 Meet and find
+
+Found on reading the code (the first scorecard was wrong): step-free routing with closed-lift rerouting, a graphic deck plan with the route drawn, a route from the guest's own cabin, venue "Navigate" links (`navigatePath`), a named-place card that expires and says so ("good until ... / has passed"), and meet-ups in rooms already exist.
+
+Built: "Take me there" on the Now and Next lines of the daily planner and on a live meeting-point card in chat, opening the deck map at that place (`placeNavigatePath`).
+
+Open:
+- "Take me to my next event" is on the planner's now/next lines only; reservation rows (dinner, spa, tour) have no link because their venue-to-map place is not carried on the booking rows.
+- Meeting-point cards: the guest cannot choose how long a point is good for; the server sets it. The place is matched to the map by name, so a place the map does not list shows no link.
+- Directions start from a place the guest picks (no live position); that is stated on the map. Device location stays parked by the owner.
+- A one-tap "I'm at the Piazza until 6" status for the whole party (rather than a card in one chat) is not built.

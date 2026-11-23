@@ -1,8 +1,10 @@
 import { EventAccess } from './EventAccess'
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { asProgramView } from '../../api/guards'
 import type { OnboardToday, ProgramView } from '../../api/types'
 import { placeById } from '../../domain/deck'
+import { placeNavigatePath } from '../../domain/explorer/navigate'
 import { formatDate } from '../../domain/cruise'
 import { AGE_GROUPS, EVENT_INTERESTS, filterEvents, NO_EVENT_FILTER, nowAndNext, overlapping, REMINDER_MINUTES, sortEvents, type AgeGroup, type DatedEvent, type EventFilter, type EventInterest, type EventSort } from '../../domain/program'
 import { formatMoney } from '../../domain/money'
@@ -89,8 +91,8 @@ function Day({ view, filter, setFilter, mineOnly, setMineOnly, sort, setSort, re
         <Card labelledBy="now-next-h">
           <h3 id="now-next-h" className="card__title">{th('onb.nowNext')}</h3>
           <ul className="plain-bullets">
-            {nn.now.map((e) => <li key={e.id}><strong>{t('onb.happening')}</strong> {e.title}, {place(e)}</li>)}
-            {nn.next.map((e) => <li key={e.id}><strong>{t('onb.nextUp')}</strong> <Time at={e.startAt} /> {e.title}, {place(e)}</li>)}
+            {nn.now.map((e) => <li key={e.id}><strong>{t('onb.happening')}</strong> {e.title}, {place(e)}{placeNavigatePath(e.placeId) && <> · <Link to={placeNavigatePath(e.placeId)!}>{t('onb.takeMe')}<span className="visually-hidden"> {e.title}</span></Link></>}</li>)}
+            {nn.next.map((e) => <li key={e.id}><strong>{t('onb.nextUp')}</strong> <Time at={e.startAt} /> {e.title}, {place(e)}{placeNavigatePath(e.placeId) && <> · <Link to={placeNavigatePath(e.placeId)!}>{t('onb.takeMe')}<span className="visually-hidden"> {e.title}</span></Link></>}</li>)}
           </ul>
         </Card>
       )}

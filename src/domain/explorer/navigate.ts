@@ -50,3 +50,10 @@ export function spotFromQuery(params: URLSearchParams): (VenueSpot & { label: st
   const placeId = params.get('place') ?? undefined
   return { deck, section, label, ...(placeId && placeById(placeId) ? { placeId } : {}) }
 }
+
+/** Where "Take me there" goes for a place on the schematic map, or null when the map does not list it. Used for a ship event's place and a meeting point. */
+export function placeNavigatePath(placeId: string): string | null {
+  const place = placeById(placeId)
+  if (!place) return null
+  return `/ship/map?${new URLSearchParams({ deck: String(place.deck), section: place.section, to: place.name, place: place.id }).toString()}`
+}
