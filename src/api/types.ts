@@ -968,6 +968,8 @@ export interface Api {
   plan: PlanApi
   help: {
     contacts(): Promise<{ guestServices: string; emergency: string }>
+    /** The outside services that are switched on, what each is used for and what is sent to it, and what is never sent. Empty list when none are on. */
+    connectedServices(): Promise<{ services: { id: string; name: string; purpose: string; sent: string[] }[]; neverSent: string[] }>
     /** What each part of the service is doing, served by the backend (TRU-07). */
     status(): Promise<{ id: string; health: 'ok' | 'slow' | 'down' }[]>
     /** Known problems with the service, newest first, each with when it began and any end (TRU-07). */

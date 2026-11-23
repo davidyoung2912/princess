@@ -329,6 +329,7 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `calendar.status/create/revoke` | `GET/POST/DELETE /me/calendar-feed`; the address (`path`) is returned once, by POST. `GET /calendar/{token}.ics` serves the feed with no sign-in | U (the feed itself P) |
 | `support.tickets/callback/email` | `GET /me/support-tickets`; `POST /me/support-tickets` {kind:`callback`,phone} or {kind:`email`,message} | U |
 | `help.contacts` | `GET /help/contacts` | P |
+| `help.connectedServices` | `GET /help/connected-services` | U |
 | `help.incidents` | `GET /help/incidents` | P (known problems declared by the operator under `Status:Incidents`; newest first; resolved ones stay a day) |
 | `privacy.view/setConsent` | `GET /bookings/{n}/privacy`; `PUT /users/{id}/consents/{consent}` {on}, optional `?booking={n}` | B / the adult themself or the child's booker |
 | `budget.get/save` | `GET/PUT /bookings/{n}/budget` | B / BA; a child's limit needs that child's booker |

@@ -14,7 +14,7 @@ public class PrincessMcpServerTests
         var init = Send("""{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}""")!;
         Assert.Equal("princess-public", init["result"]!["serverInfo"]!["name"]!.GetValue<string>());
         var names = Send("""{"jsonrpc":"2.0","id":2,"method":"tools/list"}""")!["result"]!["tools"]!.AsArray().Select(t => t!["name"]!.GetValue<string>()).ToList();
-        Assert.Equal(["list_ports", "get_port_guide", "plan_walking_day"], names);
+        Assert.Equal(["list_ports", "get_port_guide", "plan_walking_day", "search_ship_venues", "list_excursions"], names);
         Assert.DoesNotContain(names, n => n.Contains("book") || n.Contains("pay") || n.Contains("cancel"));
     }
 
@@ -88,4 +88,36 @@ public class PrincessMcpServerTests
         Assert.Equal(["Old Town", "Fort"], list.Select(p => p.Name));
         Assert.Equal("", list[0].Why);   // text that reads like an instruction is dropped
     }
+
+    [Fact]
+    public void SearchesVenuesAndListsExcursionsByPort()
+    {
+        var all = PrincessMcpServer.CallTool("search_ship_venues", new JsonObject()).Structured!["count"]!.GetValue<int>();
+        var steak = PrincessMcpServer.CallTool("search_ship_venues", new JsonObject { ["query"] = "steakhouse" }).Structured!["count"]!.GetValue<int>();
+        Assert.InRange(steak, 1, all - 1);
+        var coz = PrincessMcpServer.CallTool("list_excursions", new JsonObject { ["port"] = "cozumel" }).Structured!["excursions"]!.AsArray();
+        Assert.NotEmpty(coz);
+        Assert.All(coz, e => Assert.Equal("cozumel", e!["port"]!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void ConnectedServicesListsOnlyOutsideSourcesThatAreOnAndNeverTheAppItself()
+    {
+        var o = new McpOptions();
+        o.Providers["princess"] = new McpProviderOptions { Enabled = true, InProcess = true, Attribution = "Princess Voyages" };
+        o.Providers["govisit"] = new McpProviderOptions { Enabled = false, Endpoint = "https://example.com/mcp", Attribution = "GoVisit" };
+        var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
+        Assert.Empty(ConnectedServices.Build(o, config).Services);
+        o.Providers["govisit"].Enabled = true;
+        var on = ConnectedServices.Build(o, config);
+        Assert.Equal(["GoVisit"], on.Services.Select(s => s.Name));
+        Assert.Contains(on.NeverSent, n => n.Contains("passport"));
+    }
+
+    [Fact]
+    public void IndoorIdeasPickShelterPlaces() =>
+        Assert.Equal(["City Museum"], Princess.Api.Domain.PortDayRules.IndoorIdeas([new("City Museum", "Walk-Off", "", 0, 0), new("Beach", "Walk-Off", "Sand", 0, 0)]));
+
+    [Fact]
+    public void TheWeatherToolIsDeclared() => Assert.Contains("get_port_weather", Princess.Api.Domain.StanleyReadTools.Names);
 }

@@ -28,7 +28,7 @@ public sealed record StanleyReadData(StanleyPacket Packet, DateTime Now, IReadOn
 public static class StanleyReadTools
 {
     public static readonly IReadOnlyList<string> Names =
-        ["get_guest_visible_plan", "check_plan_conflicts", "search_ship_venues", "get_venue_hours_and_menu", "calculate_package_value", "get_case_status", "get_verified_all_aboard_details", "get_route", "plan_port_day"];
+        ["get_guest_visible_plan", "check_plan_conflicts", "search_ship_venues", "get_venue_hours_and_menu", "calculate_package_value", "get_case_status", "get_verified_all_aboard_details", "get_route", "plan_port_day", "get_port_weather"];
 
     /// <summary>The tools that read a traveller, so they carry the traveller input and the permission check.</summary>
     public static readonly IReadOnlyList<string> PersonalNames = ["get_guest_visible_plan", "check_plan_conflicts", "calculate_package_value", "get_case_status"];
@@ -44,6 +44,7 @@ public static class StanleyReadTools
       {"name":"get_case_status","description":"The stage and due date of a guest's service cases (lost item, billing query, claim, complaint). Cannot say what a person decided before the stage says so.","input_schema":{"type":"object","properties":{"traveller":{"type":"string","description":"me (default), all, or a traveller's reference or first name."},"number":{"type":"string","description":"A case number, to read one case."}}}},
       {"name":"get_verified_all_aboard_details","description":"The published arrival and all-aboard times for a port day on the guest's sailing, whether guests tender ashore, and when the schedule was last checked. The ship's notice on the day has the last word.","input_schema":{"type":"object","properties":{"port":{"type":"string","enum":["cozumel","belize","roatan"]},"day":{"type":"integer","minimum":1,"maximum":41}}}},
       {"name":"get_route","description":"The way from one place on the ship to another from the ship's deck plan: where to walk and which lifts to take, with a time. Places are place ids or names from search_ship_venues, a cabin number, or \"deck N\". A closed lift bank is avoided.","input_schema":{"type":"object","properties":{"from":{"type":"string"},"to":{"type":"string"},"step_free":{"type":"boolean","description":"Use lifts only; both places must be step-free."},"closed_banks":{"type":"string","description":"Lift banks to avoid, for example \"C,D\"."}},"required":["from","to"]}},
+      {"name":"get_port_weather","description":"The day's weather at a port on the guest's sailing (high, UV, rain window) with plain notes on what to bring or change and indoor places to shelter in. A forecast or estimate, never a promise. Use it for 'will it rain' or 'what should I wear ashore'.","input_schema":{"type":"object","properties":{"port":{"type":"string","description":"A port id from get_verified_all_aboard_details."},"day":{"type":"integer","minimum":1,"maximum":41}}}},
       {"name":"plan_port_day","description":"A walking plan for a port day on the guest's sailing: stops chosen from the port guide, timed between getting ashore and a safety margin before the ship's published all-aboard time, with walking times, when to start back, and a weather note. A suggestion, not a booking. The ship's notice on the day has the last word on when to be back; never say it is safe to be later.","input_schema":{"type":"object","properties":{"port":{"type":"string","description":"A port id from get_verified_all_aboard_details, such as cozumel."},"day":{"type":"integer","minimum":1,"maximum":41},"pace":{"type":"string","enum":["steady","easy"],"description":"Walking pace; easy for slower walkers."},"meal":{"type":"boolean","description":"Leave an hour for a meal."}}}}
     ]
     """;
@@ -81,6 +82,7 @@ public static class StanleyReadTools
             "get_verified_all_aboard_details" => AllAboard(input, voyage),
             "get_route" => Route(input, voyage),
             "plan_port_day" => PortDay(input, d, voyage),
+            "get_port_weather" => PortWeather(input, d, voyage),
             _ => Fail($"Unknown tool {name}."),
         };
     }
@@ -227,6 +229,25 @@ public static class StanleyReadTools
             published = StanleyResolvers.PublishedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), provisional = true,
             note = "Published schedule, in ship time. The ship's notice on the day has the last word. Never tell a guest it is safe to be later.",
         }, new CitationDto("Itinerary", $"/home/sailings/{voyage.SailingId}"));
+    }
+
+    private static ToolOutcome PortWeather(JsonObject input, StanleyReadData d, StanleyVoyage voyage)
+    {
+        var port = Text(input, "port");
+        var day = Whole(input, "day");
+        var call = TimelineOf(voyage).Days.FirstOrDefault(x => x.Arrive is not null && x.AllAboard is not null && (port is null || x.Port == port) && (day is null || x.Day == day));
+        if (call is null) return Fail("No port day matches.");
+        var sky = d.Sky?.Invoke(call.Date, call.Port);
+        if (sky is null) return Fail("No weather is available.");
+        var arrive = Hhmm(call.Arrive);
+        var aboard = Hhmm(call.AllAboard);
+        var indoor = PortGuides.Places(call.Port) is { } ps ? PortDayRules.IndoorIdeas(ps.Select(p => new PortDayCandidate(p.Name, p.Tier, p.Why, p.Lat, p.Lng))) : [];
+        return Ok(new
+        {
+            day = call.Day, date = call.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), port = Itinerary.PortOf(call.Port)?.Name ?? call.Port, ashore_from = arrive, all_aboard = aboard,
+            temp_f = sky.TempF, uv = sky.Uv, rain_from = sky.RainFrom, rain_to = sky.RainTo, source = sky.Source, notes = PortDayRules.WeatherNotes(sky, arrive, aboard), indoor_ideas = indoor,
+            note = "A forecast or estimate, not a promise. The ship's notice on the day has the last word.",
+        }, new CitationDto("Port guide", $"/home/ports/{call.Port}"));
     }
 
     private static ToolOutcome PortDay(JsonObject input, StanleyReadData d, StanleyVoyage voyage)

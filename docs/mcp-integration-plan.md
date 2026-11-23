@@ -154,3 +154,16 @@ Excursion discovery (GetExperience, Peek) once an endpoint is verified reachable
   - The page still computes its own plan (so it works offline with the cached guide); per the thin-client rule it could call the endpoint instead, which is a later simplification.
 - **Phase 7 built: Princess as an MCP server, consumed through the gateway.** `Services/Mcp/PrincessMcpServer.cs` is the whole protocol (initialize, ping, tools/list, tools/call) as a pure function; `POST /api/v1/mcp` serves it (sign-in required, 16 KB limit, 202 for notifications). Tools: `list_ports`, `get_port_guide`, `plan_walking_day`, all read-only with no guest data. A new `princess` provider is `InProcess` (no network) and goes through the same egress policy, guard and health as any outside provider. `IPortKnowledge` (`Providers:PortKnowledge` = `local` or `mcp`, default local) is the swap seam: the walking-plan endpoint reads places through it, falling back to the embedded guide. Checked with a scratch harness: protocol replies, unknown tool and method errors, policy refusing a bad port, and the mcp and local paths giving identical places and plans. Tests are written in `PrincessMcpServerTests.cs` and compiled, not run.
 - **Phase 8 document:** `docs/mobi-mcp-mapping.md` lists the tools we would want from Mobi, what each unlocks, and questions for Princess.
+- **Phase 6 built: trust and transparency.** `GET /help/connected-services` lists only outside sources that are switched on (credit, purpose, exactly what is sent) plus what is never sent; it says nothing about simulated sources, so the front end cannot tell demo from live. A "Where our information comes from" card at the foot of the Help centre shows it, with a `ThirdPartyChip` for the credit. Licence table below. The static-host `frame-src` note was already covered by the Google Embed work.
+- **Phase 5 built (reduced):** Stanley tool `get_port_weather` (the day's high, UV and rain window for a port on the guest's sailing, notes, indoor ideas) and indoor ideas in the port-day weather note when rain overlaps the hours ashore (server `PortDayRules.IndoorIdeas`, page `indoorIdeas`, same rule). **Not built:** a separate `IPortWeather` interface and an MCP marine adapter: `IWeatherService` with `Providers:Weather` (sim or openmeteo) already is that seam, and the Open-Meteo MCP server is non-commercial.
+- **Phase 7 finished:** `search_ship_venues` and `list_excursions` added to the Princess MCP server, with egress rules. Prices are returned in US dollars.
+- **Not done in this pass:** Phase 8 `ICruiseDiscovery` and `IFlightSearch` seams (no provider exists to put behind them, so they would be local-only wrappers); the live adapters are blocked on access as listed in `docs/mobi-mcp-mapping.md`. C# tests are written and compiled, not run.
+
+### Provider licence table
+
+| Provider | Used for | Commercial use | Default |
+|---|---|---|---|
+| Princess (own server, in-process) | Port guides, walking plan, venues, excursions | Yes (our own data) | Off, not needed |
+| GoVisit MCP | Place ideas | No: demonstration only | Off |
+| Open-Meteo MCP | Marine and weather | No: non-commercial | Off |
+| Open-Meteo REST (`Providers:Weather=openmeteo`) | Forecast | Free tier non-commercial; a paid key is needed for commercial use | Off |

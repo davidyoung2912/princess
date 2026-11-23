@@ -16,13 +16,15 @@ public static class PrincessMcpServer
     public const string ServerName = "princess-public";
     public const string Provider = "princess";
 
-    private static readonly string[] ToolNames = ["list_ports", "get_port_guide", "plan_walking_day"];
+    private static readonly string[] ToolNames = ["list_ports", "get_port_guide", "plan_walking_day", "search_ship_venues", "list_excursions"];
 
     private const string ToolList = """
     [
       {"name":"list_ports","description":"Every cruise port the guide covers: id, name, country and a one-line summary. Optionally filter by a word in the name or country.","inputSchema":{"type":"object","properties":{"query":{"type":"string","maxLength":60}},"additionalProperties":false}},
       {"name":"get_port_guide","description":"One port's guide: how to get ashore, the things to do with how easy each is to reach and where they are on the map, and traveller tips. General information; confirm times and prices before going.","inputSchema":{"type":"object","properties":{"port":{"type":"string","description":"A port id from list_ports, such as cozumel."}},"required":["port"],"additionalProperties":false}},
-      {"name":"plan_walking_day","description":"A walking plan for a port day from the guide's places, timed between getting ashore and a safety margin before the ship's all-aboard time. A suggestion, not a booking; the ship's notice has the last word on when to be back.","inputSchema":{"type":"object","properties":{"port":{"type":"string"},"arrive":{"type":"string","description":"Ship arrival, port time HH:MM."},"allAboard":{"type":"string","description":"Everyone aboard by, port time HH:MM."},"tender":{"type":"boolean"},"pace":{"type":"string","enum":["steady","easy"]},"meal":{"type":"boolean","description":"Leave an hour for a meal."}},"required":["port","arrive","allAboard"],"additionalProperties":false}}
+      {"name":"plan_walking_day","description":"A walking plan for a port day from the guide's places, timed between getting ashore and a safety margin before the ship's all-aboard time. A suggestion, not a booking; the ship's notice has the last word on when to be back.","inputSchema":{"type":"object","properties":{"port":{"type":"string"},"arrive":{"type":"string","description":"Ship arrival, port time HH:MM."},"allAboard":{"type":"string","description":"Everyone aboard by, port time HH:MM."},"tender":{"type":"boolean"},"pace":{"type":"string","enum":["steady","easy"]},"meal":{"type":"boolean","description":"Leave an hour for a meal."}},"required":["port","arrive","allAboard"],"additionalProperties":false}},
+      {"name":"search_ship_venues","description":"The ship's dining venues: name, kind, deck, cuisine, dress and the cover charge in US dollars. Optionally filter by a word in the name, kind or cuisine.","inputSchema":{"type":"object","properties":{"query":{"type":"string","maxLength":60}},"additionalProperties":false}},
+      {"name":"list_excursions","description":"The shore excursions offered at a port: name, summary, hours, price in US dollars, activity level and whether it is wheelchair accessible. Optionally filter by a word. Confirm availability before relying on it.","inputSchema":{"type":"object","properties":{"port":{"type":"string","description":"A port id from list_ports."},"query":{"type":"string","maxLength":60}},"additionalProperties":false}}
     ]
     """;
 
@@ -77,6 +79,8 @@ public static class PrincessMcpServer
         "list_ports" => ListPorts(Str(args, "query")),
         "get_port_guide" => GetPortGuide(Str(args, "port")),
         "plan_walking_day" => PlanWalkingDay(args),
+        "search_ship_venues" => SearchVenues(Str(args, "query")),
+        "list_excursions" => ListExcursions(Str(args, "port"), Str(args, "query")),
         _ => Fail("Unknown tool."),
     };
 
@@ -120,6 +124,30 @@ public static class PrincessMcpServer
             ["gettingAshore"] = Cap(S(g, "gettingAshore"), 900), ["thingsToDo"] = things, ["tips"] = tips,
             ["note"] = "General information from Princess Voyages' port guide. Confirm opening times, access and conditions for your call date.",
         });
+    }
+
+    private static McpToolResult SearchVenues(string? query)
+    {
+        var rows = new JsonArray();
+        foreach (var v in DiningRules.Venues)
+        {
+            if (query is { Length: > 0 } && !($"{v.Name} {v.Kind} {v.Cuisine}").Contains(query, StringComparison.OrdinalIgnoreCase)) continue;
+            rows.Add(new JsonObject { ["id"] = v.Id, ["name"] = v.Name, ["kind"] = v.Kind, ["deck"] = v.Deck, ["cuisine"] = v.Cuisine, ["dress"] = v.Dress, ["coverUsd"] = v.Cover / 100.0, ["walkIn"] = v.WalkIn });
+        }
+        return Ok(new JsonObject { ["count"] = rows.Count, ["venues"] = rows });
+    }
+
+    private static McpToolResult ListExcursions(string? port, string? query)
+    {
+        var rows = new JsonArray();
+        foreach (var e in ExcursionRules.Catalogue)
+        {
+            if (port is not null && !e.Port.Equals(port, StringComparison.OrdinalIgnoreCase)) continue;
+            if (query is { Length: > 0 } && !($"{e.Name} {e.Summary} {e.Activity}").Contains(query, StringComparison.OrdinalIgnoreCase)) continue;
+            rows.Add(new JsonObject { ["id"] = e.Id, ["port"] = e.Port, ["name"] = e.Name, ["summary"] = Cap(e.Summary, 300), ["hours"] = e.Hours, ["priceUsd"] = e.Price / 100.0, ["activity"] = e.Activity, ["wheelchair"] = e.Wheelchair, ["family"] = e.Family });
+            if (rows.Count >= 60) break;
+        }
+        return Ok(new JsonObject { ["count"] = rows.Count, ["excursions"] = rows, ["note"] = "Authored catalogue; confirm availability and access with the operator." });
     }
 
     private static McpToolResult PlanWalkingDay(JsonObject a)

@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from 'react'
 import { t } from '../../i18n'
 import type { GuideAttraction } from '../../domain/portGuide'
 import { isLatLng, type Pace } from '../../maps/geo'
-import { planPortDay, weatherNotes, type Candidate } from '../../maps/portDay'
+import { planPortDay, weatherNotes, indoorIdeas, type Candidate } from '../../maps/portDay'
 import { useSky } from '../../hooks/useSky'
 import { PlaceMap } from './PlaceMap'
 
@@ -57,6 +57,7 @@ export function PortDayPlanner({ attractions, arrive, allAboard, tender, date, p
                   <li key={n.id}>{n.id === 'rain' ? t('portday.weather.rain', { from: n.from, to: n.to }) : n.id === 'hot' ? t('portday.weather.hot', { temp: n.tempF }) : n.id === 'sun' ? t('portday.weather.sun', { uv: n.uv }) : t('portday.weather.fine', { temp: n.tempF, uv: n.uv })}</li>
                 ))}
               </ul>
+              {weatherNotes(sky, arrive, allAboard).some((n) => n.id === 'rain') && indoorIdeas(candidates).length > 0 && <p>{t('portday.weather.indoor', { places: indoorIdeas(candidates).join(', ') })}</p>}
             </div>
           )}
         </>

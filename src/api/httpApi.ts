@@ -579,7 +579,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       callback: (phone) => send('post', '/me/support-tickets', { kind: 'callback', phone }),
       email: (message) => send('post', '/me/support-tickets', { kind: 'email', message }),
     },
-    help: { contacts: () => get('/help/contacts'), status: () => get('/help/status'), incidents: () => get('/help/incidents') },
+    help: { contacts: () => get('/help/contacts'), connectedServices: () => get('/help/connected-services'), status: () => get('/help/status'), incidents: () => get('/help/incidents') },
     budget: {
       get: () => inBooking('/budget'),
       save: async (budget) => send('put', `/bookings/${seg(await number())}/budget`, { ...budget, kids: budget.kids }),

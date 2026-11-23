@@ -128,3 +128,10 @@ export function weatherNotes(sky: SkyFacts, arrive: string, allAboard: string): 
   if (sky.uv >= 8) notes.push({ id: 'sun', uv: sky.uv })
   return notes.length > 0 ? notes : [{ id: 'fine', tempF: sky.tempF, uv: sky.uv }]
 }
+
+const INDOOR_WORDS = ['museum', 'church', 'cathedral', 'gallery', 'aquarium', 'palace', 'market hall', 'cafe', 'café', 'indoor']
+
+/** Places to shelter in when it rains (the same rule as the server's `IndoorIdeas`): names or reasons that point indoors, at most four. */
+export function indoorIdeas(places: readonly { name: string; why?: string }[]): string[] {
+  return places.filter((p) => INDOOR_WORDS.some((w) => `${p.name} ${p.why ?? ''}`.toLowerCase().includes(w))).map((p) => p.name).slice(0, 4)
+}

@@ -81,6 +81,8 @@ public sealed class McpEgressPolicy(IReadOnlyDictionary<string, IReadOnlyList<Mc
             Rule("get_port_guide", ["port"], ("port", new ArgRule.Text(40, "^[a-z0-9-]+$"))),
             Rule("plan_walking_day", ["port", "arrive", "allAboard"], ("port", new ArgRule.Text(40, "^[a-z0-9-]+$")), ("arrive", new ArgRule.Text(5, @"^([01]\d|2[0-3]):[0-5]\d$")), ("allAboard", new ArgRule.Text(5, @"^([01]\d|2[0-3]):[0-5]\d$")),
                 ("tender", new ArgRule.Flag()), ("pace", new ArgRule.OneOf("steady", "easy")), ("meal", new ArgRule.Flag())),
+            Rule("search_ship_venues", [], ("query", new ArgRule.Text(60, PlaceName))),
+            Rule("list_excursions", [], ("port", new ArgRule.Text(40, "^[a-z0-9-]+$")), ("query", new ArgRule.Text(60, PlaceName))),
         ],
         ["govisit"] =
         [

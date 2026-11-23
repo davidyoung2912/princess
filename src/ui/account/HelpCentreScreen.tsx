@@ -8,6 +8,7 @@ import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { Phone } from '../icons'
 import { Field } from '../Field'
+import { ConnectedServices } from '../trust/ConnectedServices'
 
 /** Help centre (SUP-01): searchable answers to the questions guests ask most, each with a way to do the thing. */
 export function HelpCentreScreen() {
@@ -42,6 +43,7 @@ export function HelpCentreScreen() {
         </ul>
       )}
       <p><Link to="/me/contact">{t('faq.stillStuck')}</Link></p>
+      <ConnectedServices />
     </div>
   )
 }

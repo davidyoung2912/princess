@@ -116,6 +116,12 @@ public static class PortDayRules
         return new PortDayPlanDto(stops, usable, final.Walk + final.Back, chosen.Count * visit, meal, usable - final.Total, final.Back, Clock(t), allAboard, null);
     }
 
+    private static readonly string[] IndoorWords = ["museum", "church", "cathedral", "gallery", "aquarium", "palace", "market hall", "cafe", "café", "indoor"];
+
+    /// <summary>Places a guest can shelter in when it rains: the guide's places whose name or reason points indoors. At most four.</summary>
+    public static List<string> IndoorIdeas(IEnumerable<PortDayCandidate> places) =>
+        [.. places.Where(p => IndoorWords.Any(w => (p.Name + " " + p.Why).Contains(w, StringComparison.OrdinalIgnoreCase))).Select(p => p.Name).Take(4)];
+
     /// <summary>
     /// Short plain notes from the day's sky for a plan: rain inside the hours ashore, heat and strong sun. Never says a plan is unsafe or that rain will not come;
     /// it is a forecast (or an estimate), and the notes say what to bring or change. <paramref name="source"/> is the sky's own source label.

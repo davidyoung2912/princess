@@ -177,6 +177,10 @@ public static class JourneyEndpoints
         api.MapGet("/help/contacts", () => Results.Ok(InboxService.Contacts()))
             .AllowAnonymous().WithTags("Help").WithSummary("Guest Services and emergency numbers.");
 
+        api.MapGet("/help/connected-services", (Microsoft.Extensions.Options.IOptions<Princess.Api.Services.Mcp.McpOptions> mcp, IConfiguration config) =>
+                Results.Ok(Princess.Api.Services.Mcp.ConnectedServices.Build(mcp.Value, config)))
+            .WithTags("Help").WithSummary("Needs a sign-in. The outside services that are switched on (credit, what each is used for, exactly what is sent to it) and what is never sent. Empty when none are on. No secrets or addresses.");
+
         api.MapGet("/help/status", async (ICurrentUser me, IServiceStatus status, IDemoStore demo, CancellationToken ct) =>
             {
                 var user = await me.LoadAsync(ct);

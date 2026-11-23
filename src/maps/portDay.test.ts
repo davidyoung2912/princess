@@ -78,3 +78,11 @@ describe('weather notes', () => {
     expect(weatherNotes({ uv: 10, tempF: 95, rainFrom: '10:00', rainTo: '12:00' }, '08:00', '16:30').map((n) => n.id)).toEqual(['rain', 'hot', 'sun'])
   })
 })
+
+import { indoorIdeas } from './portDay'
+describe('indoor ideas', () => {
+  it('picks places that point indoors, at most four', () => {
+    expect(indoorIdeas([{ name: 'City Museum' }, { name: 'Beach', why: 'Sand' }, { name: 'Old Fort', why: 'A cafe inside' }])).toEqual(['City Museum', 'Old Fort'])
+    expect(indoorIdeas(Array.from({ length: 9 }, (_, i) => ({ name: `Museum ${i}` })))).toHaveLength(4)
+  })
+})
