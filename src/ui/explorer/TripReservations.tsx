@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useMemo, useState } from 'react'
 import type { SpaAppointment, SpaView } from '../../api/spaTypes'
 import type { DiningView, ExcursionsView, Reservation } from '../../api/types'
@@ -12,7 +12,11 @@ import { itinerary, PORTS, shipZoneOnDate } from '../../domain/sailings'
 import { zonedToEpoch } from '../../domain/timezones'
 import { useSailing } from '../../hooks/useDemo'
 import { useExplorerStage } from '../../hooks/useExplorerStage'
-import { t } from '../../i18n'
+import { t, type StringKey } from '../../i18n'
+import { Chip } from '../Chip'
+import { useMirrorParams } from '../../hooks/useUrlState'
+import { readFlag, readText } from '../../routes/urlState'
+import { filterTripItems, isTripFiltering, readKinds, TRIP_KINDS, writeKinds, type TripKind } from '../../domain/explorer/tripFilter'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { CalendarClock, X } from '../icons'
@@ -32,6 +36,12 @@ export function TripReservations({ dining, spa, tours, reloadDining, reloadSpa }
   const navigate = useNavigate()
   const [cancelling, setCancelling] = useState<{ dining: Reservation } | { spa: SpaAppointment } | null>(null)
   const saved = useSavedDishes()
+  // The chips, the search and the compact view live in the address, so opening a booking and coming Back finds them as they were.
+  const [params] = useSearchParams()
+  const [kinds, setKinds] = useState<Set<TripKind>>(() => readKinds(params.get('kind')))
+  const [query, setQuery] = useState(() => readText(params, 'find'))
+  const [compact, setCompact] = useState(() => readFlag(params, 'compact'))
+  useMirrorParams({ kind: writeKinds(kinds), find: query.trim() || null, compact })
   const open = stage !== 'after'
   const canDining = !!dining?.canBook && open
   const canSpa = !!spa?.canBook && open
@@ -62,15 +72,30 @@ export function TripReservations({ dining, spa, tours, reloadDining, reloadSpa }
   }), [dining, spa, tours, days, sailing])
   const clashes = useMemo(() => tripClashes(items), [items])
   if (items.length === 0) return <p className="muted">{t('res.trip.none')}</p>
+  const filter = { kinds, query }
+  const shown = filterTripItems(items, filter)
+  const toggleKind = (k: TripKind) => setKinds((cur) => { const next = new Set(cur); if (next.has(k)) next.delete(k); else next.add(k); return next })
   return (
     <div>
-      {groupByDay(items).map((g) => {
+      <fieldset className="chip-row">
+        <legend className="visually-hidden">{t('res.trip.filter')}</legend>
+        {TRIP_KINDS.map((k) => <Chip key={k} pressed={kinds.has(k)} onToggle={() => toggleKind(k)}>{t(`res.trip.chip.${k}` as StringKey)}</Chip>)}
+        <Chip pressed={compact} onToggle={() => setCompact(!compact)}>{t('res.trip.compact')}</Chip>
+      </fieldset>
+      <div className="field">
+        <label htmlFor="trip-find">{t('res.trip.find')}</label>
+        <input id="trip-find" type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
+        <p className="field__hint">{t('res.trip.findHint')}</p>
+      </div>
+      <p className="muted" role="status">{isTripFiltering(filter) ? t('res.trip.count', { shown: shown.length, total: items.length }) : t('res.trip.total', { total: items.length })}</p>
+      {shown.length === 0 && <p>{t('res.trip.noMatch')} <Button variant="tertiary" onClick={() => { setKinds(new Set()); setQuery('') }}>{t('res.trip.clear')}</Button></p>}
+      {groupByDay(shown).map((g) => {
         const d = days[g.day - 1]
         const place = !d || d.port === 'sea' ? t('plan.atSea') : PORTS[d.port].name
         return (
           <section key={g.day} className="exp-trip__day" aria-labelledby={`trip-day-${g.day}`}>
             <h2 id={`trip-day-${g.day}`}>{t('plan.day', { n: g.day })} · {shortDate(g.date)} · {place}</h2>
-            <ul className="card-grid">{g.items.map((i) => <Row key={i.id} i={i} clash={clashes.get(i.id) ?? []} manage={manage(i)} facts={factsOf(i)} />)}</ul>
+            <ul className="card-grid">{g.items.map((i) => <Row key={i.id} i={i} clash={clashes.get(i.id) ?? []} manage={compact ? null : manage(i)} facts={compact ? [] : factsOf(i)} compact={compact} />)}</ul>
           </section>
         )
       })}
@@ -80,7 +105,7 @@ export function TripReservations({ dining, spa, tours, reloadDining, reloadSpa }
   )
 }
 
-function Row({ i, clash, manage, facts }: { i: TripItem; clash: TripItem[]; facts: string[]; manage: { change: () => void; cancel: () => void } | null }) {
+function Row({ i, clash, manage, facts, compact }: { i: TripItem; clash: TripItem[]; facts: string[]; compact: boolean; manage: { change: () => void; cancel: () => void } | null }) {
   return (
     <li className="card">
       <h3 className="card__title"><Link to={i.to}>{i.title}</Link></h3>
@@ -97,7 +122,7 @@ function Row({ i, clash, manage, facts }: { i: TripItem; clash: TripItem[]; fact
           <Button variant="secondary" icon={X} onClick={manage.cancel}>{t('exp.res.cancel')}<span className="visually-hidden"> {i.title}, {t('plan.day', { n: i.day })}</span></Button>
         </div>
       )}
-      {i.kind !== 'spa' && <SendToChat shareRef={`${i.kind === 'dining' ? 'dining' : 'excursion'}:${i.id}`} title={i.title} />}
+      {i.kind !== 'spa' && !compact && <SendToChat shareRef={`${i.kind === 'dining' ? 'dining' : 'excursion'}:${i.id}`} title={i.title} />}
     </li>
   )
 }

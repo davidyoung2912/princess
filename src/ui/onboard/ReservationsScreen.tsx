@@ -36,6 +36,7 @@ export function ReservationsScreen() {
   return (
     <div className="page">
       <p>{t('res.trip.intro')}</p>
+      <p><Link to="/home/updates">{t('res.trip.changes')}</Link></p>
       <Saved copy={dining}>{(v) => <TripReservations dining={v} spa={spa.data} tours={tours.data} reloadDining={dining.retry} reloadSpa={spa.retry} />}</Saved>
       <p><LinkButton to="/dining-today?view=trip" variant="secondary">{t('res.find')}</LinkButton></p>
       <WaitsList />

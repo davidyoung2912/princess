@@ -132,6 +132,7 @@ export function SearchScreen() {
         <Field label={t('search.label')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" enterKeyHint="search" />
       </form>
       <p role="status" className="search-count">{enough ? boldFirst(t('search.found', { count: hits.length, query: query.trim() }), String(hits.length)) : ''}</p>
+      {enough && <p className="search-mine"><Link to={`/plan/reservations?find=${encodeURIComponent(query.trim().slice(0, 80))}`}>{t('search.inMine', { query: query.trim() })}</Link></p>}
       {enough && hits.length === 0 && <Banner kind="info" title={t('search.none')}><p>{t('search.noneBody')} <Link to="/me/help">{t('route.helpCentre')}</Link></p><div className="button-row"><Button icon={MessageCircleQuestion} onClick={() => requestStanley(query.trim())}>{t('search.askStanley')}</Button></div></Banner>}
       {!enough && recent.length > 0 && (
         <section aria-labelledby="recent-h">
