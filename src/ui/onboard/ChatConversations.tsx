@@ -70,6 +70,7 @@ import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWr
 import { askBefore, showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
 import { ChatAvatar, GreetFace, MyChatAvatar } from './ChatLooks'
+import { replyTime } from './replyTime'
 import { requestGreeting, subscribeGreeting, takePendingGreeting, withGreeting } from '../../chat/greet'
 import { EmojiPicker } from './ChatEmoji'
 import { insertEmoji, wantsEmojiPicker } from '../../domain/chatEmoji'
@@ -257,10 +258,6 @@ function MembersButton({ chat, shipTime }: { chat: { id: string; name: string };
     </>
   )
 }
-
-/** A usual reply time in words: "under a minute", "about 4 min", "about 2 hr". */
-const replyTime = (seconds: number): string =>
-  seconds < 60 ? t('conv.stat.replyUnder') : seconds < 3600 ? t('conv.stat.replyMin', { count: Math.round(seconds / 60) }) : t('conv.stat.replyHr', { count: Math.max(1, Math.round(seconds / 3600)) })
 
 /** One row of the list: who, the last line, an urgency word, the mute and closed tags, and the unread count. */
 /** The numbers on a card: when it was started and by whom, how many are in it, and when each side last wrote. */

@@ -58,8 +58,11 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var group = await CreatorGroupAsync(actor, id, ct);
         var name = ChatGroupRules.CleanName(body?.Name) ?? throw ApiException.Invalid("name");
         if (ProfanityFilter.IsBlocked(name)) throw ApiException.Invalid("blocked");
-        if (name != group.Name) await store.RenameAsync(group.Id, actor.Id, name, ChatGroupRules.RenamedLine(name), await clock.NowAsync(actor, ct), ct);
+        var renamed = name != group.Name;
+        if (renamed) await store.RenameAsync(group.Id, actor.Id, name, ChatGroupRules.RenamedLine(name), await clock.NowAsync(actor, ct), ct);
         group.Name = name;
+        // Everyone else's open app refetches at once, so the new name shows on their main chat page and in the thread without a reload.
+        if (renamed) await TellAsync(group, [.. (await store.ListActiveAsync(group.Id, ct)).Where(m => m.UserId != actor.Id)], "rename", ct);
         return await ViewAsync(actor, group, ct);
     }
 
@@ -349,7 +352,7 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
             : new List<ChatGroupWaitingDto>();
         var admin = ChatPlanningRules.IsAdmin(creator, members.Any(m => m.UserId == actor.Id && m.IsAdmin));
         return new(group.PublicId, group.Name,
-            [.. members.Select(m => new ChatGroupMemberDto(m.PublicId, Short(m), m.UserId == actor.Id, m.UserId == group.CreatedByUserId, m.IsAdmin, m.Avatar, TripRules.ToMs(m.JoinedAt), m.LastMessageAt is { } lm ? TripRules.ToMs(lm) : null, m.MessageCount, m.LastActiveAt is { } la ? TripRules.ToMs(la) : null))],
+            [.. members.Select(m => new ChatGroupMemberDto(m.PublicId, Short(m), m.UserId == actor.Id, m.UserId == group.CreatedByUserId, m.IsAdmin, m.Avatar, TripRules.ToMs(m.JoinedAt), m.LastMessageAt is { } lm ? TripRules.ToMs(lm) : null, m.MessageCount, m.PhotoCount, m.DayCount, m.AvgReplySeconds, m.LastActiveAt is { } la ? TripRules.ToMs(la) : null))],
             waiting, creator, ChatGroupRules.MaxMembers, group.AnnouncementOnly, admin);
     }
 

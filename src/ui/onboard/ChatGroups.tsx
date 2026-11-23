@@ -1,6 +1,6 @@
 import { Check, Depart, Trash2, Users, X } from '../icons'
 import { useState } from 'react'
-import type { ChatConnection, ChatConnections, ChatGroup, ChatGroupInvite, ChatPerson } from '../../api/chatTypes'
+import type { ChatConnection, ChatConnections, ChatGroup, ChatGroupInvite, ChatGroupMember, ChatPerson } from '../../api/chatTypes'
 import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, togglePicked } from '../../domain/chatGroups'
 import { cleanQuery } from '../../domain/chatConnections'
 import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
@@ -13,6 +13,7 @@ import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
 import { useShipTime } from './shipTime'
+import { replyTime } from './replyTime'
 import { DialogHeader } from '../DialogHeader'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
@@ -174,6 +175,22 @@ export function LeaveChat({ chat, onClose, onLeft }: { chat: { id: string; kind:
   )
 }
 
+/** One person's numbers in a group: when they joined, how much they wrote (and their share of the chat), pictures, recent activity, how quickly they answer, and when they were last in the app. */
+function MemberStats({ m, total, shipTime }: { m: ChatGroupMember; total: number; shipTime: (at: number) => string }) {
+  const written = m.messages ?? 0
+  const lines = [
+    [m.joinedAt ? t(m.creator ? 'mstat.started' : 'mstat.joined', { time: shipTime(m.joinedAt) }) : null],
+    [t('conv.stat.messages', { count: written }) + (total > 0 && written > 0 ? ` (${t('mstat.share', { percent: Math.round((written / total) * 100) })})` : ''), m.photos ? t('conv.stat.photos', { count: m.photos }) : null],
+    [m.lastMessageAt ? t('gmem.lastMessage', { time: shipTime(m.lastMessageAt) }) : t('gmem.noMessages'), m.day ? t('conv.stat.day', { count: m.day }) : null],
+    [m.avgReplySeconds !== undefined ? t('conv.stat.reply', { time: replyTime(m.avgReplySeconds) }) : null, m.lastActiveAt ? t('gmem.lastActive', { time: shipTime(m.lastActiveAt) }) : t('gmem.neverActive')],
+  ].map((r) => r.filter(Boolean).join(' · ')).filter(Boolean)
+  return <span className="muted conv__stats">{lines.map((l) => <span key={l} className="conv__stat-line">{l}</span>)}</span>
+}
+
+/** The members in the order they joined: the leader first, then the first to join, and so on. */
+const inJoinOrder = (members: readonly ChatGroupMember[]): ChatGroupMember[] =>
+  [...members].sort((a, b) => Number(b.creator) - Number(a.creator) || (a.joinedAt ?? 0) - (b.joinedAt ?? 0))
+
 /** Who is in a chat group: each person with their avatar, role, when they joined, how much they have written and when they last used the app. */
 export function GroupMembers({ chat, shipTime, onClose, onGreet }: { chat: { id: string; name: string }; shipTime: (at: number) => string; onClose: () => void; /** Tapping another member's picture: the dialog closes and the chat opens with "Hey @Name, " in its message box. */ onGreet?: (name: string) => void }) {
   const group = useMine(() => api.chatGroups.get(chat.id), [chat.id])
@@ -184,15 +201,14 @@ export function GroupMembers({ chat, shipTime, onClose, onGreet }: { chat: { id:
           <>
             <p className="muted">{t('gmem.count', { count: g.members.length })}</p>
             <ul className="gmem" aria-label={t('gmem.title')}>
-              {g.members.map((m) => (
+              {inJoinOrder(g.members).map((m) => (
                 <li key={m.id} className="gmem__row">
                   {m.you || !onGreet
                     ? <ChatAvatar avatar={m.avatar} name={m.name} />
                     : <button type="button" className="greet-face gmem__face" aria-label={t('chat.greet', { name: m.name })} onClick={() => { onClose(); onGreet(m.name) }}><ChatAvatar avatar={m.avatar} name={m.name} /></button>}
                   <div className="gmem__body">
                     <p className="gmem__name"><strong>{m.you ? t('gmem.you', { name: m.name }) : m.name}</strong>{m.creator ? <span className="tag tag--good">{t('cgroup.status.leader')}</span> : m.admin ? <span className="tag">{t('gmem.admin')}</span> : null}</p>
-                    <p className="muted gmem__line">{m.lastMessageAt ? t('gmem.lastMessage', { time: shipTime(m.lastMessageAt) }) : t('gmem.noMessages')}{m.messages ? ` · ${t('gmem.messages', { count: m.messages })}` : ''}</p>
-                    <p className="muted gmem__line">{m.lastActiveAt ? t('gmem.lastActive', { time: shipTime(m.lastActiveAt) }) : t('gmem.neverActive')}{m.joinedAt ? ` · ${t('gmem.joined', { time: shipTime(m.joinedAt) })}` : ''}</p>
+                    <MemberStats m={m} total={g.members.reduce((n, x) => n + (x.messages ?? 0), 0)} shipTime={shipTime} />
                   </div>
                 </li>
               ))}
@@ -235,6 +251,7 @@ export function DeleteChat({ chat, onClose, onDeleted }: { chat: { id: string; k
 /** A group on a page of its own: who is in, and what the guest can do: leave, and for the creator rename, invite, remove and delete. */
 export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () => void; onChanged: () => void }) {
   const group = useMine(() => api.chatGroups.get(id), [id])
+  const shipTime = useShipTime()
   const connections = useMine(() => api.chatConnections.list())
   useChatLive(() => { group.retry(); connections.retry() })
   const [leaving, setLeaving] = useState(false)
@@ -258,10 +275,11 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
           <>
             <h3>{headingCase(t('cgroup.members', { count: g.members.length }))}</h3>
             <ul className="plain-list">
-              {g.members.map((m) => (
+              {inJoinOrder(g.members).map((m) => (
                 <li key={m.id}>
                   <span className="person-line"><ChatAvatar avatar={m.avatar} name={m.name} small /><strong>{m.you ? t('conv.you') : m.name}</strong><> <span className="muted">{t(m.creator ? 'cgroup.status.leader' : 'cgroup.status.participant')}</span></></span>
                   {g.isCreator && !m.you && <Button variant="secondary" icon={Trash2} disabled={remove.busy} onClick={() => void remove.run(m.id, m.name)}>{t('cgroup.remove')}<span className="visually-hidden"> {m.name}</span></Button>}
+                  <MemberStats m={m} total={g.members.reduce((n, x) => n + (x.messages ?? 0), 0)} shipTime={shipTime} />
                 </li>
               ))}
             </ul>
@@ -361,7 +379,9 @@ function AddPeople({ group, connections, picked, setPicked, busy, onInvite }: {
   const total = picked.length + found.length
   return (
     <div>
-      <PickPeople people={people} picked={picked} onToggle={(id) => setPicked(togglePicked(picked, id))} legend={t('cgroup.add')} />
+      {people.length > 0
+        ? <PickPeople people={people} picked={picked} onToggle={(id) => setPicked(togglePicked(picked, id))} legend={t('cgroup.add')} />
+        : <p className="muted">{t(everyone(connections.data).length === 0 ? 'cgroup.addNoContacts' : 'cgroup.addAllIn')}</p>}
       <h3 className="gmem__sub">{headingCase(t('cgroup.findTitle'))}</h3>
       <p className="muted">{t('cgroup.findBody')}</p>
       <Field label={t('people.search')} value={query} maxLength={254} autoComplete="off" error={searchError || undefined} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void search.run() } }} />

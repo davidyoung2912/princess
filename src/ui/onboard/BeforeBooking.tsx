@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react'
-import { ThumbsUp } from 'lucide-react'
 import { isSeen, markSeen, seenVersion, subscribeSeen } from '../../settings/stanleySeen'
 import { t } from '../../i18n'
 import { Button } from '../Button'
@@ -14,7 +13,7 @@ export function BeforeBookingNote() {
   return (
     <Card info>
       <p>{t('chat.beforeBooking')}</p>
-      <div className="before-booking__actions"><Button icon={ThumbsUp} onClick={() => markSeen(KEY)}>{t('urgent.gotIt')}</Button></div>
+      <div className="before-booking__actions"><Button variant="secondary" className="tip__got" onClick={() => markSeen(KEY)}>{t('tip.gotIt')}</Button></div>
     </Card>
   )
 }

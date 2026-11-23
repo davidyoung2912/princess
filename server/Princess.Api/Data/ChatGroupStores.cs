@@ -29,6 +29,11 @@ public sealed class ChatGroupPersonRow
     /// <summary>Their newest message in this group (system notes excluded), or null for none yet.</summary>
     public DateTime? LastMessageAt { get; set; }
     public int MessageCount { get; set; }
+    public int PhotoCount { get; set; }
+    /// <summary>Messages they wrote here in the last 24 hours.</summary>
+    public int DayCount { get; set; }
+    /// <summary>How long they usually take to answer someone else here, in seconds (within a day); null until they have answered someone.</summary>
+    public int? AvgReplySeconds { get; set; }
     /// <summary>When they last used the app: their newest sign-in or token refresh.</summary>
     public DateTime? LastActiveAt { get; set; }
 }
@@ -145,8 +150,15 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
             SELECT u.Id AS UserId, u.PublicId, u.ChatName AS FirstName, N'' AS LastName, u.IsSupervised, m.IsAdmin, up.ChatAvatar AS Avatar, m.JoinedAt,
               (SELECT MAX(cm.[At]) FROM dbo.ChatMessages cm WHERE cm.GroupId = m.GroupId AND cm.FromUserId = m.UserId AND cm.IsSystem = 0) AS LastMessageAt,
               (SELECT COUNT(*) FROM dbo.ChatMessages cm WHERE cm.GroupId = m.GroupId AND cm.FromUserId = m.UserId AND cm.IsSystem = 0) AS MessageCount,
+              (SELECT COUNT(*) FROM dbo.ChatMessages cm WHERE cm.GroupId = m.GroupId AND cm.FromUserId = m.UserId AND cm.IsSystem = 0 AND cm.DeletedAt IS NULL AND (cm.Photo IS NOT NULL OR cm.ExtraPhotos > 0)) AS PhotoCount,
+              (SELECT COUNT(*) FROM dbo.ChatMessages cm WHERE cm.GroupId = m.GroupId AND cm.FromUserId = m.UserId AND cm.IsSystem = 0 AND cm.DeletedAt IS NULL AND cm.[At] > DATEADD(HOUR, -24, SYSUTCDATETIME())) AS DayCount,
+              rp.AvgReplySeconds AS AvgReplySeconds,
               (SELECT MAX(rt.CreatedAt) FROM dbo.RefreshTokens rt WHERE rt.UserId = m.UserId) AS LastActiveAt
             FROM dbo.ChatGroupMembers m
+            OUTER APPLY (SELECT CAST(AVG(CAST(q.Gap AS BIGINT)) AS INT) AS AvgReplySeconds
+                         FROM (SELECT x.FromUserId, LAG(x.FromUserId) OVER (ORDER BY x.Id) AS PrevFrom, DATEDIFF(SECOND, LAG(x.[At]) OVER (ORDER BY x.Id), x.[At]) AS Gap
+                               FROM dbo.ChatMessages x WHERE x.GroupId = m.GroupId AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId IS NOT NULL) q
+                         WHERE q.FromUserId = m.UserId AND q.PrevFrom IS NOT NULL AND q.PrevFrom <> q.FromUserId AND q.Gap BETWEEN 0 AND 86400) rp
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.Users u ON u.Id = m.UserId
             JOIN dbo.Profiles p ON p.UserId = u.Id
