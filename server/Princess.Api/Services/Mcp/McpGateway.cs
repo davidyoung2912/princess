@@ -45,7 +45,7 @@ public sealed class McpGateway(IOptions<McpOptions> options, IHttpClientFactory 
         var clock0 = Stopwatch.StartNew();
         var result = await guard.RunAsync(async () =>
         {
-            var r = await client.CallToolAsync(tool, args, ct);
+            var r = settings.InProcess ? PrincessMcpServer.CallTool(tool, args) : await client.CallToolAsync(tool, args, ct);
             return r.IsError ? null : r;
         }, () => (McpToolResult)null!);
         log.LogInformation("MCP {Provider} {Tool} {Outcome} in {Ms} ms", provider, tool, result is null ? "no answer" : "ok", clock0.ElapsedMilliseconds);

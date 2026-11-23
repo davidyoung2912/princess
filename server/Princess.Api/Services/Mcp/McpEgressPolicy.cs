@@ -25,6 +25,11 @@ public abstract record ArgRule
         public override bool Allows(JsonNode? v) => v is JsonValue j && j.TryGetValue<string>(out var s) && Values.Contains(s);
     }
 
+    public sealed record Flag : ArgRule
+    {
+        public override bool Allows(JsonNode? v) => v is JsonValue j && j.TryGetValue<bool>(out _);
+    }
+
     /// <summary>An object <c>{ latitude, longitude }</c> and nothing else: a place, never a person.</summary>
     public sealed record Coordinates : ArgRule
     {
@@ -69,6 +74,14 @@ public sealed class McpEgressPolicy(IReadOnlyDictionary<string, IReadOnlyList<Mc
     /// <summary>The rules for the providers the app knows. A provider with no entry cannot be called.</summary>
     public static McpEgressPolicy Default() => new(new Dictionary<string, IReadOnlyList<McpToolRule>>(StringComparer.OrdinalIgnoreCase)
     {
+        // This app's own public server (phase 7), reached in-process: port ids, port times and flags only.
+        ["princess"] =
+        [
+            Rule("list_ports", [], ("query", new ArgRule.Text(60, PlaceName))),
+            Rule("get_port_guide", ["port"], ("port", new ArgRule.Text(40, "^[a-z0-9-]+$"))),
+            Rule("plan_walking_day", ["port", "arrive", "allAboard"], ("port", new ArgRule.Text(40, "^[a-z0-9-]+$")), ("arrive", new ArgRule.Text(5, @"^([01]\d|2[0-3]):[0-5]\d$")), ("allAboard", new ArgRule.Text(5, @"^([01]\d|2[0-3]):[0-5]\d$")),
+                ("tender", new ArgRule.Flag()), ("pace", new ArgRule.OneOf("steady", "easy")), ("meal", new ArgRule.Flag())),
+        ],
         ["govisit"] =
         [
             Rule("search_destinations", ["query"], ("query", new ArgRule.Text(120, PlaceName)), ("mode", new ArgRule.OneOf("auto", "name", "intent")), ("limit", new ArgRule.Whole(1, 20)), ("country", new ArgRule.Text(2, "^[A-Za-z]{2}$")), ("language", new ArgRule.OneOf("en", "cs"))),

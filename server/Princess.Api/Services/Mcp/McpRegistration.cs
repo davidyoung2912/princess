@@ -16,6 +16,21 @@ public static class McpRegistration
         });
         services.AddSingleton(McpEgressPolicy.Default());
         services.AddSingleton<IMcpGateway, McpGateway>();
+        // Providers:PortKnowledge is local (the embedded guides) or mcp (a tool call through the gateway, by default to this app's own public MCP server, Mcp:PortKnowledgeProvider).
+        services.AddSingleton<LocalPortKnowledge>();
+        var knowledge = (config["Providers:PortKnowledge"] ?? "local").Trim().ToLowerInvariant();
+        switch (knowledge)
+        {
+            case "local":
+                services.AddSingleton<IPortKnowledge>(sp => sp.GetRequiredService<LocalPortKnowledge>());
+                break;
+            case "mcp":
+                var from = config["Mcp:PortKnowledgeProvider"] is { Length: > 0 } named ? named : PrincessMcpServer.Provider;
+                services.AddSingleton<IPortKnowledge>(sp => new McpPortKnowledge(sp.GetRequiredService<IMcpGateway>(), sp.GetRequiredService<LocalPortKnowledge>(), from));
+                break;
+            default:
+                throw new InvalidOperationException($"Providers:PortKnowledge is '{knowledge}', which is not registered. Choose one of: local, mcp.");
+        }
         return services;
     }
 }

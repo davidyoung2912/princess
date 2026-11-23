@@ -445,6 +445,7 @@ v1.MapStateEndpoints();
 v1.MapPortRowEndpoints();
 v1.MapPartyEndpoints();
 v1.MapReferenceEndpoints();
+v1.MapMcpServerEndpoints();
 v1.MapConciergeEndpoints();
 v1.MapStanleyEndpoints();
 v1.MapFamilyHomeEndpoints();

@@ -17,7 +17,10 @@ public sealed class McpProviderOptions
     /// <summary>A bearer token for a provider that needs one. Set in user-secrets or an environment variable, never a file.</summary>
     public string? ApiKey { get; set; }
 
-    public bool IsUsable => Enabled && Uri.TryCreate(Endpoint, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps;
+    /// <summary>Served by this app itself (the <c>princess</c> provider): the gateway calls <see cref="PrincessMcpServer"/> directly, with no network and no endpoint.</summary>
+    public bool InProcess { get; set; }
+
+    public bool IsUsable => Enabled && (InProcess || (Uri.TryCreate(Endpoint, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps));
 }
 
 /// <summary>The <c>Mcp</c> configuration section: provider settings by name (<c>govisit</c>, <c>openmeteo</c> and so on).</summary>

@@ -2,6 +2,7 @@ using Princess.Api.Audit;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Services;
+using Princess.Api.Services.Mcp;
 
 namespace Princess.Api.Endpoints;
 
@@ -79,13 +80,13 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/port-guides/{id}", (string id) => PortGuides.Json(id) is { } json ? Results.Text(json, "application/json") : throw ApiException.NotFound())
             .WithTags("Reference").WithSummary("One port's guide for the Port Details page: area, currency and language, official links, getting ashore, attractions (access tier, logistics, why visit, links, map point), short and long descriptions, traveller tips and general stats (population, size, neighbours, safety, government, economy, famous people, local vibe, timeline). Not found for a port with no guide.");
 
-        api.MapGet("/reference/port-guides/{id}/walking-plan", (string id, string arrive, string allAboard, bool? tender, string? pace, bool? meal, string? date, IWeatherService weather) =>
+        api.MapGet("/reference/port-guides/{id}/walking-plan", async (string id, string arrive, string allAboard, bool? tender, string? pace, bool? meal, string? date, IWeatherService weather, IPortKnowledge knowledge, CancellationToken ct) =>
             {
-                var places = PortGuides.Places(id) ?? throw ApiException.NotFound();
+                var places = await knowledge.PlacesAsync(id, ct) ?? throw ApiException.NotFound();
                 static bool Time(string s) => System.Text.RegularExpressions.Regex.IsMatch(s, @"^([01]\d|2[0-3]):[0-5]\d$");
                 if (!Time(arrive) || !Time(allAboard) || PortDayRules.ToMinutes(allAboard) <= PortDayRules.ToMinutes(arrive)) throw ApiException.Invalid("badTimes");
                 if (pace is not null && pace is not ("steady" or "easy")) throw ApiException.Invalid("pace");
-                var plan = PortDayRules.Plan([.. places.Select(p => new PortDayCandidate(p.Name, p.Tier, p.Why, p.Lat, p.Lng))], arrive, allAboard, tender == true, pace == "easy", meal == true ? 60 : 0);
+                var plan = PortDayRules.Plan(places, arrive, allAboard, tender == true, pace == "easy", meal == true ? 60 : 0);
                 object? sky = null;
                 if (date is not null)
                 {
