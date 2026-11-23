@@ -64,7 +64,7 @@ export function Parties() {
                 <Field label={t('party.time')} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
                 <Field label={t('party.cabins')} hint={t('party.cabinsHint')} value={cabins} onChange={(e) => setCabins(e.target.value)} inputMode="numeric" />
                 <AboardError error={create.error} />
-                <Button type="submit" variant="secondary" disabled={create.busy || !title.trim() || !cabins.trim()}>{t('party.send')}</Button>
+                <Button type="submit" disabled={create.busy || !title.trim() || !cabins.trim()}>{t('party.send')}</Button>
               </form>
             )}
             <AboardError error={cancel.error} />

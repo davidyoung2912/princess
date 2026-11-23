@@ -101,7 +101,7 @@ export function PinAndDayCard({ day }: { day: Day }) {
       <p>{t('dl8.pin.body')}</p>
       <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) { update((s) => ({ ...s, ports: { ...s.ports, pins: addPin(s.ports.pins, { id: newMemoryId(), port: day.port, note, at: Date.now() }) } })); setNote('') } }}>
         <Field prose label={t('dl8.pin.note')} value={note} maxLength={80} onChange={(e) => setNote(e.target.value)} />
-        <Button type="submit" variant="secondary" disabled={!note.trim()}>{t('dl8.pin.add')}</Button>
+        <Button type="submit" disabled={!note.trim()}>{t('dl8.pin.add')}</Button>
       </form>
       {pins.length > 0 && (
         <ul className="plain-list">

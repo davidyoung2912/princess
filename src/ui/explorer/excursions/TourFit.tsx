@@ -57,7 +57,7 @@ export function TourFit({ view, busy, onAdd }: { view: ExcursionsView; busy: boo
                   <h3 className="card__title">{m.offer.item.name}</h3>
                   <p className="muted">{portLabel(m.offer.item.port)} · {formatDate(m.offer.date)}</p>
                   <p>{m.reasons.join(', ')}.</p>
-                  {view.canBook && <Button variant="secondary" disabled={busy || view.cart.some((l) => l.excursionId === m.offer.item.id)} onClick={() => onAdd(m.offer)}>{t('exc.addToCart')}<span className="visually-hidden"> {m.offer.item.name}</span></Button>}
+                  {view.canBook && <Button disabled={busy || view.cart.some((l) => l.excursionId === m.offer.item.id)} onClick={() => onAdd(m.offer)}>{t('exc.addToCart')}<span className="visually-hidden"> {m.offer.item.name}</span></Button>}
                 </li>
               ))}
             </ol>

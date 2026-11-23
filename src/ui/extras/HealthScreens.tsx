@@ -140,7 +140,7 @@ function Request({ reload }: { reload: () => void }) {
           <input id="req-note" className="field__input" value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} />
         </div>
         <ExtraError error={send.error} />
-        <Button type="submit" variant="secondary" disabled={send.busy}>{t('hlth.sendRequest')}</Button>
+        <Button type="submit" disabled={send.busy}>{t('hlth.sendRequest')}</Button>
         {sent && <p role="status">{t('hlth.requestSent')}</p>}
       </form>
     </section>

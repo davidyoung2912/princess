@@ -46,7 +46,7 @@
 @keyframes drift { from { transform: translateX(-1.5%) scale(1.04); } to { transform: translateX(1.5%) scale(1.04); } }
 @keyframes land { 0% { opacity: 0; transform: scale(1.5) rotate(-6deg); } 70% { opacity: 1; transform: scale(0.94) rotate(1deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
 .motion-lift { transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease); }
-.motion-lift:hover, .motion-lift:focus-within { transform: translateY(-2px); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--sec) 50%, transparent); }
+.motion-lift:hover, .motion-lift:focus-within { transform: translateY(-2px); box-shadow: var(--elev-3); }
 .event, .conv, .exp-days__btn, .wx-day, .schedule-card, .nav-landmarks > li { transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease), border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
 .event:hover,
 .conv:hover,
@@ -59,7 +59,7 @@
 .exp-days__btn:focus-within,
 .wx-day:focus-within,
 .schedule-card:focus-within,
-.nav-landmarks > li:focus-within { transform: translateY(-2px); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--primary) 50%, transparent); }
+.nav-landmarks > li:focus-within { transform: translateY(-2px); box-shadow: var(--elev-3); }
 .motion-land { animation: land var(--t-mid) var(--ease) both; }
 :root[data-motion='full'] .stage-hero img { animation: drift 24s ease-in-out infinite alternate; }
 :root[data-light='on'] .stage-hero img { animation: none !important; }

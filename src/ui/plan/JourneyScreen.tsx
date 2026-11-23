@@ -174,7 +174,7 @@ export function JourneyScreen() {
         </ul>
         <form onSubmit={(e) => { e.preventDefault(); update((s) => ({ ...s, journey: addBag(s.journey, bag, newTripId()) })); setBag('') }}>
           <Field label={t('journey.bags.add')} value={bag} maxLength={40} onChange={(e) => setBag(e.target.value)} />
-          <Button type="submit" variant="secondary">{t('journey.bags.addButton')}</Button>
+          <Button type="submit">{t('journey.bags.addButton')}</Button>
         </form>
       </section>
       <DriverCardView terminal={TERMINALS.usual} />

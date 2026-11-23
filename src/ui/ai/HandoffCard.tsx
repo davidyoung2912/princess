@@ -153,7 +153,7 @@ export function HandoffCard({ messages, initialTopic }: { messages: readonly { r
       <label className="choice"><input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} /><span>{t('handoff.consent')}</span></label>
       {send.error && <p role="alert" className="field__error">{t(`handoff.problem.${caseProblemOf(send.error)}` as StringKey, { phone: GUEST_SERVICES_NUMBER })}</p>}
       {!made && <p className="muted">{t('handoff.notSent')}</p>}
-      <Button variant="secondary" disabled={send.busy || !agreed || text.trim() === ''} onClick={() => void submit()}>{t('handoff.send')}</Button>
+      <Button disabled={send.busy || !agreed || text.trim() === ''} onClick={() => void submit()}>{t('handoff.send')}</Button>
     </Card>
   )
 }

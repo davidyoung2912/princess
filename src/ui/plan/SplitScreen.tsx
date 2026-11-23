@@ -72,7 +72,7 @@ export function SplitScreen() {
           <Field label={t('split.famName')} help={t('helptip.famName')} value={fam} maxLength={40} onChange={(e) => setFam(e.target.value)} />
           <Field label={t('split.famPeople')} help={t('helptip.famPeople')} type="number" min={1} max={12} value={people} onChange={(e) => setPeople(e.target.value)} />
           {famProblem && <p className="field__error" role="alert">{t(famProblem)}</p>}
-          <Button type="submit" variant="secondary">{t('split.addFamily')}</Button>
+          <Button type="submit">{t('split.addFamily')}</Button>
         </form>
       </Card>
 

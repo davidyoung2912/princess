@@ -125,7 +125,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
           </div>
           <Field prose label={t('fb.why')} help={t('helptip.billWhy')} maxLength={CASE_TEXT_MAX} value={why} onChange={(e) => setWhy(e.target.value)} />
           <ExtraError error={query.error} />
-          <Button type="submit" variant="secondary" disabled={query.busy || !picked || why.trim().length < 5}>{query.busy ? t('account.saving') : t('fb.send')}</Button>
+          <Button type="submit" disabled={query.busy || !picked || why.trim().length < 5}>{query.busy ? t('account.saving') : t('fb.send')}</Button>
         </form>
         <Human />
       </section>

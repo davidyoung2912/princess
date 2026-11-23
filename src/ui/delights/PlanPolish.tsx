@@ -51,7 +51,7 @@ export function EntryNote({ entry }: { entry: PlanEntry }) {
         <form onSubmit={(e) => { e.preventDefault(); save() }}>
           <Field label={t('dl4.note.label')} hint={t('dl4.note.hint')} value={text} maxLength={NOTE_MAX} onChange={(e) => setText(e.target.value)} />
           <div className="button-row">
-            <Button type="submit" variant="secondary">{t('dl4.note.save')}</Button>
+            <Button type="submit">{t('dl4.note.save')}</Button>
             <Button variant="tertiary" onClick={() => { setText(saved ?? ''); setOpen(false) }}>{t('dl4.note.cancel')}</Button>
           </div>
         </form>
@@ -176,7 +176,7 @@ export function OccasionsCard() {
         <Field label={t('dl4.occ.label')} value={label} maxLength={40} onChange={(e) => setLabel(e.target.value)} />
         <Field label={t('dl4.occ.date')} hint={t('dl4.occ.dateHint')} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         <label className="choice"><input type="checkbox" checked={surprise} onChange={(e) => setSurprise(e.target.checked)} /><span>{t('dl4.occ.surpriseLabel')}</span></label>
-        <Button type="submit" variant="secondary" disabled={!label.trim() || !date}>{t('dl4.occ.add')}</Button>
+        <Button type="submit" disabled={!label.trim() || !date}>{t('dl4.occ.add')}</Button>
       </form>
       <p className="muted">{t('dl4.occ.note')}</p>
     </Card>

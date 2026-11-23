@@ -79,8 +79,8 @@ export function StanleyAutoBookingCard() {
 
       <div className="button-row">
         <Button onClick={() => run('dinners')} disabled={busy}>{t('stanleyAutoBook.dinners')}</Button>{' '}
-        <Button onClick={() => run('timings')} disabled={busy}>{t('stanleyAutoBook.timings')}</Button>{' '}
-        <Button onClick={() => run('orders')} disabled={busy}>{t('stanleyAutoBook.orders')}</Button>
+        <Button variant="secondary" onClick={() => run('timings')} disabled={busy}>{t('stanleyAutoBook.timings')}</Button>{' '}
+        <Button variant="secondary" onClick={() => run('orders')} disabled={busy}>{t('stanleyAutoBook.orders')}</Button>
       </div>
       <div aria-live="polite">
         {busy && <p role="status">{t('stanleyAuto.working')}</p>}

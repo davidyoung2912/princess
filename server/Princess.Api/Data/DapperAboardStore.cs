@@ -417,7 +417,10 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         long? first = null;
         foreach (var booking in bookings)
         {
-            var group = await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT Id FROM dbo.ChatGroups WHERE Kind = 'party' AND BookingId = @booking", new { booking }, tx, ct))
+            var existing = await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT Id FROM dbo.ChatGroups WHERE Kind = 'party' AND BookingId = @booking", new { booking }, tx, ct));
+            // A guest travelling alone has no travel party to talk to, so no empty "My group" is made for them. It appears once a second person is on the booking.
+            if (existing is null && await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.BookingGuests WHERE BookingId = @booking", new { booking }, tx, ct)) < 2) continue;
+            var group = existing
                 ?? await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name, Kind, BookingId) OUTPUT INSERTED.Id VALUES (N'My group', 'party', @booking)", new { booking }, tx, ct));
             first ??= group;
             // Everyone on the booking, once. A person who left (their row stays, marked left) is not added again.
@@ -428,6 +431,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
                 """, new { group, booking }, tx, ct));
         }
         // The solo "My group" from before booking chats were shared: its (one person's) messages and read place move to the booking's chat, then it goes.
+        if (first is null) return;   // every booking is a solo trip: nothing to move the old solo chat into, and it stays as it is
         foreach (var legacy in (await c.QueryAsync<long>(Sql.Cmd("""
             SELECT g.Id FROM dbo.ChatGroups g JOIN dbo.ChatGroupMembers m ON m.GroupId = g.Id AND m.UserId = @userId
             WHERE g.Kind = 'party' AND g.BookingId IS NULL AND (SELECT COUNT(*) FROM dbo.ChatGroupMembers x WHERE x.GroupId = g.Id) = 1

@@ -86,7 +86,7 @@ export function StanleyTrafficCard({ sailingId }: { sailingId: string }) {
           {CROWDS.map((c) => <option key={c} value={c}>{t(`tr10.traffic.crowd.${c}` as StringKey)}</option>)}
         </select>
       </div>
-      <Button variant="secondary" onClick={() => void go()}>{t('tr10.traffic.go')}</Button>
+      <Button onClick={() => void go()}>{t('tr10.traffic.go')}</Button>
       <div role="status">
         {failed && <p>{t('tr10.failed')}</p>}
         {r && (
@@ -247,7 +247,7 @@ export function StanleyEmbarkTour({ sailingId }: { sailingId: string }) {
           {MOBILITY.map((m) => <option key={m} value={m}>{t(`tr10.mobility.${m}` as StringKey)}</option>)}
         </select>
       </div>
-      <Button variant="secondary" onClick={() => void go()} disabled={goals.length === 0}>{t('tr10.embark.go')}</Button>
+      <Button onClick={() => void go()} disabled={goals.length === 0}>{t('tr10.embark.go')}</Button>
       <div role="status">
         {failed && <p>{t('tr10.failed')}</p>}
         {tour && (
@@ -396,7 +396,7 @@ export function StanleyConnectionCard({ sailingId }: { sailingId: string }) {
           {WAYS_OFF.map((o) => <option key={o} value={o}>{t(`tr10.conn.off.${o}` as StringKey)}</option>)}
         </select>
       </div>
-      <Button variant="secondary" onClick={() => void go()} disabled={!departAt}>{t('tr10.conn.go')}</Button>
+      <Button onClick={() => void go()} disabled={!departAt}>{t('tr10.conn.go')}</Button>
       <div role="status">
         {failed && <p>{t('tr10.failed')}</p>}
         {result && (

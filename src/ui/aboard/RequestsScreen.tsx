@@ -80,7 +80,7 @@ export function RequestsScreen() {
                       </select>
                     </div>
                   )}
-                  <Button variant="secondary" disabled={ask.busy || !!me?.child} onClick={() => void ask.run(i.id)}>{t('req.ask')}</Button>
+                  <Button disabled={ask.busy || !!me?.child} onClick={() => void ask.run(i.id)}>{t('req.ask')}</Button>
                 </Card>
               </li>
             ))}

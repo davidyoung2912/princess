@@ -165,7 +165,7 @@ export function WantNext() {
       <h2 id="dl9-want-h" className="card__title">{th('dl9.want.title')}</h2>
       <p>{t('dl9.want.body')}</p>
       <Field prose label={t('dl9.want.label')} value={text} maxLength={WANT_LEN} disabled={list.length >= WANTS_MAX} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
-      <Button variant="secondary" onClick={add} disabled={text.trim() === '' || list.length >= WANTS_MAX}>{t('dl9.want.add')}</Button>
+      <Button onClick={add} disabled={text.trim() === '' || list.length >= WANTS_MAX}>{t('dl9.want.add')}</Button>
       {list.length >= WANTS_MAX && <p className="muted">{t('dl9.want.full')}</p>}
       {list.length > 0 && (
         <ul className="plain-list">

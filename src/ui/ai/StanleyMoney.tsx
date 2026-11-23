@@ -66,7 +66,7 @@ export function StanleyEntitlementCard({ people }: { people: { id: string; name:
           <label className="choice"><input type="checkbox" checked={alcohol} onChange={(e) => setAlcohol(e.target.checked)} /><span>{t('mo12.ent.alcohol')}</span></label>
         </>
       )}
-      <Button variant="secondary" onClick={() => void ask()} disabled={busy || !valid}>{t('mo12.ent.ask')}</Button>
+      <Button onClick={() => void ask()} disabled={busy || !valid}>{t('mo12.ent.ask')}</Button>
       <div role="status">
         {failed && <p>{t('mo12.failed')}</p>}
         {result && (
@@ -112,7 +112,7 @@ export function StanleyPackageValue() {
       <Field label={t('mo12.val.drinks')} hint={t('mo12.val.range', { max: USE_LIMITS.drinksPerDay })} inputMode="numeric" value={drinks} onChange={(e) => setDrinks(e.target.value)} />
       <Field label={t('mo12.val.wifi')} hint={t('mo12.val.range', { max: USE_LIMITS.wifiDays })} inputMode="numeric" value={wifi} onChange={(e) => setWifi(e.target.value)} />
       <Field label={t('mo12.val.dinners')} hint={t('mo12.val.range', { max: USE_LIMITS.specialtyDinners })} inputMode="numeric" value={dinners} onChange={(e) => setDinners(e.target.value)} />
-      <Button variant="secondary" onClick={() => void compare()} disabled={busy || !body}>{t('mo12.val.compare')}</Button>
+      <Button onClick={() => void compare()} disabled={busy || !body}>{t('mo12.val.compare')}</Button>
       {!body && <p className="muted">{t('mo12.val.need')}</p>}
       <div role="status">
         {failed && <p>{t('mo12.failed')}</p>}
@@ -167,7 +167,7 @@ export function StanleyScenarioCard({ view }: { view: PackagesView }) {
           <label key={to} className="choice"><input type="checkbox" checked={has('upgrade', to)} onChange={() => toggle('upgrade', to)} /><span>{t('mo12.sc.upgrade', { name: PACKAGE_NAMES[to] })}</span></label>
         ))}
       </fieldset>
-      <Button variant="secondary" onClick={() => void run()} disabled={busy || !body}>{t('mo12.sc.run')}</Button>
+      <Button onClick={() => void run()} disabled={busy || !body}>{t('mo12.sc.run')}</Button>
       <div role="status">
         {failed && <p>{t('mo12.failed')}</p>}
         {result && (
@@ -223,7 +223,7 @@ export function StanleyPaceCard() {
       ) : (
         <>
           <Field label={t('mo12.pace.field')} hint={t('mo12.pace.hint')} inputMode="decimal" value={typed} onChange={(e) => setTyped(e.target.value)} error={typed.trim() !== '' && typedCents === null ? t('mo12.pace.bad') : undefined} />
-          <Button variant="secondary" onClick={() => typedCents !== null && void save(typedCents)} disabled={typedCents === null}>{t('mo12.pace.watch')}</Button>
+          <Button onClick={() => typedCents !== null && void save(typedCents)} disabled={typedCents === null}>{t('mo12.pace.watch')}</Button>
           {memory.budget !== null && memory.budget > 0 && <Button variant="tertiary" onClick={() => void save(memory.budget)}>{t('mo12.pace.useMine', { budget: formatMoney(memory.budget) })}</Button>}
         </>
       )}
@@ -268,7 +268,7 @@ function QuestionLine({ line, sailingId, onOpened }: { line: FolioLineView; sail
         <textarea id={`${id}-n`} className="field__input" rows={3} maxLength={NOTE_MAX} value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
       <label className="choice"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>{t('mo12.folio.consent')}</span></label>
-      <Button variant="secondary" onClick={() => void send()} disabled={!consent || state === 'busy'}>{t('mo12.folio.send')}</Button>
+      <Button onClick={() => void send()} disabled={!consent || state === 'busy'}>{t('mo12.folio.send')}</Button>
       <Button variant="tertiary" onClick={() => setOpen(false)}>{t('mo12.folio.cancel')}</Button>
       <p role="status" className="muted">{state === 'failed' ? t('mo12.failed') : state === 'already' ? t('mo12.folio.already') : state === 'tooMany' ? t('mo12.folio.tooMany') : ''}</p>
     </div>

@@ -31,7 +31,7 @@ export function StanleyTourCompare({ sailingId }: { sailingId: string }) {
         <label htmlFor={`${ids}-b`}>{t('cmp9.second')}</label>
         <select id={`${ids}-b`} className="field__input" value={b} onChange={(e) => setB(e.target.value)}><option value="">{t('cmp9.choose')}</option>{options(a)}</select>
       </div>
-      <Button variant="secondary" onClick={() => void go()} disabled={!a || !b}>{t('cmp9.go')}</Button>
+      <Button onClick={() => void go()} disabled={!a || !b}>{t('cmp9.go')}</Button>
       <div role="status">
         {failed && <p>{t('cmp9.failed')}</p>}
         {result && (

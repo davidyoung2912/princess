@@ -31,7 +31,7 @@ export function NicknameField() {
       <Field label={t('nickname.label')} hint={t('nickname.hint')} value={text} maxLength={MAX_NICKNAME} onChange={(e) => { setText(e.target.value); setSaved(false) }} autoComplete="nickname" error={problem || save.error?.code === 'invalid' ? t('nickname.problem') : undefined} />
       {save.error?.code !== 'invalid' && <ActionError error={save.error} />}
       <div className="button-row">
-        <Button type="submit" variant="secondary" disabled={save.busy}>{save.busy ? t('account.saving') : t('nickname.save')}</Button>
+        <Button type="submit" disabled={save.busy}>{save.busy ? t('account.saving') : t('nickname.save')}</Button>
       </div>
       {saved && <p role="status">{t('nickname.saved')}</p>}
     </form>

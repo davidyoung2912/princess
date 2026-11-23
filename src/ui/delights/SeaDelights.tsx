@@ -110,7 +110,7 @@ export function DrinkDiary() {
           {VERDICTS.map((v) => <label key={v} className="choice"><input type="radio" name="dl7-verdict" checked={verdict === v} onChange={() => setVerdict(v)} /><span>{t(`dl7.diary.${v}` as StringKey)}</span></label>)}
         </fieldset>
         <Field label={t('dl7.diary.note')} value={note} maxLength={140} onChange={(e) => setNote(e.target.value)} />
-        <Button type="submit" variant="secondary" disabled={!name.trim()}>{t('dl7.diary.add')}</Button>
+        <Button type="submit" disabled={!name.trim()}>{t('dl7.diary.add')}</Button>
       </form>
       <p className="muted">{t('dl7.diary.private')}</p>
     </Card>
@@ -246,7 +246,7 @@ export function CelebrationDay({ date }: { date: string }) {
       {view?.canAdd && (
         <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) void add() }}>
           <Field label={t('dl7.cel.add')} value={text} maxLength={CELEBRATION_MAX} onChange={(e) => setText(e.target.value)} />
-          <Button type="submit" variant="secondary" disabled={busy || !text.trim()}>{t('dl7.cel.save')}</Button>
+          <Button type="submit" disabled={busy || !text.trim()}>{t('dl7.cel.save')}</Button>
         </form>
       )}
       {problem && <p className="field__error" role="alert">{t('dl7.cel.failed')}</p>}

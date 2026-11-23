@@ -72,7 +72,7 @@ export function StanleyAutoCard() {
     <Card labelledBy="auto-h">
       <h2 id="auto-h" className="card__title">{th('stanleyAuto.title')}</h2>
       <p>{t('stanleyAuto.intro')}</p>
-      <div className="button-row"><Button onClick={run} disabled={busy}>{t('stanleyAuto.run')}</Button> <Button onClick={checkLists} disabled={busy}>{t('stanleyAuto.lists')}</Button> <Button onClick={topUp} disabled={busy}>{t('stanleyAuto.plan')}</Button> <Button onClick={saveNotes} disabled={busy}>{t('stanleyAuto.drafts')}</Button></div>
+      <div className="button-row"><Button onClick={run} disabled={busy}>{t('stanleyAuto.run')}</Button> <Button variant="secondary" onClick={checkLists} disabled={busy}>{t('stanleyAuto.lists')}</Button> <Button variant="secondary" onClick={topUp} disabled={busy}>{t('stanleyAuto.plan')}</Button> <Button variant="secondary" onClick={saveNotes} disabled={busy}>{t('stanleyAuto.drafts')}</Button></div>
       <div aria-live="polite">
         {busy && <p role="status">{t('stanleyAuto.working')}</p>}
         {failed && <p role="alert" className="field__error">{t('stanleyAuto.error')}</p>}

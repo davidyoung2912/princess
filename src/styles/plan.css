@@ -36,7 +36,7 @@
 .slot-grid .choice > span { display: block; font-size: var(--fs-lead, 1.125rem); font-weight: 700; color: var(--primary); }
 .slot-grid .choice small { margin-block-start: var(--space-1); font-size: var(--fs-caption); font-weight: 400; color: var(--text-muted); }
 .slot-grid .choice::before { content: ''; position: absolute; inset-block-start: var(--space-3); inset-inline-end: var(--space-3); inline-size: 1.125rem; block-size: 1.125rem; border: 2px solid var(--border-strong); border-radius: 50%; background: var(--bg); }
-.slot-grid .choice:hover:not(.choice--full) { transform: translateY(-2px); border-color: var(--primary); box-shadow: var(--elev-2, 0 8px 18px rgba(0, 0, 0, 0.18)), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent); }
+.slot-grid .choice:hover:not(.choice--full) { transform: translateY(-2px); border-color: var(--primary); box-shadow: var(--elev-3); }
 .slot-grid .choice:has(input:checked) { border-color: var(--primary); background: var(--brand-tint, var(--sky-tint)); }
 .slot-grid .choice:has(input:checked)::before { border-color: var(--primary); background: radial-gradient(circle, var(--primary) 0 45%, var(--bg) 50%); }
 .slot-grid .choice:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }

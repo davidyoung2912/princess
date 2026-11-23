@@ -53,7 +53,7 @@ export function HoldScreen() {
         {h.state !== 'active' && (
           <form onSubmit={(e) => { e.preventDefault(); const l = cleanHoldLabel(label); if (l) { update((m) => ({ ...m, hold: { label: l, at: now } })); setLabel('') } }}>
             <Field prose label={t('hold.what')} hint={t('hold.hint', { hours: HOLD_HOURS })} value={label} maxLength={HOLD_LABEL_MAX} onChange={(e) => setLabel(e.target.value)} />
-            <Button type="submit" variant="secondary" disabled={cleanHoldLabel(label) === ''}>{t('hold.start')}</Button>
+            <Button type="submit" disabled={cleanHoldLabel(label) === ''}>{t('hold.start')}</Button>
           </form>
         )}
         {h.state !== 'none' && <Button variant="tertiary" onClick={() => update((m) => ({ ...m, hold: null }))}>{t('hold.release')}</Button>}
@@ -184,7 +184,7 @@ export function AllergyScreen() {
         {a.items.length < ALLERGY_MAX && (
           <form onSubmit={(e) => { e.preventDefault(); add() }}>
             <Field label={t('allergy.add')} hint={t('allergy.hint')} value={draft} maxLength={40} onChange={(e) => setDraft(e.target.value)} />
-            <Button type="submit" variant="secondary" disabled={cleanAllergy(draft) === ''}>{t('allergy.addButton')}</Button>
+            <Button type="submit" disabled={cleanAllergy(draft) === ''}>{t('allergy.addButton')}</Button>
           </form>
         )}
         {a.items.length > 0 && <Stepper label={t('allergy.track')} steps={allergySteps(status).map((s) => ({ id: s.id, state: s.state, label: t(`allergy.step.${s.id}` as StringKey) }))} />}
@@ -225,7 +225,7 @@ export function ShareLedgerScreen() {
             <h2 id="sh-t" className="card__title">{th('shares.title', { total: formatMoney(v.trip.plan.total) })}</h2>
             <form onSubmit={(e) => { e.preventDefault(); const n = name.replace(/\s+/g, ' ').trim(); if (n) { const names = [...state.shares.map((s) => s.name), n]; const parts = splitEven(v.trip.plan.total, names); update((m) => ({ ...m, shares: parts.map((p, i) => ({ id: m.shares[i]?.id ?? newMemoryId(), name: p.name, amount: p.amount, paid: m.shares[i]?.paid ?? false })) })); setName('') } }}>
               <Field prose label={t('shares.add')} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} />
-              <Button type="submit" variant="secondary" disabled={name.trim() === '' || state.shares.length >= 12}>{t('shares.addButton')}</Button>
+              <Button type="submit" disabled={name.trim() === '' || state.shares.length >= 12}>{t('shares.addButton')}</Button>
             </form>
             {state.shares.length > 0 && (
               <ul className="plain-list">

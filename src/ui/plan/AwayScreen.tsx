@@ -75,7 +75,7 @@ export function AwayScreen() {
         {state.awayExtras.length < EXTRAS_MAX && (
           <form onSubmit={(e) => { e.preventDefault(); add() }}>
             <Field label={t('away.add')} value={text} maxLength={EXTRA_MAX} onChange={(e) => setText(e.target.value)} />
-            <Button type="submit" variant="secondary" disabled={cleanExtra(text) === ''}>{t('away.addButton')}</Button>
+            <Button type="submit" disabled={cleanExtra(text) === ''}>{t('away.addButton')}</Button>
           </form>
         )}
       </Card>

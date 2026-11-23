@@ -89,7 +89,7 @@ export function TvScreen() {
               ) : (
                 <form onSubmit={(e) => { e.preventDefault(); void set.run({ casting: device.trim(), on: true }).then(() => setDevice('')) }}>
                   <Field label={t('tv.device')} hint={t('tv.deviceHint')} value={device} maxLength={40} onChange={(e) => setDevice(e.target.value)} />
-                  <Button type="submit" variant="secondary" disabled={set.busy || locked || !device.trim()}>{t('tv.startCast')}</Button>
+                  <Button type="submit" disabled={set.busy || locked || !device.trim()}>{t('tv.startCast')}</Button>
                 </form>
               )}
             </section>

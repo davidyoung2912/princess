@@ -150,7 +150,7 @@ export function NicknameCard() {
       <h2 id="dl5-nick-h" className="card__title">{th('dl5.nick.title')}</h2>
       <Field label={t('dl5.nick.field')} hint={t('dl5.nick.hint')} value={text} maxLength={NICKNAME_MAX} onChange={(e) => setText(e.target.value)} onBlur={save} />
       <div className="button-row">
-        <Button variant="secondary" onClick={save}>{t('dl5.nick.save')}</Button>
+        <Button onClick={save}>{t('dl5.nick.save')}</Button>
         {state.prepare.nickname && <Button variant="tertiary" onClick={() => { setText(''); update((s) => ({ ...s, prepare: { ...s.prepare, nickname: '' } })) }}>{t('dl5.nick.clear')}</Button>}
       </div>
     </Card>
@@ -210,7 +210,7 @@ export function RemindCard({ sailingId }: { sailingId: string }) {
         <>
           <p>{t('dl5.remind.body')}</p>
           <label className="choice"><input type="checkbox" checked={email} onChange={(e) => setEmail(e.target.checked)} /><span>{t('dl5.remind.email')}</span></label>
-          <Button variant="secondary" onClick={() => update((s) => ({ ...s, prepare: { ...s.prepare, remind: remindFrom(now, sailingId, email) } }))}>{t('dl5.remind.set')}</Button>
+          <Button onClick={() => update((s) => ({ ...s, prepare: { ...s.prepare, remind: remindFrom(now, sailingId, email) } }))}>{t('dl5.remind.set')}</Button>
         </>
       ) : (
         <>

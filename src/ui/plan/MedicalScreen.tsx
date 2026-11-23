@@ -60,7 +60,7 @@ export function MedicalScreen() {
             {card[s].length < MEDICAL_LINES_MAX ? (
               <form onSubmit={(e) => { e.preventDefault(); add(s) }}>
                 <Field label={t(`medical.add.${s}` as StringKey)} hint={t(`medical.hint.${s}` as StringKey)} value={drafts[s] ?? ''} maxLength={MEDICAL_LINE_MAX} onChange={(e) => setDrafts((d) => ({ ...d, [s]: e.target.value }))} />
-                <Button type="submit" variant="secondary" disabled={(drafts[s] ?? '').trim() === ''}>{t('medical.addButton')}</Button>
+                <Button type="submit" disabled={(drafts[s] ?? '').trim() === ''}>{t('medical.addButton')}</Button>
               </form>
             ) : <p className="muted">{t('medical.full')}</p>}
           </Card>

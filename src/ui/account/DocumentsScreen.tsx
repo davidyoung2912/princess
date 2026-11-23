@@ -80,7 +80,7 @@ function HeldRow({ guest, doc, canEdit, onChange }: { guest: GuestDocumentsView;
         <div className="held-row__date">
           <label htmlFor={`exp-${guest.id}-${doc}`}>{t('docs.expires')}<span className="visually-hidden"> {name} ({guest.name})</span></label>
           <input id={`exp-${guest.id}-${doc}`} className="field__input" type="date" value={expires} disabled={!canEdit} onChange={(e) => setExpires(e.target.value)} />
-          <Button variant="secondary" disabled={!canEdit || !expires || expires === (held.expires ?? '')} onClick={() => void onChange(guest.id, doc, { expires })}>{t('docs.saveDate')}<span className="visually-hidden"> {name} ({guest.name})</span></Button>
+          <Button disabled={!canEdit || !expires || expires === (held.expires ?? '')} onClick={() => void onChange(guest.id, doc, { expires })}>{t('docs.saveDate')}<span className="visually-hidden"> {name} ({guest.name})</span></Button>
         </div>
       )}
     </div>

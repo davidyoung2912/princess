@@ -467,7 +467,7 @@ button.chat-quote { cursor: pointer; }
 .ship-section[data-meal='dinner'] { --accent: var(--primary-bright); --tint: var(--sky-tint); }
 .ship-section[data-meal='allDay'] { --accent: var(--plum); --tint: var(--plum-tint); }
 .ship-section { transition: box-shadow var(--t-fast, 0.15s) ease, transform var(--t-fast, 0.15s) ease; }
-.ship-section:hover { --card-shadow: var(--elev-2, 0 6px 16px rgba(0, 0, 0, 0.18)); transform: translateY(-2px); }
+.ship-section:hover { --card-shadow: var(--elev-3); transform: translateY(-2px); }
 @media (prefers-reduced-motion: reduce) { .ship-section { transition: none; } .ship-section:hover { transform: none; } }
 @media (forced-colors: active) { .ship-section:hover { outline: 2px solid Highlight; } }
 .ship-section__title { margin: 0; font-size: var(--fs-h3, 1.125rem); }

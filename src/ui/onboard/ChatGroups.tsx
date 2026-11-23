@@ -215,7 +215,7 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
               <>
                 <form onSubmit={(e) => { e.preventDefault(); void rename.run() }}>
                   <Field label={t('cgroup.rename')} value={name ?? g.name} maxLength={MAX_GROUP_NAME} autoComplete="off" onChange={(e) => setName(e.target.value)} />
-                  <Button type="submit" variant="secondary" disabled={rename.busy || cleanGroupName(name ?? '') === null || name === g.name}>{t('cgroup.renameSave')}</Button>
+                  <Button type="submit" disabled={rename.busy || cleanGroupName(name ?? '') === null || name === g.name}>{t('cgroup.renameSave')}</Button>
                 </form>
                 <Problem error={rename.error} />
                 <AddPeople group={g} connections={connections} picked={picked} setPicked={setPicked} busy={invite.busy} onInvite={() => void invite.run()} />

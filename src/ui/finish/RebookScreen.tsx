@@ -135,7 +135,7 @@ function Desk({ v, reload }: { v: RebookView; reload: () => void }) {
             </select>
           </div>
           <ExtraError error={book.error} />
-          <Button type="submit" variant="secondary" disabled={book.busy || !slot}>{book.busy ? t('account.saving') : t('reb.apptBook')}</Button>
+          <Button type="submit" disabled={book.busy || !slot}>{book.busy ? t('account.saving') : t('reb.apptBook')}</Button>
         </form>
       ) : <p className="muted">{t('reb.apptOnboard')}</p>}
       <p className="muted"><Link to="/home/disembark">{t('route.disembark')}</Link></p>

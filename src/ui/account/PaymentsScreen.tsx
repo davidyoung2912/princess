@@ -149,7 +149,7 @@ function AddCard({ today, onAdded }: { today: string; onAdded: () => void }) {
       <Field label={t('pay.last4')} hint={t('pay.last4Hint')} inputMode="numeric" maxLength={4} autoComplete="off" value={last4} onChange={(e) => setLast4(e.target.value.replace(/\D/g, ''))} error={problem === 'last4' ? t('pay.err.last4') : undefined} />
       <Field label={t('pay.expiry')} hint={t('pay.expiryHint')} placeholder="MM/YY" maxLength={5} autoComplete="off" value={expiry} onChange={(e) => setExpiry(e.target.value)} error={problem === 'expiry' ? t('pay.err.expiry') : problem === 'expired' ? t('pay.err.expired') : undefined} />
       <ActionError error={add.error} />
-      <Button type="submit" variant="secondary" disabled={add.busy}>{add.busy ? t('account.saving') : t('pay.addButton')}</Button>
+      <Button type="submit" disabled={add.busy}>{add.busy ? t('account.saving') : t('pay.addButton')}</Button>
       <p role="status" className="muted">{done ? t('pay.cardAdded') : ''}</p>
     </form>
   )

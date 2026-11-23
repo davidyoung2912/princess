@@ -269,17 +269,29 @@ main.signin { margin-inline: auto; }
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .card-grid > li > .card:hover, .card-grid > li.card:hover, .fare-grid > li.card:hover, .stage-tile:hover {
-    transform: translateY(-5px) scale(1.02);
+    transform: translateY(-2px);
     z-index: 1;
-    box-shadow: var(--elev-2);
+    box-shadow: var(--elev-3);
   }
 }
 
-/* Any card that holds something to press, follow or type into gets a deeper shadow under the pointer or when focus is inside it, so it reads as live. It does not move (a form must not shift while someone types). A card with nothing actionable in it stays still. */
-.card { transition: box-shadow var(--t-mid) var(--ease); }
+/*
+ * Live surfaces: one rule for every card-like box that holds something to press, follow or type into. Under the pointer, or when focus is inside it, it takes the deeper
+ * shadow and an accent border so it reads as live. It does not move (a form must not shift while someone types). Surfaces that are themselves the click target
+ * (tiles, rows, day buttons) also lift 2px with the same shadow, in their own rules. A box with nothing actionable in it stays still. Calm mode keeps no shadow.
+ */
+.card, .banner, .tip, .says, .stanley-card, .stanley-card2, .stanley-ask, .stanley-moment, .stanley-coach, .chat-card, .chat-poll, .chat-pins, .case, .slot-card, .today-strip__card, .dish, .order, .photo { transition: box-shadow var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease); }
 @media (hover: hover) {
-  .card:has(a[href], button:not(:disabled), input:not([type='hidden']), select, textarea, summary):is(:hover, :focus-within) { --card-shadow: var(--elev-2); }
+  :is(.card, .banner, .tip, .says, .stanley-card, .stanley-card2, .stanley-ask, .stanley-moment, .stanley-coach, .chat-card, .chat-poll, .chat-pins, .case, .slot-card, .today-strip__card, .dish, .order, .photo):has(a[href], button:not(:disabled), input:not([type='hidden']), select, textarea, summary, [role='button'], [role='checkbox'], [role='switch'], [role='radio'], [role='link']):is(:hover, :focus-within) {
+    --card-shadow: var(--elev-3);
+    box-shadow: var(--elev-3);
+    border-color: color-mix(in srgb, var(--accent, var(--primary)) 55%, var(--border));
+  }
+  :root[data-calm='on'] :is(.card, .banner, .tip, .says, .stanley-card, .stanley-card2, .stanley-ask, .stanley-moment, .stanley-coach, .chat-card, .chat-poll, .chat-pins, .case, .slot-card, .today-strip__card, .dish, .order, .photo):is(:hover, :focus-within) { box-shadow: none; }
 }
+
+/* The note under the New Personal Chat search sits clear of the button above it. */
+.personal-note { margin-block-start: var(--space-5); }
 
 /* Traveller tip under the page header: yellow, with a lightbulb. The text keeps the normal text colour for contrast. */
 .page--tip { padding-block: var(--space-3) 0; }

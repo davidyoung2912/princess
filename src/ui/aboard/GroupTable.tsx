@@ -43,7 +43,7 @@ export function GroupTable({ r, canEdit }: { r: Reservation; canEdit: boolean })
                   <Field label={t('group.name')} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} />
                   <Field label={t('group.cabin')} inputMode="numeric" value={cabin} maxLength={5} onChange={(e) => setCabin(e.target.value)} />
                   <AboardError error={add.error ?? remove.error ?? split.error} />
-                  <Button type="submit" variant="secondary" disabled={add.busy || !name.trim() || !cabin.trim()}>{t('group.add')}</Button>
+                  <Button type="submit" disabled={add.busy || !name.trim() || !cabin.trim()}>{t('group.add')}</Button>
                 </form>
               )}
               {(() => {

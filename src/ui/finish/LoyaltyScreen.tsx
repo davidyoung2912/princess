@@ -113,7 +113,7 @@ function Friends({ v, reload }: { v: LoyaltyView; reload: () => void }) {
           <label htmlFor="loy-friend">{t('loy.invite.name')}</label>
           <input id="loy-friend" className="field__input" maxLength={40} autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-        <Button type="submit" variant="secondary" disabled={add.busy || !name.trim()}>{add.busy ? t('account.saving') : t('loy.invite.add')}</Button>
+        <Button type="submit" disabled={add.busy || !name.trim()}>{add.busy ? t('account.saving') : t('loy.invite.add')}</Button>
       </form>
       <p className="muted">{t('loy.invite.privacy')}</p>
     </>
@@ -175,7 +175,7 @@ function Report({ v, reload }: { v: LoyaltyView; reload: () => void }) {
           <textarea id="loy-note" className="field__input" rows={3} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         <ExtraError error={send.error} />
-        <Button type="submit" variant="secondary" disabled={send.busy}>{send.busy ? t('account.saving') : t('loy.report.send')}</Button>
+        <Button type="submit" disabled={send.busy}>{send.busy ? t('account.saving') : t('loy.report.send')}</Button>
         {sent && !send.error && <p role="status">{t('loy.report.sent')}</p>}
       </form>
       {v.reports.length > 0 && (

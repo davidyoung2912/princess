@@ -67,7 +67,7 @@ export function PackingScreen() {
                   <label htmlFor="pack-own">{t('pack.add.label')}</label>
                   <input id="pack-own" className="field__input" maxLength={60} value={own} onChange={(e) => setOwn(e.target.value)} />
                 </div>
-                <Button type="submit" variant="secondary" disabled={add.busy || !own.trim()}>{t('pack.add.go')}</Button>
+                <Button type="submit" disabled={add.busy || !own.trim()}>{t('pack.add.go')}</Button>
                 {add.error && <p role="alert">{t('pack.add.failed')}</p>}
               </form>
               {PACK_GROUPS.map((g) => {

@@ -70,7 +70,7 @@ export function ContactScreen() {
         <form onSubmit={(e) => void askCallback(e)} noValidate>
           <Field label={t('contact.phoneField')} help={t('helptip.callbackPhone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={phoneProblem ? t('contact.phoneProblem') : undefined} />
           <ActionError error={callback.error} />
-          <Button type="submit" variant="secondary" disabled={callback.busy}>{callback.busy ? t('account.saving') : t('contact.callbackButton')}</Button>
+          <Button type="submit" disabled={callback.busy}>{callback.busy ? t('account.saving') : t('contact.callbackButton')}</Button>
         </form>
       </section>
 
@@ -80,7 +80,7 @@ export function ContactScreen() {
           <TextArea label={t('contact.messageField')} hint={t('contact.messageHint', { address: SUPPORT_EMAIL })} value={message} maxLength={1000} onChange={(e) => setMessage(e.target.value)} />
           {messageProblem && <p role="alert" className="field__error">{t('contact.messageProblem')}</p>}
           <ActionError error={email.error} />
-          <Button type="submit" variant="secondary" disabled={email.busy}>{email.busy ? t('account.saving') : t('contact.emailButton')}</Button>
+          <Button type="submit" disabled={email.busy}>{email.busy ? t('account.saving') : t('contact.emailButton')}</Button>
         </form>
       </section>
       <SuccessLine>{sent ? t(`contact.sent.${sent}` as StringKey) : null}</SuccessLine>

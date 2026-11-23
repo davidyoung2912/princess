@@ -166,7 +166,7 @@ function Event({ e, inPlan, canEdit, busy, info, onToggle }: { e: DatedEvent; in
       {info && <SeatControl e={e} info={info} canEdit={canEdit} />}
       {canEdit && !cancelled && (
         <>
-          <Button variant="secondary" aria-pressed={inPlan} disabled={busy} onClick={onToggle}>
+          <Button aria-pressed={inPlan} disabled={busy} onClick={onToggle}>
             {t('onb.add')}<span className="visually-hidden"> {e.title}</span>
           </Button>
           {inPlan && <p className="muted">{t('onb.reminder', { minutes: REMINDER_MINUTES })}</p>}

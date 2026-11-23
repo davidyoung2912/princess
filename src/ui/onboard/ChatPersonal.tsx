@@ -78,7 +78,7 @@ export function NewPersonalChatPage() {
                 <h3 id="new-personal-find-h">{headingCase(t('cpersonal.findTitle'))}</h3>
                 <p className="muted">{t('cpersonal.findBody')}</p>
                 <Field label={t('people.search')} value={query} maxLength={254} autoComplete="off" error={searchError || undefined} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void search.run() } }} />
-                <Button type="button" variant="secondary" disabled={search.busy} onClick={() => void search.run()}>{t('cgroup.findGo')}</Button>
+                <Button type="button" disabled={search.busy} onClick={() => void search.run()}>{t('cgroup.findGo')}</Button>
                 <ActionError error={search.error} />
                 {nobody && <p className="muted">{t('cgroup.findNone')}</p>}
                 {results.length > 0 && (
@@ -100,7 +100,7 @@ export function NewPersonalChatPage() {
                   </ul>
                 )}
                 {problem && (problem === 'other' ? <ActionError error={ask.error} /> : <p role="alert" className="field__error">{t(`cpersonal.problem.${problem}` as StringKey)}</p>)}
-                <p className="muted">{t('cpersonal.askNote')}</p>
+                <p className="muted personal-note">{t('cpersonal.askNote')}</p>
               </Card>
             </>
           )
