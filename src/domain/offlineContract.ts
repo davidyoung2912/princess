@@ -208,6 +208,7 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/me/calm': 'needs-connection',
   '/me/assist': 'needs-connection',
   '/me/wrapped': 'needs-connection',
+  '/me/stats': 'needs-connection',
   '/me/diary': 'needs-connection',
   '/me/memories': 'needs-connection',
   '/me/recap': 'needs-connection',

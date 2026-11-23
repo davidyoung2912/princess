@@ -7,7 +7,7 @@ SQL Server (T-SQL). The scripts are plain `.sql` files that you run by hand; the
 | Order | File | What it does |
 | --- | --- | --- |
 | 0 (optional) | `00-drop-all.sql` | Test databases only. Drops every table the schema creates, plus the `ref` and `demo` schemas. |
-| 1 | `01-schema.sql` | Creates the `ref`, `dbo` and `demo` schemas and all 157 tables, keys, indexes, checks and defaults. Re-runnable: a table that exists is left alone. |
+| 1 | `01-schema.sql` | Creates the `ref`, `dbo` and `demo` schemas and all 159 tables, keys, indexes, checks and defaults. Re-runnable: a table that exists is left alone. |
 | 2 | `seed/reference/run-all.sql` | Phase 3. Reference data for all 38 `ref` tables (ship, ports, sailings, venues, excursions, fares, legal text and so on), nine files, run in order, then the generated catalogue (`seed/catalogue/generated/catalogue.sql`: regions, three ships, about 100 ports, itinerary patterns and 68 sample 2027 sailings; source JSON in `seed/catalogue`, regenerate with `npm run catalogue:gen`). |
 | 3 | `seed/personas/run-all.sql` | Phase 4. Resets then loads 34 demo people, 22 bookings and their journey data, in partial-completion states. Catalogue in `seed/personas/README.md`. |
 

@@ -8,6 +8,7 @@ import type { AboardApi } from './aboardTypes'
 import type { Api, Booking, Identity, ProgramView, TripsView } from './types'
 import type { Tier } from '../domain/people'
 import type { ChatTerm } from './chatTypes'
+import type { StatsApi } from './statsTypes'
 
 /** The groups of the `Api` that Phase 13 serves from the REST API (account, trips, payments, documents, notifications, support, privacy, budget). */
 export interface HttpGroups {
@@ -62,6 +63,7 @@ export interface HttpGroups {
   photos: Api['photos']
   laundry: Api['laundry']
   wifi: Api['wifi']
+  stats: StatsApi
   updates: Api['updates']
   /** The `aboard` group without `feedback` (Phase 13). */
   aboard: Omit<AboardApi, 'feedback'>
@@ -459,6 +461,10 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     photos,
     laundry,
     wifi,
+    stats: {
+      report: () => get('/me/stats'),
+      track: async (day, counters) => { await send('post', '/me/stats/track', { day, counters }) },
+    },
     updates,
     aboard,
     checkin,
@@ -818,6 +824,7 @@ export function toApi(g: HttpGroups): Api {
     photos: g.photos,
     laundry: g.laundry,
     wifi: g.wifi,
+    stats: g.stats,
     updates: g.updates,
     disembark: g.disembark,
     cases: g.cases,

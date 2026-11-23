@@ -84,6 +84,7 @@ export const HELDOUT_FRESH: Readonly<Record<string, string>> = {
   finalbill: 'how do I get my final bill',
   helper: 'can I let my daughter help manage my trip',
   history: 'show me my past cruises',
+  stats: 'can I see how much I have used the app',
   memories: 'can I see a recap of my trip',
   farewell: 'is there a way to say goodbye and thank the crew',
   afterillness: 'I feel ill after getting home from the cruise',

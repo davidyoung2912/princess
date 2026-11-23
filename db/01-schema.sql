@@ -4086,3 +4086,33 @@ CREATE TABLE dbo.StanleyOpsProposal (
 );
 END
 GO
+
+-- Your stats (docs/stats-plan.md): what the app itself sees a guest do. Everything else on the stats page is worked out from tables that already exist.
+-- One row per guest per counter (screen views, minutes in the app, hour of day, shares ...). The API only accepts keys of a fixed shape and caps how many a guest can have.
+IF OBJECT_ID(N'dbo.UserCounters', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.UserCounters (
+  UserId BIGINT NOT NULL,
+  CounterKey VARCHAR(40) NOT NULL,              -- 'opens', 'views', 'seconds', 'route.dining', 'hour.07', 'area.chat', 'shares' ...
+  [Value] BIGINT NOT NULL CONSTRAINT DF_UserCounters_Value DEFAULT 0,
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_UserCounters_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_UserCounters PRIMARY KEY (UserId, CounterKey),
+  CONSTRAINT FK_UserCounters_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO
+
+-- One row per guest per calendar day they used the app (the day as the guest's device saw it): drives streaks, busiest weekday and longest day.
+IF OBJECT_ID(N'dbo.UserDays', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.UserDays (
+  UserId BIGINT NOT NULL,
+  [Day] DATE NOT NULL,
+  Seconds INT NOT NULL CONSTRAINT DF_UserDays_Seconds DEFAULT 0,
+  Views INT NOT NULL CONSTRAINT DF_UserDays_Views DEFAULT 0,
+  Opens INT NOT NULL CONSTRAINT DF_UserDays_Opens DEFAULT 0,
+  CONSTRAINT PK_UserDays PRIMARY KEY (UserId, [Day]),
+  CONSTRAINT FK_UserDays_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO

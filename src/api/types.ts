@@ -1,3 +1,4 @@
+import type { StatsApi } from './statsTypes'
 import type { ExplorerDay, SavedItemView, VenueDay } from './explorerTypes'
 import type { SpaSlot, SpaView } from './spaTypes'
 import type { ExplorerKind } from '../domain/explorer/types'
@@ -778,6 +779,7 @@ export interface Api {
     setBags(dropped: boolean): Promise<EmbarkView>
   }
   orders: OrdersApi
+  stats: StatsApi
   messages: {
     /** Whether the signed-in person shows and sees read receipts. */
     receipts(): Promise<boolean>

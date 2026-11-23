@@ -1,0 +1,14 @@
+/* Your stats (docs/stats-plan.md): a grid of tiles, made-up ones with a dashed edge and a label so they are never mistaken for data. */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: var(--space-3); margin: var(--space-3) 0; padding: 0; }
+.stats-grid--top { grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); }
+.stat { position: relative; margin: 0; padding: var(--space-3); padding-right: calc(var(--space-3) + var(--target-min)); background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-md, 12px); min-width: 0; }
+.stat--joke { border-style: dashed; background: color-mix(in srgb, var(--gold, #f5c542) 10%, var(--surface)); }
+.stat__label { margin: 0; font-size: 0.875rem; color: var(--muted, inherit); }
+.stat__value { margin: var(--space-1) 0 0; font-size: 1.25rem; font-weight: 700; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-2); overflow-wrap: anywhere; }
+.stat__note { flex-basis: 100%; font-size: 0.8125rem; font-weight: 400; }
+.stat__tag { font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+.stat__share { position: absolute; top: 0; right: 0; width: var(--target-min); height: var(--target-min); display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; border-radius: var(--radius-md, 12px); color: var(--primary); font-size: 1.125rem; cursor: pointer; }
+.stat__share:is(:hover, :focus-visible) { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.stats-section--joke .card__title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.stats-section :target { scroll-margin-top: var(--space-6); }
+@media print { .stat__share { display: none; } }

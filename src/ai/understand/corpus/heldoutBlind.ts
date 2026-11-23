@@ -86,6 +86,7 @@ export const HELDOUT_BLIND: Readonly<Record<string, string>> = {
   finalbill: 'when do I get the last statement|what will my closing invoice look like|how do I settle up at the end of the trip',
   helper: 'my parent helps me with this, how do I let them in|add a relative to look after my arrangements|let a family member manage things for me',
   history: 'what did I do on my last cruise|my previous voyages|look back at the trips I have taken',
+  stats: 'what are my numbers for this app|show me the figures about how I use things|how many days in a row have I opened this',
   memories: 'show me the highlights of my trip|a keepsake of my cruise|collect my best moments',
   farewell: 'we are about to leave, is there a goodbye message|say goodbye to the crew|a thank you to the staff at the end',
   afterillness: 'I got sick after I came home|I feel unwell since the cruise ended|what do I do if I have symptoms after disembarking',

@@ -230,6 +230,8 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'PortRows'),
   (N'dbo', N'BookingState'),
   (N'dbo', N'UserState'),
+  (N'dbo', N'UserCounters'),
+  (N'dbo', N'UserDays'),
   (N'dbo', N'ServiceRequestEvents'),
   (N'dbo', N'ServiceRequests'),
   (N'dbo', N'SafetyReports'),

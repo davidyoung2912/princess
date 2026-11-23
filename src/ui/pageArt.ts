@@ -51,7 +51,7 @@ const AREAS: Array<[string[], PageArt]> = [
   [['/ship/wifi', '/ship/tv', '/plan/phone', '/me/settings', '/me/privacy', '/me/print', '/me/marketing'], { head: 'maintenance' }],
   [['/ship/games'], { head: 'gaming' }],
   [['/ship/community'], { pose: 'theatre' }],
-  [['/me/diary', '/me/recap', '/me/wrapped', '/me/history', '/me/trips', '/ship/read-aloud', '/ship/you-said'], { pose: 'camera' }],
+  [['/me/diary', '/me/recap', '/me/wrapped', '/me/stats', '/me/history', '/me/trips', '/ship/read-aloud', '/ship/you-said'], { pose: 'camera' }],
   [['/me/profile', '/me/helper', '/me/stanley-can', '/me/stanley-activity', '/me/reminders', '/me/demo', '/me/contact', '/account'], { head: 'stanley' }],
   [['/me/feedback', '/me/sustainability'], { head: 'proud' }],
 ]

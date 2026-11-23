@@ -240,6 +240,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'M43', path: '/me/stanley-can', titleKey: 'screen.M43.title', subtextKey: 'screen.M43.subtext', family: 'M' },
   { id: 'M44', path: '/me/stanley-activity', titleKey: 'screen.M44.title', subtextKey: 'screen.M44.subtext', family: 'M' },
   { id: 'M45', path: '/me/reminders', titleKey: 'screen.M45.title', subtextKey: 'screen.M45.subtext', family: 'M' },
+  { id: 'M46', path: '/me/stats', titleKey: 'screen.M46.title', subtextKey: 'screen.M46.subtext', family: 'M' },
   { id: 'M41', path: '/me/demo', titleKey: 'screen.M41.title', subtextKey: 'screen.M41.subtext', family: 'M' },
   { id: 'X01', path: '/kit', titleKey: 'screen.X01.title', subtextKey: 'screen.X01.subtext', family: 'X' },
   { id: 'X02', path: '/trial-day', titleKey: 'screen.X02.title', subtextKey: 'screen.X02.subtext', family: 'X' },
@@ -305,7 +306,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Explore', colour: 'teal', subtext: 'Browse the cruise, the sailings and the ports.', screens: ['H06', 'H07', 'H50', 'H08', 'H52', 'H54', 'H09', 'H53', 'H47', 'H49', 'H48', 'H11', 'H51', 'P04', 'X02', 'X20', 'X16', 'S01', 'S02'] },
       { label: 'Ask', colour: 'pink', subtext: 'Get answers and advice before you decide.', screens: ['H04', 'H03', 'H02', 'H13', 'P21', 'P49', 'P50'] },
     ],
-    me: { subtext: 'Your details and the sailings you have saved.', screens: ['H11', 'H51', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your details and the sailings you have saved.', screens: ['H11', 'H51', 'M46', ...SETTINGS_AND_HELP] },
   },
   discover: {
     homeSubtext: 'Your sailing, its real cost and your room, in one place.',
@@ -315,7 +316,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Cabin', colour: 'pink', subtext: 'Pick the room that suits you.', screens: ['H14', 'P19', 'H13'] },
       { label: 'Cost', colour: 'gold', subtext: 'The real, all-in price, and ways to pay less.', screens: ['H12', 'H15', 'P17', 'P18', 'H16', 'H03', 'H04'] },
     ],
-    me: { subtext: 'Your saved sailings, price watches and details.', screens: ['H11', 'H51', 'P17', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your saved sailings, price watches and details.', screens: ['H11', 'H51', 'P17', 'M46', ...SETTINGS_AND_HELP] },
   },
   book: {
     homeSubtext: 'Finish booking. Nothing is lost if you stop.',
@@ -325,7 +326,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Travellers', colour: 'pink', subtext: 'Who is going, and what each person needs.', screens: ['P47', 'M05', 'P09', 'P10', 'P11', 'P46'] },
       { label: 'Pay', colour: 'gold', subtext: 'Deposit, balance and sharing the cost.', screens: ['H19', 'P14', 'P15', 'P16', 'M07'] },
     ],
-    me: { subtext: 'Your draft, payments and travellers\' details.', screens: ['M02', 'M07', 'P13', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your draft, payments and travellers\' details.', screens: ['M02', 'M07', 'P13', 'M46', ...SETTINGS_AND_HELP] },
   },
   manage: {
     homeSubtext: 'Your booking is confirmed. Here is what needs you next.',
@@ -335,7 +336,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Needs', colour: 'pink', subtext: 'Documents, health and access for every traveller.', screens: ['M06', 'M05', 'P12', 'P08', 'P09', 'P10', 'P11', 'P07', 'H38'] },
       { label: 'Group', colour: 'gold', subtext: 'Your travel party and the people at home.', screens: ['P47', 'P48', 'P49', 'P50', 'P43', 'P46', 'P51', 'P52', 'M14'] },
     ],
-    me: { subtext: 'Payments, documents and what is due.', screens: ['M02', 'M03', 'M06', 'M07', 'M09', 'P13', 'P14', 'P12', 'P15', 'P16', 'P17', 'P18', 'M14', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Payments, documents and what is due.', screens: ['M02', 'M03', 'M06', 'M07', 'M09', 'P13', 'P14', 'P12', 'P15', 'P16', 'P17', 'P18', 'M14', 'M46', ...SETTINGS_AND_HELP] },
   },
   prebook: {
     homeSubtext: 'Shape your days before you sail.',
@@ -345,7 +346,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Prepare', colour: 'pink', subtext: 'Pack, travel and sort things at home.', screens: ['P01', 'P02', 'P03', 'P05', 'P07', 'P29', 'P31', 'P33', 'H38', 'H24', 'S45'] },
       { label: 'Group', colour: 'gold', subtext: 'Your travel party and the people at home.', screens: ['P47', 'P48', 'P49', 'P50', 'P43', 'P46', 'P51', 'P52', 'M14'] },
     ],
-    me: { subtext: 'Payments, documents, packages and rewards.', screens: ['M02', 'M03', 'M06', 'M07', 'M08', 'M09', 'P13', 'P14', 'P12', 'P15', 'P16', 'P17', 'P18', 'M14', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Payments, documents, packages and rewards.', screens: ['M02', 'M03', 'M06', 'M07', 'M08', 'M09', 'P13', 'P14', 'P12', 'P15', 'P16', 'P17', 'P18', 'M14', 'M46', ...SETTINGS_AND_HELP] },
   },
   getToShip: {
     homeSubtext: 'Get to the ship with time to spare.',
@@ -355,7 +356,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Travel', colour: 'pink', subtext: 'Getting to the ship, on time, and what to do if plans change.', screens: ['P29', 'P30', 'P31', 'P32', 'H24', 'H25', 'H38', 'P22', 'P33'] },
       { label: 'Plan', colour: 'teal', subtext: 'Book excursions and dining and shape your days.', screens: ['P01', 'P02', 'P03', 'P05', 'P07', 'P35', 'P36', 'X28', 'X13', 'P26', 'P24', 'P23', 'P25', 'P47', 'P48', 'X20', 'X16', 'S01', 'S02'] },
     ],
-    me: { subtext: 'Your documents and anything still to settle.', screens: ['M02', 'M03', 'M06', 'M07', 'M08', 'P13', 'P12', 'M14', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your documents and anything still to settle.', screens: ['M02', 'M03', 'M06', 'M07', 'M08', 'P13', 'P12', 'M14', 'M46', ...SETTINGS_AND_HELP] },
   },
   embark: {
     homeSubtext: 'Welcome aboard. One step at a time.',
@@ -365,7 +366,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S14', 'S15', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16'] },
       { label: 'Plan', colour: 'teal', subtext: 'Book excursions and dining and shape your days.', screens: ['P35', 'P36', 'X28', 'X13', 'P34', 'P26'] },
     ],
-    me: { subtext: 'Your account on board: bill, top-up and help.', screens: ['M10', 'M12', 'M11', 'M08', 'M02', 'M06', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your account on board: bill, top-up and help.', screens: ['M10', 'M12', 'M11', 'M08', 'M02', 'M06', 'M46', ...SETTINGS_AND_HELP] },
   },
   sea: {
     homeSubtext: 'Today on board, and what is next.',
@@ -375,7 +376,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16'] },
       { label: 'People', colour: 'gold', subtext: 'Your family, your group and the community.', screens: ['S40', 'S41', 'S42', 'S43', 'S44', 'S45', 'S46', 'S47', 'S48', 'S49', 'P27', 'P47', 'P43', 'P45'] },
     ],
-    me: { subtext: 'Your bill, your spending and anything to sort out.', screens: ['M10', 'M11', 'M12', 'M08', 'M24', 'M02', 'M06', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your bill, your spending and anything to sort out.', screens: ['M10', 'M11', 'M12', 'M08', 'M24', 'M02', 'M06', 'M46', ...SETTINGS_AND_HELP] },
   },
   port: {
     homeSubtext: 'Your day ashore, and when to be back.',
@@ -385,7 +386,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16'] },
       { label: 'People', colour: 'gold', subtext: 'Your family, your group and the community.', screens: ['S40', 'S41', 'S42', 'S43', 'S44', 'S45', 'S46', 'S47', 'S48', 'S49', 'P27', 'P47', 'P43', 'P45'] },
     ],
-    me: { subtext: 'Your bill, your spending and anything to sort out.', screens: ['M10', 'M11', 'M12', 'M08', 'M24', 'M02', 'M06', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your bill, your spending and anything to sort out.', screens: ['M10', 'M11', 'M12', 'M08', 'M24', 'M02', 'M06', 'M46', ...SETTINGS_AND_HELP] },
   },
   disembark: {
     homeSubtext: 'Getting home: your exit, your bags and your bill.',
@@ -395,7 +396,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S15', 'S21', 'S23', 'S26', 'S27', 'S28', 'S30', 'S34', 'X20', 'X16'] },
       { label: 'People', colour: 'gold', subtext: 'Your family, your group and the community.', screens: ['S40', 'S47', 'S48'] },
     ],
-    me: { subtext: 'Your final bill, your receipts and goodbye.', screens: ['M13', 'M10', 'M11', 'M12', 'M20', 'M24', 'M19', 'M02', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your final bill, your receipts and goodbye.', screens: ['M13', 'M10', 'M11', 'M12', 'M20', 'M24', 'M19', 'M02', 'M46', ...SETTINGS_AND_HELP] },
   },
   remember: {
     homeSubtext: 'Your trip, and where to next.',
@@ -405,7 +406,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
       { label: 'Next', colour: 'pink', subtext: 'Where to next.', screens: ['M22', 'H06', 'H07', 'H50', 'H08', 'H09', 'H52', 'H53', 'H54', 'H47', 'H11', 'H02', 'H13', 'H04', 'P28', 'P04', 'M09', 'X20', 'X16'] },
       { label: 'Feedback', colour: 'gold', subtext: 'Tell us how it went.', screens: ['M19', 'M21', 'M20', 'M23', 'M24'] },
     ],
-    me: { subtext: 'Your history, receipts, rewards and settings.', screens: ['M15', 'M13', 'M09', 'M06', 'M02', 'M03', 'P13', 'H20', ...SETTINGS_AND_HELP] },
+    me: { subtext: 'Your history, receipts, rewards and settings.', screens: ['M15', 'M13', 'M09', 'M06', 'M02', 'M03', 'P13', 'H20', 'M46', ...SETTINGS_AND_HELP] },
   },
 }
 

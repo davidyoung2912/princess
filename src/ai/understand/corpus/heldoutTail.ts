@@ -81,6 +81,7 @@ export const HELDOUT_TAIL: Readonly<Record<string, string>> = {
   finalbill: 'where is the final statement|show my final bill|receipts for my expenses',
   helper: 'can a family member manage my trip for me|nominate a helper|let my son manage my booking',
   history: 'list my past cruises|where are my previous trips|what cruises have I taken',
+  stats: 'show me my stats|how many messages have I sent|what badges have I earned',
   memories: 'show my trip memories|a recap of my cruise|open the memory book',
   farewell: 'help me say a farewell|how do I thank the crew|leave a thank you for the team',
   afterillness: 'I got ill after the cruise|I am sick after getting home|symptoms after the trip',

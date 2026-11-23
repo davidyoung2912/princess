@@ -8,6 +8,7 @@ import { getContext, subscribeContext } from '../account/context'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
 import { track } from '../diagnostics/watch'
 import { usePushSync } from '../hooks/usePushSync'
+import { useStatsTracker } from '../hooks/useStatsTracker'
 import { useStanleyLevelSync } from '../hooks/useStanleyLevelSync'
 import { t, th } from '../i18n'
 import { routeForPath } from '../routes/nav'
@@ -92,6 +93,7 @@ export function Shell() {
   const dot = useSyncExternalStore(subscribeDot, dotVisible, () => false)
   const stanleyOff = stanleyLevelFor(settings) === 'off'
   usePushSync()
+  useStatsTracker()
   useStanleyLevelSync()
   const main = useRef<HTMLElement>(null)
   const first = useRef(true)

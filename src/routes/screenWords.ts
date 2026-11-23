@@ -198,6 +198,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/me/calm': 'calm; inclusion; quiet mode; fewer alerts; sensory',
   '/me/assist': 'extra help; cancel kindly; cancelling; cancel a booking',
   '/me/wrapped': 'cruise wrapped; year in review; highlights; stats',
+  '/me/stats': 'my stats; statistics; how much do i use the app; logins; streak; messages sent; badges; fun facts; made up stats; share my stats; leaderboard; achievements',
   '/me/diary': 'trip diary; journal; notes; timeline; search my trip; quick diary',
   '/me/memories': 'memory book; memories; next trip; keepsake; scrapbook',
   '/me/recap': 'trip memories; recap; photos and notes; after the trip',
