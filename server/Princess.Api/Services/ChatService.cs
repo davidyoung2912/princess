@@ -138,6 +138,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             // Stanley has no user: his messages (and the lines marking a change of voice) are shown as his, under the subtitle they were sent with.
             if (m.FromStanley)
             {
+                if (m.DeletedAt is not null) continue;   // a deleted Stanley message leaves the thread altogether (its row stays so a notice is not posted twice)
                 if (!ChatConversationRules.IsPermanent(member.Kind) && member.StanleyMuted) continue;   // this member chose not to see his answers here
                 var expired = m.ExpiresAt is { } e && e <= now;
                 var replaced = m.SupersededAt is not null;

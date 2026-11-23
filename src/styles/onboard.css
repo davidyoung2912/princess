@@ -858,3 +858,10 @@ button.chat-quote { cursor: pointer; }
 .conv-actions { margin-block-start: var(--space-5); }
 .chat-typing-card { scroll-margin-block-end: var(--space-6); }
 .leave-chat { margin-block: var(--space-3) var(--space-4); }
+
+/* Buttons inside a Stanley card share one size and one gap: the offers, the reply chips and Got it sit in the same wrapping row, none stretched across the card. */
+.chat-msg--stanley .chat-notice-offers { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-3); }
+.chat-msg--stanley .chat-notice-offers .chip-row { display: contents; }
+.chat-msg--stanley .chat-notice-offers > p { flex-basis: 100%; margin: 0; }
+.chat-msg--stanley .button-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 0; }
+.chat-msg--stanley .btn { min-height: 2.5rem; width: auto; flex: 0 0 auto; }
