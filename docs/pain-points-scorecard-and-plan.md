@@ -378,7 +378,7 @@ Ranked by (passenger impact × how directly the research names it × effort). "E
 | ID | Gap | Research rows it lifts | Effort | Why this rank |
 | --- | --- | --- | :---: | --- |
 | G-01 | **Pilot honesty banner and per-source provenance** ("Sample data" vs "Confirmed by Princess"), driven by the server so the front end does not know | 1, 5.2, 10 | S | Research says never imply an unconfirmed action succeeded. Cheap, and it protects the proposal. Must be a server flag, per CLAUDE.md. |
-| G-02 | **"Download my cruise"**: ahead-of-time fetch of itinerary, port guides, reservations, party, schedule, with size, progress, per-port choice, failed-section list; bulk store in IndexedDB | 4 | L | The research's headline differentiator and its stated exit criterion. |
+| G-02 | **"Download my cruise"**: ahead-of-time fetch of itinerary, port guides, reservations, party, schedule, with size, progress, per-port choice, failed-section list; bulk store stays on current storage for now (IndexedDB deferred) | 4 | L | The research's headline differentiator and its stated exit criterion. |
 | G-03 | **Context restoration**: scroll position and list filters preserved on back, in the URL where possible | 6, 3, 7, 8 | M | The exact complaint quoted from Reddit; hits four areas at once. |
 | G-04 | **Trip switcher** and multi-booking list | 1, 6 | M | Needed by anyone with two sailings; research req 1.1 and 6.2. |
 | G-05 | **Explain refusals**: dining eligibility (three distinct reasons), loyalty "why not", booking-link failure states | 9, 10, 1 | M | Passengers' loudest dining and linking complaints. |
@@ -402,20 +402,22 @@ Follows the project rule: build one phase, run `npm run test`, `npm run lint`, `
 | **R1** | Continuity | G-03, G-14 | A route-scoped scroll and list state store; restore on back; filters into the URL on explorer, reservations, schedule and ports; queue favourites and notes in the outbox; "What is fresh" panel on Me. Tests: store round-trips, every list screen declares its restore key. | Areas 6, 3, 7, 8 each up about half a grade |
 | **R2** | Explain the refusal | G-05, G-13 | Server returns a `reason` for dining, loyalty and booking-link refusals; front end shows plain words, a next step and a reference ID; six-state linking flow; check-in contradiction flags. | Areas 1, 5, 9, 10 |
 | **R3** | Trips and Voyage | G-04, G-08, G-09 | Trip list and switcher; one Voyage screen with filters, compact/day toggle, reservation search in the index, "what changed" strip; schedule status field and performer search. | Areas 1, 3, 8 |
-| **R4** | Download my cruise | G-02 | IndexedDB module for bulk copies; a pack manifest from the server (items, sizes, ages); download with progress, per-port choice, resume, failed sections; storage warning; logout cleanup; test that every must-work screen reads from the pack. | Area 4 to A |
+| **R4** | Download my cruise | G-02 | a pack manifest from the server (items, sizes, ages); download with progress, per-port choice, resume, failed sections; storage warning; logout cleanup; test that every must-work screen reads from the pack. | Area 4 to A |
 | **R5** | One party hub | G-06 | Party becomes a labelled destination; one invite sheet (link, QR, email, `navigator.share`); per-person permission sheet; party picker in dining and excursion booking; wire a decided chat poll to a booking request. | Area 2, 9 |
-| **R6** | Meet and find | G-07, G-11 | Named-place sharing with expiry; step-free routing and "route to my next event"; map pin in place cards; optional device location behind an off-by-default, time-boxed switch (decision needed, see 6). | Areas 2, 11 |
+| **R6** | Meet and find | G-07 (named place only), G-11 | Named-place sharing with expiry; step-free routing and "route to my next event"; map pin in place cards. Device location is parked (section 6). | Areas 2, 11 |
 | **R7** | Provenance and support | G-01, G-12 | Server `provenance` on every record (confirmed, sample, pending); front-end badge; service-notice banner; screenshot attach with redaction; "who will answer" on cases. | Areas 1, 14, 5.2 |
 | **R8** | Measure and walk | G-10, G-15 | Task-funnel events and a baseline script; run the release-scorecard Walk rows; fix what the walk finds. | Everything to A+ |
 
 Order reasoning: R1 and R2 are cheap and hit the loudest complaints. R3 and R4 are the two largest passenger-visible wins (one view, offline). R5 and R6 are the biggest builds and depend on R2's party picker work and R3's Voyage. R7 is small but should land before any external demo. R8 is last because walks should test finished work, but **start booking R8's device sessions now** since they depend on people and dates.
 
-## 6. Decisions I need from you
+## 6. Decisions (answered 2026-11-23)
 
-1. **Location (R6):** build device-location sharing at all, or stop at named-place sharing? The research warns browsers cannot match Medallion. My recommendation: named-place sharing first, device location only as an off-by-default, 2-hour, port-day option later.
-2. **Navigation names (3.6):** keep Home / Plan / Ship / Chat / Me, or rename toward Today / Voyage / Explore / Party / Help? My recommendation: keep ours, and surface **Party** inside Plan and Chat headers, because the two-tap tests already pass.
-3. **Storage (R4):** moving bulk copies to IndexedDB is a breaking change to the saved-copy format. Acceptable, given there are no real users yet?
-4. **Provenance (R7):** is a visible "sample data" label acceptable in pilot screenshots?
+1. **Location (R6): not yet.** Build named-place sharing only ("I'm at the Piazza until 6 pm"). Device location sharing is out of scope until the owner reopens it. G-07's second step is parked.
+2. **Navigation names: keep Home / Plan / Ship / Chat / Me.** Surface **Party** inside the Plan and Chat headers instead of renaming tabs.
+3. **IndexedDB: deferred.** Do not migrate the saved-copy format now. R4 builds the download pack on the current storage and only revisits IndexedDB if the pack outgrows localStorage.
+4. **Sample-data label: yes.** A visible "sample data" label is acceptable in pilot screenshots (R7 proceeds as planned).
+
+Effect on the plan: R6 shrinks to named-place sharing, step-free routing, "route to my next event" and the map pin. R4 drops the IndexedDB module.
 
 ## 7. What I am least sure about
 
