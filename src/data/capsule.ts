@@ -1,5 +1,6 @@
 import { demoNow } from '../demo/store'
-import { CACHE_PREFIX } from '../domain/offlineCache'
+import { CACHE_PREFIX, cachePut } from '../domain/offlineCache'
+import { parseResult, type PackResult } from './cruisePack'
 import { buildCapsule, DEFAULT_PREFS, isKept, parsePrefs, readCapsuleEntries, type Capsule, type CapsulePrefs, type StorageReport } from '../domain/offlineCapsule'
 
 const local = (): Storage | null => {
@@ -50,3 +51,21 @@ export function dropCopies(kind: string): number {
   for (const k of keys) { try { s.removeItem(k) } catch { /* ignore */ } }
   return keys.length
 }
+
+/** Keeps a downloaded view under the name the screens read. `kept` is false when the phone refuses it (full or private mode). */
+export function keepCopy(kind: string, key: string, value: unknown, at: number): { kept: boolean; bytes: number } {
+  const kept = cachePut(local(), kind, key, value, at)
+  return { kept, bytes: kept ? (CACHE_PREFIX.length + kind.length + key.length + JSON.stringify(value).length + 40) * 2 : 0 }
+}
+
+/** The size of each kept copy by `kind:key`, for an honest estimate before a download. */
+export function keptSizes(): Map<string, number> {
+  const out = new Map<string, number>()
+  for (const e of readCapsuleEntries(local())) if (e.key.startsWith(CACHE_PREFIX)) out.set(e.key.slice(CACHE_PREFIX.length), e.bytes)
+  return out
+}
+
+const PACK_KEY = 'princess:pack-last'
+/** The last "Download my cruise" result on this phone, or null. */
+export const readPackResult = (): PackResult | null => { try { return parseResult(local()?.getItem(PACK_KEY)) } catch { return null } }
+export function writePackResult(r: PackResult): void { try { local()?.setItem(PACK_KEY, JSON.stringify(r)) } catch { /* the result is shown for this visit only */ } }

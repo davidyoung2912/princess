@@ -36,3 +36,16 @@ Open:
 - The schedule status uses an authored rule (final from 6 pm the evening before). A real source would state it per day ("updated", "final") with a publish time; there is no "updated" state, and the ship's own cancel or move notices are separate.
 - No per-item freshness on the list: it shows one copy age for dining; spa and tours load live.
 - No compact agenda by day-strip or "next up" pin; the compact view only hides actions and details.
+
+## R4 Download my cruise
+
+Built: a "Download my cruise" card on the Phone screen above the saved-copy card (`CruisePackCard`, `useCruisePack`, `src/data/cruisePack.ts`). It reads, with a connection, the pass, muster and emergency cards, embarkation, check-in receipt, health card, dinners, spa, cabin, family, every day's programme, shore tours per port day, the bill and the going-home views, and keeps each under the exact name the screen reads, so those screens open from the copy. The guest picks sections and leaves out ports, sees an estimate, sees progress, can stop, sees what was and was not saved with a reason (no room, not published yet, could not reach), and can retry only the failures. The last result is kept on the phone. Items the guest switched off in the saved-copy list are skipped. Storage stays on the current format (IndexedDB deferred by the owner).
+
+Open:
+- Port guides, the Stanley port pack (`portPack`), deck-plan images and venue menus are not in the pack: the app bundle carries deck plans and venues, the port pack is fetched per day by its own screen. Add the port pack to the tours section.
+- Party plans, shared boards, chat history and notes are not downloaded (chat has its own cache).
+- The estimate is a typical size per item until a copy exists; it is not a measured size and does not check free space against the quota before starting.
+- No prompt to download before sailing (a Home card at 14 days and again the day before) and no automatic refresh; the guest has to open the Phone screen.
+- The "not available yet" cases (a pass before check-in) are listed as failures rather than "will download when ready"; a scheduled re-try when the item opens is not built.
+- Copies expire by kind (programme in 3 days). A download well before sailing therefore needs refreshing close to it; the card says copies show their age but does not remind.
+- Not walked in airplane mode on a phone.
