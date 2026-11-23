@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc -b
+      - run: npm run test
+      - run: npm run build
+      - run: npm run bundle:check
+      - run: npm audit --omit=dev --audit-level=high
+
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - run: dotnet build server/Princess.sln --configuration Release
+      - run: dotnet list server/Princess.sln package --vulnerable --include-transitive
+      # The API tests are not run here yet: 31 of 1,774 failed in the last recorded run (2026-11-08, see docs/review-and-completeness-plan.md, Phase F).
+      # Run them by name, then switch this job to `dotnet test` once they pass.

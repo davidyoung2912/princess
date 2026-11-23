@@ -34,3 +34,7 @@ dist-ssr
 bin/
 obj/
 !server/Princess.sln
+
+# Local test run output
+test-results*.txt
+server/TestResults/

@@ -27,7 +27,7 @@ Status key: [ ] not started, [~] in progress, [x] done.
 | C | 13: stats page integrity | audit, fixes | [x] |
 | D | 1: security | review, fixes | [x] |
 | E | 2: performance | review, budgets, reduction plan | [x] |
-| F | 3: code health (outside-reviewer view) | review, fixes, scorecard | [ ] |
+| F | 3: code health (outside-reviewer view) | review, fixes, scorecard | [x] |
 | G | 8, 9: pages per stage, journey guidance | review, new guidance | [ ] |
 | H | 10, 11: chat and day planning | review, improvements | [ ] |
 | I | 12: guided tour coverage | tour content | [ ] |
@@ -105,3 +105,31 @@ Measured with `npm run build` and `npm run bundle:check` (no browser).
 4. *Precache by stage.* Precaching 5.9 MB on first visit is heavy on a ship's slow Wi-Fi; precache the shell and the current stage's screens and cache the rest as used.
 
 **Back end.** Already done in the earlier plan: compression, ETags on reference reads, background audit writes, batched state reads. Checked here: the schema has 188 indexes, including the hot paths (`ChatMessages (GroupId, At)`, `Orders (BookingId, PlacedAt)`, five `AuditEvents` indexes); no `SELECT *` in the data layer; interpolated SQL only splices constant column lists. The stats page runs one 107-sub-select batch per view with substring `LIKE` scans over the guest's own chat messages: bounded by one guest's rows, but it is uncached, so a short per-guest cache (60 s) would remove repeat cost if the page is refreshed often. The excursion catalogue wiring (Phase B) must keep `DayOf`-style lookups off the full 172-tour list (filter by port first).
+
+### Phase F: code health, as an outside professional reviewer would see it (step 3)
+
+**Measured.** 2,828 tracked files; 1,196 non-test TypeScript files and 478 front-end test files (4,537 tests passing, 3 skipped); 480 C# files (187 in `Domain`) and 192 C# test files; `tsc -b` clean; Oxlint 0 errors; `npm audit` 0 vulnerabilities; no `any` in the source (the grep hits were prose in comments); 3 TODO or FIXME comments in all of `src` and `server/Princess.Api`; 38 lint suppressions (12 on accessibility rules, 8 each on `set-state-in-effect` and `exhaustive-deps`), each on its own line; the front end is a thin client over typed API contracts, with framework-free logic in `src/domain` and its own unit tests; the architecture is documented (README, `server/README.md`, `db/README.md`, about 100 files in `docs/`).
+
+**Grades an outside reviewer would likely give** (A strong, B good, C acceptable with caveats, D weak, F missing):
+
+| Area | Grade | Why |
+| --- | --- | --- |
+| Architecture and separation | A- | Thin client, pure domain modules, secure-by-default API, providers behind interfaces with contract tests, rules separate from stores. |
+| Type safety and static checks | A | Strict TypeScript, no `any`, `tsc -b` clean, lint clean of errors, tests that read the source for banned patterns. |
+| Tests | B+ | Very broad (thousands of tests, content-integrity and traceability tests); no coverage measurement; the API tests are not run in CI and the last recorded run failed 31 of 1,774 (below); no browser end-to-end tests by the owner's rule. |
+| Security | B+ | See Phase D: strong; refresh token in web storage and per-process limiter state are the notable gaps. |
+| Accessibility | B+ | Contrast reports, focus-trapped dialogs, reduced motion, ARIA grids. Lint noise on the puzzle grids (false positives) is now scoped out. |
+| Delivery and repo hygiene | C | There was no CI at all, a committed UTF-16 test log with failures, a placeholder `security.txt`, no LICENSE, CONTRIBUTING or CHANGELOG, a `.bat` launcher at the root. |
+| Maintainability hotspots | C | `PortsReference.cs` is 5,588 lines of data written as code (should be JSON content like the other guides); `ChatConversations.tsx` 1,675 lines; `DapperAboardStore.cs` 1,289; `types.ts` 1,377; the 13,400-line `enCore.ts`. |
+| Performance discipline | C+ | Budgets existed but were failing unnoticed (Phase E); first load 822 kB gzip. |
+| Documentation | B | Plenty, but about 100 planning documents with overlapping scorecards (`release-scorecard`, `a-tier-matrix`, `best-in-market-*`) and a short README; a newcomer cannot tell which are current. |
+| Data and content integrity | B | Generated files checked against their generators; content is authored concept data with `(verify)` markers and an open verification list (`docs/content-verification.md`). |
+
+Overall: a strong engineering core that an outside reviewer would rate **B to B+**, held back by delivery hygiene (now partly fixed), a few very large files, unrun API tests and stale or duplicated documents.
+
+**Fixed in this phase.**
+- Added `.github/workflows/ci.yml`: lint, `tsc -b`, tests, build, bundle budget and a production `npm audit` for the front end; `dotnet build` and a vulnerable-package listing for the API (API tests deliberately not run until they pass).
+- Removed the committed `server/test-results.txt` (a UTF-16 run from 2026-11-08 that recorded 31 failures of 1,774) and ignored such files from now on. The failing tests it listed, so they are not lost: `ProviderContractTests` (EveryImplementationHonoursItsContract twice, TheConciergeModelAndLimiterFollowConfiguration), `ProviderGuardTests.ConfigurationSwitchesWeatherToOpenMeteo`, `AutopilotRulesTests.RestBlocksMustBeKnownPartsOnCruiseDaysOncePerDay`, `OnboardRulesTests.ADayOutsideTheCruiseHasNothingOn` (index out of range in `Timeline.AllAboardAt`), `PushRulesTests.AReminderSpeaksOnceTheTimeHasPassed...`, `AheadRulesTests` (two), `ShipboardRulesTests.PhotosAppearAsTheCruiseGoesOn`, `RecentStateRulesTests.UpToThreeAppAddressesAreAccepted`, `ReferenceRulesTests.AccessibleCategoriesLeaveOutTheTwoTopSuites`, `MediaRulesTests.TheReferenceMustFitThePurpose`, `OnboardFeedTests` (three), `ContextTests`, `SwaggerCoverageTests.OnlySailingsAndHelpContactsAreOpenToTheWorld`, and 12 API tests (`ConciergeApiTests`, `OnboardFeedApiTests`, `DemoApiTests`, `StanleyApiTests`, `OnboardApiTests`, `ShipboardApiTests`). The run is three weeks old and many may be fixed; the first job when `dotnet` is available is a run of these classes by name.
+- Scoped the 38 `jsx-a11y` warnings on the puzzle grids out with a documented override: those grids use the valid roving-tabindex pattern (one cell `tabIndex=0`, the container handles keys), which the rule cannot see. Lint now shows 14 warnings, all real (components created during render in `PillIcon` and `VenueDetailPage`, `setState` in effects in `NicknameField` and `ContactSteps`, `Date.now()` during render in `GuideStanley`, a use-before-initialised callback in `ChatConversations`, fast-refresh export warnings).
+
+**Open, in priority order:** (1) run and fix the 31 API tests; (2) move `PortsReference.cs` data to a JSON content file with a generator and a test; (3) fix the 14 real lint warnings (the `GuideStanley` and `ChatConversations` ones are possible bugs); (4) split `ChatConversations.tsx` by tab; (5) archive superseded planning documents under `docs/archive/` with an index of the current ones; (6) add coverage reporting (`vitest --coverage`) and a threshold in CI; (7) the owner to choose a LICENSE and a real `security.txt` contact; (8) add schema migration versioning (the schema is one idempotent 4,154-line script, which works but gives no upgrade history).
