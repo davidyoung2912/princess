@@ -128,6 +128,20 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'chatComposer', target: 'chat-composer', side: 'top', icon: 'chat', page: true },
   { id: 'chatPersonal', target: 'chat-personal', side: 'bottom', icon: 'people', page: true },
   { id: 'chatNewGroup', target: 'chat-newgroup', side: 'bottom', icon: 'people', page: true },
+  { id: 'cabinsPick', target: 'cabins-pick', side: 'bottom', icon: 'ship', page: true },
+  { id: 'portAshore', target: 'pd-ashore', side: 'top', icon: 'anchor', page: true },
+  { id: 'quizResult', target: 'quiz-result', side: 'bottom', icon: 'ship', page: true },
+  { id: 'costWants', target: 'cost-wants', side: 'bottom', icon: 'wallet', page: true },
+  { id: 'resCard', target: 'res-h', side: 'bottom', icon: 'food', page: true },
+  { id: 'arriveWindow', target: 'arrive-h', side: 'bottom', icon: 'clock', page: true },
+  { id: 'disTimes', target: 'dis-times-h', side: 'bottom', icon: 'clock', page: true },
+  { id: 'finalOwe', target: 'fb-owe-h', side: 'bottom', icon: 'bill', page: true },
+  { id: 'autoDay', target: 'ap-day', side: 'bottom', icon: 'today', page: true },
+  { id: 'moneyChecks', target: 'chk-h', side: 'bottom', icon: 'wallet', page: true },
+  { id: 'famLog', target: 'fam-log-h', side: 'bottom', icon: 'people', page: true },
+  { id: 'photoSched', target: 'sched-h', side: 'bottom', icon: 'pin', page: true },
+  { id: 'gamesDaily', target: 'daily-h', side: 'bottom', icon: 'list', page: true },
+  { id: 'pkgIncluded', target: 'incl-h', side: 'bottom', icon: 'cart', page: true },
 ]
 
 /** The steps about the screen's frame, which are counted ("3/14") and can be finished in one go; the page steps are not. */

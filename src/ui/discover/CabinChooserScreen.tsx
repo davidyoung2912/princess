@@ -132,7 +132,7 @@ export function CabinChooserScreen() {
         </div>
       )}
 
-      <Card labelledBy="cabins-pick">
+      <Card tour="cabins-pick" labelledBy="cabins-pick">
         <h2 id="cabins-pick" className="card__title">{th('cabins.choose')}</h2>
         <div className="field">
           <label htmlFor="cabins-sailing">{t('cost.sailing')}</label>

@@ -91,7 +91,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
       )}
 
       {(guide.gettingAshore || guide.currencyLanguage || guide.officialLinks.length > 0) && (
-        <section aria-labelledby="pd-ashore-h">
+        <section aria-labelledby="pd-ashore-h" data-tour="pd-ashore">
           <Card info labelledBy="pd-ashore-h">
             <h2 id="pd-ashore-h" tabIndex={-1}><PillIcon heading label={th('discover.gettingAshore')} />{th('discover.gettingAshore')}</h2>
             {guide.gettingAshore && <p>{guide.gettingAshore}</p>}

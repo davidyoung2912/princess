@@ -64,7 +64,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
     <>
       {v.includedLeft > 0 && <Banner kind="success" title={t('pho.included', { count: v.includedLeft })}><p>{t('pho.includedBody')}</p></Banner>}
 
-      <Card labelledBy="sched-h">
+      <Card tour="sched-h" labelledBy="sched-h">
         <h2 id="sched-h" className="card__title">{th('pho.schedule')}</h2>
         <ul className="plain-bullets">{v.schedule.map((p, i) => <li key={i}>{t('plan.day', { n: p.day })}, {formatTime(p.time)}: {p.what} ({placeName(p.placeId)})</li>)}</ul>
       </Card>

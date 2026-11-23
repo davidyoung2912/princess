@@ -26,7 +26,7 @@ function DailyTrivia() {
   const ahead = days.filter((d) => d.day >= today && d.port !== 'sea').map((d) => portById(d.port)?.name ?? '')
   const questions = dailyTrivia(ahead, `${sailing.id}|${today}`)
   return (
-    <section aria-labelledby="daily-h">
+    <section aria-labelledby="daily-h" data-tour="daily-h">
       <h2 id="daily-h">{th('game.daily')}</h2>
       <p>{t('game.dailyBody')}</p>
       {questions.length === 0 && <p className="muted">{t('game.dailyNone')}</p>}

@@ -47,7 +47,7 @@ function Body({ view, reload }: { view: PackagesView; reload: () => void }) {
   return (
     <>
       <ReadOnly canDo={view.canBuy} />
-      <section aria-labelledby="incl-h">
+      <section aria-labelledby="incl-h" data-tour="incl-h">
         <h2 id="incl-h">{entitlementGroup(view.window) === 'history' ? th('pk.history') : th('pk.included')}</h2>
         <p className="muted">{t('pk.includedHint')}</p>
         <p role="status">{t(`pk.window.${view.window.status}` as StringKey, { from: formatDate(view.window.from), until: formatDate(view.window.until) })}</p>

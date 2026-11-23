@@ -63,7 +63,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
       {offline && <Banner kind="offline" title={t('pass.offline')}><p>{t('pass.offlineBody')}</p></Banner>}
       {boarding.terminal.changedFrom && <Banner kind="warning" title={t('pass.terminalChanged', { from: boarding.terminal.changedFrom, to: boarding.terminal.name })}><p>{t('pass.terminalChangedBody')}</p></Banner>}
 
-      <Card hero labelledBy="arrive-h">
+      <Card tour="arrive-h" hero labelledBy="arrive-h">
         <p className="eyebrow">{t('embark.arrival')}</p>
         {boarding.arrival ? <h2 id="arrive-h" className="booking-number">{formatTime(boarding.arrival.start)} – {formatTime(boarding.arrival.end)}</h2> : <h2 id="arrive-h">{th('embark.noWindow')}</h2>}
         <p>{boarding.arrival ? t('embark.waitGuide', { minutes: WAIT_MINUTES[boarding.arrival.crowd] }) : <Link to="/home/check-in/arrival">{t('embark.chooseWindow')}</Link>}</p>

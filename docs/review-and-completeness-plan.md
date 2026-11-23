@@ -30,7 +30,7 @@ Status key: [ ] not started, [~] in progress, [x] done.
 | F | 3: code health (outside-reviewer view) | review, fixes, scorecard | [x] |
 | G | 8, 9: pages per stage, journey guidance | review, one new page, gap list | [x] |
 | H | 10, 11: chat and day planning | review, ranked improvement list | [x] |
-| I | 12: guided tour coverage | tour content | [ ] |
+| I | 12: guided tour coverage | tour content | [x] |
 | J | 14: Stanley ideas | document only | [ ] |
 
 ## Findings
@@ -188,3 +188,11 @@ Measured gap in the types: no `translate`, `schedule`, `readAt` or sticker field
 6. **A week view on the phone** (today only from 1024 px wide): a seven-row strip with meals, shows, ports and rest marked, and the unplanned days highlighted.
 7. **Step-free routing in the walk times** for guests with an access profile (events already carry access codes; the walk calculation does not use them).
 8. **"Book soon" pressure only where it is true**: capacity is simulated from a hash today, so do not show scarcity until the capacity is real (a dark-pattern guard test exists, `darkPatterns.test.ts`).
+
+### Phase I: guided-tour content (step 12)
+
+The tour had 14 frame steps and 92 page steps over about 50 screens. This phase added **14 page steps** on screens that had none, covering every journey stage: Choose Your Cabin, ports (what to do ashore), the Cruise Quiz result, Trip Cost extras, dining reservations, the embarkation arrival window, leaving the ship, the final bill, Autopilot Day, Money checks, Family log, the photographer schedule, daily Games and Packages. Each step is a `data-tour` mark on an existing card or section, a `TOUR_STEPS` entry and an English title and body (`tour.<id>.title` and `.body`); the existing tests check the mark exists and the text is present.
+
+**Limit reached:** the tour now has exactly 120 steps, the most an account can store (`HINTS_MAX_STEPS` in `hintsState.ts` and `HintsMaxSteps` in `StateRules.cs`, with a test). More steps need both constants raised together (suggest 200; the `hints` document size cap of 16,000 bytes still holds, as ids are short). That C# edit was left for a phase where the server can be built.
+
+**Still without a tour step** (largest first): PhotosScreen body, Helper, Packages upsells, Decide, Disruption hub, Loyalty, Checkin, Journey, Reservations list, Print, Calm, Wrapped, Split, What-if, Assistance, At sea, Know-How (S51).

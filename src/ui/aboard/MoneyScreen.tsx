@@ -64,7 +64,7 @@ export function InCurrency({ cents }: { cents: number }) {
 function ChargeChecks() {
   const [settings, update] = useSettings()
   return (
-    <section aria-labelledby="chk-h">
+    <section aria-labelledby="chk-h" data-tour="chk-h">
       <h2 id="chk-h">{th('money.checks')}</h2>
       <p>{t('money.checksBody')}</p>
       <div className="field">

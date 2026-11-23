@@ -88,7 +88,7 @@ export function TripCostScreen() {
         </div>
       </Card>
 
-      <section aria-labelledby="cost-wants-h">
+      <section aria-labelledby="cost-wants-h" data-tour="cost-wants">
         <h2 id="cost-wants-h">{th('cost.wants')}</h2>
         <div className="field">
           <label><input type="checkbox" checked={drinks} onChange={(e) => setDrinks(e.target.checked)} /> {t('cost.drinks')}</label>

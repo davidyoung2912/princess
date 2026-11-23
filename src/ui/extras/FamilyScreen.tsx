@@ -47,7 +47,7 @@ function Family({ v, reload, offline }: { v: FamilyView; reload: () => void; off
 function Log({ v }: { v: FamilyView }) {
   const shipTime = useShipTime()
   return (
-    <section aria-labelledby="fam-log-h">
+    <section aria-labelledby="fam-log-h" data-tour="fam-log-h">
       <h2 id="fam-log-h">{th('fam.log')}</h2>
       <ul className="plain-bullets">{v.log.map((l) => <li key={l.id}>{shipTime(l.at)}: {l.text}</li>)}</ul>
     </section>

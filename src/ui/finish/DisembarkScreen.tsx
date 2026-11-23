@@ -56,7 +56,7 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
       {v.closed && chosen === null && <Banner kind="warning" title={t('dis.closed')}><p>{t('dis.closedBody')}</p></Banner>}
       {v.needsHelp && <Banner kind="info" title={t('dis.help')} action={<Link to="/plan/assistance">{t('route.assistance')}</Link>}><p>{t('dis.helpBody')}</p></Banner>}
 
-      <Card hero labelledBy="dis-times-h">
+      <Card tour="dis-times-h" hero labelledBy="dis-times-h">
         <h2 id="dis-times-h" className="card__title">{th('dis.times')}</h2>
         <dl className="plain-dl">
           <div><dt>{t('dis.arrive')}</dt><dd>{shipTime(v.times.arrivalAt)}</dd></div>

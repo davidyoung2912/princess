@@ -128,7 +128,7 @@ export function QuizScreen() {
         <Button type="submit">{t('quiz.show')}</Button>
       </form>}
       {result && (
-        <section aria-labelledby="quiz-result-h" aria-live="polite">
+        <section aria-labelledby="quiz-result-h" aria-live="polite" data-tour="quiz-result">
           <h2 id="quiz-result-h">{th('quiz.result')}</h2>
           {result.picks.length === 0 ? <p>{t('quiz.none')}</p> : (
             <ol className="card-grid">

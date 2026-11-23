@@ -103,7 +103,7 @@ export function AutopilotScreen() {
       <p className="muted">{t('autopilot.promise')}</p>
 
       <PastedLines day={day} />
-      <Card labelledBy="ap-day">
+      <Card tour="ap-day" labelledBy="ap-day">
         <h2 id="ap-day" className="card__title">{th('autopilot.day')}</h2>
         <label htmlFor="ap-pick">{t('autopilot.pick')}</label>
         <select id="ap-pick" className="field__input" value={day} onChange={(e) => { setDay(Number(e.target.value)); setMessage(null) }}>

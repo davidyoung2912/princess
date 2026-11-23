@@ -83,7 +83,7 @@ function Detail({ r, canEdit, reload }: { r: Reservation; canEdit: boolean; relo
   return (
     <>
       <ReadOnly canDo={canEdit} />
-      <Card labelledBy="res-h">
+      <Card tour="res-h" labelledBy="res-h">
         <h2 id="res-h" className="card__title">{v.name}</h2>
         <ul className="tour__facts">
           <li>{t('dine.when', { day: r.day, date: formatDate(addDays(s.departure, r.day - 1)), time: formatTime(r.time) })}</li>
