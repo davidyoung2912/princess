@@ -12173,6 +12173,8 @@ export const enCore = {
   'game.open.current': 'Pick up from here',
   'game.open.beat': 'Beat it',
   'bundle.done': 'I did it',
+  'bundle.done.failed': 'That could not be saved. Try again.',
+  'senddlg.retry': 'Try again',
   'bundle.forward': 'Forward',
   'bundle.done.count_one': 'Done by {count} person',
   'bundle.done.count_other': 'Done by {count} people',

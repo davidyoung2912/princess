@@ -28,7 +28,8 @@ function Outcome({ conversationId, message, canAct }: { conversationId: string; 
   return (
     <div className="button-row">
       <Button variant={done ? 'primary' : 'secondary'} aria-pressed={done} disabled={!canAct || toggle.busy} onClick={() => void toggle.run()}>{t('bundle.done')}</Button>
-      {count > 0 && <p className="muted" aria-live="polite">{done || !tally?.going?.length ? t('bundle.done.count', { count }) : t('bundle.done.names', { names: tally.going.join(', ') })}</p>}
+      <p className={count > 0 ? 'muted' : 'visually-hidden'} role="status">{count > 0 ? (done || !tally?.going?.length ? t('bundle.done.count', { count }) : t('bundle.done.names', { names: tally.going.join(', ') })) : ''}</p>
+      {toggle.error && <p role="alert" className="field__error">{t('bundle.done.failed')}</p>}
     </div>
   )
 }

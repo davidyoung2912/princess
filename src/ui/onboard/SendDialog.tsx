@@ -43,11 +43,12 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
   const [showCode, setShowCode] = useState(false)
   const [how, setHow] = useState<'send' | 'ask'>('send')
   const ids = useId()
+  const [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let live = true
-    api.chatConversations.list().then((l) => { if (live) setRows(l.filter((c) => c.kind !== 'stanley' && !c.closed && !c.permanent)) }, () => { if (live) setFailed(true) })
+    api.chatConversations.list().then((l) => { if (live) { setFailed(false); setRows(l.filter((c) => c.kind !== 'stanley' && !c.closed && !c.permanent)) } }, () => { if (live) setFailed(true) })
     return () => { live = false }
-  }, [])
+  }, [attempt])
   const sentIds = outcomes.filter((o) => o.ok).map((o) => o.id)
   const open = (rows ?? []).filter((c) => !sentIds.includes(c.id))
   const recent = useMemo(() => loadRecentSent(), [])
@@ -84,7 +85,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
         <p role="status" className={status ? undefined : 'visually-hidden'}>{status}</p>
         {bad.map((o) => <p key={o.id} role="alert" className="field__error">{t('senddlg.failedOne', { name: o.name, reason: t(shareError(!o.ok ? o.error : null)) })}</p>)}
         {rows === null && !failed && <p role="status" className="muted">{t('conv.share.loading')}</p>}
-        {failed && <p role="alert" className="field__error">{t('conv.share.failed')}</p>}
+        {failed && <><p role="alert" className="field__error">{t('conv.share.failed')}</p><Button variant="secondary" onClick={() => { setFailed(false); setAttempt((n) => n + 1) }}>{t('senddlg.retry')}</Button></>}
         {rows !== null && rows.length === 0 && <p className="muted">{t('sendchat.none')}</p>}
         {!allDone && open.length > 0 && (
           <>

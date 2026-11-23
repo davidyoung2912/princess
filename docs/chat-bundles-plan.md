@@ -310,6 +310,8 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 
 > **Built 2026-11-23, part 4 (small): chat icon on explorer venue tiles** (front end checked with test, lint, tsc and build; no server change). **Done:** each venue card in the explorer lists sends the venue as a bundle. **Not done (B11 part 5):** Stanley answers (needs the server: admin confirm in made groups), naming the original sender of a forward (server), thumbnails, state review, accessibility pass.
 
+> **Built 2026-11-23, part 5 (small): states review** (front end checked with test, lint, tsc and build; no server change). **Done:** the send dialog offers **Try again** when the chat list fails to load; the **I did it** toggle says when it could not be saved, and its count is a standing status region so a screen reader hears changes. **Not done (B11 part 6):** Stanley answers (server: admin confirm in made groups), naming the original sender of a forward (server), thumbnails, a fuller keyboard pass.
+
 ## 7. Risks
 
 - **Scope creep in B2 to B6.** Each planning object is built once, in a fixed order, and each phase is usable on its own.
