@@ -69,7 +69,9 @@ function TourCard({ step, count, last }: { step: TourStep; count: string | null;
   }, [step.target])
   // A note that is not modal: the page behind stays usable. A step is announced politely when it appears, and the guest can still use the keyboard to reach Got It! after the page.
   return (
-    <aside className="tour" data-testid="tour" role="region" aria-labelledby={titleId}>
+    // Pressing anywhere on the card is Got It! (the buttons keep their own meaning: Skip skips). Keyboard and screen reader users have the Got It! button itself, so the card needs no key handler.
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
+    <aside className="tour" data-testid="tour" role="region" aria-labelledby={titleId} onClick={(e) => { if (!(e.target as HTMLElement).closest('button, a')) markTourStep(step.id) }}>
       <p className="tour__head"><Icon className="tour__icon" aria-hidden="true" /><strong id={titleId} className="tour__title">{t(`tour.${step.id}.title` as StringKey)}</strong></p>
       <p className="tour__text">{t(`tour.${step.id}.body` as StringKey)}</p>
       <div className="tour__foot">

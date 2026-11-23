@@ -93,6 +93,8 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         var due = SummaryExpiryDue(actor.Id);
         var now = due ? await clock.NowAsync(actor, ct) : default;
         if (due) await store.ExpireAsync(actor.Id, now, ct);
+        // Stanley's thread, with its welcome, is made the first time anything reads chat: a seeded account that has not opened the list yet still has the welcome waiting, so the badge counts it from the first read.
+        if (due) await chat.EnsureStanleyAsync(actor.Id, StanleyPersonaRules.Welcome(actor.FirstName), now, ct);
         var l = await ListAsync(actor, ct, expire: false);
         // Group invitations are waiting requests too: one for the guest counts with the people who want to chat, one for their child with the approvals.
         if (due) await groups.ExpireAsync(actor.Id, now, ct);

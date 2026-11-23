@@ -447,6 +447,7 @@ main.signin { margin-inline: auto; }
 /* First-visit tour: frosted glass over the whole screen (with a hole over the part being explained), and a floating tip card beside it. */
 /* The first-visit tour: one small card along the bottom, above the phone tab bar; the page behind stays usable. */
 .tour {
+  cursor: pointer;
   position: fixed; z-index: 40; box-sizing: border-box; inset-inline: var(--space-2); bottom: calc(4.5rem + env(safe-area-inset-bottom));
   max-width: 28rem; margin-inline: auto; padding: var(--space-2) var(--space-3);
   background: var(--bg); color: var(--text); border: 2px solid var(--primary); border-radius: var(--radius-card); box-shadow: 0 8px 24px rgba(2, 2, 21, 0.3);
