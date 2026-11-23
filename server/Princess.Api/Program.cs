@@ -12,6 +12,7 @@ using Princess.Api.Domain;
 using Princess.Api.Endpoints;
 using Princess.Api.Realtime;
 using Princess.Api.Services;
+using Princess.Api.Services.Mcp;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -117,6 +118,8 @@ services.AddHostedService<ChatFanoutService>();
 services.AddScoped<IFinishStore, DapperFinishStore>();
 // External sources and the concierge model are chosen by configuration (Providers:*), all defaulting to the simulation.
 services.AddProviders(builder.Configuration);
+// External MCP servers (docs/mcp-integration-plan.md): all off by default; see the Mcp section.
+services.AddMcp(builder.Configuration);
 
 // Until a real email and text provider is set, no one can read a code that was "sent", so Verification:FixedCode (six digits) stands in for every random code.
 // It is ignored the moment either provider is real (pingram), so switching on real sending returns every code to random without touching this setting.

@@ -36,6 +36,23 @@ public sealed class ProviderGuard(string name, IClock clock, ILogger log, int th
         return fallback();
     }
 
+    /// <summary>As <see cref="Run{T}"/> for a call that waits on the network. The fall-back is still a plain function, so a failing provider never makes a request wait twice.</summary>
+    public async Task<T> RunAsync<T>(Func<Task<T?>> real, Func<T> fallback) where T : class
+    {
+        if (IsOpen) return fallback();
+        try
+        {
+            var got = await real();
+            if (got is not null) { lock (gate) failures = 0; return got; }
+            Fail("no answer");
+        }
+        catch (Exception e)
+        {
+            Fail(e.Message);
+        }
+        return fallback();
+    }
+
     private void Fail(string why)
     {
         lock (gate)
