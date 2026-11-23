@@ -18,6 +18,7 @@ import { StanleyExplain } from '../ai/StanleyExplain'
 import { TenderOutlook } from './TenderOutlook'
 import { SendToChat } from '../onboard/SendToChat'
 import { PlaceMap, type MapPin } from '../maps/PlaceMap'
+import { PortDayPlanner } from '../maps/PortDayPlanner'
 import { isLatLng } from '../../maps/geo'
 
 /**
@@ -52,7 +53,7 @@ export function PortScreen() {
       {tender && day && <TenderOutlook port={id} date={day.date} />}
 
       {!guide && <FeedWaiting />}
-      {guide && <GuideBody guide={guide} />}
+      {guide && <GuideBody guide={guide} call={day?.arrive && day.allAboard ? { arrive: day.arrive, allAboard: day.allAboard } : null} tender={tender} />}
       <p><Link to="/home/cruise">{t('discover.backToCruise')}</Link> · <Link to="/home/ports">{t('portguide.list.all')}</Link></p>
     </div>
   )
@@ -70,7 +71,7 @@ function Area({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuide>> }
   )
 }
 
-function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuide>> }) {
+function GuideBody({ guide, call, tender }: { guide: NonNullable<ReturnType<typeof usePortGuide>>; call: { arrive: string; allAboard: string } | null; tender: boolean }) {
   const tiers = byTier(guide.attractions)
   const [picked, setPicked] = useState<string | null>(null)
   // Pins are numbered in the order the places are listed below (easiest to reach first), so a number on the map is a number in the list.
@@ -121,6 +122,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
               </div>
             </Card>
           )}
+          {call && <Card info><PortDayPlanner attractions={guide.attractions} arrive={call.arrive} allAboard={call.allAboard} tender={tender} /></Card>}
           {tiers.map((g) => (
             <div key={g.tier} role="group" aria-label={g.tier}>
               <h3>{g.tier}</h3>

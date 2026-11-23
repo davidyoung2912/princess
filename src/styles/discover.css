@@ -145,3 +145,4 @@ section[aria-labelledby='find8-h'] section > .button-row:last-child { margin-bot
 .place-map__embed { display: block; width: 100%; height: 22rem; border: 1px solid var(--border-strong); border-radius: var(--radius-card); margin-top: var(--space-3); }
 .port-details__pin { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; margin-inline-end: var(--space-2); border-radius: 50%; background: var(--primary); color: var(--on-primary); font-size: var(--fs-caption); font-weight: 700; }
 .port-details__place--on { outline: 3px solid var(--primary); outline-offset: 2px; }
+.port-day__options { border: 0; padding: 0; margin: 0 0 var(--space-3); display: grid; gap: var(--space-2); }\n.port-day__timeline { padding-inline-start: var(--space-5); display: grid; gap: var(--space-2); }

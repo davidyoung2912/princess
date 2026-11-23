@@ -4,6 +4,7 @@ Notable changes, newest first. The project is pre-release; versions are not cut 
 
 ## Unreleased (November 2026)
 
+- Plan my port day on Port Details: a timed walking plan against the ship's all-aboard time, with a map and a return-by time.
 - Maps on Port Details: a self-drawn map of the things to do with numbered pins, "Show on map" on each place, Google Maps links, and an optional click-to-load Google embed (set `VITE_GOOGLE_MAPS_EMBED_KEY`).
 - MCP gateway on the server (`Services/Mcp`): client, read-only egress allowlist, sanitiser, guarded calls, health rows. Every provider is off by default. See `docs/mcp-integration-plan.md`.
 - Code health: all lint warnings fixed, coverage reporting with floors in CI, CI workflow, documentation index and archive, contributing guide.
