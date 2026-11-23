@@ -29,7 +29,7 @@ Status key: [ ] not started, [~] in progress, [x] done.
 | E | 2: performance | review, budgets, reduction plan | [x] |
 | F | 3: code health (outside-reviewer view) | review, fixes, scorecard | [x] |
 | G | 8, 9: pages per stage, journey guidance | review, one new page, gap list | [x] |
-| H | 10, 11: chat and day planning | review, improvements | [ ] |
+| H | 10, 11: chat and day planning | review, ranked improvement list | [x] |
 | I | 12: guided tour coverage | tour content | [ ] |
 | J | 14: Stanley ideas | document only | [ ] |
 
@@ -159,3 +159,32 @@ Topics a first-time or returning guest asks about that had **no page of their ow
 - *Open from the guidance plan:* "Do it for me" on a task, Help and Remind-me on the "Coming up" rows, keying push to guide task ids, access needs in the personal fit, an insurance task and a "meet people" task for solo guests.
 
 *Proposed warnings, in priority order:* (1) passport validity against the itinerary's last port date, per traveller, at Manage and again at 30 days; (2) "excursion no longer fits" when a port time moves; (3) final-payment and card-expiry clash; (4) "you have not checked in and it closes in 24 hours" (the countdown exists; make it a push); (5) missing documents per traveller at 7 days, listed by name; (6) a quiet "you have booked nothing for the sea day" note the evening before.
+
+### Phase H: chat and day planning (steps 10 and 11)
+
+These two are already deep, so the review lists what is built (from the types, the plans and the code), then what would add the most value. Nothing here was built in this phase: both areas need server work (C#) that cannot be compiled here, and the tests that guard them are large; the lists are ranked so the next phase can take them in order.
+
+**Chat, what exists** (`src/api/chatTypes.ts`, the ten `chat-*.md` plans, about 50 `Chat*Rules.cs` files): 1:1 and group chats with a connection handshake, rooms, search, replies, edits, deletes for everyone, forwarding, reactions, mentions, pins, photos, typing, disappearing messages, mute and archive, urgency levels with a staff and guardian bypass, safety screening and reporting, guardian access for children, a text-message bridge and an "ashore" bridge, Stanley's help (reword, friendlier, shorter, ask about a message, a welcome line), and **bundles**: any venue, menu, port, place, tour or game sent into a chat, with polls, time slots, a shared day board and QR forms. Open items recorded in the plans: no delivered state, group push fan-out sequential on the request, no do-not-disturb control in Chat settings, no re-invite after a decline cool-down, no guardian-read notice, no staff screen.
+
+**Chat, ranked improvements:**
+1. **Quiet hours and a do-not-disturb control** in Chat settings (listed as not done), with an automatic ship-time night window that urgent messages still bypass. The urgency machinery already exists; this is the missing switch, and it is what a guest asleep next to a noisy group chat asks for first.
+2. **Delivered and read state** for 1:1 chats and small groups, optional per person (and off in calm mode). The server tracks neither today (`readAt` and `readBy` do not exist in the types).
+3. **Scheduled send** ("send at 9:00 ship time", "when I am back aboard"): useful across time zones and when a friend is ashore; fits the existing outbox.
+4. **"I am here" quick action** in the composer: one tap sends the guest's current deck-plan place as a place bundle with "Take me there", reusing the meeting-point work (R6).
+5. **"Catch me up" on request**: a guest-triggered summary of the unread messages in a busy group, through Stanley, on the same terms as "ask about a message" (one explicit request, no background reading; the owner dropped background reading on 2026-11-16).
+6. **Move the group push fan-out off the request** (already a known item; the security and performance plan's background-writer pattern fits).
+7. **Re-invite cool-down, guardian-read notice and a staff review screen** (the three safety items the plans list as open).
+8. **Message translation** for international guests (English only today, so later), and **voice notes** (text-first for ship Wi-Fi; only if bandwidth allows).
+Measured gap in the types: no `translate`, `schedule`, `readAt` or sticker fields.
+
+**Day planning, what exists:** Today's Plan and Build my Day over the Explorer data (about 320 events a ship), clash detection with up to three alternatives (series, same title, same interest, open then), rest blocks by part of day, walk times between places with decks and lifts, sunrise and sunset watch spots, celebrations, evening bundles (up to three steps with a 60-minute return buffer), an Autopilot Day, a daily-rhythm taste profile, mid-day moves and cancellations, a calendar feed, share-to-chat, and a shared day board in chat.
+
+**Day planning, ranked improvements:**
+1. **A day health check with one-tap fixes.** From data the app already has: no breakfast, lunch or dinner planned, two items back to back with a long walk between, more than about six hours scheduled with no rest block, an excursion ending inside the landing buffer before all-aboard, or no dinner reservation on a specialty night. Show it as a short list on Today's Plan, each line with its fix ("Add lunch at the Eatery", "Add 15 minutes", "Move the spa to the afternoon").
+2. **A weather-aware plan B.** For outdoor items (pool deck, open deck, tender, port walks) show the indoor alternatives from `alternatives.ts` when the weather feed says rain, wind or heat; the feed and the alternatives engine both exist.
+3. **Day templates**: three ready sea days (relaxed, active, family) and two port days (guided tour, independent) as one-tap starting points that the guest then edits (also proposed in Phase G).
+4. **Common free windows for a party**: given each member's plan, show the blocks when everyone is free and offer to propose an activity there as a poll bundle (the poll and day-board machinery exists).
+5. **A running cost line**: the extras a plan adds (events with a price, specialty cover charges, spa) against the Money plan's budget.
+6. **A week view on the phone** (today only from 1024 px wide): a seven-row strip with meals, shows, ports and rest marked, and the unplanned days highlighted.
+7. **Step-free routing in the walk times** for guests with an access profile (events already carry access codes; the walk calculation does not use them).
+8. **"Book soon" pressure only where it is true**: capacity is simulated from a hash today, so do not show scarcity until the capacity is real (a dark-pattern guard test exists, `darkPatterns.test.ts`).
