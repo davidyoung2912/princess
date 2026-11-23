@@ -334,10 +334,12 @@ export function PolishDraft({ text, onUse }: { text: string; onUse: (suggestion:
   const status = useStanleyStatus()
   if (status?.on !== true || tap?.available !== true || !canAskReword(text)) return null
   return (
-    <>
-      <RewordButton text={text} mode="friendlier" onUse={onUse} />
-      <RewordButton text={text} mode="shorter" onUse={onUse} />
-    </>
+    <section className="wh__group" aria-label={t('wh.polish')}>
+      <p className="wh__title" aria-hidden="true">{t('wh.polish')}</p>
+      <div className="wh__row">
+        {(['friendlier', 'cheerful', 'shorter', 'clearer', 'formal', 'fix'] as const).map((m) => <RewordButton key={m} text={text} mode={m} onUse={onUse} />)}
+      </div>
+    </section>
   )
 }
 

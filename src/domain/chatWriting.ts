@@ -29,7 +29,7 @@ export const helpIsOn = (status: Pick<ChatStanleyStatus, 'on'> | undefined): boo
 /** The line for a request problem (the server's `cooldown`, `tooManyOpen`, `tooMany`, `alreadyAsked`), or undefined to keep the app's own wording. */
 export const problemLine = (status: Pick<ChatStanleyStatus, 'on' | 'lines'> | undefined, problem: string): string | undefined => (helpIsOn(status) ? status!.lines[problem] : undefined)
 
-export const MODE_LABEL: Record<ChatRewordMode, 'cw.friendlier' | 'cw.shorter' | 'cw.reword'> = { friendlier: 'cw.friendlier', shorter: 'cw.shorter', reword: 'cw.reword' }
+export const MODE_LABEL = { friendlier: 'cw.friendlier', shorter: 'cw.shorter', reword: 'cw.reword', formal: 'cw.formal', fix: 'cw.fix', cheerful: 'cw.cheerful', clearer: 'cw.clearer' } as const satisfies Record<ChatRewordMode, string>
 
 /** The message box after "Use this": the suggestion, cut to the box's length. The guest still presses Send. */
 export const useSuggestion = (suggestion: string, max: number): string => suggestion.slice(0, max)

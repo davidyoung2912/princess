@@ -511,7 +511,7 @@ export interface ChatStanleyUse { days: number; perDay: { date: string; calls: n
 export interface ChatTerm { word: string; meaning: string }
 /** `lines` are Stanley's wording keyed by what each is for: waiting, sent, expired, cooldown, tooManyOpen, tooMany, alreadyAsked, blocked. */
 export interface ChatStanleyStatus { on: boolean; lines: Record<string, string> }
-export type ChatRewordMode = 'reword' | 'friendlier' | 'shorter'
+export type ChatRewordMode = 'reword' | 'friendlier' | 'shorter' | 'formal' | 'fix' | 'cheerful' | 'clearer'
 /** One suggestion, or none with a `reason` (`unavailable`, `limit`, `safety`, `none`). `message` is what Stanley says either way. */
 export interface ChatReword { suggestion?: string; reason?: 'unavailable' | 'limit' | 'safety' | 'none'; message: string }
 export interface ChatIcebreakers { lines: string[]; canMore: boolean }

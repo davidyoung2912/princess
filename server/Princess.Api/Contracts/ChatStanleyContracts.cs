@@ -36,7 +36,7 @@ public sealed record ChatDraftDto(string Text);
 /// <summary>Whether Stanley's chat help is on for this guest, and the lines the screens show (keyed by what each is for), so the app renders wording the server wrote.</summary>
 public sealed record ChatStanleyStatusDto(bool On, Dictionary<string, string> Lines);
 
-/// <summary><c>Mode</c> is <c>reword</c> (a blocked message), <c>friendlier</c> or <c>shorter</c>.</summary>
+/// <summary><c>Mode</c> is <c>reword</c> (a blocked message), <c>friendlier</c>, <c>shorter</c>, <c>formal</c>, <c>fix</c>, <c>cheerful</c> or <c>clearer</c>.</summary>
 public sealed record ChatRewordBody(string? Text, string? Mode);
 
 /// <summary>One suggestion, or none. <c>Reason</c> (when there is none) is <c>unavailable</c>, <c>limit</c>, <c>safety</c> or <c>none</c>; <c>Message</c> is what Stanley says either way.</summary>

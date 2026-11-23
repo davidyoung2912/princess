@@ -53,7 +53,7 @@ export const deliveryOf = (m: Pick<ChatMessage, 'seenBy' | 'delivered'>): Exclud
   m.seenBy && m.seenBy.length > 0 ? 'read' : m.delivered ? 'delivered' : 'sent'
 
 /** The fixed English quick replies shown under the composer (keys into the strings; a tap sends the text at once). */
-export const QUICK_REPLY_KEYS = ['yes', 'no', 'omw', 'thanks', 'late', 'ok'] as const
+export const QUICK_REPLY_KEYS = ['yes', 'no', 'omw', 'thanks', 'late', 'ok', 'laugh', 'love', 'call', 'where', 'wait', 'seeyou', 'sorry', 'cheers'] as const
 export type QuickReplyKey = (typeof QUICK_REPLY_KEYS)[number]
 
 /** A person's message can be replied to or reacted to; a line about the group and a Stanley notice cannot. */

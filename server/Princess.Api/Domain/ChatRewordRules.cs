@@ -15,7 +15,7 @@ public static class ChatRewordRules
     public const int OpenerCount = 3;
 
     /// <summary>Which help a draft is asked for: <c>reword</c> (a blocked message), <c>friendlier</c> or <c>shorter</c> (polish).</summary>
-    public const string Reword = "reword", Friendlier = "friendlier", Shorter = "shorter";
+    public const string Reword = "reword", Friendlier = "friendlier", Shorter = "shorter", Formal = "formal", Fix = "fix", Cheerful = "cheerful", Clearer = "clearer";
 
     /// <summary>Why no suggestion was made.</summary>
     public const string Unavailable = "unavailable", Limit = "limit", Safety = "safety", NoSuggestion = "none", BadMode = "mode", Empty = "empty";
@@ -26,7 +26,7 @@ public static class ChatRewordRules
     public const string LimitLine = "That's enough help with writing for now. Please try again a little later.";
     public const string SafetyLine = "I can't help with that one. If someone needs help, tell the nearest crew member or use the Help button on board.";
 
-    public static bool IsMode(string? mode) => mode is Reword or Friendlier or Shorter;
+    public static bool IsMode(string? mode) => mode is Reword or Friendlier or Shorter or Formal or Fix or Cheerful or Clearer;
 
     /// <summary>The draft as it may be used: trimmed, null when blank or longer than <see cref="MaxDraft"/>.</summary>
     public static string? Draft(string? text)
@@ -45,6 +45,10 @@ public static class ChatRewordRules
         {
             Reword => "Rewrite the draft so it keeps the meaning but drops any offensive or rude wording, and stays friendly. ",
             Friendlier => "Rewrite the draft so it keeps the meaning and sounds warmer and friendlier. ",
+            Formal => "Rewrite the draft so it keeps the meaning and sounds more polite and formal, still short and natural for a chat. ",
+            Fix => "Correct only the spelling, grammar and punctuation of the draft. Keep the words, tone and meaning the same. ",
+            Cheerful => "Rewrite the draft so it keeps the meaning and sounds more cheerful and upbeat. ",
+            Clearer => "Rewrite the draft so it keeps the meaning and is clearer and easier to follow. ",
             _ => "Rewrite the draft so it keeps the meaning and is shorter. ",
         } +
         $"Give exactly one version, under {MaxSuggestion} characters, in plain English with no markdown and no quotation marks. Add no new facts, plans, prices or times, no links and no phone numbers. Reply with only the new message.";

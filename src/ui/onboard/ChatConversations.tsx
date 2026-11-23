@@ -48,10 +48,12 @@ import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { Depart, OctagonAlert, TriangleAlert } from '../icons'
-import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Filter, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, Users, UserPlus, UserMinus, Info, X, Footprints, type LucideIcon } from 'lucide-react'
+import { BellRing, CalendarPlus, ListChecks, Frown, Handshake, Heart, Hourglass, Laugh, MapPin, PartyPopper, Phone, Check, CircleCheck, EllipsisVertical, Clock, Filter, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, Users, UserPlus, UserMinus, Info, X, Footprints, type LucideIcon } from 'lucide-react'
 
 /** A small icon for each quick reply; the words are its label. */
-const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
+/** The quick replies in rows of related ones: answers, getting together, and feelings. */
+const QUICK_GROUPS: readonly (readonly (typeof QUICK_REPLY_KEYS)[number][])[] = [['yes', 'no', 'ok', 'thanks', 'sorry'], ['omw', 'late', 'wait', 'where', 'call', 'seeyou'], ['laugh', 'love', 'cheers']]
+const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck, laugh: Laugh, love: Heart, call: Phone, where: MapPin, wait: Hourglass, seeyou: Handshake, sorry: Frown, cheers: PartyPopper }
 import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
 import { ClearDraft } from '../ClearDraft'
@@ -356,6 +358,14 @@ const keepCardInView = (from: Element | null | undefined): number | undefined =>
   const card = from?.closest('.chat-msg')
   if (!card) return undefined
   return window.requestAnimationFrame(() => card.scrollIntoView({ block: 'nearest', behavior: 'auto' }))
+}
+/** Opens one of the sharing sections under the message box (a place, or a poll or plan) and brings it into view. */
+const openTool = (selector: string): void => {
+  const el = document.querySelector<HTMLDetailsElement>(selector)
+  if (!el) return
+  el.open = true
+  el.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+  el.querySelector('summary')?.focus()
 }
 const prefersReducedMotion = (): boolean => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -859,9 +869,6 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       <h2 id="thread-h"><span className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</span></h2>
       {permanent && <p className="muted" role="note">{t('stanley.chat.permanent')}</p>}
       {conversation?.kind === 'direct' && <LeavePersonalChat conversationId={id} name={name} onLeft={onBack} />}
-      {conversation && conversation.kind !== 'direct' && !permanent && !room && (
-        <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
-      )}
       {conversation && !permanent && !room && conversation.kind !== 'stanley' && <ChatStats c={conversation} shipTime={shipTime} />}
       {conversation?.kind === 'group' && <MembersButton chat={conversation} shipTime={shipTime} />}
       {conversation && (conversation.kind === 'group' || conversation.kind === 'party') && (conversation.people?.length ?? 0) > 0 && <SenderFilter people={conversation.people ?? []} mine={mine} picked={senders} onChange={setSenders} />}
@@ -945,32 +952,45 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } else if (e.key === 'Escape' && typedMention) { e.preventDefault(); setMentionOff(true) } }}
             onKeyUp={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} onClick={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} />
-          <details className="chat-more chat-more--inline">
+          <details className="chat-more chat-more--inline writing-helpers">
             <summary>{headingCase(t('conv.writeMore'))}</summary>
-          {emojiOk && (
-            <>
-              <Button type="button" variant="tertiary" aria-expanded={emojiOpen} onClick={() => setEmojiOpen((o) => !o)}>{t('emoji.button')}</Button>
-              {emojiOpen && <EmojiPicker onClose={() => { setEmojiOpen(false); form.current?.querySelector('textarea')?.focus() }} onPick={(emoji) => {
-                const box = form.current?.querySelector('textarea')
-                const next = insertEmoji(text, box?.selectionStart ?? text.length, box?.selectionEnd ?? text.length, emoji, MAX_TEXT)
-                setText(next.text)
-                setCaret(next.caret)
-                setEmojiOpen(false)
-                box?.focus()
-                requestAnimationFrame(() => box?.setSelectionRange(next.caret, next.caret))
-              }} />}
-            </>
-          )}
-          <AskStanleyButton onAsk={() => {
-            const next = withAsk(text).slice(0, MAX_TEXT)
-            setText(next)
-            setCaret(next.length)
-            const box = form.current?.querySelector('textarea')
-            requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
-          }} />
-          <AskStanleyNote text={text} />
-          {tap?.available && <HelpMeWrite onUse={putInBox} />}
-          <PolishDraft text={text} onUse={putInBox} />
+            <div className="wh">
+              <section className="wh__group" aria-label={t('wh.add')}>
+                <p className="wh__title" aria-hidden="true">{t('wh.add')}</p>
+                <div className="wh__row">
+                  {emojiOk && <Button type="button" variant="tertiary" aria-expanded={emojiOpen} onClick={() => setEmojiOpen((o) => !o)}>{t('emoji.button')}</Button>}
+                  {!room && <Button type="button" variant="tertiary" icon={MapPin} onClick={() => openTool('.chat-share:not(.chat-plan-tools)')}>{t('wh.place')}</Button>}
+                  {!room && conversation!.kind !== 'direct' && <Button type="button" variant="tertiary" icon={ListChecks} onClick={() => openTool('.chat-plan-tools')}>{t('wh.poll')}</Button>}
+                  {!room && conversation!.kind !== 'direct' && <Button type="button" variant="tertiary" icon={CalendarPlus} onClick={() => openTool('.chat-plan-tools')}>{t('wh.plan')}</Button>}
+                </div>
+                {emojiOk && emojiOpen && <EmojiPicker onClose={() => { setEmojiOpen(false); form.current?.querySelector('textarea')?.focus() }} onPick={(emoji) => {
+                  const box = form.current?.querySelector('textarea')
+                  const next = insertEmoji(text, box?.selectionStart ?? text.length, box?.selectionEnd ?? text.length, emoji, MAX_TEXT)
+                  setText(next.text)
+                  setCaret(next.caret)
+                  setEmojiOpen(false)
+                  box?.focus()
+                  requestAnimationFrame(() => box?.setSelectionRange(next.caret, next.caret))
+                }} />}
+              </section>
+              {tap?.available && (
+                <section className="wh__group" aria-label={t('wh.ask')}>
+                  <p className="wh__title" aria-hidden="true">{t('wh.ask')}</p>
+                  <div className="wh__row">
+                    <AskStanleyButton onAsk={() => {
+                      const next = withAsk(text).slice(0, MAX_TEXT)
+                      setText(next)
+                      setCaret(next.length)
+                      const box = form.current?.querySelector('textarea')
+                      requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
+                    }} />
+                    <HelpMeWrite onUse={putInBox} />
+                  </div>
+                </section>
+              )}
+              <AskStanleyNote text={text} />
+              <PolishDraft text={text} onUse={putInBox} />
+            </div>
           </details>
           {typedMention && (
             <MentionList people={people} query={typedMention.query} onPick={(person) => {
@@ -992,7 +1012,11 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           {askTerms && <PhotoTermsDialog busy={acceptTerms.busy} failed={acceptTerms.error !== null && acceptTerms.error !== undefined} onProceed={() => void acceptTerms.run().catch(() => undefined)} onCancel={() => setAskTerms(false)} />}
           <ActionError error={sendDraftPhotos.error} />
           {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">
-            {QUICK_REPLY_KEYS.map((k) => { const Icon = QUICK_ICONS[k]; return <button key={k} type="button" className="chat-quick__btn" aria-label={t(`conv.quick.${k}`)} title={t(`conv.quick.${k}`)} onClick={() => void submit(t(`conv.quick.${k}`))}><Icon aria-hidden="true" /></button> })}
+            {QUICK_GROUPS.map((keys) => (
+              <div key={keys[0]} className="chat-quick__row">
+                {keys.map((k) => { const Icon = QUICK_ICONS[k]; return <button key={k} type="button" className="chat-quick__btn" aria-label={t(`conv.quick.${k}`)} title={t(`conv.quick.${k}`)} onClick={() => void submit(t(`conv.quick.${k}`))}><Icon aria-hidden="true" /></button> })}
+              </div>
+            ))}
           </div>}
         </form>
         {!room && <ShareChooser conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}

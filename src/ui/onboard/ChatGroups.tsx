@@ -1,5 +1,7 @@
 import { Check, Depart, Trash2, Users, X } from '../icons'
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { requestGreeting } from '../../chat/greet'
 import type { ChatConnection, ChatConnections, ChatGroup, ChatGroupInvite, ChatGroupMember, ChatPerson } from '../../api/chatTypes'
 import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, togglePicked } from '../../domain/chatGroups'
 import { cleanQuery } from '../../domain/chatConnections'
@@ -252,6 +254,7 @@ export function DeleteChat({ chat, onClose, onDeleted }: { chat: { id: string; k
 export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () => void; onChanged: () => void }) {
   const group = useMine(() => api.chatGroups.get(id), [id])
   const shipTime = useShipTime()
+  const nav = useNavigate()
   const connections = useMine(() => api.chatConnections.list())
   useChatLive(() => { group.retry(); connections.retry() })
   const [leaving, setLeaving] = useState(false)
@@ -274,10 +277,12 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
         {(g) => (
           <>
             <h3>{headingCase(t('cgroup.members', { count: g.members.length }))}</h3>
-            <ul className="plain-list">
+            <ul className="plain-list group-members">
               {inJoinOrder(g.members).map((m) => (
                 <li key={m.id}>
-                  <span className="person-line"><ChatAvatar avatar={m.avatar} name={m.name} small /><strong>{m.you ? t('conv.you') : m.name}</strong><> <span className="muted">{t(m.creator ? 'cgroup.status.leader' : 'cgroup.status.participant')}</span></></span>
+                  <span className="person-line">{m.you
+                    ? <ChatAvatar avatar={m.avatar} name={m.name} small />
+                    : <button type="button" className="greet-face gmem__face" aria-label={t('chat.greet', { name: m.name })} onClick={() => { requestGreeting(m.name); void nav(`/chat/c/${encodeURIComponent(id)}`) }}><ChatAvatar avatar={m.avatar} name={m.name} small /></button>}<strong>{m.you ? t('conv.you') : m.name}</strong><> <span className="muted">{t(m.creator ? 'cgroup.status.leader' : 'cgroup.status.participant')}</span></></span>
                   {g.isCreator && !m.you && <Button variant="secondary" icon={Trash2} disabled={remove.busy} onClick={() => void remove.run(m.id, m.name)}>{t('cgroup.remove')}<span className="visually-hidden"> {m.name}</span></Button>}
                   <MemberStats m={m} total={g.members.reduce((n, x) => n + (x.messages ?? 0), 0)} shipTime={shipTime} />
                 </li>

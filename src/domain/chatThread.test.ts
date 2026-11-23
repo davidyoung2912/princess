@@ -131,8 +131,8 @@ describe('replies, quick replies and the unread divider', () => {
   })
 
   it('has a fixed set of six quick replies', () => {
-    expect(QUICK_REPLY_KEYS).toHaveLength(6)
-    expect(new Set(QUICK_REPLY_KEYS).size).toBe(6)
+    expect(QUICK_REPLY_KEYS).toHaveLength(14)
+    expect(new Set(QUICK_REPLY_KEYS).size).toBe(14)
   })
 })
 
