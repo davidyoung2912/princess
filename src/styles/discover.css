@@ -127,3 +127,21 @@ section[aria-labelledby='find8-h'] > section { margin-top: var(--space-5); }
 section[aria-labelledby='find8-h'] > [role='status'], section[aria-labelledby='find8-h'] > [role='alert'] { margin-top: 0; }
 section[aria-labelledby='find8-h'] .button-row { gap: var(--space-3) var(--space-4); margin-bottom: var(--space-4); }
 section[aria-labelledby='find8-h'] section > .button-row:last-child { margin-bottom: 0; }
+
+/* Place maps: drawn from coordinates, no tiles. Pins carry numbers, so colour is never the only cue. */
+.place-map { margin: 0 0 var(--space-4); }
+.place-map__svg { display: block; width: 100%; height: auto; max-height: 24rem; border: 1px solid var(--border-strong); border-radius: var(--radius-card); }
+.place-map__bg { fill: var(--surface-info); }
+.place-map__route { fill: none; stroke: var(--primary); stroke-width: 3; stroke-dasharray: 8 6; stroke-linejoin: round; }
+.place-map__pin { cursor: pointer; }
+.place-map__pin circle { fill: var(--primary); stroke: var(--bg); stroke-width: 2.5; }
+.place-map__pin text { fill: var(--on-primary); font-size: 13px; font-weight: 700; pointer-events: none; }
+.place-map__pin--on circle { fill: var(--attention); stroke: var(--text); }
+.place-map__pin--on text { fill: var(--on-attention); }
+.place-map__scale line { stroke: var(--text); stroke-width: 2; }
+.place-map__scale text { fill: var(--text); font-size: 12px; }
+.place-map__list { padding-inline-start: var(--space-5); display: grid; gap: var(--space-2); margin: var(--space-3) 0; }
+.place-map__item--on { font-weight: 700; }
+.place-map__embed { display: block; width: 100%; height: 22rem; border: 1px solid var(--border-strong); border-radius: var(--radius-card); margin-top: var(--space-3); }
+.port-details__pin { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; margin-inline-end: var(--space-2); border-radius: 50%; background: var(--primary); color: var(--on-primary); font-size: var(--fs-caption); font-weight: 700; }
+.port-details__place--on { outline: 3px solid var(--primary); outline-offset: 2px; }

@@ -8,7 +8,12 @@ import { VitePWA } from 'vite-plugin-pwa'
  * in-process; the only network call is to the app's own API (`connect-src`); the concierge's model is called by the server. Build-only: the dev
  * server needs inline scripts for hot reload. React sets styles through the DOM, hence 'unsafe-inline' for styles alone.
  */
-const cspFor = (apiUrl: string): string => [
+/** The optional Google map embed (docs/mcp-integration-plan.md, phase 1): its frame is allowed only when a build sets `VITE_GOOGLE_MAPS_EMBED_KEY`, and only for Google's map embed address. */
+function mapFrame(key: string): string {
+  return key ? " frame-src https://www.google.com/maps/embed/" : ''
+}
+
+const cspFor = (apiUrl: string, mapKey = ''): string => [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
@@ -19,7 +24,7 @@ const cspFor = (apiUrl: string): string => [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'none'",
-].join('; ')
+].join('; ') + mapFrame(mapKey)
 
 /** The API's origin for `img-src` when it is absolute: guest avatars are pictures served by the API (`/public/avatars/<id>`), so an image tag needs that origin too. */
 function apiImages(apiUrl: string): string {
@@ -36,11 +41,11 @@ function apiOrigin(apiUrl: string): string {
   } catch { return '' }
 }
 
-const contentSecurityPolicy = (apiUrl: string): Plugin => ({
+const contentSecurityPolicy = (apiUrl: string, mapKey: string): Plugin => ({
   name: 'content-security-policy',
   apply: 'build',
   transformIndexHtml: () => [
-    { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: cspFor(apiUrl) }, injectTo: 'head-prepend' },
+    { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: cspFor(apiUrl, mapKey) }, injectTo: 'head-prepend' },
     { tag: 'meta', attrs: { name: 'referrer', content: 'no-referrer' }, injectTo: 'head-prepend' },
   ],
 })
@@ -79,7 +84,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    contentSecurityPolicy(loadEnv(mode, process.cwd(), 'VITE_').VITE_API_URL?.trim() ?? ''),
+    contentSecurityPolicy(loadEnv(mode, process.cwd(), 'VITE_').VITE_API_URL?.trim() ?? '', loadEnv(mode, process.cwd(), 'VITE_').VITE_GOOGLE_MAPS_EMBED_KEY?.trim() ?? ''),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],

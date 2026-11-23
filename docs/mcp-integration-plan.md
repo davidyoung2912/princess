@@ -138,3 +138,5 @@ Excursion discovery (GetExperience, Peek) once an endpoint is verified reachable
 ## 8. Progress log
 
 (Updated as each phase is committed.)
+
+- **Phase 1 done.** `src/maps/geo.ts` and `googleMaps.ts` (pure, tested), `PlaceMap` (SVG map, numbered pins, optional route, text list, Google links, click-to-load embed only with `VITE_GOOGLE_MAPS_EMBED_KEY`), wired into Port Details with pin numbers on each attraction and a "Show on map" button. CSP gains `frame-src https://www.google.com/maps/embed/` only when the key is set at build time. To switch the embed on: create a Maps Embed API key restricted to the site's referrer and set `VITE_GOOGLE_MAPS_EMBED_KEY` for the build (optional; everything works without it).

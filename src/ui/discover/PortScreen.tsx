@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { PillIcon } from '../PillIcon'
 import { t, th, type StringKey } from '../../i18n'
@@ -16,6 +17,8 @@ import { SaveShare } from './parts'
 import { StanleyExplain } from '../ai/StanleyExplain'
 import { TenderOutlook } from './TenderOutlook'
 import { SendToChat } from '../onboard/SendToChat'
+import { PlaceMap, type MapPin } from '../maps/PlaceMap'
+import { isLatLng } from '../../maps/geo'
 
 /**
  * Port Details: everything the guide holds for one port (the server's port guide): what it is like, how to get ashore, the things to do by how easy they
@@ -69,6 +72,11 @@ function Area({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuide>> }
 
 function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuide>> }) {
   const tiers = byTier(guide.attractions)
+  const [picked, setPicked] = useState<string | null>(null)
+  // Pins are numbered in the order the places are listed below (easiest to reach first), so a number on the map is a number in the list.
+  const pins: MapPin[] = tiers.flatMap((g) => g.items).filter((a) => a.map && isLatLng(a.map)).map((a) => ({ id: a.name, label: a.name, at: a.map!, note: a.tier }))
+  const pinNo = (name: string) => pins.findIndex((p) => p.id === name) + 1
+  const pick = (id: string) => { setPicked(id); document.getElementById('pd-map')?.scrollIntoView({ block: 'nearest' }) }
   const rows = guide.stats ? FACTS.filter((f) => guide.stats?.[f.key]) : []
   const jumps: { id: string; label: StringKey }[] = [
     ...(guide.gettingAshore || guide.currencyLanguage || guide.officialLinks.length > 0 ? [{ id: 'pd-ashore-h', label: 'discover.gettingAshore' as StringKey }] : []),
@@ -105,10 +113,18 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
         <section aria-labelledby="pd-do-h">
           <h2 id="pd-do-h" tabIndex={-1}><PillIcon heading label={th('discover.thingsToDo')} />{th('discover.thingsToDo')}</h2>
           <p className="muted">{t('portguide.attractionsNote')}</p>
+          {pins.length > 1 && (
+            <Card info>
+              <div id="pd-map" tabIndex={-1}>
+                <PlaceMap title={t('maps.portTitle')} pins={pins} selectedId={picked} onSelect={setPicked} />
+                <p className="muted">{t('maps.portNote')}</p>
+              </div>
+            </Card>
+          )}
           {tiers.map((g) => (
             <div key={g.tier} role="group" aria-label={g.tier}>
               <h3>{g.tier}</h3>
-              <ul className="card-grid">{g.items.map((a) => <AttractionCard key={a.name} a={a} />)}</ul>
+              <ul className="card-grid">{g.items.map((a) => <AttractionCard key={a.name} a={a} pin={pinNo(a.name)} picked={picked === a.name} onShow={pick} />)}</ul>
             </div>
           ))}
         </section>
@@ -127,13 +143,14 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
   )
 }
 
-function AttractionCard({ a }: { a: GuideAttraction }) {
+function AttractionCard({ a, pin, picked, onShow }: { a: GuideAttraction; pin: number; picked: boolean; onShow: (id: string) => void }) {
   return (
-    <li className="card port-details__place">
-      <h4>{a.name}{a.aka && <span className="muted"> {a.aka}</span>}</h4>
+    <li className={`card port-details__place${picked ? ' port-details__place--on' : ''}`}>
+      <h4>{pin > 0 && <span className="port-details__pin" aria-label={`${pin}.`}>{pin}</span>}{a.name}{a.aka && <span className="muted"> {a.aka}</span>}</h4>
       {a.why && <p>{a.why}</p>}
       {a.logistics.length > 0 && <dl className="port-details__logistics">{a.logistics.map((l) => <div key={l.label}><dt>{l.label}</dt><dd>{l.text}</dd></div>)}</dl>}
       <p className="row">
+        {pin > 0 && <button type="button" className="btn btn--secondary" aria-pressed={picked} onClick={() => onShow(a.name)}>{t('maps.show')}<span className="visually-hidden"> {a.name}</span></button>}
         {a.map && <a className="btn btn--secondary" href={directionsUrl(a.map)} target="_blank" rel="noreferrer">{t('portguide.directions')}<span className="visually-hidden"> {a.name} {t('portguide.newTab')}</span></a>}
         {a.map && <a href={mapUrl(a.map)} target="_blank" rel="noreferrer">{t('portguide.map')}<span className="visually-hidden"> {a.name} {t('portguide.newTab')}</span></a>}
         {a.links.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noreferrer">{l.label}<span className="visually-hidden"> {t('portguide.newTab')}</span></a>)}
