@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLE_TYPES, BUNDLE_VERSION, REF_TYPES, bundleLink, bundleSummary, eventRef, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
+import { BUNDLE_TYPES, BUNDLE_VERSION, REF_TYPES, bundleLink, bundleSummary, eventRef, gameOfBundle, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
 
 const venue = { type: 'venue', v: 1, title: 'Crown Grill', subtitle: 'Steakhouse', path: '/dining-today/crown-grill', place: 'Deck 7' }
 
@@ -27,8 +27,8 @@ describe('isKnownBundle and bundleLink', () => {
   })
   it('does not know a newer payload or another type, so an older app shows the fallback', () => {
     expect(isKnownBundle({ type: 'venue', v: BUNDLE_VERSION + 1 })).toBe(false)
-    expect(isKnownBundle({ type: 'game.sudoku', v: 1 })).toBe(false)
-    expect(bundleLink({ type: 'game.sudoku', v: 1, path: '/dining-today/crown-grill' })).toBeNull()
+    expect(isKnownBundle({ type: 'game.kakuro', v: 1 })).toBe(false)
+    expect(bundleLink({ type: 'game.kakuro', v: 1, path: '/dining-today/crown-grill' })).toBeNull()
   })
   it('opens only the screens a shared item may open', () => {
     expect(bundleLink(venue)).toBe('/dining-today/crown-grill')
@@ -115,6 +115,8 @@ export const BUNDLE_COVERAGE: Readonly<Record<string, string>> = {
   'place on the ship': 'place',
   'day summary and trip itinerary': 'none yet: arrives with the day board follow-up (Add all to my day)',
   'shortlist': 'none yet: waits for the huddle work',
+  'game (Sudoku family, Binairo)': 'game.sudoku',
+  'game (other twelve)': 'none yet: arrives with B9',
 }
 
 describe('bundle coverage', () => {
@@ -123,5 +125,27 @@ describe('bundle coverage', () => {
       expect(item).not.toBe('')
       expect(how in BUNDLE_TYPES || how.startsWith('none yet: ')).toBe(true)
     }
+  })
+})
+
+describe('game bundles', () => {
+  const sent = { type: 'game.sudoku', v: 1, title: 'Sudoku', ref: 'game:sudoku:current', data: 'd=easy;p=0' }
+  it('are in the registry for each shareable game and read their puzzle text and way of sending', () => {
+    for (const id of ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo']) expect(`game.${id}` in BUNDLE_TYPES).toBe(true)
+    expect(gameOfBundle(sent)).toEqual({ game: 'sudoku', mode: 'current', data: 'd=easy;p=0' })
+    expect(gameOfBundle({ ...sent, ref: 'game:binairo:current' })).toBeNull()
+    expect(gameOfBundle({ ...sent, ref: 'game:sudoku:later' })).toBeNull()
+    expect(gameOfBundle({ ...sent, data: undefined })).toBeNull()
+    expect(gameOfBundle({ type: 'venue', ref: 'venue:x' })).toBeNull()
+  })
+  it('keep puzzle text only when it is plain and small', () => {
+    expect(parseBundle(sent)?.data).toBe('d=easy;p=0')
+    expect(parseBundle({ ...sent, data: 'd=easy<b>' })?.data).toBeUndefined()
+    expect(parseBundle({ ...sent, data: 'a'.repeat(4001) })?.data).toBeUndefined()
+    expect(parseBundle({ ...sent, data: 5 })?.data).toBeUndefined()
+  })
+  it('open the game screen from the registry path', () => {
+    expect(bundleLink({ type: 'game.sudoku', v: 1, path: '/games-explorer/sudoku' })).toBe('/games-explorer/sudoku')
+    expect(bundleLink({ type: 'game.sudoku', v: 1, path: '/games-explorer/../admin' })).toBeNull()
   })
 })

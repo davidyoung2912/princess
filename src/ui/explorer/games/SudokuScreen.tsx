@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Notes, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const bit = (d: number) => 1 << (d - 1)
@@ -17,6 +17,7 @@ const WORDS: Record<Variant, { board: StringKey; repeats: StringKey; help1: Stri
   jigsaw: { board: 'sudoku.jigsaw.board', repeats: 'sudoku.jigsaw.repeats', help1: 'sudoku.jigsaw.help.1', help2: 'sudoku.jigsaw.help.2' },
   killer: { board: 'sudoku.killer.board', repeats: 'sudoku.killer.repeats', help1: 'sudoku.killer.help.1', help2: 'sudoku.killer.help.2' },
 }
+const GAME_ID = { classic: 'sudoku', diagonal: 'diagonal-sudoku', jigsaw: 'jigsaw-sudoku', killer: 'killer-sudoku' } as const
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 
 interface Snapshot { entries: number[]; notes: number[] }
@@ -43,12 +44,14 @@ const ENGINES = {
 
 function SudokuGame({ variant }: { variant: Variant }) {
   const engine = ENGINES[variant]
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => engine.generate('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame(GAME_ID[variant])
+  const sent = incoming && incoming.shared.game !== 'binairo' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? engine.generate('easy'))
   const rules = game.rules
   const words = WORDS[variant]
-  const [entries, setEntries] = useState<number[]>(() => Array(81).fill(0))
-  const [notes, setNotes] = useState<number[]>(() => Array(81).fill(0))
+  const [entries, setEntries] = useState<number[]>(() => sent?.entries ?? Array(81).fill(0))
+  const [notes, setNotes] = useState<number[]>(() => sent?.notes ?? Array(81).fill(0))
   const [history, setHistory] = useState<Snapshot[]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [pencil, setPencil] = useState(false)
@@ -139,6 +142,7 @@ function SudokuGame({ variant }: { variant: Variant }) {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     setGame(engine.generate(level))
     setEntries(Array(81).fill(0))
     setNotes(Array(81).fill(0))
@@ -177,6 +181,7 @@ function SudokuGame({ variant }: { variant: Variant }) {
         <LevelBar name="sudoku-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: t(LEVEL_KEYS[d]) }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -247,6 +252,7 @@ function SudokuGame({ variant }: { variant: Variant }) {
           <button type="button" className="sd-tool" onClick={erase} disabled={selected === null}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" aria-pressed={pencil} onClick={() => setPencil((p) => !p)}><Notes aria-hidden="true" focusable="false" /><span>{t(pencil ? 'sudoku.notesOn' : 'sudoku.notesOff')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
+          <GameShare shared={{ game: GAME_ID[variant], puzzle: game, entries, notes }} title={t(words.board)} />
         </div>
         <div className="sd-pad" role="group" aria-label={t('sudoku.pad')}>
           {DIGITS.map((d) => (

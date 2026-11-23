@@ -132,4 +132,41 @@ public class ChatBundleRulesTests
         Assert.Null(ChatBundleRules.ParseDishRef("dish:a:b:c"));
         Assert.False(ChatBundleRules.IsPlannable(ChatBundleRules.Port));
     }
+
+    private static string Clues(int n = 81) => "d=hard;p=" + new string('0', n);
+
+    [Fact]
+    public void AGameBundleIsBuiltFromAFixedTableAndKeepsThePuzzleText()
+    {
+        var b = ChatBundleRules.BuildGame("game:sudoku:start", Clues(), "  try this  ")!;
+        Assert.Equal("game.sudoku", b.Type);
+        Assert.Equal("Sudoku", b.Title);
+        Assert.Equal("Hard, starting position", b.Subtitle);
+        Assert.Equal("/games-explorer/sudoku", b.Path);
+        Assert.Equal(Clues(), b.Data);
+        Assert.Equal("Hard, board so far", ChatBundleRules.BuildGame("game:binairo:current", Clues(36), null)!.Subtitle);
+        Assert.Null(ChatBundleRules.TypeOfRef("game:sudoku:start"));   // no poll, board or code can name a game
+    }
+
+    [Theory]
+    [InlineData("game:sudoku", "d=easy;p=0")]
+    [InlineData("game:sudoku:later", "d=easy")]
+    [InlineData("game:chess:start", "d=easy")]
+    [InlineData("venue:x:start", "d=easy")]
+    [InlineData("game:sudoku:start", "")]
+    [InlineData("game:sudoku:start", "d=nope;p=0")]
+    [InlineData("game:sudoku:start", "d=easy;d=easy;p=0")]
+    public void ABadGameRefOrPayloadIsRefused(string shareRef, string data) => Assert.Null(ChatBundleRules.BuildGame(shareRef, data, null));
+
+    [Fact]
+    public void GamePuzzleTextIsHeldToItsAllowListAndSize()
+    {
+        Assert.False(ChatBundleRules.GameDataOk("sudoku", Clues() + "<b>"));
+        Assert.False(ChatBundleRules.GameDataOk("sudoku", Clues(80)));
+        Assert.False(ChatBundleRules.GameDataOk("binairo", Clues(81)));
+        Assert.True(ChatBundleRules.GameDataOk("binairo", Clues(144)));
+        Assert.False(ChatBundleRules.GameDataOk("sudoku", Clues() + ";x=" + new string('a', ChatBundleRules.GameDataMax)));
+        Assert.False(ChatBundleRules.GameDataOk("sudoku", null));
+        Assert.False(ChatBundleRules.GameDataOk("sudoku", "d=easy;p=" + new string('0', 80) + "x"));
+    }
 }

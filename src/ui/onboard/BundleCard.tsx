@@ -1,5 +1,8 @@
+import { useMemo } from 'react'
 import type { ChatBundle } from '../../api/chatTypes'
-import { BUNDLE_TYPES, bundleLink, bundleSummary, isKnownBundle } from '../../domain/chatBundles'
+import { BUNDLE_TYPES, bundleLink, bundleSummary, gameOfBundle, isKnownBundle } from '../../domain/chatBundles'
+import { holdIncoming } from '../../domain/games/incoming'
+import { decodeGame, type ShareMode } from '../../domain/games/share'
 import { clock12 } from '../../domain/planCard'
 import { t } from '../../i18n'
 import { LinkButton } from '../Button'
@@ -15,6 +18,13 @@ export function BundleCard({ bundle, onOpen }: { bundle: ChatBundle; onOpen?: ()
   const type = known ? BUNDLE_TYPES[bundle.type] : undefined
   const link = bundleLink(bundle)
   const label = type ? t(type.label) : ''
+  // Phase B8: a game opens the puzzle in its own screen. The text is decoded here (it can be anything a sender wrote), and the puzzle waits in memory for the screen, never in the address.
+  const game = useMemo(() => {
+    const g = known ? gameOfBundle(bundle) : null
+    const shared = g ? decodeGame(g.game, g.data) : null
+    return g && shared ? { ...g, shared } : null
+  }, [bundle, known])
+  const play = (mode: ShareMode) => { if (game) holdIncoming(game.game, game.shared, mode); onOpen?.() }
   const when = [bundle.day !== undefined ? t('card.day', { day: bundle.day }) : '', bundle.time ? clock(bundle.time) : ''].filter(Boolean).join(', ')
   return (
     <div className={['chat-card', 'chat-card--bundle', `chat-card--${bundle.type.replace(/\W/g, '-')}`].join(' ')} role="group" aria-label={[label, bundleSummary(bundle, clock)].filter(Boolean).join(': ')}>
@@ -25,6 +35,12 @@ export function BundleCard({ bundle, onOpen }: { bundle: ChatBundle; onOpen?: ()
       {bundle.place && bundle.place !== bundle.title && <p>{bundle.place}</p>}
       {bundle.note && <p>{bundle.note}</p>}
       {!known ? <p className="muted">{t('bundle.update')}</p>
+        : bundle.type.startsWith('game.') ? (game && link ? (
+          <div className="button-row">
+            <LinkButton to={link} variant="secondary" onClick={() => play(game.mode)} aria-label={`${t(game.mode === 'start' ? 'game.open.play' : 'game.open.current')}: ${bundle.title}`}>{t(game.mode === 'start' ? 'game.open.play' : 'game.open.current')}</LinkButton>
+            {game.mode === 'current' && <LinkButton to={link} variant="secondary" onClick={() => play('start')} aria-label={`${t('game.open.start')}: ${bundle.title}`}>{t('game.open.start')}</LinkButton>}
+          </div>
+        ) : <p className="muted">{t('game.open.bad')}</p>)
         : link ? <LinkButton to={link} variant="secondary" onClick={onOpen} aria-label={t('card.open.label', { title: bundle.title })}>{t('card.open')}</LinkButton>
         : <p className="muted">{t('card.gone')}</p>}
     </div>

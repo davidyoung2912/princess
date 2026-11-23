@@ -216,8 +216,10 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
     /// A bundle (docs/chat-bundles-plan.md, phase B1) for a ref: a venue or a menu from the guest's own ship, rebuilt here from the ship's data and carrying only a title, subtitle, place and screen. The sender supplies the ref and a short note, never the words.
     /// 400 <c>shareRef</c> for a ref of no known type, a venue or meal the ship does not have, or when there is no current booking.
     /// </summary>
-    public async Task<ChatBundle> BundleAsync(UserRecord actor, string? shareRef, string? note, CancellationToken ct)
+    public async Task<ChatBundle> BundleAsync(UserRecord actor, string? shareRef, string? note, CancellationToken ct, string? data = null)
     {
+        // Phase B8: a game is the one snapshot bundle. The server writes its words from a fixed table; only the puzzle text comes from the sender, held to a character allow-list and a size cap, and never shown as text.
+        if (shareRef is not null && shareRef.StartsWith("game:", StringComparison.Ordinal)) return ChatBundleRules.BuildGame(shareRef, data, note) ?? throw ApiException.Invalid("game");
         var type = ChatBundleRules.TypeOfRef(shareRef) ?? throw ApiException.Invalid("shareRef");
         var card = type == ChatBundleRules.Venue && ChatCardRules.ParseVenueRef(shareRef) is { } venueId ? await VenueCardAsync(actor, venueId, ct)
             : type == ChatBundleRules.Menu && ChatCardRules.ParseMenuRef(shareRef) is { } menu ? await MenuCardAsync(actor, menu.VenueId, menu.Meal, ct)

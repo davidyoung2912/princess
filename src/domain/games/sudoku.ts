@@ -142,6 +142,12 @@ function search(grid: number[], rules: Rules, limit: number, random?: () => numb
 /** How many solutions a puzzle has, counting no further than `limit` (2 is enough to tell unique from not). */
 export const countSolutions = (puzzle: Grid, limit = 2, rules: Rules = CLASSIC): number => search([...puzzle], rules, limit).count
 
+/** The one solution of a puzzle, or null when it has none, has more than one, or the search runs out of its node budget (for a puzzle that came from someone else, so it can never hang the app). */
+export function solveUniqueWithin(puzzle: Grid, rules: Rules, budget = 200000): number[] | null {
+  const r = search([...puzzle], rules, 2, undefined, budget)
+  return r.count === 1 && !r.aborted ? r.first : null
+}
+
 /** The solution of a puzzle, or null when it has none. */
 export const solve = (puzzle: Grid, rules: Rules = CLASSIC): number[] | null => search([...puzzle], rules, 1).first
 
@@ -158,7 +164,7 @@ export const neighbours = (i: number): number[] => {
 }
 
 /** True when the cells of one region form a single connected shape. */
-function connected(region: readonly number[], id: number): boolean {
+export function connected(region: readonly number[], id: number): boolean {
   const cells = region.flatMap((v, i) => (v === id ? [i] : []))
   const seen = new Set<number>([cells[0]])
   const queue = [cells[0]]

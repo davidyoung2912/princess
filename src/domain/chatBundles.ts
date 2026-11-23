@@ -2,6 +2,7 @@
 import type { ChatBundle } from '../api/chatTypes'
 import type { StringKey } from '../i18n'
 import { openablePath } from './chatCards'
+import { GAME_DATA_CHARS, GAME_DATA_MAX, SHAREABLE_GAMES, type ShareMode } from './games/share'
 
 /** The newest payload shape this app understands. A larger number is shown as its title and subtitle only. */
 export const BUNDLE_VERSION = 1
@@ -12,7 +13,7 @@ export interface BundleType {
   /** The word above the card ("Place", "Menu"). */
   label: StringKey
   /** The screen reader's name for the chat icon on this kind of thing. */
-  family: 'venue' | 'menu' | 'event' | 'excursion' | 'dinner' | 'port' | 'place' | 'dish'
+  family: 'venue' | 'menu' | 'event' | 'excursion' | 'dinner' | 'port' | 'place' | 'dish' | 'game'
   /** Phase B2: it has a day and a time, so it can be asked about (Going, Maybe, No) as well as just sent. */
   plannable?: boolean
   /** How a code for it is made: `direct` for public catalogue data (the address holds the ref, no signal needed), `handoff` for anything personal (a short code the server keeps for a short time). */
@@ -31,6 +32,8 @@ export const BUNDLE_TYPES: Readonly<Record<string, BundleType>> = {
   port: { label: 'bundle.type.port', family: 'port', qr: 'direct' },
   place: { label: 'bundle.type.place', family: 'place', qr: 'direct' },
   dish: { label: 'bundle.type.dish', family: 'dish', qr: 'direct' },
+  // Phase B8: a game is the one snapshot bundle (its puzzle text rides in `data`); a code for it is a handoff code that waits for a later phase, so nothing offers one yet.
+  ...Object.fromEntries(SHAREABLE_GAMES.map((id) => [`game.${id}`, { label: 'bundle.type.game', family: 'game', qr: 'handoff' } satisfies BundleType])),
 }
 
 /** The types a ref can start with. A booked excursion or dinner (`excursion:<id>`, `dining:<id>`) is an older card and is not one, though a bundle may carry the type `excursion` (made from an `event:` ref). */
@@ -67,11 +70,21 @@ export function parseBundle(raw: unknown): ChatBundle | null {
   }
   const day = whole(r.day)
   if (day !== undefined) out.day = day
+  if (typeof r.data === 'string' && r.data.length <= GAME_DATA_MAX && GAME_DATA_CHARS.test(r.data)) out.data = r.data
   return out
 }
 
 /** Whether this app can open the bundle: a type in the registry and a payload no newer than it knows. Anything else shows the title and subtitle and "Update the app to open this". */
 export const isKnownBundle = (b: Pick<ChatBundle, 'type' | 'v'>): boolean => b.type in BUNDLE_TYPES && b.v <= BUNDLE_VERSION
+
+/** The game, the way it was sent and the puzzle text in a game bundle, or null for any other bundle (or a game bundle with no puzzle text). Whether the text is a puzzle is for `decodeGame` to say. */
+export function gameOfBundle(b: Pick<ChatBundle, 'type' | 'ref' | 'data'>): { game: string; mode: ShareMode; data: string } | null {
+  if (!b.type.startsWith('game.') || !b.data) return null
+  const game = b.type.slice(5)
+  const parts = (b.ref ?? '').split(':')
+  const mode = parts[2]
+  return parts.length === 3 && parts[0] === 'game' && parts[1] === game && (mode === 'start' || mode === 'current') ? { game, mode, data: b.data } : null
+}
 
 /** Where Open goes, or null: an unknown bundle, or a path that is not one of the screens a shared item may open (the path never decides by itself, the allow-list does). */
 export function bundleLink(b: Pick<ChatBundle, 'type' | 'v' | 'path'>): string | null {

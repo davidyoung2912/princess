@@ -120,7 +120,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         return new ChatBoardDto(board.Day, items, gone.Count > 0 ? gone : null, clashes.Count > 0 ? clashes : null);
     }
 
-    private static ChatBundleDto BundleDto(ChatBundle b) => new(b.Type, b.V, b.Title, b.Subtitle, b.Path, b.Day, b.Time, b.Place, b.Ref, b.Note);
+    private static ChatBundleDto BundleDto(ChatBundle b) => new(b.Type, b.V, b.Title, b.Subtitle, b.Path, b.Day, b.Time, b.Place, b.Ref, b.Note, b.Data);
 
     private static ChatCardDto CardDto(ChatCard c, long nowMs, IReadOnlySet<Guid>? stillBooked = null) => new(c.Type, c.Title, c.Subtitle, c.Day, c.Time, c.Place, c.Path, c.ExpiresAt, ChatCardRules.IsExpired(c.ExpiresAt, nowMs), c.Note, stillBooked is not null && ChatCardRules.IsGone(c, stillBooked));
 
@@ -293,7 +293,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         else if (kind == ChatBundleRules.Kind)
         {
             // A bundle is rebuilt here from the ship's own data, like a card; its one free-text part, the note, is held to the rules of a message.
-            var bundle = await share.BundleAsync(actor, body?.ShareRef, body?.Note, ct);
+            var bundle = await share.BundleAsync(actor, body?.ShareRef, body?.Note, ct, body?.Data);
             payload = ChatBundleRules.Serialise(bundle);
             if (ChatCardRules.HasForbiddenKey(payload)) throw ApiException.Invalid("kind");   // a guard: no bundle may carry money or identity
             text = ChatBundleRules.Preview(bundle);

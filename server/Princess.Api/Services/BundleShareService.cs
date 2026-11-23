@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// </summary>
 public sealed class BundleShareService(IBundleShareStore store, ChatShareService share, IUserStore users, IClock clock, ChatGroupService groups, ChatConnectionService connections)
 {
-    private static ChatBundleDto Dto(ChatBundle b) => new(b.Type, b.V, b.Title, b.Subtitle, b.Path, b.Day, b.Time, b.Place, b.Ref, b.Note);
+    private static ChatBundleDto Dto(ChatBundle b) => new(b.Type, b.V, b.Title, b.Subtitle, b.Path, b.Day, b.Time, b.Place, b.Ref, b.Note, b.Data);
 
     private static ShareCodeDto Dto(BundleShareRow r, string? code = null) => new(r.PublicId, r.Ref, Shipboard.Ms(r.ExpiresAt), r.Scans, code, code is null ? null : $"/s/{code}");
 
