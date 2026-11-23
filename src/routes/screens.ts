@@ -178,6 +178,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'S36', path: '/ship/dnd', titleKey: 'screen.S36.title', subtextKey: 'screen.S36.subtext', family: 'S' },
   { id: 'S37', path: '/ship/port', titleKey: 'screen.S37.title', subtextKey: 'screen.S37.subtext', family: 'S' },
   { id: 'S38', path: '/ship/port/guide', titleKey: 'screen.S38.title', subtextKey: 'screen.S38.subtext', family: 'S' },
+  { id: 'S51', path: '/ship/know-how', titleKey: 'screen.S51.title', subtextKey: 'screen.S51.subtext', family: 'S' },
   { id: 'S50', path: '/ship/away', titleKey: 'screen.S50.title', subtextKey: 'screen.S50.subtext', family: 'S' },
   { id: 'S39', path: '/ship/port/snapshot', titleKey: 'screen.S39.title', subtextKey: 'screen.S39.subtext', family: 'S' },
   { id: 'C01', path: '/chat', titleKey: 'screen.C01.title', subtextKey: 'screen.C01.subtext', family: 'C' },
@@ -343,7 +344,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     tiles: ['X28', 'X13', 'M08', 'P02', 'P01', 'P47'],
     tabs: [
       { label: 'Plan', colour: 'teal', subtext: 'Book excursions and dining and shape your days.', screens: ['X28', 'X13', 'P04', 'P35', 'P36', 'P26', 'P27', 'P24', 'P23', 'P25', 'P28', 'P34', 'P39', 'P40', 'P41', 'P42', 'P44', 'P45', 'P06', 'S18', 'S19', 'S38', 'H09', 'X20', 'X16', 'S01', 'S02'] },
-      { label: 'Prepare', colour: 'pink', subtext: 'Pack, travel and sort things at home.', screens: ['P01', 'P02', 'P03', 'P05', 'P07', 'P29', 'P31', 'P33', 'H38', 'H24', 'S45'] },
+      { label: 'Prepare', colour: 'pink', subtext: 'Pack, travel and sort things at home.', screens: ['P01', 'P02', 'P03', 'P05', 'P07', 'P29', 'P31', 'P33', 'H38', 'H24', 'S45', 'S51'] },
       { label: 'Group', colour: 'gold', subtext: 'Your travel party and the people at home.', screens: ['P47', 'P48', 'P49', 'P50', 'P43', 'P46', 'P51', 'P52', 'M14'] },
     ],
     me: { subtext: 'Payments, documents, packages and rewards.', screens: ['M02', 'M03', 'M06', 'M07', 'M08', 'M09', 'P13', 'P14', 'P12', 'P15', 'P16', 'P17', 'P18', 'M14', 'M46', ...SETTINGS_AND_HELP] },
@@ -363,7 +364,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     tiles: ['H33', 'H35', 'S25', 'S01', 'S23', 'S27'],
     tabs: [
       { label: 'Board', colour: 'gold', subtext: 'Check-in, your pass and getting aboard.', screens: ['H32', 'H33', 'H34', 'H35', 'H31', 'H36', 'H37', 'H29', 'H26', 'H24', 'H25', 'S40', 'S25', 'S26'] },
-      { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S14', 'S15', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16'] },
+      { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S14', 'S15', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16', 'S51'] },
       { label: 'Plan', colour: 'teal', subtext: 'Book excursions and dining and shape your days.', screens: ['P35', 'P36', 'X28', 'X13', 'P34', 'P26'] },
     ],
     me: { subtext: 'Your account on board: bill, top-up and help.', screens: ['M10', 'M12', 'M11', 'M08', 'M02', 'M06', 'M46', ...SETTINGS_AND_HELP] },
@@ -373,7 +374,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     tiles: ['H22', 'X13', 'P34', 'S40', 'S01', 'M11'],
     tabs: [
       { label: 'Today', colour: 'teal', subtext: 'Your day on board: events, meals and what is next.', screens: ['H22', 'P34', 'P35', 'P36', 'X28', 'X13', 'P39', 'P40', 'P41', 'P42', 'P26', 'S04', 'H24', 'H25', 'H39', 'H40', 'H41', 'H44', 'H45'] },
-      { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16'] },
+      { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16', 'S51'] },
       { label: 'People', colour: 'gold', subtext: 'Your family, your group and the community.', screens: ['S40', 'S41', 'S42', 'S43', 'S44', 'S45', 'S46', 'S47', 'S48', 'S49', 'P27', 'P47', 'P43', 'P45'] },
     ],
     me: { subtext: 'Your bill, your spending and anything to sort out.', screens: ['M10', 'M11', 'M12', 'M08', 'M24', 'M02', 'M06', 'M46', ...SETTINGS_AND_HELP] },
@@ -383,7 +384,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     tiles: ['S37', 'S38', 'X28', 'S32', 'P31', 'S40'],
     tabs: [
       { label: 'Port', colour: 'teal', subtext: 'Your day ashore, with the all-aboard time.', screens: ['S37', 'S50', 'S38', 'S39', 'H09', 'H52', 'H53', 'H54', 'X28', 'P44', 'S32', 'P31', 'H38', 'S33', 'S45', 'S46', 'H25', 'H22', 'P34', 'P35'] },
-      { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16'] },
+      { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36', 'X20', 'X16', 'S51'] },
       { label: 'People', colour: 'gold', subtext: 'Your family, your group and the community.', screens: ['S40', 'S41', 'S42', 'S43', 'S44', 'S45', 'S46', 'S47', 'S48', 'S49', 'P27', 'P47', 'P43', 'P45'] },
     ],
     me: { subtext: 'Your bill, your spending and anything to sort out.', screens: ['M10', 'M11', 'M12', 'M08', 'M24', 'M02', 'M06', 'M46', ...SETTINGS_AND_HELP] },

@@ -28,7 +28,7 @@ Status key: [ ] not started, [~] in progress, [x] done.
 | D | 1: security | review, fixes | [x] |
 | E | 2: performance | review, budgets, reduction plan | [x] |
 | F | 3: code health (outside-reviewer view) | review, fixes, scorecard | [x] |
-| G | 8, 9: pages per stage, journey guidance | review, new guidance | [ ] |
+| G | 8, 9: pages per stage, journey guidance | review, one new page, gap list | [x] |
 | H | 10, 11: chat and day planning | review, improvements | [ ] |
 | I | 12: guided tour coverage | tour content | [ ] |
 | J | 14: Stanley ideas | document only | [ ] |
@@ -133,3 +133,29 @@ Overall: a strong engineering core that an outside reviewer would rate **B to B+
 - Scoped the 38 `jsx-a11y` warnings on the puzzle grids out with a documented override: those grids use the valid roving-tabindex pattern (one cell `tabIndex=0`, the container handles keys), which the rule cannot see. Lint now shows 14 warnings, all real (components created during render in `PillIcon` and `VenueDetailPage`, `setState` in effects in `NicknameField` and `ContactSteps`, `Date.now()` during render in `GuideStanley`, a use-before-initialised callback in `ChatConversations`, fast-refresh export warnings).
 
 **Open, in priority order:** (1) run and fix the 31 API tests; (2) move `PortsReference.cs` data to a JSON content file with a generator and a test; (3) fix the 14 real lint warnings (the `GuideStanley` and `ChatConversations` ones are possible bugs); (4) split `ChatConversations.tsx` by tab; (5) archive superseded planning documents under `docs/archive/` with an index of the current ones; (6) add coverage reporting (`vitest --coverage`) and a threshold in CI; (7) the owner to choose a LICENSE and a real `security.txt` contact; (8) add schema migration versioning (the schema is one idempotent 4,154-line script, which works but gives no upgrade history).
+
+### Phase G: pages per stage and the user journey (steps 8 and 9)
+
+**Step 8, pages offered per stage.** The registry holds 254 screens (after this phase). Screens used per stage: Dream 48, Discover 52, Book 51, Manage 67, Prebook 83, Get to the ship 69, Embark 73, Sea 99, Port 98, Disembark 53, Remember 59 (`STAGE_TABS`; the matrix is `docs/stage-menus-matrix.md`). Every stage has Home, two or three stage tabs and Me. The aboard and prebook stages are rich; the earlier stages (Dream to Book) have the fewest guidance pages relative to their importance, because they are where a guest decides whether to trust the product.
+
+Topics a first-time or returning guest asks about that had **no page of their own** (checked by searching the screen titles and the English catalogue): what to wear and formal nights, the ship's rules in brief (smoking, bringing drinks, appliances, medicines), how money works aboard, the words crew use, how to use a sea day, whether a drink package is worth it, what travel insurance is for, and how a tender port works.
+
+*Built:* **S51 Cruise Know-How** (`/ship/know-how`, `src/domain/knowHow.ts`, `KnowHowScreen.tsx`): eight topics of four or five plain tips each, with the topics that matter most at the guest's stage first and one link per topic to the screen that holds the real answer (packing, help centre, top-up and gratuities, glossary, activities, prepay, what-if, port know-how). It opens at every stage (`ALWAYS_OPEN_SCREENS`), appears under Prepare (Prebook) and under Ship (Embark, Sea, Port), has two page tips and four Stanley page questions, is listed in the offline contract (works offline, it is static) and in search words. Tips state what is usual, never a price or a policy as fact (the page says so).
+
+*Proposed, in priority order* (each is one more page of the same kind, or a small tool):
+1. **First cruise in ten minutes** (Dream, Discover): what a cruise day looks like, what is and is not included, how embarkation works. Today this is spread across H06, H13 and H12.
+2. **What is included and what costs extra** (Discover, Book): a fare-aware list built from the catalogue's fare book, so the total on H12 is explained, not just stated.
+3. **Documents and deadlines timeline** (Manage): one vertical timeline of passport validity, visas, final payment, check-in opening, and the day each document is due, per traveller (data exists in `countdowns` and the readiness board; the page does not).
+4. **Insurance task and screen** (Manage): the checklist and guide have an optional `manage.insurance` task that lands on the health-prep screen, which is not insurance. Point it at S51's insurance topic now, or build a short "Compare your cover" form (what your policy says, with the date to buy by).
+5. **Tender-port day** (Port): a per-port card that says "tender" in the first line of Port Day with the last-boat-back time and a mobility note; the data (`PORTS[port].tender`) exists.
+6. **Sea-day planner template** (Sea): three ready-made sea days (relaxed, active, family) the guest can drop into Build my Day in one tap.
+7. **Add an earlier cruise** (Remember or Me): a small form that writes `dbo.PastTrips`, which nothing writes today (Phase C), so the "earlier voyages" stats and badges become live.
+8. **Customs by country** (Disembark): H43 exists; add a per-country declaration checklist from the country guides.
+
+**Step 9, the journey across the eleven stages.** The guidance engine is built and tested (`docs/next-steps-guidance-plan.md`, phases G1 to G6 complete): the stage comes from the server; `GuideRules.cs` holds the task catalogue (46 tasks across the stages, each with a destination, minutes, hard or optional, how it is known done, a due date and a reason); Home shows "Do this now" and up to four "Coming up"; skip and later are kept on the account; urgent tasks dot the tabs; moments and push point to the first open task; the checklist runs 90, 60, 30, 14, 7 and 1 days out. The answer to "is it clear what to do when" is **mostly yes for Manage through Embark, and weaker at the edges**:
+- *Before booking (Dream to Book)* has 4 to 5 tasks per stage and no deadlines, which is right, but nothing warns about the things that bite later: passport validity (six months after the sailing for many countries), name-must-match-passport at booking, and the deposit and cancellation dates. A short "before you pay" checklist on the booking confirmation step (name match, passport validity against the last port date, cancellation date) is the highest-value warning left.
+- *Disembark to Remember* tasks are present (7 and 6) but the post-trip clock is thin: nothing reminds a guest about the claim window for lost items or the feedback deadline.
+- *Warnings are rules-based and reactive.* The server pushes disruptions, event moves and cancellations, dining and spa reminders and the all-aboard time; it does not yet warn ahead of time about conflicts the guest created (an excursion that ends too close to all-aboard is flagged at booking, but not re-checked when a port time changes), a payment due while the card on file expires, or a traveller whose passport expires before the return date.
+- *Open from the guidance plan:* "Do it for me" on a task, Help and Remind-me on the "Coming up" rows, keying push to guide task ids, access needs in the personal fit, an insurance task and a "meet people" task for solo guests.
+
+*Proposed warnings, in priority order:* (1) passport validity against the itinerary's last port date, per traveller, at Manage and again at 30 days; (2) "excursion no longer fits" when a port time moves; (3) final-payment and card-expiry clash; (4) "you have not checked in and it closes in 24 hours" (the countdown exists; make it a push); (5) missing documents per traveller at 7 days, listed by name; (6) a quiet "you have booked nothing for the sea day" note the evening before.

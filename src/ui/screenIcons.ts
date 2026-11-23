@@ -201,7 +201,7 @@ export const SCREEN_ICONS: Record<string, LucideIcon> = {
   S04: Newspaper, S05: Search, S06: Footprints, S07: Umbrella, S08: Binoculars, S09: Navigation, S10: Waves, S11: Milestone, S12: Moon,
   S13: Activity, S14: MessageCircleQuestion, S15: Coffee, S16: Wine, S17: ShoppingBag, S18: Flower2, S19: ChefHat, S20: Shirt, S21: ConciergeBell,
   S22: BedDouble, S23: Wifi, S24: Tv, S25: Megaphone, S26: Siren, S27: Ambulance, S28: MessageSquareText, S29: ShieldAlert, S30: Stethoscope,
-  S31: Pill, S32: ShieldCheck, S33: Wheat, S34: PackageSearch, S35: Captions, S36: BellOff, S37: MapPin, S38: BookOpen, S39: MapPinned,
+  S31: Pill, S32: ShieldCheck, S33: Wheat, S34: PackageSearch, S35: Captions, S36: BellOff, S37: MapPin, S38: BookOpen, S51: Lightbulb, S39: MapPinned,
   C01: MessagesSquare, C02: Users, C03: MessageSquareMore, C04: Search, C05: Baby, C06: Headset, C07: MessageCircle, S40: LocateFixed, S41: Baby, S42: Handshake, S43: Gamepad2, S44: CalendarHeart, S45: Timer, S46: ThumbsUp, S47: Megaphone,
   S48: Camera, S49: Volume2, M02: Route, M03: Info, M04: UserRound, M05: Contact, M06: Files, M07: CreditCard, M08: Package, M09: Crown,
   M10: Receipt, M11: ScrollText, M12: Banknote, M13: ReceiptText, M14: HeartHandshake, M15: History, M16: Images, M17: BookHeart, M18: Sparkles,

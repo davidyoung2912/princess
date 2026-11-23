@@ -135,6 +135,7 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/ship/access': 'needs-connection',
   '/ship/games': 'needs-connection',
   '/ship/tv': 'needs-connection',
+  '/ship/know-how': 'offline',
   '/ship/seasick': 'needs-connection',
   '/ship/loungers': 'needs-connection',
   '/ship/kids-report': 'needs-connection',

@@ -222,6 +222,7 @@ export const SCREEN_SPECS: readonly ScreenSpec[] = BASE_SPECS.map((x) => (MORE_W
 
 /** Screens that are not something a guest asks for, so no topic offers them: each is reached another way. */
 export const NOT_ASKED: Readonly<Record<string, string>> = {
+  S51: 'A tips page reached from the stage tabs; each topic is answered by Stanley\u2019s own library and the screens it names.',
   S26: 'the emergency card is what the safety handoff opens; the engine never offers it',
   S29: 'a security concern goes to the safety handoff, not to a pill',
   X01: 'design component kit, not a guest screen',

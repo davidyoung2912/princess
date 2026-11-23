@@ -79,7 +79,7 @@ export const splitMe = (ids: readonly string[]): { main: string[]; settings: str
 })
 
 /** Reference screens a guest can open at any stage, whichever tabs the stage lists: the cruise, sailings, ships, explore, trip cost, ports and countries guides and their lists, and the ship's reference pages (deck map, venues, shops, Wi-Fi, laundry, accessibility, allergy and family information). */
-export const ALWAYS_OPEN_SCREENS: readonly string[] = ['S05', 'M42', 'M43', 'H06', 'H07', 'H08', 'H09', 'H12', 'H47', 'H48', 'H49', 'H50', 'H52', 'H53', 'H54', 'S01', 'S02', 'S03', 'S16', 'S17', 'S20', 'S23', 'S24', 'S31', 'S33', 'S35', 'S41', 'S42']
+export const ALWAYS_OPEN_SCREENS: readonly string[] = ['S05', 'M42', 'M43', 'H06', 'H07', 'H08', 'H09', 'H12', 'H47', 'H48', 'H49', 'H50', 'H52', 'H53', 'H54', 'S01', 'S02', 'S03', 'S16', 'S17', 'S20', 'S23', 'S24', 'S31', 'S33', 'S35', 'S41', 'S42', 'S51']
 
 /** The booking flow (start, steps, resume, confirmed). A guest still dreaming can start booking from a cruise or sailing page ("Book this cruise"), so it opens in that stage too; once booked it is an earlier stage's screen again. */
 export const BOOKING_FLOW_SCREENS: readonly string[] = ['H16', 'H17', 'H18', 'H20']
@@ -140,6 +140,7 @@ export function shipGroupOf(id: string): ShipGroup | null {
   const n = /^S(\d+)$/.exec(id)?.[1]
   if (!n) return null
   const k = Number(n)
+  if (k === 51) return 'services' // Cruise Know-How: tips for aboard
   return k <= 14 ? 'find' : k <= 24 ? 'services' : k <= 36 ? 'safety' : null
 }
 

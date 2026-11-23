@@ -12,7 +12,7 @@ describe('screen registry (P2)', () => {
     const entries = new Set(SCREEN_LIST.map((s) => s.path))
     expect(ROUTES.filter((r) => !TAB_FRONT_PATHS.includes(r.path) && !entries.has(r.path)).map((r) => r.path)).toEqual([])
     expect(SCREEN_LIST.filter((s) => !routes.has(s.path)).map((s) => s.path)).toEqual([])
-    expect(SCREEN_LIST).toHaveLength(253)
+    expect(SCREEN_LIST).toHaveLength(254)
   })
 
   it('has unique ids, paths and titles, each with a title and a subtext', () => {
@@ -93,7 +93,7 @@ describe('screen registry (P2)', () => {
 
   it('counts the screens each stage uses as the plan lists them (Chat is global, so it is not counted)', () => {
     const counts = Object.fromEntries(JOURNEY_STAGES.map((s) => [s, screensOfStage(s).length]))
-    expect(counts).toEqual({ dream: 48, discover: 52, book: 51, manage: 67, prebook: 82, getToShip: 69, embark: 72, sea: 98, port: 97, disembark: 53, remember: 59 })
+    expect(counts).toEqual({ dream: 48, discover: 52, book: 51, manage: 67, prebook: 83, getToShip: 69, embark: 73, sea: 99, port: 98, disembark: 53, remember: 59 })
   })
 
   it('lets guests browse the ship from Dream on, but keeps the on-board services for on board', () => {

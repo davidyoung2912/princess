@@ -142,6 +142,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/ship/access': 'captioned shows; signed shows; sign language; subtitles; hearing',
   '/ship/games': 'ship challenges; challenges; scavenger hunt; trivia; bingo; badges; games; play',
   '/ship/tv': 'cabin tv; television; channels; movies; remote',
+  '/ship/know-how': 'know-how; tips; dress code; formal night; ship rules; smoking; tipping; money aboard; first cruise; drink package; travel insurance; tender',
   '/ship/seasick': 'seasickness; motion sickness; sick; nausea; queasy',
   '/ship/loungers': 'loungers; sun beds; deck chairs; pool seats; reserve a seat',
   '/ship/kids-report': 'kids club report; child report; how was my child; pick up',
