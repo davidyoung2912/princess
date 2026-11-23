@@ -101,7 +101,41 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         // The person is told at once, and the others' open apps refetch so the line and the member count show.
         await notifier.ChatEndedAsync(person.UserId, group.PublicId, group.Name, false, ct);
         await TellAsync(group, [.. members.Where(m => m.UserId != person.UserId && m.UserId != actor.Id)], "members", ct);
+        // Everyone affected gets a Stanley message; everyone but the leader (who just did it) also gets a popup if they are not looking at the chat.
+        var now = await clock.NowAsync(actor, ct);
+        var leader = members.First(m => m.UserId == actor.Id);
+        var gone = Short(person);
+        var stamp = $"{group.PublicId:N}:{person.PublicId:N}:{now.Ticks}";
+        var staying = members.Where(m => m.UserId != person.UserId && m.UserId != actor.Id).ToList();
+        await AnnounceAsync(actor.Id, $"chat:removed:{stamp}", $"{gone} was removed", $"You removed {gone} from “{group.Name}”. They have been told, and they can no longer read or write in the group. You can invite them back from the group page any time.", null, now, true, false, ct, group.PublicId);
+        await AnnounceAsync(person.UserId, $"chat:removedYou:{stamp}", $"You were removed from “{group.Name}”", $"{Short(leader)} removed you from “{group.Name}”, so it is no longer in your chats and you won't see anything new there. If you think this was a mistake, you can ask {Short(leader)} to invite you back.",
+            $"{Short(leader)} removed {gone} from “{group.Name}”, so it is no longer in their chats. If you think this was a mistake, you can ask {Short(leader)} to invite them back.", now, true, false, ct);
+        foreach (var m in staying)
+            await AnnounceAsync(m.UserId, $"chat:removedOther:{stamp}", $"{gone} was removed from “{group.Name}”", $"{Short(leader)} removed {gone} from “{group.Name}”. With {gone} gone, {PeopleLeft(staying.Count + 1)}.", null, now, true, false, ct, group.PublicId);
     }
+
+    /// <summary>
+    /// Tells one person about a change to a chat: a message in their Stanley chat to refer back to and, when <paramref name="popup"/>, a bottom popup (shown by an open app that is not on the main chat page) that stays until Got it.
+    /// A child's guardian is told too, in words about the child. <paramref name="phone"/> is false where another alert for the same event already reaches the phone, and for the person who made the change themself.
+    /// </summary>
+    private async Task AnnounceAsync(long userId, string keyBase, string title, string body, string? guardianBody, DateTime now, bool popup, bool phone, CancellationToken ct, Guid? conversation = null)
+    {
+        // A notice about a group that still exists for the person links to it, and stays quiet while they are looking at it.
+        var path = conversation is Guid c ? $"/chat/c/{c:D}" : "/chat";
+        if (await users.FindByIdAsync(userId, ct) is not { } person) return;
+        var key = $"{keyBase}:{userId}";
+        await stanleyThread.TellAsync(person, key, title, body, now, ct, popup ? "chatEvent" : "chatNote", path);
+        if (popup) await notifier.InfoAsync(userId, key, title, body, ct, phone, path);
+        if (guardianBody is not null && person.IsSupervised && person.BookerUserId is long guardianId && guardianId != userId && await users.FindByIdAsync(guardianId, ct) is { } guardian)
+        {
+            var gkey = $"{keyBase}:guardian:{guardianId}:{userId}";
+            await stanleyThread.TellAsync(guardian, gkey, title, guardianBody, now, ct, "chatEvent", path);
+            if (popup) await notifier.InfoAsync(guardianId, gkey, title, guardianBody, ct, phone, path);
+        }
+    }
+
+    /// <summary>The words about a person leaving or going, for everyone who stays: how many are left.</summary>
+    private static string PeopleLeft(int count) => count == 1 ? "just you are left" : $"{count} people are still in it";
 
     /// <summary>Makes the group announcement-only (only admins post; votes, answers and reactions stay open) or opens it again. Only the creator (the group's only admin) may. 403 admin.</summary>
     public async Task<ChatGroupDto> SetAnnouncementOnlyAsync(UserRecord actor, Guid id, ChatGroupAnnouncementBody? body, CancellationToken ct)
@@ -126,6 +160,7 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
     {
         var group = await CreatorGroupAsync(actor, id, ct);
         var members = await store.ListActiveAsync(group.Id, ct);
+        var waiting = await store.ListWaitingAsync(group.Id, ct);
         await store.DeleteGroupAsync(group.Id, ct);
         var others = members.Where(m => m.UserId != actor.Id).ToList();
         await Task.WhenAll(others.Select(m => notifier.ChatEndedAsync(m.UserId, group.PublicId, group.Name, true, ct)));
@@ -133,12 +168,17 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var leader = members.FirstOrDefault(m => m.UserId == actor.Id);
         var now = await clock.NowAsync(actor, ct);
         var body = $"{(leader is null ? "The leader" : Short(leader))} closed “{group.Name}”, so it has now been removed from your chats. Thank you for being part of the conversation!";
+        var name = leader is null ? "The leader" : Short(leader);
         foreach (var m in others)
+            await AnnounceAsync(m.UserId, $"chat:groupEnded:{group.PublicId:N}", "A chat group has ended", body, $"{name} closed “{group.Name}”, so it has been removed from {Short(m)}'s chats.", now, true, false, ct);   // ChatEndedAsync has already sent the phone alert
+        // The leader keeps a record of closing it, and anyone still deciding on an invitation is told it is no longer open.
+        await AnnounceAsync(actor.Id, $"chat:groupClosed:{group.PublicId:N}", "You closed a chat group", $"You closed “{group.Name}”. Everyone in it has been told and it has been removed from their chats, too.", null, now, false, false, ct);
+        foreach (var w in waiting)
         {
-            if (await users.FindByIdAsync(m.UserId, ct) is not { } member) continue;
-            var key = $"chat:groupEnded:{group.PublicId:N}:{m.UserId}";
-            await stanleyThread.TellAsync(member, key, "A chat group has ended", body, now, ct);
-            await notifier.InfoAsync(m.UserId, key, "A chat group has ended", body, ct, phone: false);   // ChatEndedAsync has already sent the phone alert
+            var text = $"{name} closed “{group.Name}” before the invitation was answered, so there is nothing to join now. You can still ask {name} to start a new group.";
+            await AnnounceAsync(w.InviteeId, $"chat:inviteClosed:{group.PublicId:N}:{w.PublicId:N}", "A chat group invitation was withdrawn", text, null, now, true, true, ct);
+            if (w.GuardianUserId is long guardianId && w.Status == ChatGroupRules.AwaitingGuardian)
+                await AnnounceAsync(guardianId, $"chat:inviteClosedGuardian:{group.PublicId:N}:{w.PublicId:N}", "A chat group invitation was withdrawn", $"{name} closed “{group.Name}” before the invitation for {w.InviteeFirst} was answered, so there is nothing to approve now.", null, now, true, true, ct);
         }
     }
 
@@ -150,14 +190,20 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var me = (await store.ListActiveAsync(group.Id, ct)).First(m => m.UserId == actor.Id);
         var now = await clock.NowAsync(actor, ct);
         if (!await store.RemoveMemberAsync(group.Id, actor.Id, "left", ChatGroupRules.LeftLine(Short(me)), now, ct)) throw ApiException.NotFound();
-        // The leader's Stanley thread says who left. One message per leaving (a person who rejoins and leaves again is told again).
-        if (group.CreatedByUserId is long leaderId && await users.FindByIdAsync(leaderId, ct) is { } leader)
-        {
-            var key = $"chat:left:{group.PublicId:N}:{actor.Id}:{now.Ticks}";
-            var body = $"{Short(me)} left “{group.Name}”.";
-            await stanleyThread.TellAsync(leader, key, "Someone left your chat group", body, now, ct);
-            await notifier.InfoAsync(leaderId, key, "Someone left your chat group", body, ct);
-        }
+        // Everyone affected hears of it in their Stanley chat, and in a popup if they are not looking at the chat: the leader, the people who stay, the person who left (a record only) and a child's guardian.
+        var members = await store.ListActiveAsync(group.Id, ct);
+        var stamp = $"{group.PublicId:N}:{actor.Id}:{now.Ticks}";
+        var who = Short(me);
+        var leaderRow = members.FirstOrDefault(m => m.UserId == group.CreatedByUserId);
+        await AnnounceAsync(actor.Id, $"chat:leftYou:{stamp}", $"You left “{group.Name}”", $"You left “{group.Name}”. It is no longer in your chats, and nothing said there from now on will reach you. If you change your mind, ask {(leaderRow is null ? "the leader" : Short(leaderRow))} to invite you back.",
+            null, now, false, false, ct);
+        if (group.CreatedByUserId is long leaderId)
+            await AnnounceAsync(leaderId, $"chat:left:{stamp}", $"{who} left your chat group", $"{who} chose to leave “{group.Name}”. {(members.Count == 1 ? "Now it is just you." : $"{members.Count} people are still in it.")} You can invite {who} back from the group page any time.", null, now, true, true, ct, group.PublicId);
+        foreach (var m in members.Where(x => x.UserId != group.CreatedByUserId))
+            await AnnounceAsync(m.UserId, $"chat:leftOther:{stamp}", $"{who} left “{group.Name}”", $"{who} chose to leave “{group.Name}”. With {who} gone, {PeopleLeft(members.Count)}.", null, now, true, false, ct, group.PublicId);
+        // The guardian of the child who left is told in words about the child (the child's own notice is above).
+        if (actor.IsSupervised && actor.BookerUserId is long parent && parent != actor.Id)
+            await AnnounceAsync(parent, $"chat:leftChild:{stamp}", $"{who} left “{group.Name}”", $"{who} left “{group.Name}”, so it is no longer in their chats.", null, now, true, false, ct);
     }
 
     /// <summary>Invitations waiting for the caller, and for children they are guardian of.</summary>
@@ -301,7 +347,7 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
             : new List<ChatGroupWaitingDto>();
         var admin = ChatPlanningRules.IsAdmin(creator, members.Any(m => m.UserId == actor.Id && m.IsAdmin));
         return new(group.PublicId, group.Name,
-            [.. members.Select(m => new ChatGroupMemberDto(m.PublicId, Short(m), m.UserId == actor.Id, m.UserId == group.CreatedByUserId, m.IsAdmin, m.Avatar))],
+            [.. members.Select(m => new ChatGroupMemberDto(m.PublicId, Short(m), m.UserId == actor.Id, m.UserId == group.CreatedByUserId, m.IsAdmin, m.Avatar, TripRules.ToMs(m.JoinedAt), m.LastMessageAt is { } lm ? TripRules.ToMs(lm) : null, m.MessageCount, m.LastActiveAt is { } la ? TripRules.ToMs(la) : null))],
             waiting, creator, ChatGroupRules.MaxMembers, group.AnnouncementOnly, admin);
     }
 

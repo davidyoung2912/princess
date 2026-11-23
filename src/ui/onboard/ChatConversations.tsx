@@ -48,7 +48,7 @@ import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { Depart, OctagonAlert, TriangleAlert } from '../icons'
-import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, X, Footprints, type LucideIcon } from 'lucide-react'
+import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, Users, UserPlus, UserMinus, Info, X, Footprints, type LucideIcon } from 'lucide-react'
 
 /** A small icon for each quick reply; the words are its label. */
 const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
@@ -57,7 +57,7 @@ import { ActionError } from '../account/parts'
 import { ClearDraft } from '../ClearDraft'
 import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
-import { DeleteChat, GroupPage, LeaveChat, NewGroupPage } from './ChatGroups'
+import { DeleteChat, GroupMembers, GroupPage, LeaveChat, NewGroupPage } from './ChatGroups'
 import { LeavePersonalChat, NewPersonalChatPage } from './ChatPersonal'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
@@ -226,6 +226,17 @@ function AwayPeople({ rows, onChange }: { rows: readonly ChatConversation[]; onC
   )
 }
 
+/** The button in an open group that shows the same members dialog as the icon on the group's card. */
+function MembersButton({ chat, shipTime }: { chat: { id: string; name: string }; shipTime: (at: number) => string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button variant="secondary" icon={Users} onClick={() => setOpen(true)}>{t('gmem.title')}</Button>
+      {open && <GroupMembers chat={chat} shipTime={shipTime} onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
 /** One row of the list: who, the last line, an urgency word, the mute and closed tags, and the unread count. */
 /** The numbers on a card: when it was started and by whom, how many are in it, and when each side last wrote. */
 function ChatStats({ c, shipTime }: { c: ChatConversation; shipTime: (at: number) => string }) {
@@ -233,25 +244,20 @@ function ChatStats({ c, shipTime }: { c: ChatConversation; shipTime: (at: number
   const stanley = isStanleyChat(c)
   // How the newest message you wrote has travelled: reached, then read (read only where both sides share receipts).
   const travelled = !stanley && c.lastMineTo ? (c.lastMineSeen ? t('conv.stat.seen', { seen: c.lastMineSeen, count: c.lastMineTo }) : c.lastMineDelivered ? t('conv.stat.delivered', { delivered: c.lastMineDelivered, count: c.lastMineTo }) : t('conv.stat.sent')) : null
-  const lines = stanley ? [
-    c.startedAt ? t('conv.stat.started', { time: shipTime(c.startedAt) }) : null,
-    t('conv.stat.messages', { count: messages }),
-    c.waitingAck ? t('conv.stat.waiting', { count: c.waitingAck }) : t('conv.stat.allConfirmed'),
+  const rows = (stanley ? [
+    [c.startedAt ? t('conv.stat.started', { time: shipTime(c.startedAt) }) : null],
+    [t('conv.stat.messages', { count: messages }), c.waitingAck ? t('conv.stat.waiting', { count: c.waitingAck }) : t('conv.stat.allConfirmed')],
   ] : [
-    c.startedAt ? (c.ownerName && !c.permanent ? t('conv.stat.startedBy', { time: shipTime(c.startedAt), name: c.ownerName }) : t('conv.stat.started', { time: shipTime(c.startedAt) })) : null,
-    t('conv.stat.people', { count: c.members.length + 1 }),
-    c.lastMineAt ? t('conv.stat.mine', { time: shipTime(c.lastMineAt) }) : t('conv.stat.mineNever'),
-    c.lastTheirsAt ? t('conv.stat.theirs', { time: shipTime(c.lastTheirsAt) }) : t('conv.stat.theirsNever'),
-    t('conv.stat.messagesMine', { count: messages, mine: c.mineCount ?? 0 }),
-    travelled,
-    c.pinCount ? t('conv.stat.pinned', { count: c.pinCount }) : null,
-    c.unread > 0 ? t('conv.stat.unread', { count: c.unread }) : null,
-  ].filter(Boolean)
-  return <span className="conv__stats muted">{lines.join(' · ')}</span>
+    [c.startedAt ? (c.ownerName && !c.permanent ? t('conv.stat.startedBy', { time: shipTime(c.startedAt), name: c.ownerName }) : t('conv.stat.started', { time: shipTime(c.startedAt) })) : null, t('conv.stat.people', { count: c.members.length + 1 })],
+    [c.lastMineAt ? t('conv.stat.mine', { time: shipTime(c.lastMineAt) }) : t('conv.stat.mineNever'), c.lastTheirsAt ? t('conv.stat.theirs', { time: shipTime(c.lastTheirsAt) }) : t('conv.stat.theirsNever')],
+    [t('conv.stat.messagesMine', { count: messages, mine: c.mineCount ?? 0 }), travelled, c.pinCount ? t('conv.stat.pinned', { count: c.pinCount }) : null, c.unread > 0 ? t('conv.stat.unread', { count: c.unread }) : null],
+  ]).map((r) => r.filter(Boolean).join(' · ')).filter(Boolean)
+  return <span className="conv__stats muted">{rows.map((r) => <span key={r} className="conv__stat-line">{r}</span>)}</span>
 }
 
 function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, onLeave, shipTime, now, keptDay }: { c: ChatConversation; urgentIds: readonly string[]; onOpen: (id: string) => void; onManage: (c: ChatConversation) => void; onDelete: (c: ChatConversation) => void; onLeave: (c: ChatConversation) => void; shipTime: (at: number) => string; now: number; keptDay: number | null }) {
   const typingIn = useTypingConversations()
+  const [members, setMembers] = useState(false)
   const typers = [...typingIn].find(([hex]) => isSameConversation(c.id, hex))?.[1] ?? []
   // The leader of a group edits or deletes it; everyone else in a group or a personal chat can leave it (unless it has already ended for them).
   const canLeave = !c.owner && !c.closed && !c.permanent && (c.kind === 'group' || c.kind === 'direct')
@@ -260,7 +266,7 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, onLeave, s
   const tags = [muted && (c.mutedUntil ? t('conv.mutedUntil', { time: shipTime(c.mutedUntil) }) : t('conv.muted')), c.closed && t('conv.closed'), keptDay !== null && t('keep.tag', { date: keepDate(keptDay) })].filter(Boolean)
   return (
     <li className="conv-item">
-      <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`, (c.owner || canLeave) && 'conv--tools'].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
+      <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`, (c.owner || canLeave || c.kind === 'group') && 'conv--tools'].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
         {isStanleyChat(c)
           ? <img className="conv__avatar conv__avatar--stanley" src={stanleyPicture} alt="" width="44" height="44" />
           : c.ownerName ? <ChatAvatar avatar={c.ownerAvatar} name={c.ownerName} /> : <ChatAvatar avatar={c.avatar} name={c.name} />}
@@ -284,17 +290,17 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, onLeave, s
           </span>
         )}
       </button>
-      {canLeave && (
+      {(canLeave || c.owner || c.kind === 'group') && (
         <span className="conv__tools" role="group" aria-label={t('conv.tools.label', { name: c.name })}>
-          <button type="button" className="conv__tool conv__tool--danger" onClick={() => onLeave(c)} aria-label={t('conv.tool.leave', { name: c.name })} title={t('conv.tool.leave', { name: c.name })}><Depart aria-hidden="true" /></button>
+          {c.kind === 'group' && <button type="button" className="conv__tool" onClick={() => setMembers(true)} aria-label={t('conv.tool.members', { name: c.name })} title={t('conv.tool.members', { name: c.name })}><Users aria-hidden="true" /></button>}
+          {c.owner && <>
+            <button type="button" className="conv__tool" onClick={() => onManage(c)} aria-label={t('conv.tool.edit', { name: c.name })} title={t('conv.tool.edit', { name: c.name })}><Pencil aria-hidden="true" /></button>
+            <button type="button" className="conv__tool conv__tool--danger" onClick={() => onDelete(c)} aria-label={t('conv.tool.delete', { name: c.name })} title={t('conv.tool.delete', { name: c.name })}><Trash2 aria-hidden="true" /></button>
+          </>}
+          {canLeave && <button type="button" className="conv__tool conv__tool--danger" onClick={() => onLeave(c)} aria-label={t('conv.tool.leave', { name: c.name })} title={t('conv.tool.leave', { name: c.name })}><Depart aria-hidden="true" /></button>}
         </span>
       )}
-      {c.owner && (
-        <span className="conv__tools" role="group" aria-label={t('conv.tools.label', { name: c.name })}>
-          <button type="button" className="conv__tool" onClick={() => onManage(c)} aria-label={t('conv.tool.edit', { name: c.name })} title={t('conv.tool.edit', { name: c.name })}><Pencil aria-hidden="true" /></button>
-          <button type="button" className="conv__tool conv__tool--danger" onClick={() => onDelete(c)} aria-label={t('conv.tool.delete', { name: c.name })} title={t('conv.tool.delete', { name: c.name })}><Trash2 aria-hidden="true" /></button>
-        </span>
-      )}
+      {members && <GroupMembers chat={c} shipTime={shipTime} onClose={() => setMembers(false)} />}
     </li>
   )
 }
@@ -753,7 +759,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     wasNear.current = true
     void load()
   })
-  const cancelDraft = () => { setText(''); setDraftPhotos([]); setReplyTo(null); setLevel('normal'); setProblem(null) }
+  const cancelDraft = () => { if (typingSentAt.current !== null) { typingSentAt.current = null; api.chatConversations.typingStop(id).catch(() => undefined) }; setText(''); setDraftPhotos([]); setReplyTo(null); setLevel('normal'); setProblem(null) }
   const submit = async (quick?: string) => {
     if (quick === undefined && draftPhotos.length > 0) { void sendDraftPhotos.run(); return }
     const body = (quick ?? text).trim()
@@ -813,6 +819,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {conversation && conversation.kind !== 'direct' && !permanent && !room && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
+      {conversation?.kind === 'group' && <MembersButton chat={conversation} shipTime={shipTime} />}
       {back && !offline && <p className="muted">{t('conv.backOnShip', { names: back })}</p>}
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
@@ -1147,7 +1154,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged, 
       <p><strong>{noticeHeadline(m.text)}</strong></p>
       {body && <p>{body}</p>}
       {state !== 'active' && <p className="muted">{t(state === 'superseded' ? (n.lane === 'suggestion' ? 'stanley.moment.putAway' : 'stanley.notice.superseded') : 'stanley.notice.expired')}</p>}
-      {link && (n.actions ?? []).length === 0 && <LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton>}
+      {link && (n.actions ?? []).length === 0 && <div className="button-row"><LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton></div>}
       {state === 'active' && onChanged && n.lane === 'suggestion' && <MomentButtons m={m} conversationId={conversationId} onChanged={onChanged} />}
       {state === 'active' && onChanged && <ChatNoticeOffers m={m} conversationId={conversationId} onChanged={onChanged} />}
       {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <div className="button-row"><Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button></div>)}
@@ -1158,7 +1165,13 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged, 
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
 const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete, canPin, pinned, onPin, held, onHold, onUse, ask }: MessageRowProps) {
-  if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
+  if (m.system) {
+    // A change of group status: someone joined (green), left or was removed (amber), or a plain note such as Stanley's welcome (blue).
+    const change = /\bjoined\b/i.test(m.text) ? 'joined' : /\b(left|removed)\b/i.test(m.text) ? 'gone' : 'note'
+    const Icon = change === 'joined' ? UserPlus : change === 'gone' ? UserMinus : Info
+    return <li className={`chat-msg chat-msg--system chat-msg--system-${change}`}><p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.comment')}</strong><span className="chat-msg__time">{shipTime(m.at)}</span></p>
+      <p className="chat-msg__system-text"><Icon aria-hidden="true" /><span>{m.text}</span></p></li>
+  }
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
     const n = m.notice
@@ -1209,8 +1222,6 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
         : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
       {photoCountOf(m) > 0 && <MessagePhotos conversationId={conversationId} message={m} name={m.fromName ?? ''} you={t('chat.you')} />}
-      {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
-      {!own && (kind === 'room' || kind === 'group') && <FlagToStaff messageId={m.id} />}
       {m.reactions && m.reactions.length > 0 && (
         <ul className="chat-reactions" aria-label={t('conv.reactions')}>
           {m.reactions.map((r) => <ReactionChip key={r.emoji} r={r} you={you} disabled={!canAct || !onReact} onPick={() => onReact?.(m.id, r.emoji)} />)}
@@ -1224,6 +1235,8 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
             {pinning && onPin && <button type="button" className="chat-act chat-act--icon" aria-label={t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')} title={t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')} onClick={() => onPin(m.id, pinning === 'pin')}>{pinning === 'pin' ? <PinIcon aria-hidden="true" /> : <PinOff aria-hidden="true" />}</button>}
             <StanleyMessageActions conversationId={conversationId} message={m} mine={mine} onPosted={onChanged ?? noop} onUse={onUse} onBlocked={onBlocked} />
             <CoordinatorButton message={m} />
+            {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
+            {!own && (kind === 'room' || kind === 'group') && <FlagToStaff messageId={m.id} />}
           </>
         )
         return own && onEdit && onDelete

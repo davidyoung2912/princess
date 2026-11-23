@@ -44,7 +44,9 @@ INSERT INTO dbo.Users ([PublicId], [Slug], [AccountNumber], [Username], [ChatNic
   ('3FB6E4C1-DCC0-A99A-F432-A34755AE3D04', N'portsolo2', N'4100285084', N'portsolo2', N'Port', N'port-solo-2', N'pbkdf2$600000$28EepqyKdEwBtJPubZ9UEQ==$yvnpI5MJisXeTrhY0X05Kf1qH4ee6/k2iKWmo0hWArclu0TeLvgHdKrSqDaqDW9Josd032np2qJUzLirdGQGLQ==', N'guest', 1, 0, NULL, N'gold', 0, N'standard'),
   ('B7D10499-FF5A-25EC-7B1E-330F5BF1DB4F', N'dream', N'4100293003', N'dream', N'Dream', N'dream', N'pbkdf2$600000$IBiSsmyIsB7URODtExjBBw==$CpaStKDPnxmlbwe5UZUwBfQngd6gd3xq9Rzwua0rapkXqpvbJQ7VIibqRCyZMC8QILRT2EXpoQSdu128Z4mvoQ==', N'guest', 1, 0, NULL, N'none', 0, N'standard'),
   ('DE8FEF58-F649-2541-9079-0979201363A6', N'test1', N'4100300922', N'test1', N'chattydad', N'test1', N'pbkdf2$600000$5NZ1XsCzIloaEbChb+v0jA==$U8Hxk8MjH9sJc9Lk/bxlA3dvbzCet4guQLZZs7OkPVlYbizhC6Ku1g21EYuj4+V2gyCXfDZjtcw0nuT0usk7kQ==', N'guest', 1, 0, NULL, N'none', 0, N'standard'),
-  ('23788AF0-0BBA-9301-ED69-32015A6A68B8', N'test2', N'4100308841', N'test2', N'chattymom', N'test2', N'pbkdf2$600000$hCBdVkdxm81VI3x3mOaWSQ==$bTugTMORLbq0gc5lTic7U3AWN+GP+xe10UWVNZO73qwyWiyfoQC/wF03P/pBEumTn2LtqEmlUwJ60S3IpCUZRw==', N'guest', 1, 0, NULL, N'none', 0, N'standard');
+  ('23788AF0-0BBA-9301-ED69-32015A6A68B8', N'test2', N'4100308841', N'test2', N'chattymom', N'test2', N'pbkdf2$600000$hCBdVkdxm81VI3x3mOaWSQ==$bTugTMORLbq0gc5lTic7U3AWN+GP+xe10UWVNZO73qwyWiyfoQC/wF03P/pBEumTn2LtqEmlUwJ60S3IpCUZRw==', N'guest', 1, 0, NULL, N'none', 0, N'standard'),
+  ('D6BDF060-8F05-4BED-9268-74416A3E0ED2', N'test3', N'4100316760', N'test3', N'betty', N'test3', N'pbkdf2$600000$FMbaZMSEOeLcWIwJI3ekoA==$M/Fv4UxdHGpA/+lBer9hIVGpqbWkQAM8cIKtD4rZc98oh0R/RaNOD1u4wZNduX7+aNsN9Wb5Mdz/ThRIgCFjFQ==', N'guest', 1, 0, NULL, N'none', 0, N'standard'),
+  ('EDAF2945-51E2-4974-9C7C-750F16F9E61D', N'test4', N'4100324679', N'test4', N'barney', N'test4', N'pbkdf2$600000$Bb/gwYMi3+OLyTD9hy9fzQ==$tnYIR+91mzW+wlAuBD7XWheBdvtHAixqIhostuEQeBPNFneEj5L3dKbYpA/yHI+LDnp31XxArilXFDUuLKUZ3Q==', N'guest', 1, 0, NULL, N'none', 0, N'standard');
 
 -- dbo.Users: 4 rows
 INSERT INTO dbo.Users ([PublicId], [Slug], [AccountNumber], [Username], [ChatNickname], [Email], [PasswordHash], [Role], [IsDemo], [IsSupervised], [BookerUserId], [Tier], [Sanctuary], [TextSize]) VALUES
@@ -92,7 +94,9 @@ DECLARE
   @u_portsolo2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo2'),
   @u_dream BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'dream'),
   @u_test1 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test1'),
-  @u_test2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test2');
+  @u_test2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test2'),
+  @u_test3 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test3'),
+  @u_test4 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test4');
 
 -- dbo.Profiles: 39 rows
 INSERT INTO dbo.Profiles ([UserId], [LegalName], [Dob], [Phone], [Citizenship], [Bedding], [SpecialRequests], [EmergencyName], [EmergencyPhone], [EmergencyRelationship], [Street], [City], [Region], [Postcode], [Country]) VALUES
@@ -134,7 +138,9 @@ INSERT INTO dbo.Profiles ([UserId], [LegalName], [Dob], [Phone], [Citizenship], 
   (@u_portsolo2, N'Port Solo Two', CAST('1974-04-14' AS DATE), N'+1 305 555 2295', N'us', N'noPreference', N'', N'Alex Contact', N'+1 305 555 0100', N'Friend', N'135 Harbour Road', N'Fort Lauderdale', N'FL', N'33301', N'United States'),
   (@u_dream, N'Dream Tester', CAST('1992-08-17' AS DATE), N'+1 305 555 2332', N'us', N'noPreference', N'', N'Alex Contact', N'+1 305 555 0100', N'Friend', N'136 Harbour Road', N'Fort Lauderdale', N'FL', N'33301', N'United States'),
   (@u_test1, N'Test One', CAST('1986-08-14' AS DATE), N'+1 305 555 2369', N'us', N'noPreference', N'', N'Alex Contact', N'+1 305 555 0100', N'Friend', N'137 Harbour Road', N'Fort Lauderdale', N'FL', N'33301', N'United States'),
-  (@u_test2, N'Test Two', CAST('1986-08-14' AS DATE), N'+1 305 555 2406', N'us', N'noPreference', N'', N'Alex Contact', N'+1 305 555 0100', N'Friend', N'138 Harbour Road', N'Fort Lauderdale', N'FL', N'33301', N'United States');
+  (@u_test2, N'Test Two', CAST('1986-08-14' AS DATE), N'+1 305 555 2406', N'us', N'noPreference', N'', N'Alex Contact', N'+1 305 555 0100', N'Friend', N'138 Harbour Road', N'Fort Lauderdale', N'FL', N'33301', N'United States'),
+(@u_test3, N'Test Three', CAST('1986-08-14' AS DATE), N'+1 305 555 2443', N'us', N'noPreference', N'', N'Alex Contact', N'+1 305 555 0100', N'Friend', N'139 Harbour Road', N'Fort Lauderdale', N'FL', N'33301', N'United States'),
+(@u_test4, N'Test Four', CAST('1986-08-14' AS DATE), N'+1 305 555 2480', N'us', N'noPreference', N'', N'Alex Contact', N'+1 305 555 0100', N'Friend', N'140 Harbour Road', N'Fort Lauderdale', N'FL', N'33301', N'United States');
 
 -- dbo.ProfileTags: 14 rows
 INSERT INTO dbo.ProfileTags ([UserId], [Kind], [Code]) VALUES
@@ -239,7 +245,9 @@ INSERT INTO dbo.NotificationPrefs ([UserId], [Prefs]) VALUES
   (@u_portsolo2, N'{"channels":{"critical":{"push":true,"email":true,"sms":true},"payments":{"push":true,"email":true,"sms":false},"documents":{"push":true,"email":true,"sms":false},"checkin":{"push":true,"email":true,"sms":false},"offers":{"push":false,"email":false,"sms":false}},"quiet":{"on":false,"from":"22:00","to":"07:00"},"dnd":{"until":0},"explorerLead":15}'),
   (@u_dream, N'{"channels":{"critical":{"push":true,"email":true,"sms":true},"payments":{"push":true,"email":true,"sms":false},"documents":{"push":true,"email":true,"sms":false},"checkin":{"push":true,"email":true,"sms":false},"offers":{"push":false,"email":false,"sms":false}},"quiet":{"on":false,"from":"22:00","to":"07:00"},"dnd":{"until":0},"explorerLead":15}'),
   (@u_test1, N'{"channels":{"critical":{"push":true,"email":true,"sms":true},"payments":{"push":true,"email":true,"sms":false},"documents":{"push":true,"email":true,"sms":false},"checkin":{"push":true,"email":true,"sms":false},"offers":{"push":false,"email":false,"sms":false}},"quiet":{"on":false,"from":"22:00","to":"07:00"},"dnd":{"until":0},"explorerLead":15}'),
-  (@u_test2, N'{"channels":{"critical":{"push":true,"email":true,"sms":true},"payments":{"push":true,"email":true,"sms":false},"documents":{"push":true,"email":true,"sms":false},"checkin":{"push":true,"email":true,"sms":false},"offers":{"push":false,"email":false,"sms":false}},"quiet":{"on":false,"from":"22:00","to":"07:00"},"dnd":{"until":0},"explorerLead":15}');
+  (@u_test2, N'{"channels":{"critical":{"push":true,"email":true,"sms":true},"payments":{"push":true,"email":true,"sms":false},"documents":{"push":true,"email":true,"sms":false},"checkin":{"push":true,"email":true,"sms":false},"offers":{"push":false,"email":false,"sms":false}},"quiet":{"on":false,"from":"22:00","to":"07:00"},"dnd":{"until":0},"explorerLead":15}'),
+(@u_test3, N'{"channels":{"critical":{"push":true,"email":true,"sms":true},"payments":{"push":true,"email":true,"sms":false},"documents":{"push":true,"email":true,"sms":false},"checkin":{"push":true,"email":true,"sms":false},"offers":{"push":false,"email":false,"sms":false}},"quiet":{"on":false,"from":"22:00","to":"07:00"},"dnd":{"until":0},"explorerLead":15}'),
+(@u_test4, N'{"channels":{"critical":{"push":true,"email":true,"sms":true},"payments":{"push":true,"email":true,"sms":false},"documents":{"push":true,"email":true,"sms":false},"checkin":{"push":true,"email":true,"sms":false},"offers":{"push":false,"email":false,"sms":false}},"quiet":{"on":false,"from":"22:00","to":"07:00"},"dnd":{"until":0},"explorerLead":15}');
 
 -- dbo.ConsentChoices: 82 rows
 INSERT INTO dbo.ConsentChoices ([UserId], [ConsentId], [IsOn], [ChangedByUserId], [At]) VALUES
@@ -324,7 +332,11 @@ INSERT INTO dbo.ConsentChoices ([UserId], [ConsentId], [IsOn], [ChangedByUserId]
   (@u_test1, N'improve', 1, @u_test1, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
   (@u_test1, N'marketingEmail', 0, @u_test1, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
   (@u_test2, N'improve', 1, @u_test2, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
-  (@u_test2, N'marketingEmail', 0, @u_test2, CAST('2026-09-15T14:00:00' AS DATETIME2(0)));
+  (@u_test2, N'marketingEmail', 0, @u_test2, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
+  (@u_test3, N'improve', 1, @u_test3, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
+  (@u_test3, N'marketingEmail', 0, @u_test3, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
+  (@u_test4, N'improve', 1, @u_test4, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
+  (@u_test4, N'marketingEmail', 0, @u_test4, CAST('2026-09-15T14:00:00' AS DATETIME2(0)));
 
 -- demo.DemoState: 39 rows
 INSERT INTO demo.DemoState ([UserId], [ClockOffsetSeconds], [ClockSpeed], [ActiveScenarios]) VALUES
@@ -366,7 +378,9 @@ INSERT INTO demo.DemoState ([UserId], [ClockOffsetSeconds], [ClockSpeed], [Activ
   (@u_portsolo2, DATEDIFF_BIG(SECOND, SYSUTCDATETIME(), CAST('2027-03-25T17:00:00' AS DATETIME2(0))), 1, N'[]'),
   (@u_dream, DATEDIFF_BIG(SECOND, SYSUTCDATETIME(), CAST('2026-11-02T15:00:00' AS DATETIME2(0))), 1, N'[]'),
   (@u_test1, DATEDIFF_BIG(SECOND, SYSUTCDATETIME(), CAST('2026-11-02T15:00:00' AS DATETIME2(0))), 1, N'[]'),
-  (@u_test2, DATEDIFF_BIG(SECOND, SYSUTCDATETIME(), CAST('2026-11-02T15:00:00' AS DATETIME2(0))), 1, N'[]');
+  (@u_test2, DATEDIFF_BIG(SECOND, SYSUTCDATETIME(), CAST('2026-11-02T15:00:00' AS DATETIME2(0))), 1, N'[]'),
+  (@u_test3, DATEDIFF_BIG(SECOND, SYSUTCDATETIME(), CAST('2026-11-02T15:00:00' AS DATETIME2(0))), 1, N'[]'),
+  (@u_test4, DATEDIFF_BIG(SECOND, SYSUTCDATETIME(), CAST('2026-11-02T15:00:00' AS DATETIME2(0))), 1, N'[]');
 
 -- dbo.GuestDocuments: 32 rows
 INSERT INTO dbo.GuestDocuments ([UserId], [Doc], [Expires]) VALUES

@@ -271,15 +271,20 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         if (!await store.EndAsync(row.Id, actor.Id, await clock.NowAsync(actor, ct), ct)) throw ApiException.Conflict("notConnected");
         var otherId = actor.Id == row.RequesterId ? row.TargetId : row.RequesterId;
         if (row.ConversationId is Guid conversationId) await notifier.PersonalChatEndedAsync(otherId, conversationId, ct);
-        // The person who asked is the leader of a personal chat: when the other person leaves, the leader's Stanley thread says so.
-        if (actor.Id == row.TargetId && await users.FindByIdAsync(row.RequesterId, ct) is { } leader)
+        // Both people hear of it in their Stanley chat: the other person also gets a popup (when not looking at the chat), the one who ended it only a record to refer back to.
+        var now = await clock.NowAsync(actor, ct);
+        var iAmTarget = actor.Id == row.TargetId;
+        var who = iAmTarget ? ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast) : ChatConnectionRules.ShortName(row.RequesterFirst, row.RequesterLast);
+        var them = iAmTarget ? ChatConnectionRules.ShortName(row.RequesterFirst, row.RequesterLast) : ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast);
+        var key = ChatConnectionRules.NoticeKey("personalLeft", row.PublicId);
+        var title = $"{who} ended your personal chat";
+        var body = $"{who} chose to leave your personal chat, so the chat and its messages have been removed for both of you. You are welcome to send {who} a new chat request any time.";
+        if (await users.FindByIdAsync(otherId, ct) is { } other)
         {
-            var who = ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast);
-            var key = ChatConnectionRules.NoticeKey("personalLeft", row.PublicId);
-            var body = $"{who} left your personal chat, so it has been removed.";
-            await stanleyThread.TellAsync(leader, key, "Personal chat ended", body, await clock.NowAsync(actor, ct), ct);
-            await notifier.InfoAsync(leader.Id, key, "Personal chat ended", body, ct, phone: false);   // PersonalChatEndedAsync has already sent the phone alert
+            await stanleyThread.TellAsync(other, key, title, body, now, ct);
+            await notifier.InfoAsync(other.Id, key, title, body, ct, phone: false);   // PersonalChatEndedAsync has already sent the phone alert
         }
+        await stanleyThread.TellAsync(actor, ChatConnectionRules.NoticeKey("personalLeftYou", row.PublicId), $"You ended your chat with {them}", $"You left your personal chat with {them}, so the chat and its messages have been removed for both of you. You can send {them} a new chat request any time.", now, ct, "chatNote");
     }
 
     // ---- shaping ----

@@ -825,6 +825,7 @@ button.chat-quote { cursor: pointer; }
 .conv-item { position: relative; }
 .conv--tools { padding-bottom: calc(var(--space-3) + 2.25rem); }
 .conv__stats { font-size: var(--fs-caption); }
+.conv__stat-line { display: block; }
 .conv__tools { position: absolute; inset-block-end: var(--space-2); inset-inline-end: var(--space-3); display: flex; gap: var(--space-1); }
 .conv__tool { display: inline-grid; place-items: center; min-width: 2rem; min-height: 2rem; padding: 0; border: 2px solid var(--border); border-radius: 50%; background: var(--bg); color: var(--primary); cursor: pointer; }
 .conv__tool:hover, .conv__tool:focus-visible { border-color: var(--primary); }
@@ -868,3 +869,17 @@ button.chat-quote { cursor: pointer; }
 .chat-msg--stanley > .btn, .chat-msg--stanley .chat-notice-offers > .btn { justify-self: start; }
 .conv__time { font-weight: 800; color: var(--text); }
 .conv__time { font-family: inherit; font-size: inherit; font-weight: 800; }
+.gmem { list-style: none; margin: var(--space-3) 0; padding: 0; display: grid; gap: var(--space-2); }
+.gmem__row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius, 0.75rem); background: var(--surface, var(--bg)); }
+.gmem__body { min-width: 0; display: grid; gap: 2px; }
+.gmem__name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; }
+.gmem__line { margin: 0; font-size: var(--fs-caption); }
+.gmem__sub { margin: var(--space-4) 0 0; font-size: var(--fs-body); }
+.chat-msg--system { text-align: start; border: 1px solid var(--border); border-radius: var(--radius, 0.75rem); padding: var(--space-2) var(--space-3); background: var(--sky-tint); box-shadow: none; }
+.chat-msg--system > p { display: flex; align-items: center; gap: var(--space-2); margin: 0; }
+.chat-msg--system .chat-msg__meta { margin-bottom: var(--space-1); }
+.chat-msg--system .chat-msg__system-text { align-items: flex-start; }
+.chat-msg--system .lucide { flex: none; width: 1.1rem; height: 1.1rem; }
+.chat-msg--system .chat-msg__time { margin-inline-start: auto; font-size: var(--fs-caption); }
+.chat-msg--system-joined { background: var(--success-tint); border-color: var(--success, var(--border)); }
+.chat-msg--system-gone { background: var(--gold-tint); border-color: var(--gold, var(--border)); }

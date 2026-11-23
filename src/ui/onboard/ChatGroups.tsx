@@ -173,6 +173,45 @@ export function LeaveChat({ chat, onClose, onLeft }: { chat: { id: string; kind:
   )
 }
 
+/** Who is in a chat group: each person with their avatar, role, when they joined, how much they have written and when they last used the app. */
+export function GroupMembers({ chat, shipTime, onClose }: { chat: { id: string; name: string }; shipTime: (at: number) => string; onClose: () => void }) {
+  const group = useMine(() => api.chatGroups.get(chat.id), [chat.id])
+  return (
+    <Dialog title={t('gmem.title')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('gmem.title')} subtext={chat.name} icon={Users} onClose={onClose} />}>
+      <Load state={group}>
+        {(g) => (
+          <>
+            <p className="muted">{t('gmem.count', { count: g.members.length, max: g.max })}</p>
+            <ul className="gmem" aria-label={t('gmem.title')}>
+              {g.members.map((m) => (
+                <li key={m.id} className="gmem__row">
+                  <ChatAvatar avatar={m.avatar} name={m.name} />
+                  <div className="gmem__body">
+                    <p className="gmem__name"><strong>{m.you ? t('gmem.you', { name: m.name }) : m.name}</strong>{m.creator ? <span className="tag tag--good">{t('cgroup.status.leader')}</span> : m.admin ? <span className="tag">{t('gmem.admin')}</span> : null}</p>
+                    <p className="muted gmem__line">{m.lastMessageAt ? t('gmem.lastMessage', { time: shipTime(m.lastMessageAt) }) : t('gmem.noMessages')}{m.messages ? ` · ${t('gmem.messages', { count: m.messages })}` : ''}</p>
+                    <p className="muted gmem__line">{m.lastActiveAt ? t('gmem.lastActive', { time: shipTime(m.lastActiveAt) }) : t('gmem.neverActive')}{m.joinedAt ? ` · ${t('gmem.joined', { time: shipTime(m.joinedAt) })}` : ''}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {g.waiting.length > 0 && (
+              <>
+                <h3 className="gmem__sub">{t('gmem.waiting')}</h3>
+                <ul className="gmem">
+                  {g.waiting.map((w) => (
+                    <li key={w.inviteId} className="gmem__row"><ChatAvatar avatar={w.avatar} name={w.name} /><div className="gmem__body"><p className="gmem__name"><strong>{w.name}</strong></p><p className="muted gmem__line">{t(w.needsGuardian ? 'gmem.needsGuardian' : 'gmem.invited')}</p></div></li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        )}
+      </Load>
+      <div className="button-row"><Button variant="secondary" onClick={onClose}>{t('gmem.close')}</Button></div>
+    </Dialog>
+  )
+}
+
 /** Deleting a whole chat for everyone, by the guest who started it. The others are told at once and it leaves their lists. */
 export function DeleteChat({ chat, onClose, onDeleted }: { chat: { id: string; kind: string; name: string }; onClose: () => void; onDeleted: () => void }) {
   const remove = useAction(async () => {
@@ -195,6 +234,7 @@ export function DeleteChat({ chat, onClose, onDeleted }: { chat: { id: string; k
 export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () => void; onChanged: () => void }) {
   const group = useMine(() => api.chatGroups.get(id), [id])
   const connections = useMine(() => api.chatConnections.list())
+  useChatLive(() => { group.retry(); connections.retry() })
   const [leaving, setLeaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [name, setName] = useState<string | null>(null)
@@ -206,7 +246,7 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
   const remove = useAction(async (personId: string, who: string) => { await api.chatGroups.remove(id, personId); done(t('cgroup.removed', { name: who })) })
   const revoke = useAction(async (inviteId: string, who: string) => { await api.chatGroups.revokeInvite(id, inviteId); done(t('cgroup.revoked', { name: who })) })
   const leave = useAction(async () => { await api.chatGroups.leave(id); chatChanged(); onLeft() })
-  const announce = useAction(async (on: boolean) => { await api.chatGroups.setAnnouncementOnly(id, on); done(t('cgroup.announce')) })
+  const announce = useAction(async (on: boolean) => { await api.chatGroups.setAnnouncementOnly(id, on); done(t(on ? 'cgroup.announce.nowOn' : 'cgroup.announce.nowOff')) })
   return (
     <section aria-labelledby="grp-page-h">
       <h2 id="grp-page-h"><span className="person-line"><Users aria-hidden="true" /> {group.data?.name ?? t('cgroup.details')}</span></h2>
@@ -227,7 +267,7 @@ export function GroupPage({ id, onLeft, onChanged }: { id: string; onLeft: () =>
             {g.isAdmin && (
               <>
                 <Chip pressed={g.announcementOnly === true} onToggle={() => { if (!announce.busy) void announce.run(g.announcementOnly !== true) }}>{t('cgroup.announce')}</Chip>
-                <p className="muted">{t('cgroup.announce.hint')}</p>
+                <p className="muted">{t(g.announcementOnly === true ? 'cgroup.announce.hintOn' : 'cgroup.announce.hintOff')}</p>
                 {announce.error && <p role="alert" className="field__error">{t('cgroup.announce.failed')}</p>}
               </>
             )}

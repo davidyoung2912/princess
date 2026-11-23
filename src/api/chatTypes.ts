@@ -511,7 +511,7 @@ export interface ChatExport { name: string; at: number; lines: ChatExportLine[];
 
 // ---- Groups (docs/chat-plan.md, phase 5) ----
 
-export interface ChatGroupMember { id: string; name: string; avatar?: string; you: boolean; creator: boolean; /** The second admin (the creator is always one). Absent when not. */ admin?: boolean }
+export interface ChatGroupMember { id: string; name: string; avatar?: string; you: boolean; creator: boolean; /** The second admin (the creator is always one). Absent when not. */ admin?: boolean; /** When they joined. */ joinedAt?: number; /** Their newest message here; absent when they have written none. */ lastMessageAt?: number; /** How many messages they wrote here. */ messages?: number; /** When they last used the app; absent when never. */ lastActiveAt?: number }
 
 /** An invitation the creator is still waiting on. `needsGuardian`: the person is a child and their guardian must say yes. */
 export interface ChatGroupWaiting { inviteId: string; personId: string; name: string; needsGuardian: boolean; avatar?: string }

@@ -18,3 +18,6 @@
 /* Data-light mode (NET-04): no animation, no decorative backgrounds, photos wait to be asked for. */
 :root[data-light='on'] *, :root[data-light='on'] *::before, :root[data-light='on'] *::after { animation: none !important; transition: none !important; background-image: none !important; }
 :root[data-light='on'] .chat-msg__photo { max-width: 12rem; }
+.chat-safety { flex: 1 0 100%; margin-top: var(--space-2); }
+.chat-safety .field { margin-bottom: var(--space-3); }
+.chat-safety .button-row { margin-bottom: 0; }

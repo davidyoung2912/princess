@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { ChatSummary } from '../api/chatTypes'
-import { arrivals, chooseInfoNotice, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyUrgent, type ChatNotice } from '../domain/chatNotice'
+import { arrivals, chooseInfoNotice, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyInfo, mayNotifyUrgent, type ChatNotice } from '../domain/chatNotice'
 import { api } from '../runtime'
 import { useChatDnd } from './useChatDnd'
 import { useSettings } from './useSettings'
@@ -56,6 +56,6 @@ export function useChatNotice(summary: ChatSummary | null): { notice: ChatNotice
   const close = useCallback(() => { setUrgent(null); setNotice(null); setInfo(null) }, [])
   const showing = mayNotify({ popups: settings.chatPopups, calm: settings.calm, path: pathname, dnd })
   if (urgent && mayNotifyUrgent(pathname)) return { notice: urgent, close }
-  if (info && showing) return { notice: info, close }
+  if (info && mayNotifyInfo({ popups: settings.chatPopups, calm: settings.calm, path: pathname, dnd, about: info.about })) return { notice: info, close }
   return { notice: showing ? notice : null, close }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConnection, ChatConnections, ChatConversation, ChatSummary } from '../api/chatTypes'
-import { arrivals, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyUrgent, noticePath, requestsWaiting, shouldAck } from './chatNotice'
+import { arrivals, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyInfo, mayNotifyUrgent, noticePath, requestsWaiting, shouldAck } from './chatNotice'
 
 const sum = (o: Partial<ChatSummary> = {}): ChatSummary => ({ incoming: 0, approvals: 0, answers: 0, newlyConnected: 0, unread: 0, urgentUnacked: 0, urgentConversations: [], ...o })
 const conn = (o: Partial<ChatConnection>): ChatConnection => ({ id: 'r1', kind: 'incoming', personId: 'p', name: 'Sam L', conversationId: null, childId: null, childName: null, isNew: false, at: 1, expiresAt: 9, ...o })
@@ -87,5 +87,24 @@ describe('shouldAck', () => {
   it('acknowledges a nudge only while the page is in front, so a hidden app still gets the phone alert', () => {
     expect(shouldAck('visible')).toBe(true)
     expect(shouldAck('hidden')).toBe(false)
+  })
+})
+
+describe('mayNotifyInfo', () => {
+  const base = { popups: true, calm: false, about: '01234567-89ab-cdef-0123-456789abcdef' }
+  it('hides on the main chat page and on the conversation it is about, shows elsewhere', () => {
+    expect(mayNotifyInfo({ ...base, path: '/chat' })).toBe(false)
+    expect(mayNotifyInfo({ ...base, path: '/chat/c/0123456789abcdef0123456789abcdef' })).toBe(false)
+    expect(mayNotifyInfo({ ...base, path: '/chat/c/other' })).toBe(true)
+    expect(mayNotifyInfo({ ...base, path: '/chat/people' })).toBe(true)
+    expect(mayNotifyInfo({ ...base, path: '/home' })).toBe(true)
+  })
+  it('shows in any conversation when it is about none (a declined request)', () => {
+    expect(mayNotifyInfo({ ...base, about: null, path: '/chat/c/abc' })).toBe(true)
+  })
+  it('respects the pop-ups setting, calm mode and do not disturb', () => {
+    expect(mayNotifyInfo({ ...base, path: '/home', popups: false })).toBe(false)
+    expect(mayNotifyInfo({ ...base, path: '/home', calm: true })).toBe(false)
+    expect(mayNotifyInfo({ ...base, path: '/home', dnd: true })).toBe(false)
   })
 })

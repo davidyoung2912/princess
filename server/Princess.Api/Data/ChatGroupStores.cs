@@ -25,6 +25,12 @@ public sealed class ChatGroupPersonRow
     /// <summary>Phase 4: the second admin (the creator is always one and is not flagged).</summary>
     public bool IsAdmin { get; set; }
     public string? Avatar { get; set; }
+    public DateTime JoinedAt { get; set; }
+    /// <summary>Their newest message in this group (system notes excluded), or null for none yet.</summary>
+    public DateTime? LastMessageAt { get; set; }
+    public int MessageCount { get; set; }
+    /// <summary>When they last used the app: their newest sign-in or token refresh.</summary>
+    public DateTime? LastActiveAt { get; set; }
 }
 
 /// <summary>One invitation, with the group and the names of the inviter and invitee.</summary>
@@ -136,7 +142,10 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatGroupPersonRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, u.ChatName AS FirstName, N'' AS LastName, u.IsSupervised, m.IsAdmin, up.ChatAvatar AS Avatar
+            SELECT u.Id AS UserId, u.PublicId, u.ChatName AS FirstName, N'' AS LastName, u.IsSupervised, m.IsAdmin, up.ChatAvatar AS Avatar, m.JoinedAt,
+              (SELECT MAX(cm.[At]) FROM dbo.ChatMessages cm WHERE cm.GroupId = m.GroupId AND cm.FromUserId = m.UserId AND cm.IsSystem = 0) AS LastMessageAt,
+              (SELECT COUNT(*) FROM dbo.ChatMessages cm WHERE cm.GroupId = m.GroupId AND cm.FromUserId = m.UserId AND cm.IsSystem = 0) AS MessageCount,
+              (SELECT MAX(rt.CreatedAt) FROM dbo.RefreshTokens rt WHERE rt.UserId = m.UserId) AS LastActiveAt
             FROM dbo.ChatGroupMembers m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.Users u ON u.Id = m.UserId

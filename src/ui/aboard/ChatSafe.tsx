@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
-import { Camera, X } from 'lucide-react'
+import { Camera, ShieldAlert, X } from 'lucide-react'
 import { FieldLabel } from '../Field'
 import { MAX_PHOTO_BYTES, PHOTO_MIN_AGE, PHOTO_TYPES, REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import type { PersonaId } from '../../domain/people'
@@ -23,24 +23,26 @@ export function MessageSafety({ messageId, from, name, onBlocked }: { messageId:
   const report = useAction(async () => { await api.aboard.chat.report(messageId, reason); setSent(true) })
   const block = useAction(async () => { await api.aboard.chat.block(from, true); onBlocked() })
   return (
-    <div className="chat-safety">
-      <Button variant="tertiary" aria-expanded={open} onClick={() => setOpen(!open)}>{t('safe.more')}<span className="visually-hidden"> {who}</span></Button>
+    <>
+      <button type="button" className="chat-act chat-act--icon" aria-expanded={open} aria-label={`${t('safe.more')} ${who}`} title={t('safe.more')} onClick={() => setOpen(!open)}><ShieldAlert aria-hidden="true" /></button>
       {open && (
-        <div>
+        <div className="chat-safety">
           {sent ? <p role="status">{t('safe.reported')}</p> : (
             <div className="field">
               <FieldLabel htmlFor={`rsn-${messageId}`} help={t('helptip.reportReason')}>{t('safe.reason')}</FieldLabel>
               <select id={`rsn-${messageId}`} className="field__input" value={reason} onChange={(e) => setReason(e.target.value as ChatReportReason)}>
                 {REPORT_REASONS.map((r) => <option key={r} value={r}>{t(`safe.r.${r}` as StringKey)}</option>)}
               </select>
-              <Button variant="secondary" disabled={report.busy} onClick={() => void report.run()}>{t('safe.report')}</Button>
             </div>
           )}
-          <Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('safe.block', { name: who })}</Button>
+          <div className="button-row">
+            {!sent && <Button variant="secondary" disabled={report.busy} onClick={() => void report.run()}>{t('safe.report')}</Button>}
+            <Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('safe.block', { name: who })}</Button>
+          </div>
           <AboardError error={report.error ?? block.error} />
         </div>
       )}
-    </div>
+    </>
   )
 }
 

@@ -48,6 +48,8 @@ DECLARE
   @u_dream BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'dream'),
   @u_test1 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test1'),
   @u_test2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test2'),
+  @u_test3 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test3'),
+  @u_test4 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test4'),
   @b_gerald BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC163342'),
   @b_maria BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC179254'),
   @b_linda BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC195166'),

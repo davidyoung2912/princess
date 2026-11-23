@@ -46,6 +46,8 @@ Sailing for every booking: `sun-2027-03-21` (2027-03-21), except port-solo-2, wh
 | Dream Tester | `dream` | none | booked | 2026-11-02 15:00 | - | Dream stage, nothing booked. First journey stage: no booking yet. Login dream / dream. |
 | Test One | `test1` | none | booked | 2026-11-02 15:00 | - | Bare chat tester, chat name chattydad. No booking and default settings. Find chattymom as chattymom and chat. Login test1 / test1. |
 | Test Two | `test2` | none | booked | 2026-11-02 15:00 | - | Bare chat tester, chat name chattymom. No booking and default settings. Find chattydad and chat. Login test2 / test2. |
+| Test Three | `test3` | none | booked | 2026-11-02 15:00 | - | Bare chat tester, chat name betty. No booking and default settings. Login test3 / test3. |
+| Test Four | `test4` | none | booked | 2026-11-02 15:00 | - | Bare chat tester, chat name barney. No booking and default settings. Login test4 / test4. |
 
 ## Not seeded
 

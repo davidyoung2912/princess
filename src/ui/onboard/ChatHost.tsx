@@ -1,3 +1,4 @@
+import { Flag } from 'lucide-react'
 import { useState } from 'react'
 import type { ApiError } from '../../api/errors'
 import type { ChatConversation, ChatMeetUp, HostFlagReason } from '../../api/chatTypes'
@@ -161,7 +162,7 @@ export function FlagToStaff({ messageId }: { messageId: string }) {
   const flag = useAction(async () => { await api.chatRooms.flag(messageId, reason as HostFlagReason); setDone(true) })
   return (
     <>
-      {done ? <p className="muted" role="status">{t('chost.flagged')}</p> : <button type="button" className="chat-act" onClick={() => setOpen(true)}>{t('chost.flag')}</button>}
+      {done ? <p className="muted" role="status">{t('chost.flagged')}</p> : <button type="button" className="chat-act chat-act--icon" aria-label={t('chost.flag')} title={t('chost.flag')} onClick={() => setOpen(true)}><Flag aria-hidden="true" /></button>}
       {open && !done && (
         <Dialog title={t('chost.flagTitle')} onClose={() => setOpen(false)}>
           <p className="muted">{t('chost.flagBody')}</p>

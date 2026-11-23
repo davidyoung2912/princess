@@ -18,6 +18,8 @@ export interface ChatNotice {
   title?: string
   body?: string
   messageId?: string
+  /** For an informative notice about a chat that still exists for the guest: that conversation's id, so the notice stays quiet while they are looking at it. */
+  about?: string | null
 }
 
 export interface Arrivals { requests: number; messages: number }
@@ -34,6 +36,17 @@ export function arrivals(prev: ChatSummary | null, next: ChatSummary): Arrivals 
 /** Whether a notice may show: switched on, not in calm mode or do not disturb, and the guest is not already in Chat (where the list and banner say it). */
 export function mayNotify(o: { popups: boolean; calm: boolean; path: string; dnd?: boolean }): boolean {
   return o.popups && !o.calm && !o.dnd && o.path !== '/chat' && !o.path.startsWith('/chat/')
+}
+
+/**
+ * A chat-event notice (someone left, was removed, a group ended) is for the guest who is not already looking at the change: it stays hidden on the main chat page and on the page of the conversation it is about,
+ * and shows everywhere else, including the Stanley chat and other conversations.
+ */
+export const mayNotifyInfo = (o: { popups: boolean; calm: boolean; path: string; dnd?: boolean; about?: string | null }): boolean => {
+  if (!o.popups || o.calm || o.dnd || o.path === '/chat') return false
+  const plain = (id: string): string => decodeURIComponent(id).replace(/-/g, '').toLowerCase()
+  const here = o.path.match(/^\/chat\/c\/([^/?#]+)/)?.[1]
+  return !(o.about && here && plain(here) === plain(o.about))
 }
 
 /** An urgent notice shows unless the guest is already in Chat, where the pinned row and the message itself say it. Calm mode and the pop-ups setting do not apply. */
@@ -68,7 +81,7 @@ export function chooseUrgentNotice(urgentIds: readonly string[], conversations: 
 export function chooseInfoNotice(conversationId: string, messages: readonly ChatMessage[]): ChatNotice | null {
   const m = messages.filter((x) => x.notice?.kind === 'chatEvent' && x.acked === false && !x.deleted && !x.notice.superseded).reduce<ChatMessage | null>((best, x) => (!best || x.at > best.at ? x : best), null)
   if (!m) return null
-  return { key: `info:${m.id}`, kind: 'info', name: '', count: 1, requestId: null, conversationId, title: noticeHeadline(m.text), body: noticeBody(m.text), messageId: m.id }
+  return { key: `info:${m.id}`, kind: 'info', name: '', count: 1, requestId: null, conversationId, title: noticeHeadline(m.text), body: noticeBody(m.text), messageId: m.id, about: m.notice?.path.match(/^\/chat\/c\/([^/?#]+)/)?.[1] ?? null }
 }
 
 const request = (c: ChatConnection, canAccept: boolean): ChatNotice =>

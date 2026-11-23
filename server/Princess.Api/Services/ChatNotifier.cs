@@ -117,8 +117,8 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     public Task ChangedAsync(long userId, CancellationToken ct) =>
         Deliver(userId, "changed", new PushNotice($"chat:changed:{userId}:{Guid.NewGuid():N}", "chat", "chat", false, 40, "/chat", "", "", []), false, ct);
 
-    public Task InfoAsync(long userId, string key, string title, string body, CancellationToken ct, bool phone = true) =>
-        Deliver(userId, "info", new PushNotice(key, "chatEvent", "chat", false, 45, "/chat", title, body, []), phone, ct);
+    public Task InfoAsync(long userId, string key, string title, string body, CancellationToken ct, bool phone = true, string path = "/chat") =>
+        Deliver(userId, "info", new PushNotice(key, "chatEvent", "chat", false, 45, path, title, body, []), phone, ct);
 
     /// <summary>
     /// The other person left a personal chat, so it is gone for both. Told at once like a deleted group (an open app drops it from its list and closes the thread), with words that fit a chat between two people. Nothing of what was said is named.
