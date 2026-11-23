@@ -66,6 +66,8 @@ public interface IChatConnectionStore
     Task<Guid?> AcceptAsync(long id, DateTime now, CancellationToken ct);
     /// <summary>Ends an agreed connection and records who did. False when it was not agreed.</summary>
     Task<bool> EndAsync(long id, long byUserId, DateTime now, CancellationToken ct);
+    /// <summary>Records that the sender has seen the answer to this one request (used when the answer is delivered to them another way, such as their Stanley thread).</summary>
+    Task MarkAnswerSeenAsync(long id, DateTime now, CancellationToken ct);
     /// <summary>Records that the sender has seen the answers to their requests.</summary>
     Task MarkAnswersSeenAsync(long userId, DateTime now, CancellationToken ct);
     /// <summary>Closes waiting requests that passed their time, for the person (as sender, receiver or guardian).</summary>
@@ -234,6 +236,12 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
             await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatPins WHERE GroupId = @groupId; DELETE FROM dbo.ChatGroups WHERE Id = @groupId", new { groupId }, tx, ct));
         await tx.CommitAsync(ct);
         return true;
+    }
+
+    public async Task MarkAnswerSeenAsync(long id, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatConnections SET RequesterSeenAt = @now WHERE Id = @id AND RequesterSeenAt IS NULL", new { id, now }, null, ct));
     }
 
     public async Task MarkAnswersSeenAsync(long userId, DateTime now, CancellationToken ct)

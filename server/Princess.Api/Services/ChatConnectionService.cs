@@ -168,6 +168,8 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         if (await users.FindByIdAsync(row.RequesterId, ct) is not { } requester) return;
         var name = ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast);
         await stanleyThread.TellAsync(requester, ChatConnectionRules.NoticeKey("declinedThread", row.PublicId), "Chat request declined", ChatStanleyVoice.Declined(name), now, ct);
+        // The Stanley message is how the sender hears of it, so the Chat badge does not also count the same answer until a page that clears it is opened.
+        await store.MarkAnswerSeenAsync(row.Id, now, ct);
     }
 
     public async Task<ChatConnectionDto> RespondAsync(UserRecord actor, Guid id, ChatRespondBody? body, CancellationToken ct)
