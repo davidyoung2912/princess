@@ -249,6 +249,16 @@ Ranked ideas, each with the reason:
 
 Guard rails to keep: no invented prices, policies or times; the front end never knows whether data is simulated; safety topics hand off to the official screens; every proactive message can be turned off.
 
+## Second pass: improvements built (2026-11-23)
+
+Worked through the lists with the rule that nothing may need `dotnet test` or a browser to be trusted.
+
+- **Phase F** (code health): see the second-pass section under Phase F and its regraded scorecard (overall B+ to A-).
+- **Phase H, day planning, item 1 (day health check): built.** `src/domain/explorer/dayCheck.ts` (7 tests) and a "Day check" card on Today's Plan and Day Plan: missing breakfast, lunch or dinner still ahead (a long shore tour covers lunch; passed meals are skipped on today), a day of six hours or more with no hour-long gap, and overlapping lines, each with a link to the dining Explorer where useful. It reads only the lines already on the plan and changes nothing. The "tour ends too close to all-aboard" check from the same item needs the port's all-aboard time on the plan items and is not done.
+- **Phase A, C, D, E, G, I, J:** their open items are server work (C#), database work, browser-proved performance changes, or the owner's decisions, so none was attempted: the venues and menus fills (A) are content; the stats `PastTrips` writer (C) and the tender-port, passport-validity and excursion-recheck warnings (G) need server data and rules; the refresh-token cookie, logout revocation and shared limiter (D) need hosting decisions and C# tests; Phase E is as above; the tour step cap (I) needs the C# and TypeScript limits raised together; Phase J is document-only.
+- **Phase B** (excursions wiring): still blocked on a C# test run, see the Phase B section.
+- **Also this session (not in the original plan):** Phase 1 and 2 of `docs/mcp-integration-plan.md` (maps on Port Details; an MCP gateway with an egress allowlist, live-tested against GoVisit), and the finding that the research document's first-choice free providers mostly do not work for cruise ports.
+
 ## Open items after phases A to J
 
 - Wire `server/Princess.Api/Content/port-excursions.json` (160 tours) into the server catalogue (needs C# build and tests).

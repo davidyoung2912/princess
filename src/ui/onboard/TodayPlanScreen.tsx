@@ -6,6 +6,7 @@ import { downloadText } from '../delights/cardTools'
 import { formatTime } from '../../domain/cruise'
 import { EXPLORER_PATHS, planCalendar } from '../../domain/explorer/planItems'
 import { alternativesFor, needsAlternatives, type Alternative } from '../../domain/explorer/alternatives'
+import { dayCheck } from '../../domain/explorer/dayCheck'
 import { clashMap, disrupted, groupByPeriod, walkHints, type Period, type PlanItem, type WalkHint } from '../../domain/explorer/planTimeline'
 import { itinerary, shipZoneAt, shipZoneOnDate } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
@@ -40,6 +41,8 @@ const LINKS = [
   ['route.excursionsExplorer', '/excursions-explorer'], ['route.spaExplorer', EXPLORER_PATHS.spa], ['route.exerciseExplorer', EXPLORER_PATHS.exercise], ['route.activitiesExplorer', EXPLORER_PATHS.activities],
 ] as const
 
+const minuteOfDay = (hhmm: string): number => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
+
 /** Today's plan, the seventh page of the Explorer family: the ship's clock and date, then everything the guest has on that day in time order. */
 export function TodayPlanScreen() { return <PlanDay /> }
 
@@ -54,6 +57,8 @@ function PlanDay({ details = false }: { details?: boolean }) {
   const clashes = clashMap(plan.items)
   const hints = walkHints(plan.items)
   const changed = disrupted(plan.items)
+  // Meals that have already passed are left out when the day shown is today (ship time).
+  const notes = plan.ready ? dayCheck(plan.items, state.day === state.currentDay ? minuteOfDay(timeIn(state.nowAt, shipZoneAt(sailing, state.nowAt))) : 0) : []
   const addToPlan = useAddToPlan(state.day, plan.retry)
   const { profile: taste } = useTaste()
   const pins = useVenuePins(plan.explorers.flatMap((d) => d.venues.map((v) => v.venue)))
@@ -95,6 +100,20 @@ function PlanDay({ details = false }: { details?: boolean }) {
               </ul>
             </section>
           ))}
+          {notes.length > 0 && (
+            <Card info labelledBy="tp-check">
+              <h2 id="tp-check">{headingCase(t('plan.check.title'))}</h2>
+              <p className="muted">{t('plan.check.intro')}</p>
+              <ul className="plain-bullets">
+                {notes.map((n) => (
+                  <li key={n.id === 'meal' ? n.meal : n.id}>
+                    {n.id === 'meal' ? <>{t(`plan.check.meal.${n.meal}` as StringKey)} <Link to={`${EXPLORER_PATHS.dining}?day=${state.day}`}>{t('plan.check.dining')}</Link></>
+                      : n.id === 'fullDay' ? t('plan.check.fullDay', { hours: String(n.hours) }) : t('plan.check.clashes', { count: String(n.count) })}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
           <DayBundles bundles={bundles} day={state.day} clockAt={clockAt} busy={addToPlan.busy} onAdd={(e) => { void addToPlan.add(e) }} />
           <p role="status" className="visually-hidden">{addToPlan.message}</p>
           {plan.items.some((i) => i.status !== 'cancelled') && <p><Button variant="secondary" onClick={addToCalendar}>{t('plan.today.calendar')}</Button></p>}
