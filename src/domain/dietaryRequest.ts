@@ -1,5 +1,5 @@
-import type { StringKey } from '../i18n'
-import type { BadgeKind } from '../ui/StatusBadge'
+import type { StringKey } from '../shared/i18n'
+import type { BadgeKind } from '../shared/ui/StatusBadge'
 
 /** What the request is about: a medical allergy, a diet, or anything else. */
 export type DietaryKind = 'allergy' | 'diet' | 'other'

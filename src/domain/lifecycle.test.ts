@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { canMove, isOpen, LIFECYCLE, lifecycleOf, needsAction } from './lifecycle'
-import { en } from '../i18n/locales/en'
+import { en } from '../shared/i18n/locales/en'
 
 describe('one lifecycle vocabulary (TRU-03)', () => {
   it('has the nine states, each with a guest-facing word', () => {

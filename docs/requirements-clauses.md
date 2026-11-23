@@ -20,36 +20,36 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | GTS-01 | P0 | Built | field saved/submitted/accepted state | `src` |
 | GTS-02 | P0 | Built | submitted not shown as approved | `any` |
 | GTS-04 | P0 | Built | arrival-group change timestamped | `src` |
-| GTS-05 | P0 | Built | never hides urgent help | `src/ui/boarding/EmbarkScreen.tsx` |
+| GTS-05 | P0 | Built | never hides urgent help | `src/features/boarding/ui/EmbarkScreen.tsx` |
 | GTS-12 | P0 | Built | required correction and human contact | `src/domain/papersCheck.ts` |
 | SEA-01 | P0 | Built | live data labelled not inferred | `src/domain/tileLive.ts` |
 | SEA-02 | P0 | Built | cancelled/moved retained in history | `src/domain/plan.ts` |
 | SEA-13 | P0 | Built | exclusions and validity per guest | `src/domain/entitlements.ts` |
-| SEA-14 | P0 | Built | dispute path on charge | `src/ui/onboard/BillScreen.tsx,src/ui/finish/FinalBillScreen.tsx,src/ui/finish/CasesScreen.tsx` |
+| SEA-14 | P0 | Built | dispute path on charge | `src/features/onboard/ui/BillScreen.tsx,src/features/finish/ui/FinalBillScreen.tsx,src/features/finish/ui/CasesScreen.tsx` |
 | SEA-14 | P0 | Built | pending vs posted | `src/domain/ledgerSplit.ts` |
 | SEA-19 | P0 | Built | unresolved acknowledgement routes to staff | `src/domain/medicalCard.ts` |
 | POR-05 | P0 | Built | status timestamped, estimate not confirmed | `src/domain/tender.ts` |
 | POR-06 | P0 | Built | assumptions and uncertainty shown | `src/domain/portPilot.ts` |
-| DEB-02 | P0 | Built | capacity and consequence | `src/domain/disembark.ts,src/ui/finish/DisembarkScreen.tsx` |
-| DEB-02 | P0 | Built | preference vs final assignment | `src/domain/disembark.ts,src/ui/finish/DisembarkScreen.tsx` |
-| DEB-03 | P0 | Built | tag group and lost-bag contact | `src/ui/onboard/FinishMoreScreens.tsx` |
-| DEB-03 | P0 | Built | offline/printable copy | `src/ui/onboard/FinishMoreScreens.tsx` |
-| DEB-08 | P0 | Built | source and update date shown | `src/ui/finish/CustomsScreen.tsx` |
-| DEB-08 | P0 | Built | no legal eligibility guarantee | `src/ui/finish/CustomsScreen.tsx` |
-| DEB-14 | P0 | Built | case history carried to shore | `src/ui/finish/CasesScreen.tsx` |
-| REM-06 | P0 | Built | survey only vs request follow-up | `src/ui/finish/FeedbackScreen.tsx` |
-| REM-16 | P0 | Built | correction of data | `src/ui/account/PrivacyScreen.tsx` |
+| DEB-02 | P0 | Built | capacity and consequence | `src/domain/disembark.ts,src/features/finish/ui/DisembarkScreen.tsx` |
+| DEB-02 | P0 | Built | preference vs final assignment | `src/domain/disembark.ts,src/features/finish/ui/DisembarkScreen.tsx` |
+| DEB-03 | P0 | Built | tag group and lost-bag contact | `src/features/onboard/ui/FinishMoreScreens.tsx` |
+| DEB-03 | P0 | Built | offline/printable copy | `src/features/onboard/ui/FinishMoreScreens.tsx` |
+| DEB-08 | P0 | Built | source and update date shown | `src/features/finish/ui/CustomsScreen.tsx` |
+| DEB-08 | P0 | Built | no legal eligibility guarantee | `src/features/finish/ui/CustomsScreen.tsx` |
+| DEB-14 | P0 | Built | case history carried to shore | `src/features/finish/ui/CasesScreen.tsx` |
+| REM-06 | P0 | Built | survey only vs request follow-up | `src/features/finish/ui/FeedbackScreen.tsx` |
+| REM-16 | P0 | Built | correction of data | `src/features/account/ui/PrivacyScreen.tsx` |
 | MOB-01 | P0 | Built | continue in browser | `src/domain/phoneSetup.ts` |
 | TRU-01 | P0 | Built | history includes consent changes | `src/domain/trustLedger.ts` |
 | TRU-03 | P0 | Partial | all nine states | `src/domain/trustLedger.ts` |
-| TRU-06 | P0 | Built | source/freshness label | `src/hooks/useSavedCopy.ts` |
+| TRU-06 | P0 | Built | source/freshness label | `src/shared/hooks/useSavedCopy.ts` |
 | OFF-03 | P0 | Built | verify with crew fallback | `src/domain/offlineCapsule.ts` |
-| OFF-04 | P0 | Built | conflict resolution on reconnect | `src/data/outbox.ts` |
-| A11Y-05 | P0 | Built | non-app route documented | `src/ui/aboard/SupportScreens.tsx` |
+| OFF-04 | P0 | Built | conflict resolution on reconnect | `src/shared/data/outbox.ts` |
+| A11Y-05 | P0 | Built | non-app route documented | `src/features/aboard/ui/SupportScreens.tsx` |
 | SEC-02 | P0 | Built | no raw card numbers stored | `src/gates/auditGate.test.ts` |
-| SEC-04 | P0 | Built | correction of data | `src/ui/account/PrivacyScreen.tsx` |
+| SEC-04 | P0 | Built | correction of data | `src/features/account/ui/PrivacyScreen.tsx` |
 | SEC-05 | P0 | Built | location opt-in scoped, time-limited | `src/domain/arrivalPing.ts` |
-| SEC-06 | P0 | Built | guardian controls | `src/ui/plan/FamilyLinkScreen.tsx` |
+| SEC-06 | P0 | Built | guardian controls | `src/features/plan/ui/FamilyLinkScreen.tsx` |
 | BOK-13 | P1 | Built | no prechecked extras; exclusions and refund link | `any` |
 | MNG-06 | P1 | Built | party readiness shows task status only | `any` |
 | PRE-11 | P1 | Built | paid experience shows cancellation window before commit | `src` |
@@ -58,7 +58,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | SEA-12 | P1 | Built | order tracking states only when source confirms | `src` |
 | DEB-10 | P1 | Built | airline deep link no credentials | `src` |
 | DEB-15 | P1 | Built | departure pocket card printable | `src` |
-| AST-02 | P1 | Built | answers label source and freshness | `src/ai,src/domain/stanley` |
+| AST-02 | P1 | Built | answers label source and freshness | `src/features/stanley/logic,src/domain/stanley` |
 | OFF-07 | P1 | Built | storage eviction/quota guidance | `src` |
 | UX-04 | P1 | Built | sync across devices plan, searches, prefs | `src` |
 
@@ -87,7 +87,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | MOB-23 | P0 | Built | **OK** | (BM19 closed) see best-in-market-plan-2 section 5d |
 | OFF-01 | P0 | Built | **OK** | (BM19 closed) see best-in-market-plan-2 section 5d |
 | SEA-05 | P1 | Partial | **PARTIAL** | (BM20) Venue directory shows open or closed from hours (openAt) only: no temporarily-unavailable state and no timestamp. |
-| AST-02 | P1 | Built | **PARTIAL** | (BM20) src/ai has no source or freshness label on answers. |
+| AST-02 | P1 | Built | **PARTIAL** | (BM20) src/features/stanley/logic has no source or freshness label on answers. |
 | MNG-06 | P1 | Built | **OK** | (BM20) readinessBoard rows carry name, percent, open tasks and behind flag only; no document fields. |
 | SEA-04 | P1 | Partial | **PARTIAL** | (BM20) searchIndex returns hits that link to screens (title, detail, to); no direct answers or actions and no source or freshness. |
 | GTS-16 | P1 | Built | **NEEDS-READ** | (BM20) MedallionScreen has activate and lost; no order or delivery status found, but ReadyScreens.tsx was only skimmed. |
@@ -100,15 +100,15 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 
 | ID | Pri | Matrix | Clause | Probe |
 |---|---|---|---|---|
-| DRM-01#1 | P0 | Built | A new visitor can search and open a sailing before being prompted to sign in; | found: search and open a sailing before sign-in (`src/routes/routes.ts`) |
+| DRM-01#1 | P0 | Built | A new visitor can search and open a sailing before being prompted to sign in; | found: search and open a sailing before sign-in (`src/app/routes/routes.ts`) |
 | DRM-01#2 | P0 | Built | prompts appear only when saving, booking or linking personal data. |  |
 | DRM-02#1 | P1 | Built | Filters combine without losing prior selections; | found: filters combine; useful empty state with nearby alternatives (`src/domain/alternatives.ts`) |
 | DRM-02#2 | P1 | Built | unavailable combinations show a useful empty state and nearby alternatives. |  |
 | DRM-03#1 | P0 | Built | Results identify exact ship, embarkation date, itinerary and fare basis; | found: three ships, no hard-coded routes (`src/domain/sailings.ts`) |
 | DRM-03#2 | P0 | Built | catalogue supports at least three ships and 2027 sailings without hard-coded route constants. |  |
-| DRM-04#1 | P1 | Built | Calendar labels lowest observed fare, occupancy assumptions, currency and quote time; | found: price calendar labels lowest fare, currency, quote time (`src/api/types.ts`) |
+| DRM-04#1 | P1 | Built | Calendar labels lowest observed fare, occupancy assumptions, currency and quote time; | found: price calendar labels lowest fare, currency, quote time (`src/shared/api/types.ts`) |
 | DRM-04#2 | P1 | Built | clicking a date opens the exact sailing and revalidates the price. |  |
-| DRM-05#1 | P1 | Built | Guest may skip, revise or reset answers; | found: finder may skip, revise, reset answers (`src/ui/discover/TrialDayScreen.tsx`) |
+| DRM-05#1 | P1 | Built | Guest may skip, revise or reset answers; | found: finder may skip, revise, reset answers (`src/features/discover/ui/TrialDayScreen.tsx`) |
 | DRM-05#2 | P1 | Built | results explain the preferences used and never treat accessibility or health answers as marketing permission. |  |
 | DRM-06#1 | P1 | Built | Sea days, tenders, muster, dining, cabins, gratuities, packages and port time are explained with ship/itinerary-specific caveats and no sales-pressure gate. | found: first-cruise concepts explained (tender, muster, gratuities) (`src/domain/dream.ts`) |
 | DRM-07#1 | P2 | Partial | Occasion filters surface relevant itineraries and optional services; | unread |
@@ -119,20 +119,20 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | DRM-09#2 | P1 | Partial | no assumed roommate matching. |  |
 | DRM-10#1 | P0 | Built | Guest can filter step-free routes, lift access, wheelchair/tender limits and accessible transport; | unread |
 | DRM-10#2 | P0 | Built | unknown details are explicitly unknown. |  |
-| DRM-11#1 | P0 | Built | Estimate separates cruise, travel, hotel, transfers, insurance, gratuities, packages and discretionary spend; | found: uncertainty range visible (`src/api/types.ts`) |
+| DRM-11#1 | P0 | Built | Estimate separates cruise, travel, hotel, transfers, insurance, gratuities, packages and discretionary spend; | found: uncertainty range visible (`src/shared/api/types.ts`) |
 | DRM-11#2 | P0 | Built | assumptions and uncertainty range are visible. |  |
 | DRM-12#1 | P1 | Partial | Map order matches the selected sailing and shows provisional versus confirmed calls; | unread |
 | DRM-12#2 | P1 | Partial | an accessible text itinerary is always available. |  |
 | DRM-13#1 | P1 | Built | Capacity, class, dining, entertainment, accessible features, connectivity and room-control capability are sourced per ship and updated with effective dates. | found: ship profiles per ship with effective dates (`src/domain/prepareDelights.ts`) |
 | DRM-14#1 | P1 | Built | Invited members can vote without seeing private fare/payment details; | found: group wish list votes; organiser closes and exports (`src/domain/board.ts`) |
 | DRM-14#2 | P1 | Built | organiser can close voting and export the result. |  |
-| DRM-15#1 | P1 | Built | Link is read-only by default, can expire, and exposes only explicitly selected options; | found: shortlist link read-only, expires, revocable (`src/api/finishTypes.ts`) |
+| DRM-15#1 | P1 | Built | Link is read-only by default, can expire, and exposes only explicitly selected options; | found: shortlist link read-only, expires, revocable (`src/shared/api/finishTypes.ts`) |
 | DRM-15#2 | P1 | Built | opening the link never grants booking access. |  |
 | DRM-16#1 | P2 | Partial | Alert is tied to exact sailing, cabin/fare assumptions and currency; | found: alert tied to exact sailing, pause or delete (`src/domain/fareAlert.ts`) |
 | DRM-16#2 | P2 | Partial | guest sets thresholds and can pause/delete it in one action. |  |
-| DSC-01#1 | P0 | Built | Comparison normalises date, ship, itinerary, fare, occupancy, cabin category, included items and total estimate; | found: missing data not fabricated (`src/account/context.ts`) |
+| DSC-01#1 | P0 | Built | Comparison normalises date, ship, itinerary, fare, occupancy, cabin category, included items and total estimate; | found: missing data not fabricated (`src/features/account/logic/context.ts`) |
 | DSC-01#2 | P0 | Built | missing data is not fabricated. |  |
-| DSC-02#1 | P0 | Built | The score is explainable and can be viewed as raw facts; | found: score explainable, raw facts (`src/api/types.ts`) |
+| DSC-02#1 | P0 | Built | The score is explainable and can be viewed as raw facts; | found: score explainable, raw facts (`src/shared/api/types.ts`) |
 | DSC-02#2 | P0 | Built | no single “best” score hides trade-offs. |  |
 | DSC-03#1 | P1 | Built | Arrival/departure, tender expectation, excursion meeting constraints and local/ship time are separately shown with source and freshness. | found: tender expectation and local/ship time separately (`src/domain/allaboard.ts`) |
 | DSC-04#1 | P0 | Built | Category-level characteristics are not confused with the exact cabin attributes; | **ABSENT**: category vs exact cabin attributes |
@@ -144,7 +144,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | DSC-07#1 | P1 | Partial | Every image states exact cabin, category representative, ship sister-vessel or illustrative; | unread |
 | DSC-07#2 | P1 | Partial | outdated images have review dates. |  |
 | DSC-08#1 | P0 | Built | Guests can expand every included/extra item and see conditions, guest eligibility, tax/service charges and cancellation terms. | found: cancellation terms per item (`src/domain/bookingPrep.ts`) |
-| DSC-09#1 | P1 | Built | Calculator uses stated guest habits and current published prices; | found: package break-even, labelled estimate (`src/data/outbox.ts`) |
+| DSC-09#1 | P1 | Built | Calculator uses stated guest habits and current published prices; | found: package break-even, labelled estimate (`src/shared/data/outbox.ts`) |
 | DSC-09#2 | P1 | Built | shows break-even assumptions and is explicitly an estimate. |  |
 | DSC-10#1 | P2 | Built | Score shows positive matches and compromises, allows weights to be changed, and does not use protected or sensitive attributes to exclude options. | found: fit score weights changeable (`src/domain/bookingPrep.ts`) |
 | DSC-11#1 | P0 | Built | Ship, gangway, tender, port transport, tour surfaces, restroom access and transfer limitations appear in one checklist with unknowns highlighted. | unread |
@@ -159,21 +159,21 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | DSC-16#2 | P1 | Built | shared participants have scoped access. |  |
 | BOK-01#1 | P0 | Built | A guest can leave, reauthenticate and resume at the last completed step; | found: draft expiry explained (`src/domain/lifecycle.ts`) |
 | BOK-01#2 | P0 | Built | draft expiry and inventory risk are explained. |  |
-| BOK-02#1 | P0 | Built | Validation identifies the exact field and expected format; | found: exact field and format error (`src/api/aboardTypes.ts`)<br>found: legal name change does not alter confirmed booking (`src/api/types.ts`) |
+| BOK-02#1 | P0 | Built | Validation identifies the exact field and expected format; | found: exact field and format error (`src/shared/api/aboardTypes.ts`)<br>found: legal name change does not alter confirmed booking (`src/shared/api/types.ts`) |
 | BOK-02#2 | P0 | Built | legal name changes do not silently alter a confirmed booking. |  |
 | BOK-03#1 | P1 | Out of reach | OCR values are suggestions only; | unread |
 | BOK-03#2 | P1 | Out of reach | guest confirms every field and can enter data manually; |  |
 | BOK-03#3 | P1 | Out of reach | temporary images follow a deletion policy. |  |
-| BOK-04#1 | P0 | Built | Countdown comes from server expiry, not device clock; | found: countdown from server expiry (`src/api/careTypes.ts`) |
+| BOK-04#1 | P0 | Built | Countdown comes from server expiry, not device clock; | found: countdown from server expiry (`src/shared/api/careTypes.ts`) |
 | BOK-04#2 | P0 | Built | hold renewal/failure is explicit and a stale client cannot imply inventory is reserved. |  |
-| BOK-05#1 | P0 | Built | A change to fare or terms forces a clear review before payment; | found: accepted fare/terms version stored (`src/api/types.ts`) |
+| BOK-05#1 | P0 | Built | A change to fare or terms forces a clear review before payment; | found: accepted fare/terms version stored (`src/shared/api/types.ts`) |
 | BOK-05#2 | P0 | Built | audit record stores the accepted version. |  |
 | BOK-06#1 | P0 | Built | Each line identifies traveller, amount, currency, tax/fee, one-time/recurring status and due date; | found: line has traveller, tax/fee, one-time/recurring, due (`src/domain/dream.ts`) |
 | BOK-06#2 | P0 | Built | total reconciles mathematically. |  |
-| BOK-07#1 | P0 | Built | If anything changes, checkout pauses and shows before/after impact with guest choice to continue or return. | found: before/after impact on change (`src/api/types.ts`) |
+| BOK-07#1 | P0 | Built | If anything changes, checkout pauses and shows before/after impact with guest choice to continue or return. | found: before/after impact on change (`src/shared/api/types.ts`) |
 | BOK-08#1 | P0 | Simulated | PAN/CVV never enter application logs, analytics or browser persistence; | unread |
 | BOK-08#2 | P0 | Simulated | payment provider returns token and transaction reference only. |  |
-| BOK-09#1 | P0 | Built | Repeated submit, refresh or network retry uses idempotency; | found: status checked before retry (`src/api/http.ts`) |
+| BOK-09#1 | P0 | Built | Repeated submit, refresh or network retry uses idempotency; | found: status checked before retry (`src/shared/api/http.ts`) |
 | BOK-09#2 | P0 | Built | UI checks transaction status before offering retry. |  |
 | BOK-10#1 | P1 | Partial | Payer sees their amount and deadline; | found: split payment payer sees own amount and deadline (`src/domain/contributions.ts`) |
 | BOK-10#2 | P1 | Partial | organiser sees paid/pending/failed status but not another person's payment credentials. |  |
@@ -192,7 +192,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | BOK-16#2 | P0 | Built | pending state is clearly not confirmation. |  |
 | MNG-01#1 | P0 | Partial | A trip can be linked by secure verification; | unread |
 | MNG-01#2 | P0 | Partial | ambiguous duplicate profiles route to resolution rather than displaying another guest's booking. |  |
-| MNG-02#1 | P0 | Built | Every task shows owner, due date, status, action link and consequence of missing the deadline. | found: task owner and consequence (`src/auth/provider.ts`) |
+| MNG-02#1 | P0 | Built | Every task shows owner, due date, status, action link and consequence of missing the deadline. | found: task owner and consequence (`src/shared/auth/provider.ts`) |
 | MNG-03#1 | P0 | Built | A failed lookup never appears as “no cruise”; | unread |
 | MNG-03#2 | P0 | Built | cached trip details remain visible with timestamp and retry option. |  |
 | MNG-04#1 | P0 | Built | Requirement source, jurisdiction and last-verified date are shown; | found: last-verified date and official authority (`src/domain/papersCheck.ts`) |
@@ -202,16 +202,16 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | MNG-06#1 | P1 | Built | Organiser sees task status only unless the traveller explicitly delegates document access. | **ABSENT**: party readiness shows task status only |
 | MNG-07#1 | P1 | Built | Guest grants named scopes and expiry; | found: helper scopes and expiry (`src/domain/account.ts`) |
 | MNG-07#2 | P1 | Built | delegate cannot pay, cancel or edit legal identity unless separately authorised. |  |
-| MNG-08#1 | P1 | Built | Suggestions account for climate, ports, dress guidance, excursion type and guest-entered needs; | found: packing list editable (`src/api/httpApi.ts`) |
+| MNG-08#1 | P1 | Built | Suggestions account for climate, ports, dress guidance, excursion type and guest-entered needs; | found: packing list editable (`src/shared/api/httpApi.ts`) |
 | MNG-08#2 | P1 | Built | all items remain editable. |  |
 | MNG-09#1 | P1 | Partial | Each item has provider, reference, contact, timing and disruption plan; | found: travel-to-port external bookings not Princess-confirmed (`src/domain/travel.ts`) |
 | MNG-09#2 | P1 | Partial | external bookings are not described as Princess-confirmed. |  |
-| MNG-10#1 | P0 | Built | Paid, due, pending, failed and refunded are distinct; | found: paid due pending failed refunded distinct (`src/api/types.ts`) |
+| MNG-10#1 | P0 | Built | Paid, due, pending, failed and refunded are distinct; | found: paid due pending failed refunded distinct (`src/shared/api/types.ts`) |
 | MNG-10#2 | P0 | Built | amount matches authoritative booking/payment records. |  |
 | MNG-11#1 | P0 | Partial | Each request has receipt, owner/team, current state, expected response or reason no ETA exists, and escalation path. | **ABSENT**: owner/team on request<br>**ABSENT**: expected response or reason no ETA |
-| MNG-12#1 | P1 | Built | Guest chooses whether a preference is saved and where it is shared; | found: allergy sharing with crew acknowledgement not a safety guarantee (`src/api/careTypes.ts`) |
+| MNG-12#1 | P1 | Built | Guest chooses whether a preference is saved and where it is shared; | found: allergy sharing with crew acknowledgement not a safety guarantee (`src/shared/api/careTypes.ts`) |
 | MNG-12#2 | P1 | Built | crew acknowledgement is visible and not described as a safety guarantee. |  |
-| MNG-13#1 | P1 | Built | Change notice identifies affected port, times, reservation and onward travel; | found: itinerary change before/after with deadline (`src/api/types.ts`) |
+| MNG-13#1 | P1 | Built | Change notice identifies affected port, times, reservation and onward travel; | found: itinerary change before/after with deadline (`src/shared/api/types.ts`) |
 | MNG-13#2 | P1 | Built | options and action deadline are prominent. |  |
 | MNG-14#1 | P1 | Built | Transactional, safety, service and marketing are separated; | found: notification centre categories; duplicates collapsed (`src/domain/notifications.ts`) |
 | MNG-14#2 | P1 | Built | duplicate notices are collapsed without losing the canonical record. |  |
@@ -219,7 +219,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | MNG-15#2 | P1 | Partial | deadline changes produce a new event rather than overwriting history. |  |
 | MNG-16#1 | P2 | Partial | Preference is opt-in, editable and can be excluded from future voyages; | unread |
 | MNG-16#2 | P2 | Partial | health/child data is not reused for marketing. |  |
-| MNG-17#1 | P1 | Built | Tier, points/credits and expiry reconcile to loyalty source; | found: loyalty stale status identified (`src/api/aheadTypes.ts`) |
+| MNG-17#1 | P1 | Built | Tier, points/credits and expiry reconcile to loyalty source; | found: loyalty stale status identified (`src/shared/api/aheadTypes.ts`) |
 | MNG-17#2 | P1 | Built | stale status is identified. |  |
 | MNG-18#1 | P1 | Built | Trip pack includes only selected documents and current itinerary; | found: trip pack large-print and low-ink variants (`src/domain/assistance.ts`) |
 | MNG-18#2 | P1 | Built | QR codes and small text remain legible in print test. |  |
@@ -230,7 +230,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | PRE-02#2 | P0 | Built | user can override with warning. |  |
 | PRE-03#1 | P0 | Built | Availability is revalidated at commit; | found: revalidated at commit; reference id (`server/Princess.Api/Services/SecurityHeaders.cs`) |
 | PRE-03#2 | P0 | Built | reservation produces reference ID, party details and cancellation rules. |  |
-| PRE-04#1 | P0 | Built | New slot is secured before old reservation is cancelled, or the UI explains that atomic replacement is unsupported and asks for informed consent. | found: atomic replacement unsupported consent (`src/domain/chat.ts`) |
+| PRE-04#1 | P0 | Built | New slot is secured before old reservation is cancelled, or the UI explains that atomic replacement is unsupported and asks for informed consent. | found: atomic replacement unsupported consent (`src/features/chat/domain/chat.ts`) |
 | PRE-05#1 | P1 | Simulated | Join, leave and promotion notifications are recorded; | unread |
 | PRE-05#2 | P1 | Simulated | no invented queue position or promise is shown. |  |
 | PRE-06#1 | P1 | Simulated | Guest receives queue token, party size, join time, status and call instructions; | unread |
@@ -244,7 +244,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | PRE-11#1 | P1 | Built | Time, duration, location, price, package inclusion and cancellation window appear before commit. | **ABSENT**: paid experience shows cancellation window before commit |
 | PRE-12#1 | P1 | Built | Age eligibility, sign-in/out authority, schedule and consent state are recorded; | found: youth registration guardian consent; minors cannot bypass (`src/domain/ahead.ts`) |
 | PRE-12#2 | P1 | Built | minors cannot bypass guardian rules. |  |
-| PRE-13#1 | P1 | Built | Each guest can accept, decline or propose alternatives without exposing private calendar or personal reason. | found: group plan board accept decline propose alternative (`src/ui/account/PrintScreen.tsx`) |
+| PRE-13#1 | P1 | Built | Each guest can accept, decline or propose alternatives without exposing private calendar or personal reason. | found: group plan board accept decline propose alternative (`src/features/account/ui/PrintScreen.tsx`) |
 | PRE-14#1 | P1 | Built | Forecast assumptions are editable and distinguish included, prepaid, expected and discretionary charges. | found: spend forecast editable; included vs prepaid vs discretionary (`src/domain/pricing.ts`) |
 | PRE-15#1 | P1 | Built | Each item states eligible guest, quantity/balance, usage window and redemption status; | found: entitlement wallet; expired remain in history (`src/domain/entitlements.ts`) |
 | PRE-15#2 | P1 | Built | expired items remain in history. |  |
@@ -258,7 +258,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | GTS-01#2 | P0 | Built | supported web and phone tasks stay in sync. |  |
 | GTS-02#1 | P0 | Built | Receipt identifies data category and time received; | **ABSENT**: submitted not shown as approved |
 | GTS-02#2 | P0 | Built | “submitted” is not shown as “approved” where manual review remains. |  |
-| GTS-03#1 | P0 | Built | Pass renders in airplane mode and high contrast; | found: pass paper/terminal fallback (`src/api/types.ts`) |
+| GTS-03#1 | P0 | Built | Pass renders in airplane mode and high contrast; | found: pass paper/terminal fallback (`src/shared/api/types.ts`) |
 | GTS-03#2 | P0 | Built | paper/terminal fallback is explicit. |  |
 | GTS-04#1 | P0 | Built | Details match ship/date/port; | **ABSENT**: arrival-group change timestamped |
 | GTS-04#2 | P0 | Built | arrival-group change is timestamped and only sourced from booking/terminal operations. |  |
@@ -282,21 +282,21 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | GTS-13#2 | P2 | Simulated | absent feed hides the estimate rather than substituting a guess. |  |
 | GTS-14#1 | P0 | Partial | Request shows received/acknowledged/assigned state and contact; | unread |
 | GTS-14#2 | P0 | Partial | guest can print the plan and retain a fallback. |  |
-| GTS-15#1 | P1 | Built | Checks downloaded pass, login, battery advice, offline maps and Medallion status; | found: night-before checklist (`src/data/battery.ts`) |
+| GTS-15#1 | P1 | Built | Checks downloaded pass, login, battery advice, offline maps and Medallion status; | found: night-before checklist (`src/shared/data/battery.ts`) |
 | GTS-15#2 | P1 | Built | failure gives a practical alternative. |  |
 | GTS-16#1 | P1 | Built | Country, sailing and eligibility conditions are reflected; | **ABSENT**: Medallion order/delivery/activation, keycard fallback |
 | GTS-16#2 | P1 | Built | keycard/terminal fallback is visible. |  |
 | EMB-01#1 | P0 | Partial | Boarding is confirmed only by ship/terminal manifest or authorised scan; | found: boarded set by manifest/scan, not guest (`src/domain/embark.ts`) |
 | EMB-01#2 | P0 | Partial | local QR display alone never means boarded. |  |
-| EMB-02#1 | P0 | Built | Station, deck, route and completion are cached; | found: crew instructions override app (`src/i18n/locales/en.ts`) |
+| EMB-02#1 | P0 | Built | Station, deck, route and completion are cached; | found: crew instructions override app (`src/shared/i18n/locales/en.ts`) |
 | EMB-02#2 | P0 | Built | app states that crew instructions and announcements override app content. |  |
 | EMB-03#1 | P0 | Out of reach | Alternative is ship-specific and confirmed by safety operations; | unread |
 | EMB-03#2 | P0 | Out of reach | app does not invent an accessible evacuation route. |  |
-| EMB-04#1 | P1 | Built | Steps adapt to confirmed muster, cabin readiness, venue hours and ship announcements; | found: first four hours dismissable and revisit (`src/hooks/useStanleyMode.ts`) |
+| EMB-04#1 | P1 | Built | Steps adapt to confirmed muster, cabin readiness, venue hours and ship announcements; | found: first four hours dismissable and revisit (`src/shared/hooks/useStanleyMode.ts`) |
 | EMB-04#2 | P1 | Built | each can be dismissed or revisited. |  |
-| EMB-05#1 | P1 | Built | Cabin and route match confirmed assignment; | found: cabin arrival card steward and troubleshooting (`src/api/finishTypes.ts`) |
+| EMB-05#1 | P1 | Built | Cabin and route match confirmed assignment; | found: cabin arrival card steward and troubleshooting (`src/shared/api/finishTypes.ts`) |
 | EMB-05#2 | P1 | Built | accessible alternative and keycard/Medallion troubleshooting are linked. |  |
-| EMB-06#1 | P1 | Built | “Delivered”, “in transit” and “expected” are distinct; | found: luggage delivered/in transit/expected, no fake tracking (`src/api/types.ts`) |
+| EMB-06#1 | P1 | Built | “Delivered”, “in transit” and “expected” are distinct; | found: luggage delivered/in transit/expected, no fake tracking (`src/shared/api/types.ts`) |
 | EMB-06#2 | P1 | Built | no fake bag tracking is shown when no sensor/integration exists. |  |
 | EMB-07#1 | P1 | Partial | Submission creates case ID, timestamp and owner; | found: cabin issue case id, no duplicate case (`src/domain/services.ts`) |
 | EMB-07#2 | P1 | Partial | guest sees updates and can add detail without duplicate case. |  |
@@ -307,15 +307,15 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | EMB-09#3 | P1 | Built | tour is optional and can be paused. |  |
 | EMB-10#1 | P1 | Built | Landmark, deck and time are visible; | found: meeting-point card with I'm here expiry (`src/domain/arrivalSignal.ts`) |
 | EMB-10#2 | P1 | Built | one-time “I'm here” updates only to invited party and expire. |  |
-| EMB-11#1 | P0 | Built | Instructions are ship-specific; | found: never implies third-party internet free (`src/i18n/locales/es.ts`) |
+| EMB-11#1 | P0 | Built | Instructions are ship-specific; | found: never implies third-party internet free (`src/shared/i18n/locales/es.ts`) |
 | EMB-11#2 | P0 | Built | app never suggests that third-party internet is free or that PWA access bypasses captive portal rules. |  |
 | EMB-12#1 | P1 | Built | Hours and eligibility are timestamped and ship/date-specific; | found: first-day venue hours timestamped, unknown crowd omitted (`src/domain/boarding.ts`) |
 | EMB-12#2 | P1 | Built | unknown crowd status is omitted. |  |
 | EMB-13#1 | P2 | Partial | Viewpoint recommendation includes step-free route and weather/open-deck caveat; | unread |
 | EMB-13#2 | P2 | Partial | no crowd prediction without data. |  |
-| EMB-14#1 | P1 | Built | Authorised adults, children and meeting locations are explicit; | found: guardian handover plan, no child tracking (`src/api/guards.ts`) |
+| EMB-14#1 | P1 | Built | Authorised adults, children and meeting locations are explicit; | found: guardian handover plan, no child tracking (`src/shared/api/guards.ts`) |
 | EMB-14#2 | P1 | Built | no unattended child-tracking assumption. |  |
-| EMB-15#1 | P0 | Built | Muster, emergency phone/crew instructions and ship address are reachable in two taps or less without login after cache. | found: reachable in two taps without login (`src/art/manifest.ts`) |
+| EMB-15#1 | P0 | Built | Muster, emergency phone/crew instructions and ship address are reachable in two taps or less without login after cache. | found: reachable in two taps without login (`src/shared/art/manifest.ts`) |
 | SEA-01#1 | P0 | Built | Shows next planned item, time, venue, deck, reservation confirmation and route; | **ABSENT**: live data labelled not inferred |
 | SEA-01#2 | P0 | Built | missing/live data is labelled rather than inferred. |  |
 | SEA-02#1 | P0 | Built | Planner reconciles reservations and changes; | **ABSENT**: cancelled/moved retained in history |
@@ -332,7 +332,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | SEA-07#2 | P1 | Partial | no continuous device GPS is needed for core navigation. |  |
 | SEA-08#1 | P2 | Simulated | Each value is measured or estimated with confidence and timestamp; | unread |
 | SEA-08#2 | P2 | Simulated | absent data does not produce fabricated occupancy. |  |
-| SEA-09#1 | P0 | Built | A confirmed reservation always has a receipt; | found: old reservation preserved until replaced (`src/domain/chat.ts`) |
+| SEA-09#1 | P0 | Built | A confirmed reservation always has a receipt; | found: old reservation preserved until replaced (`src/features/chat/domain/chat.ts`) |
 | SEA-09#2 | P0 | Built | change flow preserves old reservation until replacement rules are clear. |  |
 | SEA-10#1 | P1 | Simulated | Each queue token has state, party size, current instructions and cancel/leave control; | unread |
 | SEA-10#2 | P1 | Simulated | queue type is identified. |  |
@@ -343,45 +343,45 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | SEA-13#2 | P0 | Built | folio remains financial source of truth. |  |
 | SEA-14#1 | P0 | Built | Each charge has date/time, venue, amount, currency, status and dispute path; | **ABSENT**: dispute path on charge<br>**ABSENT**: pending vs posted |
 | SEA-14#2 | P0 | Built | totals reconcile to official statement. |  |
-| SEA-15#1 | P1 | Built | Forecast distinguishes posted, pending and predicted spend; | found: spend forecast posted/pending/predicted, budget alerts (`src/api/careTypes.ts`) |
+| SEA-15#1 | P1 | Built | Forecast distinguishes posted, pending and predicted spend; | found: spend forecast posted/pending/predicted, budget alerts (`src/shared/api/careTypes.ts`) |
 | SEA-15#2 | P1 | Built | alerts are guest-configured and child spend uses guardian rules. |  |
 | SEA-16#1 | P1 | Partial | One-to-one and group chat support block/report, guardian consent and message delivery state; | unread |
 | SEA-16#2 | P1 | Partial | no sensitive notification previews by default. |  |
-| SEA-17#1 | P1 | Built | Only authorised guardians can view/update; | found: youth club check-in/out state timestamped (`src/routes/screenWords.ts`) |
+| SEA-17#1 | P1 | Built | Only authorised guardians can view/update; | found: youth club check-in/out state timestamped (`src/app/routes/screenWords.ts`) |
 | SEA-17#2 | P1 | Built | check-in/out state comes from staff system and is timestamped. |  |
 | SEA-18#1 | P1 | Partial | Captions, hearing assistance, seating/access route and sensory notes are shown when verified; | unread |
 | SEA-18#2 | P1 | Partial | requests are tracked. |  |
 | SEA-19#1 | P0 | Built | Each stage is explicit; | **ABSENT**: unresolved acknowledgement routes to staff |
 | SEA-19#2 | P0 | Built | “received” never means food is allergen-safe; |  |
 | SEA-19#3 | P0 | Built | unresolved acknowledgement routes to staff. |  |
-| SEA-20#1 | P0 | Partial | Request has owner, status, ETA/confidence, updates, escalation and closure confirmation; | found: ETA/confidence (`src/ui/aboard/RequestsScreen.tsx`)<br>found: escalation (`src/ui/aboard/RequestsScreen.tsx`)<br>found: reopen keeps history (`src/ui/aboard/RequestsScreen.tsx`) |
+| SEA-20#1 | P0 | Partial | Request has owner, status, ETA/confidence, updates, escalation and closure confirmation; | found: ETA/confidence (`src/features/aboard/ui/RequestsScreen.tsx`)<br>found: escalation (`src/features/aboard/ui/RequestsScreen.tsx`)<br>found: reopen keeps history (`src/features/aboard/ui/RequestsScreen.tsx`) |
 | SEA-20#2 | P0 | Partial | reopening retains history. |  |
 | SEA-21#1 | P2 | Out of reach | Control is hidden when unsupported; | unread |
 | SEA-21#2 | P2 | Out of reach | guest receives confirmed device state or explicit failure, not optimistic UI success. |  |
-| SEA-22#1 | P1 | Built | Brief includes ship time, reservations, itinerary notices, weather and relevant action; | found: daily briefing suppresses marketing in calm mode (`src/api/httpApi.ts`) |
+| SEA-22#1 | P1 | Built | Brief includes ship time, reservations, itinerary notices, weather and relevant action; | found: daily briefing suppresses marketing in calm mode (`src/shared/api/httpApi.ts`) |
 | SEA-22#2 | P1 | Built | suppresses marketing in calm mode. |  |
 | SEA-23#1 | P1 | Built | Each feed has timestamp/source and operational caveat; | found: ship position, sunrise/sunset, sea state timestamped (`src/domain/catalogue.ts`) |
 | SEA-23#2 | P1 | Built | navigational/safety decisions defer to bridge/crew. |  |
-| SEA-24#1 | P1 | Built | Directory is available offline and prominently says it is not diagnosis or medical advice; | found: medical centre not medical advice (`src/api/types.ts`) |
+| SEA-24#1 | P1 | Built | Directory is available offline and prominently says it is not diagnosis or medical advice; | found: medical centre not medical advice (`src/shared/api/types.ts`) |
 | SEA-24#2 | P1 | Built | urgent instructions defer to crew/emergency process. |  |
-| SEA-25#1 | P0 | Built | Defer large images/video, avoid background refresh loops and preserve task functionality over the ship's app-only network. | found: defer large images in data-light (`src/diagnostics/telemetry.ts`) |
+| SEA-25#1 | P0 | Built | Defer large images/video, avoid background refresh loops and preserve task functionality over the ship's app-only network. | found: defer large images in data-light (`src/shared/diagnostics/telemetry.ts`) |
 | POR-01#1 | P0 | Built | Mode is ship-time-first and includes return buffer, meeting point and offline readiness; | found: return buffer and meeting point (`src/domain/portPilot.ts`) |
 | POR-01#2 | P0 | Built | app cannot hide all-aboard behind promotional content. |  |
 | POR-02#1 | P0 | Built | Every deadline names its governing clock; | found: DST and date-line tests (`src/domain/timeIntelligence.test.ts`) |
 | POR-02#2 | P0 | Built | DST changes and date-line crossings are tested; |  |
 | POR-02#3 | P0 | Built | ship time comes from authoritative sailing feed. |  |
-| POR-03#1 | P0 | Built | Contains pier/terminal, excursion tickets, maps, contacts, all-aboard and return guidance; | found: download completion tested before ashore (`src/api/finishTypes.ts`) |
+| POR-03#1 | P0 | Built | Contains pier/terminal, excursion tickets, maps, contacts, all-aboard and return guidance; | found: download completion tested before ashore (`src/shared/api/finishTypes.ts`) |
 | POR-03#2 | P0 | Built | download completion is tested before going ashore. |  |
-| POR-04#1 | P0 | Built | Card distinguishes Princess-operated from independent activity, shows cancellation/contact route and remains available offline. | found: Princess-operated vs independent label (`src/domain/excursions.ts`)<br>found: cancellation/contact route (`src/ui/onboard/PortCard.tsx`) |
+| POR-04#1 | P0 | Built | Card distinguishes Princess-operated from independent activity, shows cancellation/contact route and remains available offline. | found: Princess-operated vs independent label (`src/domain/excursions.ts`)<br>found: cancellation/contact route (`src/features/onboard/ui/PortCard.tsx`) |
 | POR-05#1 | P0 | Built | Current status is sourced from ship operations and timestamped; | **ABSENT**: status timestamped, estimate not confirmed |
 | POR-05#2 | P0 | Built | no estimated status is labelled confirmed. |  |
 | POR-06#1 | P0 | Built | Uses all-aboard, selected buffer, walking/transport estimates and tender wait where available; | **ABSENT**: assumptions and uncertainty shown |
 | POR-06#2 | P0 | Built | assumptions and uncertainty are shown. |  |
 | POR-07#1 | P1 | Partial | Surface, slope, curb, lift, restroom and transport details are source-tagged; | unread |
 | POR-07#2 | P1 | Partial | unknowns are visible and guest can request human help. |  |
-| POR-08#1 | P1 | Built | Plan warns about distance, opening-hour uncertainty, transit and ship-return risk; | found: port day plan warns ship-return risk (`src/api/types.ts`) |
+| POR-08#1 | P1 | Built | Plan warns about distance, opening-hour uncertainty, transit and ship-return risk; | found: port day plan warns ship-return risk (`src/shared/api/types.ts`) |
 | POR-08#2 | P1 | Built | alternatives can be saved offline. |  |
-| POR-09#1 | P1 | Built | Contacts are port- and sailing-specific, tested and cached; | found: local emergency contacts: services vs ship agent (`src/ui/aboard/PortExtras.tsx`) |
+| POR-09#1 | P1 | Built | Contacts are port- and sailing-specific, tested and cached; | found: local emergency contacts: services vs ship agent (`src/features/aboard/ui/PortExtras.tsx`) |
 | POR-09#2 | P1 | Built | app distinguishes emergency services from ship agent/Princess support. |  |
 | POR-10#1 | P1 | Built | Rate source/time are shown; | found: currency converter indicative, not ATM rate (`src/domain/bookingPrep.ts`) |
 | POR-10#2 | P1 | Built | conversion is indicative and never represented as a payment/ATM rate guarantee. |  |
@@ -390,46 +390,46 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | POR-11#3 | P1 | Built | translation is labelled practical not authoritative. |  |
 | POR-12#1 | P1 | Built | Source, timestamp and forecast horizon are visible; | found: weather/tender advisory source, timestamp, horizon (`src/domain/finishMore.ts`) |
 | POR-12#2 | P1 | Built | safety action follows ship announcements and local authorities. |  |
-| POR-13#1 | P1 | Built | Guest sends one-time arrival signal to named party; | found: one-time arrival signal, no background location (`src/api/types.ts`) |
+| POR-13#1 | P1 | Built | Guest sends one-time arrival signal to named party; | found: one-time arrival signal, no background location (`src/shared/api/types.ts`) |
 | POR-13#2 | P1 | Built | no background location share is implied. |  |
 | POR-14#1 | P1 | Built | Members can mark aboard, ashore, excursion, returning or safe; | found: ashore board statuses expire, not manifest (`src/domain/excursions.ts`) |
 | POR-14#2 | P1 | Built | stale status auto-expires and is never treated as manifest status. |  |
 | POR-15#1 | P0 | Built | Cancelled port, delayed tender or excursion change identifies impacted bookings, credits/refunds policy and new plan; | found: impacted bookings and refund policy (`src/domain/disruptionHub.ts`) |
 | POR-15#2 | P0 | Built | no silent itinerary overwrite. |  |
-| POR-16#1 | P0 | Built | Explains immediate steps and required documents, stores port agent/shore support contacts offline and never promises the vessel will wait. | found: port agent contacts offline (`src/api/types.ts`)<br>found: never promises vessel will wait (`src/domain/delay.ts`) |
+| POR-16#1 | P0 | Built | Explains immediate steps and required documents, stores port agent/shore support contacts offline and never promises the vessel will wait. | found: port agent contacts offline (`src/shared/api/types.ts`)<br>found: never promises vessel will wait (`src/domain/delay.ts`) |
 | DEB-01#1 | P0 | Built | Shows cabin deadline, breakfast availability, luggage, meeting point, gangway/route and next transport; | found: sailing-specific data (`src/domain/disembark.ts`) |
 | DEB-01#2 | P0 | Built | all data is sailing-specific. |  |
 | DEB-02#1 | P0 | Built | Selection shows capacity and consequence; | **ABSENT**: capacity and consequence<br>**ABSENT**: preference vs final assignment |
 | DEB-02#2 | P0 | Built | final assignment comes from operations and is distinguished from preference. |  |
 | DEB-03#1 | P0 | Built | Instructions identify tag group, location, accessibility help and lost-bag contact; | **ABSENT**: tag group and lost-bag contact<br>**ABSENT**: offline/printable copy |
 | DEB-03#2 | P0 | Built | offline/printable copy exists. |  |
-| DEB-04#1 | P0 | Partial | Final, pending, disputed, refunded and adjusted charges are separate; | found: refunded/disputed/adjusted separate (`src/domain/folio.ts`)<br>found: official receipt export (`src/ui/finish/FinalBillScreen.tsx`) |
+| DEB-04#1 | P0 | Partial | Final, pending, disputed, refunded and adjusted charges are separate; | found: refunded/disputed/adjusted separate (`src/domain/folio.ts`)<br>found: official receipt export (`src/features/finish/ui/FinalBillScreen.tsx`) |
 | DEB-04#2 | P0 | Partial | official receipt can be exported. |  |
-| DEB-05#1 | P0 | Built | Case links to transaction, preserves receipt and gives owner/response expectation; | found: case links to transaction (`src/ui/finish/CasesScreen.tsx`)<br>found: submission does not imply reversal (`src/domain/cabinMap.ts`) |
+| DEB-05#1 | P0 | Built | Case links to transaction, preserves receipt and gives owner/response expectation; | found: case links to transaction (`src/features/finish/ui/CasesScreen.tsx`)<br>found: submission does not imply reversal (`src/domain/cabinMap.ts`) |
 | DEB-05#2 | P0 | Built | submission does not imply charge is reversed. |  |
-| DEB-06#1 | P1 | Built | Checklist covers documents, medications, chargers, valuables, safe, drawers and borrowed equipment; | found: cabin sweep checklist items editable dismissible (`src/data/lifecycle.ts`) |
+| DEB-06#1 | P1 | Built | Checklist covers documents, medications, chargers, valuables, safe, drawers and borrowed equipment; | found: cabin sweep checklist items editable dismissible (`src/shared/data/lifecycle.ts`) |
 | DEB-06#2 | P1 | Built | editable and dismissible. |  |
 | DEB-07#1 | P1 | Built | Venue hours reflect disembark schedule and capacity; | found: departure-day venue hours (`src/domain/menus.ts`) |
 | DEB-07#2 | P1 | Built | closed or changed venues are not shown as open. |  |
 | DEB-08#1 | P0 | Built | Country, nationality and itinerary scope are clear; | **ABSENT**: source and update date shown<br>**ABSENT**: no legal eligibility guarantee |
 | DEB-08#2 | P0 | Built | current source and update date are shown; |  |
 | DEB-08#3 | P0 | Built | app does not make legal eligibility guarantees. |  |
-| DEB-09#1 | P1 | Built | Address, booking reference, pickup zone, buffer and contact are visible; | found: onward travel workspace labelled estimates (`src/api/finishTypes.ts`) |
+| DEB-09#1 | P1 | Built | Address, booking reference, pickup zone, buffer and contact are visible; | found: onward travel workspace labelled estimates (`src/shared/api/finishTypes.ts`) |
 | DEB-09#2 | P1 | Built | suggested connections are labelled estimates. |  |
 | DEB-10#1 | P1 | Built | Deep link opens correct carrier and flight context where supported; | **ABSENT**: airline deep link no credentials |
 | DEB-10#2 | P1 | Built | no credentials are transmitted to a third party by default. |  |
-| DEB-11#1 | P1 | Built | Item description, optional photo, location/time and contact preference are captured; | found: lost property report case stays in My Trips (`src/feeds/onboard.ts`) |
+| DEB-11#1 | P1 | Built | Item description, optional photo, location/time and contact preference are captured; | found: lost property report case stays in My Trips (`src/shared/feeds/onboard.ts`) |
 | DEB-11#2 | P1 | Built | case remains in My Trips. |  |
-| DEB-12#1 | P1 | Built | Includes itinerary, folio, receipts, purchased photos and relevant certificates; | found: post-cruise document pack retention info (`src/api/careTypes.ts`) |
+| DEB-12#1 | P1 | Built | Includes itinerary, folio, receipts, purchased photos and relevant certificates; | found: post-cruise document pack retention info (`src/shared/api/careTypes.ts`) |
 | DEB-12#2 | P1 | Built | each file has retention/availability information. |  |
 | DEB-13#1 | P1 | Built | Directions are terminal-specific and include accessible route and pickup restrictions; | found: terminal exit directions accessible route (`src/domain/journey.ts`) |
 | DEB-13#2 | P1 | Built | source/freshness are visible. |  |
 | DEB-14#1 | P0 | Built | Case owner, history, evidence and guest communication preference transfer without forcing the guest to restate the issue. | **ABSENT**: case history carried to shore |
 | DEB-15#1 | P1 | Built | One-page print/download includes group, time, luggage, meeting point, terminal and onward travel contacts; | **ABSENT**: departure pocket card printable |
 | DEB-15#2 | P1 | Built | can be cached. |  |
-| REM-01#1 | P0 | Built | Past trips remain searchable and downloadable according to retention policy; | found: searchable past trips (`src/ui/finish/HistoryScreen.tsx`)<br>found: downloadable (`src/ui/finish/HistoryScreen.tsx`) |
+| REM-01#1 | P0 | Built | Past trips remain searchable and downloadable according to retention policy; | found: searchable past trips (`src/features/finish/ui/HistoryScreen.tsx`)<br>found: downloadable (`src/features/finish/ui/HistoryScreen.tsx`) |
 | REM-01#2 | P0 | Built | booking and passenger permissions remain enforced. |  |
-| REM-02#1 | P1 | Built | Imported milestone is labelled as sourced; | found: diary entries editable, sourced milestone labelled (`src/art/manifest.ts`) |
+| REM-02#1 | P1 | Built | Imported milestone is labelled as sourced; | found: diary entries editable, sourced milestone labelled (`src/shared/art/manifest.ts`) |
 | REM-02#2 | P1 | Built | generated text is editable and guest can remove any item. |  |
 | REM-03#1 | P1 | Built | Guest chooses content and layout, previews before export/order, and can delete the project. | found: memory book preview and delete project (`src/domain/media.ts`) |
 | REM-04#1 | P1 | Built | Owner controls download/share; | unread |
@@ -437,19 +437,19 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | REM-04#3 | P1 | Built | private images never become public by default. |  |
 | REM-05#1 | P1 | Simulated | Download resumes after interruption, verifies completeness and states purchase/expiry terms; | unread |
 | REM-05#2 | P1 | Simulated | originals are not recompressed without notice. |  |
-| REM-06#1 | P0 | Built | Guest can choose survey only or request follow-up; | **ABSENT**: survey only vs request follow-up<br>found: follow-up creates owned case (`src/ui/finish/FeedbackScreen.tsx`) |
+| REM-06#1 | P0 | Built | Guest can choose survey only or request follow-up; | **ABSENT**: survey only vs request follow-up<br>found: follow-up creates owned case (`src/features/finish/ui/FeedbackScreen.tsx`) |
 | REM-06#2 | P0 | Built | requested follow-up creates owned case and prevents marketing offers from masking unresolved issue. |  |
-| REM-07#1 | P1 | Built | Tier/credits/expiry reconcile with source and identify last sync; | found: loyalty last sync and report discrepancy (`src/api/finishTypes.ts`) |
+| REM-07#1 | P1 | Built | Tier/credits/expiry reconcile with source and identify last sync; | found: loyalty last sync and report discrepancy (`src/shared/api/finishTypes.ts`) |
 | REM-07#2 | P1 | Built | guest can report discrepancy. |  |
-| REM-08#1 | P1 | Built | Reason for recommendation is shown; | found: next-voyage reason shown, inputs editable (`src/api/finishTypes.ts`) |
+| REM-08#1 | P1 | Built | Reason for recommendation is shown; | found: next-voyage reason shown, inputs editable (`src/shared/api/finishTypes.ts`) |
 | REM-08#2 | P1 | Built | guest can edit/remove inputs; |  |
 | REM-08#3 | P1 | Built | no sensitive health or child details used for targeting. |  |
-| REM-09#1 | P1 | Built | Guest reviews each reused field and current terms; | found: rebooking reuses consented details, revalidates (`src/api/finishTypes.ts`) |
+| REM-09#1 | P1 | Built | Guest reviews each reused field and current terms; | found: rebooking reuses consented details, revalidates (`src/shared/api/finishTypes.ts`) |
 | REM-09#2 | P1 | Built | outdated passport/payment/assistance data is revalidated. |  |
-| REM-10#1 | P1 | Built | Credit source, value, currency, expiry, eligibility and redemption history are clear and reconcilable. | found: credits wallet source, expiry, redemption history (`src/api/finishTypes.ts`) |
-| REM-11#1 | P1 | Built | Guest can answer a short survey first and optionally expand; | found: progressive survey short first then expand (`src/routes/screenWords.ts`) |
+| REM-10#1 | P1 | Built | Credit source, value, currency, expiry, eligibility and redemption history are clear and reconcilable. | found: credits wallet source, expiry, redemption history (`src/shared/api/finishTypes.ts`) |
+| REM-11#1 | P1 | Built | Guest can answer a short survey first and optionally expand; | found: progressive survey short first then expand (`src/app/routes/screenWords.ts`) |
 | REM-11#2 | P1 | Built | accessibility and service issues are captured without forcing a long form. |  |
-| REM-12#1 | P1 | Built | Message routes to approved channel; | found: crew thank-you with receipt, no rating (`src/api/types.ts`) |
+| REM-12#1 | P1 | Built | Message routes to approved channel; | found: crew thank-you with receipt, no rating (`src/shared/api/types.ts`) |
 | REM-12#2 | P1 | Built | no public rating, ranking or employment-impact score is exposed. |  |
 | REM-13#1 | P2 | Built | Guest previews names/photos/locations and approves every external share; | found: recap preview, approve every share (`src/domain/dataRules.ts`) |
 | REM-13#2 | P2 | Built | no other guest is included without permission. |  |
@@ -457,27 +457,27 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | REM-14#2 | P2 | Partial | incentives are disclosed. |  |
 | REM-15#1 | P2 | Simulated | Price, shipping, photo rights and proof approval are required before charge; | unread |
 | REM-15#2 | P2 | Simulated | production provider receives only chosen assets. |  |
-| REM-16#1 | P0 | Built | Guest can view, export, correct and request deletion where legally permitted; | **ABSENT**: correction of data<br>found: retention exceptions explained (`src/design/contrast.ts`) |
+| REM-16#1 | P0 | Built | Guest can view, export, correct and request deletion where legally permitted; | **ABSENT**: correction of data<br>found: retention exceptions explained (`src/shared/design/contrast.ts`) |
 | REM-16#2 | P0 | Built | retention exceptions are explained. |  |
 | MOB-01#1 | P0 | Built | Provide contextual install guidance for supported platforms; | **ABSENT**: continue in browser |
 | MOB-01#2 | P0 | Built | guest can continue in browser and all core tasks remain usable without install. |  |
-| MOB-02#1 | P0 | Built | Cache shell/assets by version, retain user drafts across deploys, announce updates and never force-reload during a critical transaction. | found: drafts retained across deploys (`src/hooks/useDraft.ts`)<br>found: no forced reload (`src/runtime/update.ts`) |
+| MOB-02#1 | P0 | Built | Cache shell/assets by version, retain user drafts across deploys, announce updates and never force-reload during a critical transaction. | found: drafts retained across deploys (`src/shared/hooks/useDraft.ts`)<br>found: no forced reload (`src/app/runtime/update.ts`) |
 | MOB-03#1 | P0 | Built | Let user select voyage, ship, ports, maps, tickets, documents and media; | unread |
 | MOB-03#2 | P0 | Built | show download progress, size, expiry and last test. |  |
 | MOB-04#1 | P0 | Built | Drafts and outbox survive reload/crash; | unread |
 | MOB-04#2 | P0 | Built | storage quota, migration, corruption and eviction are handled with export/recovery options. |  |
 | MOB-05#1 | P0 | Built | Each control states available offline, queued, view-only or requires connection before user commits; | unread |
 | MOB-05#2 | P0 | Built | no silent optimism. |  |
-| MOB-06#1 | P1 | Built | Ask only after explaining a specific benefit and user gesture; | found: push permission after explaining benefit; iOS home screen (`src/push/browser.ts`) |
+| MOB-06#1 | P1 | Built | Ask only after explaining a specific benefit and user gesture; | found: push permission after explaining benefit; iOS home screen (`src/shared/push/browser.ts`) |
 | MOB-06#2 | P1 | Built | on iOS/iPadOS, describe Home Screen installation requirement and fallback channels. |  |
 | MOB-07#1 | P1 | Partial | Links authenticate safely, resolve to the correct voyage and show current state if the original event has changed. | unread |
-| MOB-08#1 | P1 | Built | Share only guest-selected content; | found: share sheet with copy-link fallback (`src/art/manifest.ts`) |
+| MOB-08#1 | P1 | Built | Share only guest-selected content; | found: share sheet with copy-link fallback (`src/shared/art/manifest.ts`) |
 | MOB-08#2 | P1 | Built | handle unsupported browsers and cancellation with copy-link fallback. |  |
 | MOB-09#1 | P1 | Partial | Preview, crop/retake, manual entry and delete are available; | unread |
 | MOB-09#2 | P1 | Partial | uploads require explicit confirmation and purpose notice. |  |
 | MOB-10#1 | P1 | Partial | Validate payload type and issuer; | unread |
 | MOB-10#2 | P1 | Partial | never treat a scanned QR as authoritative boarding/muster completion by itself. |  |
-| MOB-11#1 | P1 | Built | Request only during active visible task; | found: wake lock released, unavailable shown (`src/hooks/useWakeLock.ts`) |
+| MOB-11#1 | P1 | Built | Request only during active visible task; | found: wake lock released, unavailable shown (`src/shared/hooks/useWakeLock.ts`) |
 | MOB-11#2 | P1 | Built | show when unavailable/revoked and release on task completion; |  |
 | MOB-11#3 | P1 | Built | never make it required for scanning. |  |
 | MOB-12#1 | P0 | Built | Primary actions stay in reachable zones; | found: reachable-zone placement (`src/styles/aboard.css`) |
@@ -486,7 +486,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | MOB-13#1 | P1 | Partial | Permission requested only when the user starts the feature; | unread |
 | MOB-13#2 | P1 | Partial | no continuous/background tracking; |  |
 | MOB-13#3 | P1 | Partial | manual address/map fallback is present. |  |
-| MOB-14#1 | P0 | Built | Label governing clock beside each deadline, detect time-zone/date-line changes and never silently rely on the phone clock for sailing events. | found: time-zone / date-line change detected and announced (`src/i18n/locales/en.ts`)<br>found: governing clock label (`src/ui/ThreeClocks.tsx`) |
+| MOB-14#1 | P0 | Built | Label governing clock beside each deadline, detect time-zone/date-line changes and never silently rely on the phone clock for sailing events. | found: time-zone / date-line change detected and announced (`src/shared/i18n/locales/en.ts`)<br>found: governing clock label (`src/shared/ui/ThreeClocks.tsx`) |
 | MOB-15#1 | P1 | Built | Export uses correct time zone and updated/cancelled event identifiers where supported; | found: calendar export with UID and zone (`src/domain/calendar.ts`) |
 | MOB-15#2 | P1 | Built | explain that external calendar sync may lag. |  |
 | MOB-16#1 | P2 | Out of reach | Use signed, provider-compliant passes with update/revocation support; | unread |
@@ -495,7 +495,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | MOB-17#2 | P1 | Built | PWA cannot force hardware brightness, so user controls remain explicit. |  |
 | MOB-18#1 | P1 | Built | Numbers/URLs are port/ship scoped, tested and available offline; | found: tap-to-call links offline (`src/domain/journey.ts`) |
 | MOB-18#2 | P1 | Built | the guest chooses before the device opens another app. |  |
-| MOB-19#1 | P1 | Built | Works with system/browser capability where available; | found: read-aloud user initiated with pause and rate (`src/ui/delights/DiscoverDelights.tsx`) |
+| MOB-19#1 | P1 | Built | Works with system/browser capability where available; | found: read-aloud user initiated with pause and rate (`src/features/delights/ui/DiscoverDelights.tsx`) |
 | MOB-19#2 | P1 | Built | text remains visible and user controls pause/rate; |  |
 | MOB-19#3 | P1 | Built | screen-reader compatibility retained. |  |
 | MOB-20#1 | P2 | Built | Only supported after explicit activation; | found: voice input explicit activation (`src/domain/finishMore.ts`) |
@@ -507,7 +507,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | MOB-22#2 | P2 | Partial | offer north-up/manual orientation fallback and never use heading as authoritative ship navigation. |  |
 | MOB-23#1 | P0 | Built | Server push and in-app inbox are primary; | unread |
 | MOB-23#2 | P0 | Built | Background Sync/periodic sync are progressive enhancements only, never required for all-aboard, emergency or payment safety. |  |
-| MOB-24#1 | P1 | Built | Defer video/large photography, reduce polling, batch safe refreshes and preserve current confirmed reservations and tickets. | found: data saver and battery aware (`src/data/battery.ts`) |
+| MOB-24#1 | P1 | Built | Defer video/large photography, reduce polling, batch safe refreshes and preserve current confirmed reservations and tickets. | found: data saver and battery aware (`src/shared/data/battery.ts`) |
 | MOB-25#1 | P1 | Built | User chooses each asset and destination; | unread |
 | MOB-25#2 | P1 | Built | strip location metadata from shared copies by default unless user opts in; |  |
 | MOB-25#3 | P1 | Built | respect photo ownership and consent. |  |
@@ -515,49 +515,49 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | QOL-02#1 | **Universal Queue Wallet** | Simulated | Guest value: no hunting across separate services; | unread |
 | QOL-02#2 | **Universal Queue Wallet** | Simulated | every place in line has clear state, instructions and cancellation. |  |
 | QOL-03#1 | **Voyage Trust Ledger** | Built | Guest value: answer “did it go through?” and “what happened?” with receipt, source, timestamp and status. | found: trust ledger receipts status source (`src/domain/bookingPrep.ts`) |
-| QOL-04#1 | **Offline Capsule Manager** | Built | Guest value: know what is saved, when it was updated, how much space it uses and which tasks still require a connection. | found: capsule manager stale and expiry (`src/data/capsule.ts`) |
-| QOL-05#1 | **One-Tap Contextual Rescue** | Built | Guest value: eliminates repetitive explanations and helps staff diagnose a specific failure quickly. | found: rescue case with redaction preview (`src/ErrorBoundary.tsx`) |
+| QOL-04#1 | **Offline Capsule Manager** | Built | Guest value: know what is saved, when it was updated, how much space it uses and which tasks still require a connection. | found: capsule manager stale and expiry (`src/shared/data/capsule.ts`) |
+| QOL-05#1 | **One-Tap Contextual Rescue** | Built | Guest value: eliminates repetitive explanations and helps staff diagnose a specific failure quickly. | found: rescue case with redaction preview (`src/app/ErrorBoundary.tsx`) |
 | QOL-06#1 | **Quietest-Next Finder** | Simulated | Guest value: suggests a less crowded alternative without requiring the guest to wander or guess. | unread |
-| QOL-07#1 | **Party Consensus Engine** | Built | Guest value: finds the option that best satisfies shared constraints and makes non-response visible without nagging. | found: consensus poll close date and organiser controls (`src/api/types.ts`) |
-| QOL-08#1 | **Privacy-Safe Rendezvous** | Built | Guest value: easier family/friend meetups with explicit control over who sees each update. | found: rendezvous one-time signal expiry (`src/api/careTypes.ts`) |
+| QOL-07#1 | **Party Consensus Engine** | Built | Guest value: finds the option that best satisfies shared constraints and makes non-response visible without nagging. | found: consensus poll close date and organiser controls (`src/shared/api/types.ts`) |
+| QOL-08#1 | **Privacy-Safe Rendezvous** | Built | Guest value: easier family/friend meetups with explicit control over who sees each update. | found: rendezvous one-time signal expiry (`src/shared/api/careTypes.ts`) |
 | QOL-09#1 | **Allergy Chain of Custody** | Built | Guest value: visibility into whether the request reached a human and what remains unresolved. | found: allergy chain of custody no safety promise (`src/domain/finishMore.ts`) |
 | QOL-10#1 | **Accessible Route Replanner** | Partial | Guest value: fewer blocked routes and less uncertainty when an elevator or accessible route is unavailable. | unread |
-| QOL-11#1 | **Port Return Guardian** | Built | Guest value: a calm, actionable return countdown with “leave now” reasoning and safe alternatives. | found: port return guardian doesn't guarantee vessel wait (`src/api/bounded.ts`) |
-| QOL-12#1 | **Entitlement Explainer & Spend Coach** | Built | Guest value: no surprise when Plus/Premier, loyalty or prepaid credits differ by guest or item. | found: entitlement explainer consumed and cost (`src/api/httpApi.ts`) |
+| QOL-11#1 | **Port Return Guardian** | Built | Guest value: a calm, actionable return countdown with “leave now” reasoning and safe alternatives. | found: port return guardian doesn't guarantee vessel wait (`src/shared/api/bounded.ts`) |
+| QOL-12#1 | **Entitlement Explainer & Spend Coach** | Built | Guest value: no surprise when Plus/Premier, loyalty or prepaid credits differ by guest or item. | found: entitlement explainer consumed and cost (`src/shared/api/httpApi.ts`) |
 | QOL-13#1 | **Cabin Comfort Profile** | Built | Guest value: a cabin feels more tailored across repeat voyages, with a quick way to set preferences. | found: cabin comfort preference vs confirmed device (`src/domain/ahead.ts`) |
 | QOL-14#1 | **One Concierge, Many Sources** | Built | Guest value: one approachable guide knows the stage, trip and plan while keeping answers affordable and grounded. | found: concierge order deterministic then search then LLM (`src/domain/autopilot.ts`) |
 | QOL-15#1 | **Weather-to-Plan Recomposer** | Built | Guest value: the day is re-planned without manually finding every affected booking. | found: weather recomposer no auto cancel or rebook (`src/domain/recompose.ts`) |
 | QOL-16#1 | **No-Surprise Money View** | Built | Guest value: understand total trip cost before sailing and spending remaining onboard. | found: no-surprise money view paid pending forecast separate (`src/domain/briefing.ts`) |
 | QOL-17#1 | **Visual Ship Literacy** | Partial | Guest value: reduce first-day disorientation, especially on large ships and for infrequent cruisers. | unread |
 | QOL-18#1 | **Photo-to-Memory Curation** | Partial | Guest value: a useful memory product with less editing effort and full guest control. | unread |
-| QOL-19#1 | **Travel Disruption Command Centre** | Built | Guest value: one place to act when the journey to the ship breaks down. | found: disruption command centre last update, human phone (`src/api/careTypes.ts`) |
+| QOL-19#1 | **Travel Disruption Command Centre** | Built | Guest value: one place to act when the journey to the ship breaks down. | found: disruption command centre last update, human phone (`src/shared/api/careTypes.ts`) |
 | QOL-20#1 | **Personal Accessibility Passport** | Partial | Guest value: less repetitive disclosure and fewer mismatches along the complete journey. | found: accessibility passport preview recipients, revoke (`src/domain/passport.ts`) |
 | QOL-21#1 | **Voyage Time Intelligence** | Built | Guest value: eliminate missed events caused by DST/date-line confusion. | found: time service ship/port/home, deadline governing (`src/domain/navigation.ts`) |
 | QOL-22#1 | **Service Promise Tracker** | Built | Guest value: service feels accountable even when work cannot be completed immediately. | found: service promise target vs guarantee (`src/domain/activityLog.ts`) |
-| IDN-01#1 | P0 | Partial | Support secure Princess account sign-in, account recovery, session management and step-up verification for sensitive changes. | found: step-up verification (`server/Princess.Api/Program.cs`)<br>found: session management / sign out everywhere (`src/auth/httpProvider.ts`) |
+| IDN-01#1 | P0 | Partial | Support secure Princess account sign-in, account recovery, session management and step-up verification for sensitive changes. | found: step-up verification (`server/Princess.Api/Program.cs`)<br>found: session management / sign out everywhere (`src/shared/auth/httpProvider.ts`) |
 | IDN-02#1 | P0 | Built | Link a booking through verified booking data without exposing another guest's reservation through guessable booking references. | found: guess-resistant linking (`server/Princess.Api/Audit/Audit.cs`) |
 | IDN-03#1 | P0 | Partial | Support duplicate-profile detection and safe account/booking reconciliation with human resolution for ambiguous matches. | unread |
 | IDN-04#1 | P0 | Partial | Model guest, household, booking party, cabin party, linked travel group, helper/delegate and shipmate as distinct relationships. | unread |
 | IDN-05#1 | P0 | Partial | Provide permissions by person and task: view itinerary, manage check-in, pay assigned amount, edit booking, see folio, see documents, message, share location. | unread |
-| IDN-06#1 | P0 | Built | Parent/guardian controls for minors, age-appropriate communication, authorised pickup and consent. | found: authorised pickup (`src/api/httpApi.ts`) |
+| IDN-06#1 | P0 | Built | Parent/guardian controls for minors, age-appropriate communication, authorised pickup and consent. | found: authorised pickup (`src/shared/api/httpApi.ts`) |
 | IDN-07#1 | P1 | Partial | Show “who can see what” and provide immediate revoke/leave-group controls. | unread |
 | IDN-08#1 | P1 | Partial | Support account access for guests who booked through a travel advisor or another permitted channel. | unread |
 | TRU-01#1 | P0 | Built | Maintain a guest-visible history of bookings, payments, reservations, orders, requests, itinerary changes and consent changes. | **ABSENT**: history includes consent changes |
 | TRU-02#1 | P0 | Built | Assign a durable receipt/reference ID to each successful material action. | found: durable receipt id (`src/domain/trustLedger.ts`) |
 | TRU-03#1 | P0 | Partial | Distinguish draft, submitted, pending, confirmed, declined, cancelled, refunded, expired and failed states. | **ABSENT**: all nine states |
-| TRU-04#1 | P0 | Built | Implement idempotent create/change/payment APIs and safe reconciliation after timeouts. | found: reconcile after timeout (`src/api/httpApi.ts`) |
+| TRU-04#1 | P0 | Built | Implement idempotent create/change/payment APIs and safe reconciliation after timeouts. | found: reconcile after timeout (`src/shared/api/httpApi.ts`) |
 | TRU-05#1 | P0 | Built | Never replace a confirmed booking with a new booking until the new reservation is confirmed, unless the guest explicitly chooses otherwise. | unread |
 | TRU-06#1 | P0 | Built | Show last-updated timestamp and source/freshness for cached or live information. | **ABSENT**: source/freshness label |
 | TRU-07#1 | P0 | Partial | Provide an operational status centre for app/API/ship-service incidents. | unread |
 | TRU-08#1 | P1 | Built | Explain policy-based failures in plain language and provide a next step or human route. | found: policy failure plain message with next step (`src/domain/booking.ts`) |
-| AST-01#1 | P1 | Built | Use one assistant front door (Stanley) across stages, routing behind the scenes to planning, booking, trip, ship, policy and support data. | found: one front door Stanley (`src/art/manifest.ts`) |
+| AST-01#1 | P1 | Built | Use one assistant front door (Stanley) across stages, routing behind the scenes to planning, booking, trip, ship, policy and support data. | found: one front door Stanley (`src/shared/art/manifest.ts`) |
 | AST-02#1 | P1 | Built | Answer from permission-checked source data; | **ABSENT**: answers label source and freshness |
 | AST-02#2 | P1 | Built | label source and freshness for consequential information. |  |
 | AST-03#1 | P1 | Built | Use deterministic answer cards for common trip questions before calling a model. | found: deterministic answer cards before model (`src/domain/answerCards.ts`) |
-| AST-04#1 | P0 | Built | Ask explicit confirmation before booking, paying, cancelling, changing a reservation or sharing personal data. | found: confirm before book/pay/cancel/change/share (`src/ui/ai/StanleyConfirm.tsx`) |
-| AST-05#1 | P0 | Built | Escalate urgent safety, medical, security, legal and unsupported matters to the appropriate human/service channel. | found: escalation channels (`src/ai/guard.ts`) |
-| AST-06#1 | P1 | Built | Pass conversation summary, trip context and attempted actions to human agents with guest consent. | found: handoff summary with consent (`src/diagnostics/stanleyTiers.ts`) |
-| AST-07#1 | P1 | Built | Provide global search that returns answers/actions (e.g. | found: global search returns answers/actions (`src/api/httpApi.ts`) |
+| AST-04#1 | P0 | Built | Ask explicit confirmation before booking, paying, cancelling, changing a reservation or sharing personal data. | found: confirm before book/pay/cancel/change/share (`src/features/stanley/ui/StanleyConfirm.tsx`) |
+| AST-05#1 | P0 | Built | Escalate urgent safety, medical, security, legal and unsupported matters to the appropriate human/service channel. | found: escalation channels (`src/features/stanley/logic/guard.ts`) |
+| AST-06#1 | P1 | Built | Pass conversation summary, trip context and attempted actions to human agents with guest consent. | found: handoff summary with consent (`src/features/stanley/diagnostics/stanleyTiers.ts`) |
+| AST-07#1 | P1 | Built | Provide global search that returns answers/actions (e.g. | found: global search returns answers/actions (`src/shared/api/httpApi.ts`) |
 | AST-07#2 | P1 | Built | tonight's dinner, Wi-Fi instructions, all-aboard time), not only page links. |  |
 | AST-08#1 | P2 | Built | Add voice input/read-aloud where supported, with keyboard and touch alternatives. | found: voice input and read-aloud (`src/domain/finishMore.ts`) |
 | COM-01#1 | P0 | Built | Maintain one in-app inbox for transactional, safety, itinerary and service communications. | found: inbox categories (`src/domain/notifications.ts`) |
@@ -572,19 +572,19 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | OFF-02#1 | P0 | Built | Cache boarding pass, booking essentials, emergency/muster information, daily itinerary, confirmed reservations, tickets, deck map and port pack. | found: cache essentials list (`src/domain/offlineCapsule.ts`) |
 | OFF-03#1 | P0 | Built | Display cache timestamp and whether content is safe to rely on; | **ABSENT**: verify with crew fallback |
 | OFF-03#2 | P0 | Built | critical data includes a “verify with crew/official notice” fallback. |  |
-| OFF-04#1 | P0 | Built | Queue only safe actions; | found: queued/sending/sent/failed (`src/data/outbox.ts`)<br>**ABSENT**: conflict resolution on reconnect |
+| OFF-04#1 | P0 | Built | Queue only safe actions; | found: queued/sending/sent/failed (`src/shared/data/outbox.ts`)<br>**ABSENT**: conflict resolution on reconnect |
 | OFF-04#2 | P0 | Built | show queued/sending/sent/failed and provide conflict resolution when reconnecting. |  |
-| OFF-05#1 | P0 | Built | Retry with exponential backoff and idempotency; | found: exponential backoff (`src/api/bounded.ts`) |
+| OFF-05#1 | P0 | Built | Retry with exponential backoff and idempotency; | found: exponential backoff (`src/shared/api/bounded.ts`) |
 | OFF-05#2 | P0 | Built | avoid duplicate orders, messages and payments. |  |
 | OFF-06#1 | P1 | Built | Provide low-data mode, image loading controls, no autoplay and battery-conscious refresh. | unread |
 | OFF-07#1 | P1 | Built | Handle browser storage eviction/quota with export/backup guidance and graceful re-download. | **ABSENT**: storage eviction/quota guidance |
-| A11Y-01#1 | P0 | Built | Meet WCAG 2.2 AA for responsive web, including keyboard, visible focus, logical reading order, accessible names and error handling. | found: keyboard/focus/names tested (`src/ui/a11y.test.tsx`) |
+| A11Y-01#1 | P0 | Built | Meet WCAG 2.2 AA for responsive web, including keyboard, visible focus, logical reading order, accessible names and error handling. | found: keyboard/focus/names tested (`src/shared/ui/a11y.test.tsx`) |
 | A11Y-02#1 | P0 | Partial | Support screen readers (VoiceOver, TalkBack, NVDA, JAWS), 200% text resize and reflow at 320 CSS px. | unread |
 | A11Y-03#1 | P0 | Built | Never rely on colour, sound, motion, drag, hover or precise gestures as the only way to complete a task. | found: not colour alone (`src/domain/lifecycle.ts`) |
-| A11Y-04#1 | P0 | Built | Support captions/transcripts, reduced motion, high contrast and large text; | found: captions/transcripts (`src/api/aboardTypes.ts`) |
+| A11Y-04#1 | P0 | Built | Support captions/transcripts, reduced motion, high contrast and large text; | found: captions/transcripts (`src/shared/api/aboardTypes.ts`) |
 | A11Y-04#2 | P0 | Built | include calm/simple modes. |  |
 | A11Y-05#1 | P0 | Built | Provide a documented non-app route for all safety, boarding, check-in, help and disembarkation tasks. | **ABSENT**: non-app route documented |
-| A11Y-06#1 | P0 | Built | Show accessibility constraints at discovery and prebook—not after payment. | found: constraints before payment (`src/ui/book/RoomStep.tsx`) |
+| A11Y-06#1 | P0 | Built | Show accessibility constraints at discovery and prebook—not after payment. | found: constraints before payment (`src/features/book/ui/RoomStep.tsx`) |
 | A11Y-07#1 | P1 | Out of reach | Test with older adults and people with visual, hearing, mobility, cognitive and neurodiverse needs in realistic cruise conditions. | unread |
 | A11Y-08#1 | P1 | Not built | Provide multilingual and plain-language content, with translation reviewed for safety/operational accuracy. | unread |
 | SEC-01#1 | P0 | Built | Minimise personal data and encrypt it in transit and at rest; | found: audit log (`server/Princess.Api/Audit/Audit.cs`) |
@@ -594,10 +594,10 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | SEC-03#1 | P0 | Built | Protect passport, identity, photo, health, child and location data with purpose limitation, least privilege and retention schedules. | found: retention schedule (`src/domain/dataRules.ts`) |
 | SEC-04#1 | P0 | Built | Provide clear consent, export, correction, deletion and marketing controls appropriate to applicable jurisdictions. | **ABSENT**: correction of data |
 | SEC-05#1 | P0 | Built | Make location sharing opt-in, scoped by person/time/purpose, easy to stop and never silently activated. | **ABSENT**: location opt-in scoped, time-limited |
-| SEC-06#1 | P0 | Built | Apply parent/guardian safeguards and age-aware messaging controls. | found: age-aware messaging (`src/ui/aboard/ChatSafe.tsx`)<br>**ABSENT**: guardian controls |
+| SEC-06#1 | P0 | Built | Apply parent/guardian safeguards and age-aware messaging controls. | found: age-aware messaging (`src/features/aboard/ui/ChatSafe.tsx`)<br>**ABSENT**: guardian controls |
 | SEC-07#1 | P1 | Partial | Support account-device review, sign-out everywhere, suspicious login alerts and secure account recovery. | unread |
 | SEC-08#1 | P1 | Out of reach | Complete threat modelling, penetration testing, vendor review and incident response before production. | unread |
-| UX-01#1 | P0 | Built | Provide functional parity for account, booking, My Trips, payment, documents, planning, reservations, check-in and support across phone and desktop, except explicitly hardware-dependent functions. | found: parity by shared code (`src/routes/coverage.test.ts`) |
+| UX-01#1 | P0 | Built | Provide functional parity for account, booking, My Trips, payment, documents, planning, reservations, check-in and support across phone and desktop, except explicitly hardware-dependent functions. | found: parity by shared code (`src/app/routes/coverage.test.ts`) |
 | UX-02#1 | P0 | Partial | Design desktop comparison and planning as a wide-screen workspace, not an enlarged mobile layout. | unread |
 | UX-03#1 | P0 | Built | Ensure phone supports one-handed, time-critical tasks with primary actions in reachable zones and large targets. | found: large targets (`src/styles/aboard.css`) |
 | UX-04#1 | P1 | Built | Synchronise plan, saved searches, documents, preferences and case history across authenticated devices. | **ABSENT**: sync across devices plan, searches, prefs |

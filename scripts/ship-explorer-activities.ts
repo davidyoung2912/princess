@@ -4,7 +4,7 @@
 // places are authored here for review. Nothing here is booked or charged by the app, so the only prices are the late-night youth sitting, which is paid on board.
 //
 // Day kinds as in the other Explorers. Embarkation day carries only the solo travellers' meet-up and the youth centre's open hours; the rest of the programme starts on the first full day.
-import type { HoursRule } from '../src/domain/explorer/types.ts'
+import type { HoursRule } from '../src/features/explorer/domain/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
 
 const daily = (from: string, to: string): HoursRule[] => [{ kind: 'fixed', when: ['night'], windows: [[from, to]] }]

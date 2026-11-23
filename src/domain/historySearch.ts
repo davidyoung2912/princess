@@ -1,4 +1,4 @@
-import type { HistoryTrip } from '../api/finishTypes'
+import type { HistoryTrip } from '../shared/api/finishTypes'
 
 /** Trips whose title, ship, year or ports contain every word typed (REM-01). */
 export function matchTrips(trips: HistoryTrip[], query: string): HistoryTrip[] {

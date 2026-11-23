@@ -1,19 +1,19 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { en } from '../i18n/locales/en'
+import { en } from '../shared/i18n/locales/en'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
 
 /** The promises of Phase H5 (S6-02, S4-02, XA-02, XI-05), checked in the source and the text so a later edit cannot quietly break them. */
 describe('Phase H5 promises', () => {
   it('never changes the plan, books or accepts anything from an effect: only from a handler the guest triggers', () => {
-    for (const f of ['src/ui/plan/AutopilotScreen.tsx', 'src/ui/plan/SlotWatch.tsx', 'src/ui/home/AskScreen.tsx', 'src/ui/ai/StanleyActionCard.tsx', 'src/hooks/useDayPlan.ts']) {
+    for (const f of ['src/features/plan/ui/AutopilotScreen.tsx', 'src/features/plan/ui/SlotWatch.tsx', 'src/features/home/ui/AskScreen.tsx', 'src/features/stanley/ui/StanleyActionCard.tsx', 'src/shared/hooks/useDayPlan.ts']) {
       expect(read(f), f).not.toMatch(/useEffect|useLayoutEffect|setInterval|setTimeout/)
     }
   })
 
   it('books a watched place only after the confirm-before-charge check', () => {
-    const text = read('src/ui/plan/SlotWatch.tsx')
+    const text = read('src/features/plan/ui/SlotWatch.tsx')
     expect(text).toMatch(/sure\.ask\(w\.priceCents/)
     expect(text.match(/bookWatch\(/g)).toHaveLength(1)
   })
@@ -26,7 +26,7 @@ describe('Phase H5 promises', () => {
   })
 
   it('shows the age and the estimate on every Ship Pulse reading', () => {
-    const text = read('src/ui/onboard/PulseScreen.tsx')
+    const text = read('src/features/onboard/ui/PulseScreen.tsx')
     expect(text.match(/pulse\.age/g)?.length).toBeGreaterThanOrEqual(2)
     expect(text.match(/pulse\.sim/g)?.length).toBeGreaterThanOrEqual(2)
   })

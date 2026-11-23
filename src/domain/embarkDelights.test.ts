@@ -121,7 +121,7 @@ describe('ticket stubs', () => {
 
 describe('stubs in the memory document', () => {
   it('survive a save and load', async () => {
-    const { normalizeMemory, EMPTY_MEMORY, restOf } = await import('../memory/store')
+    const { normalizeMemory, EMPTY_MEMORY, restOf } = await import('../features/memory/logic/store')
     const m = { ...EMPTY_MEMORY, embark: { stubs: addStub([], { id: 'a', number: 'N1', date: '2027-03-20', terminal: 'Terminal 2', guests: 2, savedAt: 9 }) } }
     expect(normalizeMemory(JSON.parse(JSON.stringify(restOf(m)))).embark.stubs).toHaveLength(1)
   })

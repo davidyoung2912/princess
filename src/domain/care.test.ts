@@ -6,7 +6,7 @@ import { canJoinWaitlist, HOLD_MIN, queueState, startingPosition, waitlistState 
 import { routeBetween, stepFreeInstead } from './route'
 import { canReturn, isTicketed, seatsLeft, takenByOthers, TICKETED, ticketProblem } from './tickets'
 import { SCENARIOS } from './scenarios'
-import { TOP_TASKS } from '../routes/nav'
+import { TOP_TASKS } from '../app/routes/nav'
 
 const MIN = 60_000
 

@@ -11,14 +11,14 @@ import { applyWeek, normalizePlanning, tasteInferences, withoutSurprises } from 
 import { NOTHING_SHARED, normalizeSharing } from '../domain/partyShare'
 import { itinerary, REFERENCE_SAILING, sailingNights } from '../domain/sailings'
 import { DEFAULT_STYLE, STYLES } from '../domain/prepMore'
-import { en } from '../i18n/locales/en'
+import { en } from '../shared/i18n/locales/en'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
 
 /** Promises of H8 slice A (booking and preparation), checked in the source and the text so a later edit cannot quietly break them. */
 describe('H8 slice A promises', () => {
   it('keeps booking help on the device: no booking, charge or send call, and no timers beyond the shared clock', () => {
-    const text = read('src/ui/plan/PrepScreens.tsx') + read('src/domain/bookingPrep.ts')
+    const text = read('src/features/plan/ui/PrepScreens.tsx') + read('src/domain/bookingPrep.ts')
     expect(text).not.toMatch(/\.(book|cancel|payBalance|change|email|callback)\(|fetch\(|Notification|setInterval|setTimeout/)
     expect(en['hold.intro']).toMatch(/nothing is held with the cruise line, and nothing is charged/)
     expect(en['shares.intro']).toMatch(/no payment links are made and nothing is collected/)
@@ -27,7 +27,7 @@ describe('H8 slice A promises', () => {
   })
 
   it('shows the hold countdown on its own screen only', () => {
-    const files = ['src/ui/plan/PrepScreens.tsx', 'src/ui/home/HomeScreen.tsx', 'src/ui/plan/PlanScreen.tsx']
+    const files = ['src/features/plan/ui/PrepScreens.tsx', 'src/features/home/ui/HomeScreen.tsx', 'src/features/plan/ui/PlanScreen.tsx']
     expect(read(files[0])).toMatch(/leftInWords/)
     expect(read(files[1]) + read(files[2])).not.toMatch(/holdState|leftInWords/)
     expect(en['hold.note']).toMatch(/no countdown anywhere else/)
@@ -35,14 +35,14 @@ describe('H8 slice A promises', () => {
 })
 describe('H8 slice A part 2 promises', () => {
   it('keeps pasted plans, the money plan and the story on the device with no booking call', () => {
-    const text = read('src/ui/plan/PrepMoreScreens.tsx') + read('src/domain/prepMore.ts')
+    const text = read('src/features/plan/ui/PrepMoreScreens.tsx') + read('src/domain/prepMore.ts')
     expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout/)
     expect(en['paste.intro']).toMatch(/nothing is kept until you tick/)
     expect(en['paste.note']).toMatch(/nothing is booked/)
     expect(en['mplan.note']).toMatch(/not your onboard account/)
   })
   it('makes the weekly companion a budgeted nudge with a one-tap off', () => {
-    const card = read('src/ui/home/PrepCards.tsx')
+    const card = read('src/features/home/ui/PrepCards.tsx')
     expect(card).toMatch(/nudgesPerDay === 0/)
     expect(card).toMatch(/companionOff: true/)
     expect(en['carbon.method']).toMatch(/not a measurement/)
@@ -52,7 +52,7 @@ describe('H8 slice A part 2 promises', () => {
 
 describe('H8 slice B promises', () => {
   it('keeps the planning screens free of direct sends and timers', () => {
-    const text = read('src/ui/plan/PlanningScreens.tsx') + read('src/domain/planning.ts')
+    const text = read('src/features/plan/ui/PlanningScreens.tsx') + read('src/domain/planning.ts')
     expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout/)
     expect(en['brief.note']).toMatch(/show this screen/i)
   })
@@ -74,7 +74,7 @@ describe('H8 slice B promises', () => {
 
 describe('H8 slice C promises', () => {
   it('sends nothing: reminders and checks live on the screen, with no timers or network', () => {
-    const text = read('src/ui/onboard/AboardMoreScreens.tsx') + read('src/domain/aboardMore.ts')
+    const text = read('src/features/onboard/ui/AboardMoreScreens.tsx') + read('src/domain/aboardMore.ts')
     expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout|sendBeacon/)
     expect(en['ok.nothingSent']).toMatch(/Nothing is sent to anyone/)
     expect(en['solo.nothingSent']).toMatch(/Nothing is sent to anyone/)
@@ -88,14 +88,14 @@ describe('H8 slice C promises', () => {
   })
   it('keeps critical notices through do not disturb and puts the report behind parent consent', () => {
     expect(dndNow([{ id: 'a', from: '00:00', to: '23:59', on: true }], '12:00', 'critical')).toBe(false)
-    expect(read('src/ui/onboard/AboardMoreScreens.tsx')).toMatch(/!a\.kidsConsent \? <Nothing/)
+    expect(read('src/features/onboard/ui/AboardMoreScreens.tsx')).toMatch(/!a\.kidsConsent \? <Nothing/)
     expect(en['dnd.critical']).toMatch(/always come through/)
   })
 })
 
 describe('H8 slice D promises', () => {
   it('sends nothing: notes and lists live on the screen, with no timers or network', () => {
-    const text = (read('src/ui/onboard/FinishMoreScreens.tsx') + read('src/domain/finishMore.ts')).replace(/synth\.cancel\(\)/g, '')
+    const text = (read('src/features/onboard/ui/FinishMoreScreens.tsx') + read('src/domain/finishMore.ts')).replace(/synth\.cancel\(\)/g, '')
     expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout|sendBeacon/)
     expect(en['follow.nothingSent']).toMatch(/Nothing is sent to anyone/)
     expect(en['sweep.note']).toMatch(/Nothing is sent to anyone/)
@@ -109,12 +109,12 @@ describe('H8 slice D promises', () => {
   })
   it('never guesses and keeps gifts away from task screens', () => {
     expect(en['stanley.door.ship']).toMatch(/says when he does not know/)
-    expect(read('src/ui/home/HomeScreen.tsx') + read('src/ui/finish/DisembarkScreen.tsx')).not.toMatch(/giftsFor|GiftsScreen/)
+    expect(read('src/features/home/ui/HomeScreen.tsx') + read('src/features/finish/ui/DisembarkScreen.tsx')).not.toMatch(/giftsFor|GiftsScreen/)
   })
   it('keeps the budget and the safety exception on Home, and the confirm rule on voice and item requests', () => {
     expect(homeNudges({ budget: 0, quiet: true, backAboardMin: 30, storm: 'higher', stormPhase: 'near', proposals: 3, briefing: true }).map((n) => n.id)).toEqual(['backAboard'])
     // Phase 5: every change is a preview from the server, and only the Confirm button sends it. Voice only fills the box.
-    expect(read('src/ui/ai/StanleyActionCard.tsx')).toMatch(/onClick=\{\(\) => void confirm\(\)\}/)
+    expect(read('src/features/stanley/ui/StanleyActionCard.tsx')).toMatch(/onClick=\{\(\) => void confirm\(\)\}/)
   })
 })
 
@@ -154,12 +154,12 @@ describe('H8 wire-through promises', () => {
   })
   it('the privacy default is on every group screen that shows plans or spending, and is the safest by default', () => {
     expect(NOTHING_SHARED).toEqual({ plans: false, status: false, spending: false, photos: false })
-    for (const f of ['src/ui/party/PartyScreen.tsx', 'src/ui/plan/PrepScreens.tsx']) expect(read(f)).toMatch(/<SharingNote field=/)
-    expect(read('src/ui/plan/PlanningScreens.tsx')).toMatch(/<SharingNote field="plans"/)
-    expect(read('src/ui/SharingNote.tsx')).not.toMatch(/medical'?\)/)
+    for (const f of ['src/features/party/ui/PartyScreen.tsx', 'src/features/plan/ui/PrepScreens.tsx']) expect(read(f)).toMatch(/<SharingNote field=/)
+    expect(read('src/features/plan/ui/PlanningScreens.tsx')).toMatch(/<SharingNote field="plans"/)
+    expect(read('src/shared/ui/SharingNote.tsx')).not.toMatch(/medical'?\)/)
   })
   it('the excursion catalogue flags what could be hard for the profile and can hide those tours', () => {
-    const src = read('src/ui/explorer/excursions/ExcursionsExplorerScreens.tsx')
+    const src = read('src/features/explorer/ui/excursions/ExcursionsExplorerScreens.tsx')
     expect(src).toMatch(/difficultyConcerns\(x\.item, mem\.access\)\.length === 0/)
     expect(src).toMatch(/concerns=\{difficultyConcerns\(o\.item, mem\.access\)\}/)
     expect(en['exc.concerns']).toMatch(/profile/)
@@ -171,26 +171,26 @@ describe('H8 wire-through promises', () => {
     expect(needsStepFree({ ...EMPTY_ACCESS, device: 'cane' })).toBe(true)
     expect(cabinsFor('x', 'sanctuaryMiniSuite').some((c) => c.accessible)).toBe(false)
     expect(cabinsFor('x', 'balcony').some((c) => c.accessible)).toBe(true)
-    expect(read('src/ui/book/RoomStep.tsx')).toMatch(/useState\(stepFreeNeeded\)/)
+    expect(read('src/features/book/ui/RoomStep.tsx')).toMatch(/useState\(stepFreeNeeded\)/)
   })
   it('carbon uses the sailing length, and the money plan is kept and can become the trip budget', () => {
     expect(sailingNights(REFERENCE_SAILING)).toBe(itinerary(REFERENCE_SAILING).length - 1)
-    expect(read('src/ui/plan/PrepMoreScreens.tsx')).toMatch(/carbonRange\(nights,/)
+    expect(read('src/features/plan/ui/PrepMoreScreens.tsx')).toMatch(/carbonRange\(nights,/)
     expect(normalizePlanning({ moneyDaily: { sea: 5000, port: 8000 } }).moneyDaily).toEqual({ sea: 5000, port: 8000 })
     expect(normalizePlanning({ moneyDaily: { sea: -1, port: 'x' } }).moneyDaily).toBeNull()
-    expect(read('src/ui/plan/PrepMoreScreens.tsx')).toMatch(/budget: plan\.total/)
+    expect(read('src/features/plan/ui/PrepMoreScreens.tsx')).toMatch(/budget: plan\.total/)
   })
   it('the cabin route offers the booked cabin and the Home continue card names the step', () => {
-    expect(read('src/ui/onboard/AboardMoreScreens.tsx')).toMatch(/api\.booking\.get\(tripNo\)/)
-    expect(read('src/ui/home/PrepCards.tsx')).toMatch(/continue\.at/)
+    expect(read('src/features/onboard/ui/AboardMoreScreens.tsx')).toMatch(/api\.booking\.get\(tripNo\)/)
+    expect(read('src/features/home/ui/PrepCards.tsx')).toMatch(/continue\.at/)
     expect(en['continue.at']).toMatch(/as far as/)
   })
   it('kept pasted lines show on their own day, day stories start from a default style, and the kids report reads club check-in', () => {
-    expect(read('src/ui/PastedLines.tsx')).toMatch(/l\.day === day/)
-    expect(read('src/ui/home/BriefingScreen.tsx') + read('src/ui/plan/AutopilotScreen.tsx')).toMatch(/<PastedLines day=\{day\}/)
+    expect(read('src/shared/ui/PastedLines.tsx')).toMatch(/l\.day === day/)
+    expect(read('src/features/home/ui/BriefingScreen.tsx') + read('src/features/plan/ui/AutopilotScreen.tsx')).toMatch(/<PastedLines day=\{day\}/)
     expect(en['paste.todayNote']).toMatch(/not bookings/)
     expect(STYLES).toContain(DEFAULT_STYLE)
-    expect(read('src/ui/onboard/AboardMoreScreens.tsx')).toMatch(/api\.family\.view\(\)/)
+    expect(read('src/features/onboard/ui/AboardMoreScreens.tsx')).toMatch(/api\.family\.view\(\)/)
   })
   it('the assistant adds a named excursion to the cart only after a confirm tap, and never pays', () => {
     const effects = read('server/Princess.Api/Services/StanleyActions.cs')

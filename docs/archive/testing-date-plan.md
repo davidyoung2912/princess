@@ -2,7 +2,7 @@
 
 ## Idea
 
-Every signed-in guest is in one of the eleven journey stages (`JOURNEY_STAGES` in `src/routes/hubs.ts`). The menus, screens and messaging
+Every signed-in guest is in one of the eleven journey stages (`JOURNEY_STAGES` in `src/app/routes/hubs.ts`). The menus, screens and messaging
 should follow that stage, and within a stage they should follow the **day** of it: on board, the restaurant menus and the entertainment
 depend on which sailing day it is; before the trip, the messages are countdowns ("12 days to boarding", "5 days left to pay").
 
@@ -36,7 +36,7 @@ Testers need an easy way to be a guest at any point of the journey. The **testin
   (`demoNow()` / `IUserClock`) rather than the real clock. List the leaks before fixing them.
 - Add the countdown messages that are missing (days to boarding, days left to pay, check-in opens in N days), from the position module.
 
-## Phase 3: stage-tailored menus (done: `src/routes/stageMenus.ts`, matrix in `docs/stage-menus-matrix.md`)
+## Phase 3: stage-tailored menus (done: `src/app/routes/stageMenus.ts`, matrix in `docs/stage-menus-matrix.md`)
 
 - Draft a matrix of stage to tabs, hubs and screens for review.
 - Filter or reorder tabs and hubs from the matrix; keep every screen reachable by search so nothing is lost.

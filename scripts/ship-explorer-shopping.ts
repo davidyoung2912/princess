@@ -8,7 +8,7 @@
 //
 // The doc's week maps onto day kinds as in the Entertainment content: Day 1 `embark`, Day 2 `firstSea`, Day 3 `earlyPortOdd` and Day 6 `lastPort`, Day 4
 // `portEven`, Day 5 `laterSea`, Day 7 `last`. On a port day every event starts after the sailaway reopening.
-import type { HoursRule } from '../src/domain/explorer/types.ts'
+import type { HoursRule } from '../src/features/explorer/domain/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
 
 /** Closed alongside; open 45 minutes after the ship sails until 10 pm; open at 5:30 pm on embarkation day; 9:30 am to 10 pm at sea. */

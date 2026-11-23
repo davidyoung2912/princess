@@ -15,8 +15,8 @@ The date and the current stage chip show for every guest. The chip opens `/welco
 
 ## How a step counts as done
 
-- **By data**: payment paid, documents in order, check-in done, muster done, a sailing saved, a cabin category chosen (`nextSteps` in `src/routes/stageHome.ts`, facts from `useStageFacts`).
-- **By visiting**: opening the screen the step points at (`stepsAt` in `src/routes/stageProgress.ts`). Steps whose link depends on the guest's data, or can be reached two ways, list their addresses in `STEP_ADDRESSES`.
+- **By data**: payment paid, documents in order, check-in done, muster done, a sailing saved, a cabin category chosen (`nextSteps` in `src/app/routes/stageHome.ts`, facts from `useStageFacts`).
+- **By visiting**: opening the screen the step points at (`stepsAt` in `src/app/routes/stageProgress.ts`). Steps whose link depends on the guest's data, or can be reached two ways, list their addresses in `STEP_ADDRESSES`.
 - Visits are the `stageProgress` document in `/me/state`: `{ visited: { "<stage>[:<sailingId>]#<step>": atMs } }`, validated in `StateRules.cs` (at most 300 entries, step 1 to 9), merged by keeping every visit, and cleared by **Reset Stage Welcomes** in Settings. From Manage on, a new sailing starts its steps again.
 
 ## Finishing the steps does not change the stage

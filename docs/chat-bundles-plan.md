@@ -31,14 +31,14 @@ Everything else a guest sends (a game puzzle, a place to meet, a menu, a dish) r
 
 | Exists | Where | How bundles use it |
 | --- | --- | --- |
-| Typed messages: `Kind` `text`, `card`, `place`, `plan`, `poll`; JSON `Payload`; server-built words; forbidden-key guard | `ChatCardRules`, `ChatCard`, `ChatShareService`, `src/domain/chatCards.ts`, `ChatCards.tsx` | New kind `bundle` rides the same send path, preview, push text, search, reactions, replies, pins, mentions, thread cache, guardian visibility, block and report |
+| Typed messages: `Kind` `text`, `card`, `place`, `plan`, `poll`; JSON `Payload`; server-built words; forbidden-key guard | `ChatCardRules`, `ChatCard`, `ChatShareService`, `src/features/chat/domain/chatCards.ts`, `ChatCards.tsx` | New kind `bundle` rides the same send path, preview, push text, search, reactions, replies, pins, mentions, thread cache, guardian visibility, block and report |
 | `venue` and `menu` cards through a one-conversation `<details>` | `SendToChat.tsx` | Replaced by the shared dialog; legacy cards keep working |
 | **Polls**: question plus 2 to 5 **text** options, changeable vote, 24 h life, counts only | `ChatPlanningRules`, `ChatPlanning.tsx`, `ChatResponses` | Options become **text or bundle**; same tally, vote, close and answer-while-offline rules |
 | **Plans with RSVP**: one programme event, Going/Maybe/No, Going adds to the programme and can undo | `ChatPlanningRules`, `ChatShareService.EventsAsync` | Generalised from "programme event" to any **bundle with a day and time** (excursion, dinner, show, port visit); a Going on a bookable thing never books it |
 | **Coordinator**: remind the people who have not answered, tally card, compromise when the vote splits | `ChatCoordinatorRules`, phase 11 | Reused as is for bundle polls; compromise extended to time slots |
 | **Group recap**, **huddle shortlist** (public cards before booking), **group plan board** (who is doing each tour or dinner, clashes) | `ChatRecapStore`, `ChatHuddleRules`, `groupBoard.ts` | Bundles feed all three (decision cards into the recap, shortlist cards are bundles, the day board is a bundle) |
 | Plan import, Save, programme toggle, clash checks | `SaveButton.tsx`, `planCard`, `excursions.ts`, `dining.ts` | The actions of a received bundle |
-| Games generate puzzles on the device with `Math.random`, nothing stored or sent | `src/domain/games/*`, `src/ui/explorer/games/*`, `parts.tsx` | Need a describe, encode, restore adapter per game (a later phase) |
+| Games generate puzzles on the device with `Math.random`, nothing stored or sent | `src/features/games/domain/*`, `src/features/explorer/ui/games/*`, `parts.tsx` | Need a describe, encode, restore adapter per game (a later phase) |
 
 Known limits today that this plan removes: a plan can only be about a programme event (an excursion or dinner card cannot be answered Going), polls have text options only, a group can have only one open poll or plan at a time for Stanley's offers, and nothing carries a decision through to the guest's own day.
 

@@ -10,7 +10,7 @@ The matrix says 216 of 292 requirements are "Built", but only 15 rows were read 
 
 1. **Every requirement has testable acceptance wording** (502 clauses across 292 IDs; the 58 cross-stage rows have one clause each, no separate acceptance column). The matrix judged each *row*, not each *clause*. Clause-level checking is the missing step.
 2. **"Built" is weakly proved.** By a script that checks for a test file beside each cited source file: **87 of 217 Built rows (41 of 101 P0 rows) cite no test at all.** A test beside the file is not proof either, so the real figure is worse.
-3. **Spot checks found real misses inside P0 "Built" rows.** I checked about 30 distinctive clauses by hand-written searches of `src` (including `src/i18n/locales/en.ts`, because screens keep their wording there). Section 3 lists what the checks found. Roughly one clause in four that I probed was absent. That is a small, biased sample, not a rate to quote, but it is enough to say the 216 is an upper bound by a margin, and that a systematic pass is worth doing.
+3. **Spot checks found real misses inside P0 "Built" rows.** I checked about 30 distinctive clauses by hand-written searches of `src` (including `src/shared/i18n/locales/en.ts`, because screens keep their wording there). Section 3 lists what the checks found. Roughly one clause in four that I probed was absent. That is a small, biased sample, not a rate to quote, but it is enough to say the 216 is an upper bound by a margin, and that a systematic pass is worth doing.
 
 ## 2. How to confirm outstanding gaps: a five-layer method
 
@@ -20,7 +20,7 @@ Each layer catches something the layer above it cannot. All run under the projec
 | --- | --- | --- | --- |
 | **L1 Clause register** | `docs/requirements-clauses.md`, generated from the requirements document by a script kept in `scripts/`. One row per acceptance clause (about 500), with a verdict (`proved`, `gap`, `not code`, `server only`), the proof (a test name or `file:line`), and the date checked. | Rows judged Built because the screen exists while one clause is missing. | Medium. The script is small; the reading is the work. |
 | **L2 ID-tagged tests with a ratchet** | A convention: a test names the clauses it proves (`it('DEB-02#1 ...')` or a `// proves: DEB-02#1` comment). `src/gates/traceability.test.ts` reads the register and fails if a clause marked `proved` has no tag, or a tag points at no clause. The allow-list of untagged clauses may only shrink. | "Built" with no test; claims that drift as code changes. | Low once L1 exists. |
-| **L3 Wording guards** | Tests that read `src/i18n/locales/en.ts` for required statements (for example "crew instructions override this app"). Some acceptance clauses are sentences the guest must be able to read. | Missing or edited safety and trust wording, which no behaviour test sees. | Low. |
+| **L3 Wording guards** | Tests that read `src/shared/i18n/locales/en.ts` for required statements (for example "crew instructions override this app"). Some acceptance clauses are sentences the guest must be able to read. | Missing or edited safety and trust wording, which no behaviour test sees. | Low. |
 | **L4 Release-gate scenarios** | The document's 10 P0 release gates (section 9.1) written as node tests that drive the domain modules and the `httpApi` client with the test double: double tap does not duplicate a charge, stale value shows age and next step, every critical error has a human route, and so on. | Cross-feature failures that no single row shows. | Medium. |
 | **L5 Server and human lists** | A short checklist of C# tests written but never run (BM7 to BM15), and a device/screen-reader checklist for what only a person can check (320 px reflow, brightness, wake lock, install prompts). | The parts this environment cannot prove. | You run them; I only write the list. |
 
@@ -48,7 +48,7 @@ Checked by search this session. "Absent" means no match in the cited files or th
 Matrix housekeeping found at the same time:
 
 - **Stale rows:** MOB-24, GTS-15 and MOB-15 were closed by BM3 and BM4 but the matrix still says Partial or lists them as open. IDN-05 and MNG-07 still say four permissions; BM6 to BM12 added documents, payments, folio, check-in and trip.
-- **Misattributed evidence:** AST-04 cites `src/ai/guard.ts` (the handoff screen, not confirmation); the confirmation component is `src/ui/ai/StanleyConfirm.tsx`. Six Built rows cite no file at all (GTS-16, EMB-08, DEB-03, DEB-06, DEB-10, DEB-13); they name a route instead.
+- **Misattributed evidence:** AST-04 cites `src/features/stanley/logic/guard.ts` (the handoff screen, not confirmation); the confirmation component is `src/features/stanley/ui/StanleyConfirm.tsx`. Six Built rows cite no file at all (GTS-16, EMB-08, DEB-03, DEB-06, DEB-10, DEB-13); they name a route instead.
 - **Count:** the matrix says 216 Built; the script counts 217. To be reconciled when the register is built.
 
 ## 4. The 57 known gaps (51 Partial, 6 Not built), sorted by what closes them
@@ -61,7 +61,7 @@ Counts are from the matrix. "FE" is front end only; "Server" needs C# and a sche
 | --- | --- | --- |
 | MNG-03 | P0 | Sync chip shows pending (outbox has items), unavailable and not linked as distinct states, using `useOutbox` and the session. |
 | MOB-05, OFF-01 | P0 | One `src/domain/offlineContract.ts`: every action and screen declares `offline`, `queued`, `view-only` or `needs-connection`; a test fails when a registered route has no entry; controls show the label before commit. |
-| MOB-03, QOL-04 | P0 | Guest chooses which kinds the capsule keeps; "last test" is stored (needs an allowed place under `src/data/`, see the audit gate). |
+| MOB-03, QOL-04 | P0 | Guest chooses which kinds the capsule keeps; "last test" is stored (needs an allowed place under `src/shared/data/`, see the audit gate). |
 | MOB-04 | P0 | Export and recover local drafts and outbox as a file; corrupt-store handling with a plain message. IndexedDB stays out (decided in the first plan). |
 | MOB-23 | P0 | In-app due-reminder fallback while the app is open or on next open. Never claims background delivery. |
 | DRM-10, DSC-11 | P0 | One accessibility filter across ship, cabin, port and excursion; "unknown" shown as unknown; one whole-journey comparison. |
@@ -175,13 +175,13 @@ Limits: the key lasts one call, so a retry the guest makes by tapping again gets
 ## 5h. BM23 result (built, not committed)
 
 Theme: images and data-light (OFF-06, MOB-25).
-1. **OFF-06:** new `DeferredImage` (`src/ui/DeferredImage.tsx`). In data-light mode a content photo is a "Show photo" button and no `<img>` or request exists until tapped. Used by ship photos (both lists) and chat photos; `MediaImage` (guest's kept pictures) defers the authenticated fetch the same way. `src/ui/dataLightImages.test.tsx` checks both modes, that the screens have no raw `<img>`, and that nothing autoplays (the only `.play()` is the camera preview after the guest taps start). Matrix row moved to Built.
+1. **OFF-06:** new `DeferredImage` (`src/shared/ui/DeferredImage.tsx`). In data-light mode a content photo is a "Show photo" button and no `<img>` or request exists until tapped. Used by ship photos (both lists) and chat photos; `MediaImage` (guest's kept pictures) defers the authenticated fetch the same way. `src/shared/ui/dataLightImages.test.tsx` checks both modes, that the screens have no raw `<img>`, and that nothing autoplays (the only `.play()` is the camera preview after the guest taps start). Matrix row moved to Built.
 2. **MOB-25:** read `shrinkPicture`: the canvas redraw drops location and time, so the strip is real where the browser supports it (the server strips again). Delete exists. Still missing: a local preview before upload (the picker sends on choose), so the row stays Partial.
 Limits: decorative icons and the mascot still load in data-light mode (small, cached by the service worker). jsdom only, no device check. Next in group A: MOB-25/MOB-09 preview-before-send, then DSC-05/06/12/13.
 
 ## 5i. BM24 result (built, not committed)
 
-Theme: preview before sending (MOB-25). `PicturePicker` now shrinks the chosen picture, shows it with "Nothing has been sent yet", and uploads only when the guest taps "Send this picture"; "Choose another" discards it and revokes the preview URL. `src/ui/picturePreview.test.tsx` checks nothing is uploaded before the tap. Used by every picker (cabin, book, family link, cases). MOB-25 moved to Built.
+Theme: preview before sending (MOB-25). `PicturePicker` now shrinks the chosen picture, shows it with "Nothing has been sent yet", and uploads only when the guest taps "Send this picture"; "Choose another" discards it and revokes the preview URL. `src/shared/ui/picturePreview.test.tsx` checks nothing is uploaded before the tap. Used by every picker (cabin, book, family link, cases). MOB-25 moved to Built.
 Limits: jsdom only, no device check; MOB-09 (passport and tag scan) stays Partial. The matrix Built/Partial totals were not regenerated. Next in group A: DSC-05/06/12/13.
 
 ## 5j. BM25 result (built, not committed)
@@ -195,7 +195,7 @@ Not started: DSC-05 (pick an exact cabin on the deck plan, recheck inventory bef
 ## 5k. BM26 result (built, not committed)
 
 Theme: pick on a map and plan a party's staterooms (DSC-05, DSC-12). Both rows stay Partial.
-1. **DSC-05:** `CabinMap` (`src/ui/book/CabinMap.tsx`, logic in `src/domain/cabinMap.ts`) draws each deck as a grid (port/starboard rows, forward/midship/aft cells) of real buttons; status is written (free, booked, chosen), and the existing radio list stays as the text alternative. Choosing a stateroom, from the map or the list, fetches the inventory again; if it was taken meanwhile or is no longer offered it is not kept and a plain message says so.
+1. **DSC-05:** `CabinMap` (`src/features/book/ui/CabinMap.tsx`, logic in `src/domain/cabinMap.ts`) draws each deck as a grid (port/starboard rows, forward/midship/aft cells) of real buttons; status is written (free, booked, chosen), and the existing radio list stays as the text alternative. Choosing a stateroom, from the map or the list, fetches the inventory again; if it was taken meanwhile or is no longer offered it is not kept and a plain message says so.
 2. **DSC-12:** when guests exceed one room's capacity, the room step says how many staterooms are needed and lists up to three sets of free staterooms on one deck within one part of the ship. It says close together does not mean connecting doors, and that the draft holds one stateroom only.
 Limits: there is no hold step on the server, so the recheck is a look, not a reservation; the booking's `cabinTaken` is still the final word. The map is a schematic of sample staterooms. Multi-stateroom booking, per-cabin guest counts and connecting-door data are not built (they need a draft and server change). Tests are node unit tests for `cabinMap.ts`; the UI recheck is not covered by a component test, and nothing was checked in a browser. Matrix totals not regenerated.
 
@@ -289,7 +289,7 @@ Theme: duplicate-profile detection at sign-up (IDN-03), with a "needs a person" 
 
 Theme: alert links that name the trip and the change (MOB-07, COM-06). Before, a tap opened a bare screen path (`/ship/port`, `/home/updates`, `/me/payments`) with nothing saying which trip or which change the alert was about.
 - **Server:** `PushRules.WithLink` adds `?trip=<booking number>` to every alert's path, and `&update=<id>` for a ship-change alert; `PushService` applies it after the notices are built, so the notice keys and the budget rules are unchanged. Only plain letters, digits, `-` and `_` go in; anything else leaves the path as it was.
-- **Front end:** `src/push/deepLink.ts` reads them. `DeepLinkNote` (in the shell) shows a warning when the alert was about a different trip from the one the app is on; the Disruption Hub shows "That change is no longer current" when the `update` is not among the active ones, once the list has loaded. The service worker and `princess-open` already carried the whole path including the query, and still reject any address outside the app.
+- **Front end:** `src/shared/push/deepLink.ts` reads them. `DeepLinkNote` (in the shell) shows a warning when the alert was about a different trip from the one the app is on; the Disruption Hub shows "That change is no longer current" when the `update` is not among the active ones, once the list has loaded. The service worker and `princess-open` already carried the whole path including the query, and still reject any address outside the app.
 - **Signed out:** the sign-in gate renders in place at the same address, so the guest lands on the link after signing in; no token is in the link. I read this from `App.tsx` and did not test it in a browser.
 - Tests: `deepLink.test.ts`; server `ALinkNamesTheTripAndForAShipChangeWhichOne` (written, not run).
 - **Not done:** links to a specific reservation, port-day row or case (the alerts only exist for the screens above, and `/home/ports/{port}` already names its port); a "switch to that trip" button (the app has one current trip, so the note points to My trips); a check that old alerts in the notification centre use the new paths (their stored path is unchanged). MOB-07 and COM-06 stay Partial. No component test, no browser check.
@@ -370,7 +370,7 @@ Theme: linking a booking made elsewhere (MNG-01, IDN-08).
 ## 5ag. BM49 result (built, not committed)
 
 Theme: TRU-05 and UX-02.
-- **TRU-05:** `src/ui/failedReschedule.test.tsx` moves a dinner against a stubbed server that refuses (409 full, 500). The original time still shows with "Nothing was changed", the message is plain, no cancel call is made. Row now Built.
+- **TRU-05:** `src/shared/ui/failedReschedule.test.tsx` moves a dinner against a stubbed server that refuses (409 full, 500). The original time still shows with "Nothing was changed", the message is plain, no cancel call is made. Row now Built.
 - **UX-02:** `.page--wide` on the two catalogue compare screens, the excursion compare and the difficulty screen; `.workspace` side filter column on the whole-journey filter. CSS at 1280px and up only, so phones are unchanged.
 - **Also:** BM48 left `traceability.test.ts` failing (DRM-10, DSC-11 Built with no tag); tagged `journeyAccess.test.ts`.
 - **Not done:** no browser check, so UX-02 stays Partial; the planning day view has no wide layout.
@@ -378,7 +378,7 @@ Theme: TRU-05 and UX-02.
 ## 5ah. BM50 result (built, not committed)
 
 Theme: assistant and search (AST-02, SEA-04, SEA-05).
-- **AST-02:** the ship source now says "as of {time}"; the library source says it is written ahead of time and not live. Test `src/ai/answerFreshness.test.ts`. Row Built.
+- **AST-02:** the ship source now says "as of {time}"; the library source says it is written ahead of time and not live. Test `src/features/stanley/logic/answerFreshness.test.ts`. Row Built.
 - **SEA-04:** answer cards show scope and source with a time; results end with a source line. Row stays Partial: only three topics have direct answers.
 - **SEA-05:** `venueState` gives open, closed or temporarily unavailable (`unavailableSince`, set by the ship); venue list and page show it with a ship-time stamp. Row stays Partial until the server sends `unavailableSince`.
 - `npm run test`, `lint`, `tsc -b` per the working rules.

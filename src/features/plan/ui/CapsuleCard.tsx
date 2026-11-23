@@ -1,0 +1,136 @@
+import { useRef, useState } from 'react'
+import { Link } from 'react-router'
+import { useCapsule } from '../../../shared/hooks/useCapsule'
+import { dropCopies, readPrefs, writePrefs } from '../../../shared/data/capsule'
+import { clearUnreadable, exportDevice, recoverDevice, scanDevice } from '../../../shared/data/deviceBackup'
+import { batteryNow, watchBattery } from '../../../shared/data/battery'
+import { nightBeforeTest, type ReadinessReport } from '../../../domain/nightBefore'
+import { CAPSULE_KINDS, formatBytes, formatWhen, setKept, storageState } from '../../../domain/offlineCapsule'
+import { t, th, type StringKey, headingCase } from '../../../shared/i18n'
+import { Banner } from '../../../shared/ui/Banner'
+import { Button } from '../../../shared/ui/Button'
+import { Card } from '../../../shared/ui/Card'
+
+/** What this phone has saved for use with no signal: size, age, when each copy stops being used, and whether the browser will keep it (MOB-03, MOB-04, QOL-04). */
+export function CapsuleCard() {
+  const { capsule, storage, checkedAt, check, protect } = useCapsule()
+  const [answer, setAnswer] = useState<'granted' | 'declined' | null>(null)
+  const state = storageState(storage)
+  const [report, setReport] = useState<{ at: number; r: ReadinessReport } | null>(null)
+  const [prefs, setPrefs] = useState(readPrefs)
+  const [backup, setBackup] = useState<{ kind: 'exported' | 'restored' | 'bad' | 'cleared'; count: number } | null>(null)
+  const [scan, setScan] = useState(scanDevice)
+  const file = useRef<HTMLInputElement>(null)
+  const runTest = () => {
+    watchBattery()
+    check()
+    const notifications = typeof Notification === 'undefined' ? null : Notification.permission
+    const r = nightBeforeTest({ capsule, storage: state, notifications, battery: batteryNow() })
+    setReport({ at: checkedAt, r })
+    const next = { ...prefs, lastTest: { at: checkedAt, result: r.result } }
+    writePrefs(next)
+    setPrefs(next)
+  }
+  const choose = (kind: (typeof CAPSULE_KINDS)[number]['kind'], keep: boolean) => {
+    const next = setKept(prefs, kind, keep)
+    writePrefs(next)
+    setPrefs(next)
+    if (!keep) dropCopies(kind)
+    check()
+  }
+  const doExport = () => {
+    const { text, count, name } = exportDevice()
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+    setBackup({ kind: 'exported', count })
+  }
+  const doRestore = (f: File | undefined) => {
+    if (!f) return
+    void f.text().then((text) => {
+      const done = recoverDevice(text)
+      setBackup(done ? { kind: 'restored', count: done.added } : { kind: 'bad', count: 0 })
+      setScan(scanDevice())
+    }).catch(() => setBackup({ kind: 'bad', count: 0 }))
+    if (file.current) file.current.value = ''
+  }
+  const essentials = CAPSULE_KINDS.filter((k) => k.essential)
+  const saved = new Map(capsule.rows.map((r) => [r.kind, r]))
+  return (
+    <Card labelledBy="capsule-h">
+      <h2 id="capsule-h" className="card__title">{th('capsule.title')}</h2>
+      <p>{t('capsule.intro')}</p>
+      <Banner kind={capsule.readiness === 'ready' ? 'success' : 'warning'} title={t(`capsule.${capsule.readiness}` as StringKey)}>
+        {capsule.missing.length > 0 && (
+          <ul className="plain-list">
+            {capsule.missing.map((m) => (
+              <li key={m.kind}>{t(`capsule.kind.${m.kind}` as StringKey)}: <Link to={m.path}>{t('capsule.open')}</Link></li>
+            ))}
+          </ul>
+        )}
+      </Banner>
+      <ul className="plain-list">
+        {[...essentials, ...CAPSULE_KINDS.filter((k) => !k.essential)].filter((k) => saved.has(k.kind)).map((k) => {
+          const r = saved.get(k.kind)!
+          return (
+            <li key={k.kind}>
+              <strong>{t(`capsule.kind.${k.kind}` as StringKey)}</strong>
+              <small className="muted"> {t('capsule.saved', { time: formatWhen(r.savedAt) })} · {t('capsule.until', { time: formatWhen(r.expiresAt) })} · {formatBytes(r.bytes)}{r.copies > 1 ? ` · ${t('capsule.copies', { count: r.copies })}` : ''}</small>
+              <br />
+              <span className={`capsule__state capsule__state--${r.state}`}>{t(`capsule.state.${r.state}` as StringKey)}</span>
+              {r.state !== 'fresh' && <> <Link to={r.path}>{t('capsule.open')}</Link></>}
+            </li>
+          )
+        })}
+      </ul>
+      <p className="muted">{t('capsule.size', { size: formatBytes(capsule.totalBytes) })}</p>
+      {capsule.unreadable > 0 && <p role="status">{t('capsule.unreadable', { count: capsule.unreadable })}</p>}
+      <p role="status">{t(`capsule.storage.${state}` as StringKey)}</p>
+      {state !== 'protected' && state !== 'unknown' && (
+        <Button variant="secondary" onClick={() => { void protect().then((ok) => setAnswer(ok ? 'granted' : 'declined')) }}>{t('capsule.protect')}</Button>
+      )}
+      {answer && <p role="status">{t(`capsule.protect.${answer}` as StringKey)}</p>}
+      <div className="button-row">
+        <Button onClick={runTest}>{t('ready.run')}</Button>
+        <Button variant="secondary" onClick={check}>{t('capsule.check')}</Button>
+      </div>
+      {report && (
+        <div role="status">
+          <p><strong>{t(`ready.result.${report.r.result}` as StringKey)}</strong> <small className="muted">{t('ready.ran', { time: formatWhen(report.at) })}</small></p>
+          <ul className="plain-list">
+            {report.r.checks.map((c) => <li key={c.id}>{t(`ready.${c.id}.${c.result}` as StringKey)}</li>)}
+          </ul>
+        </div>
+      )}
+      <p role="status" className="muted">{t('capsule.checked', { time: formatWhen(checkedAt) })}</p>
+      <fieldset>
+        <legend>{t('capsule.choose')}</legend>
+        <p className="muted">{t('capsule.choose.note')}</p>
+        {CAPSULE_KINDS.map((k) => (
+          <label key={k.kind} className="check-row">
+            <input type="checkbox" checked={k.essential || !prefs.skipped.includes(k.kind)} disabled={k.essential} onChange={(e) => choose(k.kind, e.target.checked)} />
+            {' '}{t(`capsule.kind.${k.kind}` as StringKey)}{k.essential ? ` (${t('capsule.always')})` : ''}
+          </label>
+        ))}
+      </fieldset>
+      <p role="status" className="muted">{prefs.lastTest ? t('capsule.lastTest', { time: formatWhen(prefs.lastTest.at), result: t(`ready.result.${prefs.lastTest.result}` as StringKey) }) : t('capsule.neverTested')}</p>
+      <h3>{headingCase(t('backup.title'))}</h3>
+      <p className="muted">{t('backup.note')}</p>
+      {scan.corrupt.length > 0 && (
+        <Banner kind="warning" title={t('backup.corrupt', { count: scan.corrupt.length })} action={<Button variant="secondary" onClick={() => { setBackup({ kind: 'cleared', count: clearUnreadable() }); setScan(scanDevice()) }}>{t('backup.clear')}</Button>}>
+          <p>{t('backup.corruptBody')}</p>
+        </Banner>
+      )}
+      <div className="button-row">
+        <Button variant="secondary" onClick={doExport}>{t('backup.export')}</Button>
+        <Button variant="secondary" onClick={() => file.current?.click()}>{t('backup.restore')}</Button>
+        <input ref={file} type="file" accept="application/json,.json" className="visually-hidden" aria-label={t('backup.restore')} onChange={(e) => doRestore(e.target.files?.[0])} />
+      </div>
+      {backup && <p role="status">{t(`backup.${backup.kind}` as StringKey, { count: backup.count })}</p>}
+      <p className="muted">{t('capsule.crew')}</p>
+    </Card>
+  )
+}

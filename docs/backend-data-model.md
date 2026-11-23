@@ -1,6 +1,6 @@
 # Backend data model and API surface (Phase 1)
 
-Status: **Reviewed; section 9 questions answered. No SQL or C# has been written.** Written 2026-10-29 (revised the same day: BIGINT keys plus a public GUID, D1 and section 2) from `src/api/*Types.ts` and `src/domain/*`. Phase 2 turns section 4 into `db/01-schema.sql`; Phases 5 to 11 use section 6 as their checklist.
+Status: **Reviewed; section 9 questions answered. No SQL or C# has been written.** Written 2026-10-29 (revised the same day: BIGINT keys plus a public GUID, D1 and section 2) from `src/shared/api/*Types.ts` and `src/domain/*`. Phase 2 turns section 4 into `db/01-schema.sql`; Phases 5 to 11 use section 6 as their checklist.
 
 Sections: 1 Decisions settled here · 2 Conventions · 3 Reading the table notation · 4 Tables · 5 JSON columns · 6 API surface · 7 Authorisation rules · 8 Mock-only behaviour that needs a home · 9 Questions for you.
 
@@ -161,7 +161,7 @@ Phase 3 adds columns to the tables above (needed to hold the authored data; see 
 Photo spots and photographer sessions are not tables: `PhotoRules.SpotsFor` and `PhotographersFor` work them out from the sailing's own days. Photo pricing options (`OptionId` table `PhotoOptions`: `Id`, `Cents`, `Count`, `Description`).
 **CrewMembers** — `Id` · `Name` · `Role {steward|dining|entertainment|guest}` · `ShipId FK`.
 **Advisors** — `Id` · `Name` · `Agency` · `Region` · `Languages [json]` · `Speciality {family|luxury|accessible|groups|first}` · `Hours` (from `ahead.ts`).
-**Faqs / HelpTopics / ContentBlocks** — `Id` · `Area` · `Title` · `Body TXT` · `Locale` · `SortOrder`. Holds `help.ts`, `safety` text, legal documents (see below), and authored copy that the UI today ships in `src/i18n`/`domain`. UI chrome strings stay in the frontend.
+**Faqs / HelpTopics / ContentBlocks** — `Id` · `Area` · `Title` · `Body TXT` · `Locale` · `SortOrder`. Holds `help.ts`, `safety` text, legal documents (see below), and authored copy that the UI today ships in `src/shared/i18n`/`domain`. UI chrome strings stay in the frontend.
 **LegalDocs** — `Id` ({terms|health|age|pregnancy}) · `Version` · `Title` · `Statement` · `Body [json array]`. PK (`Id, Version`).
 **ServiceItems** (housekeeping/maintenance request catalogue): `Id` · `ItemGroup {housekeeping|maintenance}` · `EtaMin` · `MaxQty`. **Drinks**: `Id` · `Cents` · `Alcohol BIT`. **Clubs** (family): `Id` ({firefly|neon-grove|underground}) · `Name` · `MinAge` · `MaxAge` · `Deck` · `OpenFrom/OpenTo`. **TravelWindows** (arrival windows): `Id` · `StartLocal` · `EndLocal` · `Priority BIT`. **NightChecklistItems**, **PackingItems** (`Id`, `Label`, `RuleJson [json]`), **ChecklistItems** (`Id`, `Phase`, `DueDaysBefore`, `Label`), **AdvisorQuiz** *stays in code* (pure scoring over `CabinCategories`).
 
@@ -580,7 +580,7 @@ Returns `{ version, asOf, perUsd }`. The source is `Providers:Rates`: `sim` (def
 | 1 | Chat scope | **Groups.** Friends in separate cabins share a chat. | `ChatGroups` / `ChatGroupMembers` stay as modelled in 4.8. |
 | 2 | Linked agent bookings | Linking creates guests as `BookingGuestDetails` with no user accounts; the linker sees them read-mostly. | 4.3 stands as written. |
 | 3 | Legacy groups | **Drop** `dining.list/reschedule`, `queues.list` and `requests.list/create` (and their mocks) in the frontend phases. | The 6.3 and 6.5 rows are marked dropped; Phase 11's interface check excludes them. |
-| 4 | Reference content | **The database holds the English authored copy** (FAQs, help, safety text, menus, legal); UI chrome stays in `src/i18n`. | `ref.Faqs/HelpTopics/ContentBlocks/LegalDocs` hold full text; Phase 3 seeds are larger. |
+| 4 | Reference content | **The database holds the English authored copy** (FAQs, help, safety text, menus, legal); UI chrome stays in `src/shared/i18n`. | `ref.Faqs/HelpTopics/ContentBlocks/LegalDocs` hold full text; Phase 3 seeds are larger. |
 | 5 | Photos in chat | Keep the data URL in the `ChatMessages` table for now. | No change. Blob storage is a later option. |
 | 6 | Hash cost | 200 to 300 ms per login is fine; keep PBKDF2 at 600,000 iterations. | D12 stands. |
 

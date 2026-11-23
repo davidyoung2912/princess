@@ -1,4 +1,4 @@
-import type { StringKey } from '../i18n'
+import type { StringKey } from '../shared/i18n'
 
 /** For every top task, how to do it without the app (INC-01): a desk, a phone number or a paper copy. Keyed by the task ids in `routes/nav.ts`. */
 export const ALTERNATIVES: Readonly<Record<string, StringKey>> = {

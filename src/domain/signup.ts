@@ -1,4 +1,4 @@
-import type { Registration } from '../auth/provider'
+import type { Registration } from '../shared/auth/provider'
 import { limit } from './limits'
 import { isWholePhone } from './phone'
 

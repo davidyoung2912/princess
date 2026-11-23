@@ -1,4 +1,4 @@
-import type { StringKey } from '../i18n'
+import type { StringKey } from '../shared/i18n'
 import { arrivalWindows } from './travel'
 import { EMBARK, departureEpoch, type Traffic } from './boarding'
 import { addDays } from './timezones'

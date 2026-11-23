@@ -63,15 +63,15 @@ The server returns a result `kind` (`blocked`, `offtopic`, `handoff`, `answer`, 
 
 ## S3 as built
 
-- `src/ai/stanley.ts` (pure, tested in `stanley.test.ts`): reply reading (`normalizeStanley`), the history sent (`historyToSend`: only clean round trips, latest 10, then the new message, so blocked, off-topic, handed-off and failed exchanges never go back to the server), the on-device safety screen (an emergency shows the numbers with no signal), and the in-memory thread (closing the dialog keeps it, a refresh clears it).
-- `src/ui/ai/StanleyDialog.tsx`: the chat in the shared `Dialog` (focus trap, Escape), his picture, subtext, an AI label, example questions, a typing indicator (still under reduced motion) and the box. Stanley's wording for every non-answer kind is in the English and Spanish strings (`stanley.*`); handoffs reuse the concierge's `ai.handoff.*` wording.
+- `src/features/stanley/logic/stanley.ts` (pure, tested in `stanley.test.ts`): reply reading (`normalizeStanley`), the history sent (`historyToSend`: only clean round trips, latest 10, then the new message, so blocked, off-topic, handed-off and failed exchanges never go back to the server), the on-device safety screen (an emergency shows the numbers with no signal), and the in-memory thread (closing the dialog keeps it, a refresh clears it).
+- `src/features/stanley/ui/StanleyDialog.tsx`: the chat in the shared `Dialog` (focus trap, Escape), his picture, subtext, an AI label, example questions, a typing indicator (still under reduced motion) and the box. Stanley's wording for every non-answer kind is in the English and Spanish strings (`stanley.*`); handoffs reuse the concierge's `ai.handoff.*` wording.
 - `Shell.tsx`: a Stanley button above Help in the left nav (from 1024px) and a round picture button in the top bar on phones. `runtime` has `sendStanley` (`POST /me/stanley`).
 - `src/assets/stanley-small.png` is a 192-pixel copy (60 KB) of the 1.4 MB `stanley.png`; only the small one is imported, so only it is precached.
 - Replies still appear all at once; streaming is S4.
 
 ## S4 as built
 
-- **Cooldown** (`cooldownSeconds` in `src/ai/stanley.ts`, tested): after 3 blocked replies in a row the box pauses for 30 seconds, with a countdown message (`stanley.cooldown`). A good answer ends the run. It is derived from the in-memory thread, so closing the dialog does not skip it. It is a courtesy only; the server's word filter and hourly limit remain the authority.
+- **Cooldown** (`cooldownSeconds` in `src/features/stanley/logic/stanley.ts`, tested): after 3 blocked replies in a row the box pauses for 30 seconds, with a countdown message (`stanley.cooldown`). A good answer ends the run. It is derived from the in-memory thread, so closing the dialog does not skip it. It is a courtesy only; the server's word filter and hourly limit remain the authority.
 - **Streamed look** (`revealSteps`, tested): an answer appears three words at a time; with reduced motion it appears at once. This is done on the device from the full reply. **True server streaming (SSE) was not built**: the server could not be compiled here (no `dotnet`), and a streaming endpoint would also have to run the word filter, prescan and limit before the first byte. It can replace `revealSteps` later with no change to the reply shape.
 - **Audit**: the model key stays on the server; blocked, off-topic, handed-off and failed exchanges are never resent; the matched word is never shown or logged; the dialog uses the shared focus-trapped `Dialog`, status regions and reduced-motion handling. Server tests for S1 and S2 are still unrun by hand (`dotnet test --filter Stanley`).
 

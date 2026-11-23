@@ -5,7 +5,7 @@ Status: **plan agreed (2026-11-03). R1 (server), R2 (front-end logic) and R3 (re
 ## Why
 
 - A guest who signs back in lands on Home with no memory of where they were. We keep the last three screens they visited on the server, so a guest on any device can jump back in.
-- "Your next steps" and "What matters now" (`src/ui/home/StageHome.tsx`) are plain lists on the page background. Nothing says which to look at first, and a done step is struck through, which reads as "removed".
+- "Your next steps" and "What matters now" (`src/features/home/ui/StageHome.tsx`) are plain lists on the page background. Nothing says which to look at first, and a done step is struck through, which reads as "removed".
 
 ## Agreed decisions
 
@@ -36,7 +36,7 @@ A hero card at the top of Home, up to three rows, newest first: the screen's ico
 
 ## Urgent (what decides the order)
 
-A pure rule in `src/routes/stageHome.ts` (`urgentStep`), from facts Home already has. Next steps leads when any of these is true, and its first undone step gets the primary button:
+A pure rule in `src/app/routes/stageHome.ts` (`urgentStep`), from facts Home already has. Next steps leads when any of these is true, and its first undone step gets the primary button:
 
 - a payment is unpaid and the final payment date is within 14 days (or past);
 - check-in is open and not done, and departure is within 3 days;
@@ -55,6 +55,6 @@ Otherwise the recent card leads. Both blocks are always shown; only the order an
 ## Phases (one commit each, stop after each)
 
 - **R1: Server.** Add the `recent` key to `StateRules.UserKeys`, with the shape check above. Tests in `StateTests.cs`. Not run here (no `dotnet test`, per project rules); the npm checks are the gate.
-- **R2: Front-end logic (built; the list is held in memory only, the server copy is the real one).** `src/routes/recent.ts` (what counts, dedupe, cap at three, safe path, relative time, resolve to a screen); a sync binding and merge for `recent` (`src/sync/bindings.ts`, `merges.ts`); the Shell records a visit next to `recordVisit`. Vitest in node.
+- **R2: Front-end logic (built; the list is held in memory only, the server copy is the real one).** `src/app/routes/recent.ts` (what counts, dedupe, cap at three, safe path, relative time, resolve to a screen); a sync binding and merge for `recent` (`src/shared/sync/bindings.ts`, `merges.ts`); the Shell records a visit next to `recordVisit`. Vitest in node.
 - **R3: Recent card (built; `StageHome` orders it against Next steps, the default Home shows it under the stage landing).** `RecentCard.tsx`, placed in every Home variant, English and Spanish strings, Clear button, `urgentStep` and the ordering.
 - **R4: Restyle (built; the attention badge marks the tile that opens the first undone step when Next steps is urgent).** New `StageHome` markup and CSS; render and a11y tests updated.

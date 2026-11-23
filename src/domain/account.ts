@@ -1,5 +1,5 @@
 import type { Citizenship } from './documents'
-import type { DishFlag } from '../api/explorerTypes'
+import type { DishFlag } from '../shared/api/explorerTypes'
 import { limit } from './limits'
 
 /** Account data (ACT-03, MNG-04): profile, preferences, cards and the helper role. Defaults come from the demo person; saved edits replace them. */

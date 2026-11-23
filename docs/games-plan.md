@@ -11,21 +11,21 @@ lost when the page is left (thin-client rule). Do not start the next phase until
 
 ## Every game's checklist (the wiring)
 
-1. Framework-free logic in `src/domain/games/<game>.ts` with `<game>.test.ts` (node tests): generator, solver, uniqueness, hint finder. Seeded random for tests.
+1. Framework-free logic in `src/features/games/domain/<game>.ts` with `<game>.test.ts` (node tests): generator, solver, uniqueness, hint finder. Seeded random for tests.
 2. A puzzle must have exactly one solution and be solvable by human logic without guessing (the Sudoku generator is the model: remove a clue, keep the removal only if still unique and still logic-solvable at the level).
-3. Screen in `src/ui/explorer/games/<Game>Screen.tsx`, styles appended to `src/styles/games.css` (class prefix per game, no CSS framework, themes via existing tokens, colour is never the only cue).
-4. Register: `GAMES` in `src/domain/games/catalogue.ts` (+ icon in `GamesExplorerScreen.tsx` `ICONS`), route in `src/routes/routes.ts`, screen in `src/routes/screens.ts` and `src/screens.ts`, `src/domain/offlineContract.ts` (`offline`), icon in `src/ui/icons.ts` and `src/ui/screenIcons.ts`, allow-lists and counts in `src/routes/nav.test.ts`, `coverage.test.ts` (SCREEN_LIST length and unreachable list) and `screens.test.ts` (length and unreachable list, twice).
-5. Strings in `src/i18n/locales/enCore.ts` (`screen.X##.*`, `route.*`, `gx.game.*`, game keys) and `enLate.ts` (three `tip.X##` and four `stanley.q/a/r.pg.X##.n` with answers of 70+ characters; every key must be used as a literal `t('...')`, so no built-up key names).
+3. Screen in `src/features/explorer/ui/games/<Game>Screen.tsx`, styles appended to `src/styles/games.css` (class prefix per game, no CSS framework, themes via existing tokens, colour is never the only cue).
+4. Register: `GAMES` in `src/features/games/domain/catalogue.ts` (+ icon in `GamesExplorerScreen.tsx` `ICONS`), route in `src/app/routes/routes.ts`, screen in `src/app/routes/screens.ts` and `src/app/screens.ts`, `src/domain/offlineContract.ts` (`offline`), icon in `src/shared/ui/icons.ts` and `src/shared/ui/screenIcons.ts`, allow-lists and counts in `src/app/routes/nav.test.ts`, `coverage.test.ts` (SCREEN_LIST length and unreachable list) and `screens.test.ts` (length and unreachable list, twice).
+5. Strings in `src/shared/i18n/locales/enCore.ts` (`screen.X##.*`, `route.*`, `gx.game.*`, game keys) and `enLate.ts` (three `tip.X##` and four `stanley.q/a/r.pg.X##.n` with answers of 70+ characters; every key must be used as a literal `t('...')`, so no built-up key names).
 6. Timers only through `startVisibleInterval`; a bare `setTimeout` needs the file adding to the allow-list in `src/gates/perf.test.ts` and must be cleared on unmount.
 
 ## Phases
 
 ### G1: shared game kit, Diagonal Sudoku (X33), Jigsaw Sudoku (X34) — built
 
-Built as planned. `sudoku.ts` takes a `Rules` object (`makeRules`, `CLASSIC`, `DIAGONAL`; `generatePuzzle(level, random, variant)` returns `rules` with the puzzle); `jigsawRegions` makes the layouts and `fullGrid` has a node budget. Shared UI is in `src/ui/explorer/games/parts.tsx` (`useGameClock`, `GameClock`, `GameHelp`, `LevelBar`, `HintBox`, `SolvedCard`) with `game-*` CSS. `SudokuScreen.tsx` exports `SudokuScreen`, `DiagonalSudokuScreen` and `JigsawSudokuScreen`.
+Built as planned. `sudoku.ts` takes a `Rules` object (`makeRules`, `CLASSIC`, `DIAGONAL`; `generatePuzzle(level, random, variant)` returns `rules` with the puzzle); `jigsawRegions` makes the layouts and `fullGrid` has a node budget. Shared UI is in `src/features/explorer/ui/games/parts.tsx` (`useGameClock`, `GameClock`, `GameHelp`, `LevelBar`, `HintBox`, `SolvedCard`) with `game-*` CSS. `SudokuScreen.tsx` exports `SudokuScreen`, `DiagonalSudokuScreen` and `JigsawSudokuScreen`.
 
-- Extract the shared pieces from Wordle and Sudoku into `src/ui/explorer/games/parts.tsx`: `GameHelp` (How to Play panel), clock hook and `GameClock`, `LevelBar`, `HintBox` (with dismiss), `SolvedCard`. Move the matching CSS to shared `game-*` classes. Wordle and Sudoku use them.
-- Generalise `src/domain/games/sudoku.ts` to take a `Rules` object (units with a kind: row, column, box, diagonal, region; peers; region id per cell; overlapping unit pairs) with the classic rules as the default so existing callers and tests still work. Make locked-candidate logic generic over overlapping units. Add a node budget to the full-grid search.
+- Extract the shared pieces from Wordle and Sudoku into `src/features/explorer/ui/games/parts.tsx`: `GameHelp` (How to Play panel), clock hook and `GameClock`, `LevelBar`, `HintBox` (with dismiss), `SolvedCard`. Move the matching CSS to shared `game-*` classes. Wordle and Sudoku use them.
+- Generalise `src/features/games/domain/sudoku.ts` to take a `Rules` object (units with a kind: row, column, box, diagonal, region; peers; region id per cell; overlapping unit pairs) with the classic rules as the default so existing callers and tests still work. Make locked-candidate logic generic over overlapping units. Add a node budget to the full-grid search.
 - **Diagonal (Sudoku X):** classic rules plus both main diagonals must hold 1 to 9. Tint the diagonal cells; hint wording for the diagonal.
 - **Jigsaw:** nine irregular connected regions of nine cells replace the 3x3 boxes. Layout generator: start from the boxes and swap neighbouring cells between regions while both stay connected; retry the layout when the budgeted full-grid search fails. Thick borders drawn from region boundaries (not nth-child), so classic uses the same code.
 - Both reuse `SudokuScreen` (a `variant` prop); each gets its own route, screen id, catalogue entry, How to Play text, tips and Stanley answers.

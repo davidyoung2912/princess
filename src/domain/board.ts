@@ -1,6 +1,6 @@
 /**
  * The dream board and date finder (S4-05, S0-06), shared by everyone on the booking (next-level plan N4.2). Each person hearts or ticks from their own phone; a
- * heart is one row per person, so two people acting at once never overwrite each other. Group polls live on the server (`src/ai/stanleyPolls.ts`). Framework-free.
+ * heart is one row per person, so two people acting at once never overwrite each other. Group polls live on the server (`src/features/stanley/logic/stanleyPolls.ts`). Framework-free.
  */
 const clean = (v: unknown, max: number): string => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '')
 

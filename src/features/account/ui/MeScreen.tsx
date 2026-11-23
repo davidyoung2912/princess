@@ -1,0 +1,72 @@
+import { Link } from 'react-router'
+import { sailingRange } from '../../../domain/cruise'
+import { sailingById } from '../../../domain/sailings'
+import { api, signOutSaving } from '../../../app/runtime'
+import { useSyncStatus } from '../../../shared/hooks/useSyncStatus'
+import { useMine } from '../../../shared/hooks/useMine'
+import { usePersona } from '../../../shared/hooks/useDemo'
+import { t, th, type StringKey } from '../../../shared/i18n'
+import { Button } from '../../../shared/ui/Button'
+import { Card } from '../../../shared/ui/Card'
+import { TabScreens } from '../../../shared/ui/TabScreens'
+import { countdown, formatMoment } from './format'
+import { Load } from './parts'
+import { GuideStep, PaymentBadge } from './tripParts'
+
+/** Me: who you are, your trip at a glance, and everything about the account in one place. */
+export function MeScreen() {
+  const me = usePersona()
+  const trips = useMine(() => api.trips.list())
+  const notices = useMine(() => api.notifications.list())
+  const history = useMine(() => api.account.history())
+  const unread = notices.data ? notices.data.notices.filter((n) => !n.read).length : 0
+  const trip = trips.data?.upcoming[0]
+  const syncState = useSyncStatus()
+
+  return (
+    <div className="page">
+      {me && (
+        <Card>
+          <p className="me-name">{me.name}</p>
+          <p className="muted">{me.tier === 'none' ? t('me.noTier') : t('me.tier', { tier: t(`me.tier.${me.tier}` as StringKey) })}</p>
+        </Card>
+      )}
+
+      <p role="status" className="muted">{t(`sync.${syncState}` as StringKey)}</p>
+      <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>
+
+      <section aria-labelledby="me-trip-h" data-tour="me-trip">
+        <h2 id="me-trip-h">{th('me.yourTrip')}</h2>
+        <Load state={trips}>
+          {() => trip ? (
+            <Card>
+              <h3 className="card__title"><Link to={`/me/trips/${trip.number}`}>{sailingRange(sailingById(trip.sailingId)!)}</Link></h3>
+              <p><strong>{countdown(trip.daysToDeparture)}</strong> <PaymentBadge trip={trip} /></p>
+              <GuideStep trip={trip} />
+            </Card>
+          ) : <Card info><p>{t('trips.noneUpcoming')}</p></Card>}
+        </Load>
+      </section>
+
+      <Card info labelledBy="me-stats-h" tour="me-stats">
+        <h2 id="me-stats-h" className="card__title">{th('me.stats')}</h2>
+        <p>{t('me.statsBody')}</p>
+        <p><Link to="/me/stats">{t('route.stats')}</Link></p>
+      </Card>
+
+      <TabScreens tabKey="me" badges={{ '/me/notifications': unread > 0 ? <span className="tag tag--alert">{t('me.unread', { count: unread })}</span> : null }} />
+
+      <section aria-labelledby="hist-h" data-tour="me-history">
+        <h2 id="hist-h">{th('me.history')}</h2>
+        <p className="muted">{t('me.historyIntro')}</p>
+        <Load state={history}>
+          {(list) => list.length === 0 ? <p className="muted">{t('me.historyNone')}</p> : (
+            <ul className="plain-list">
+              {list.slice(0, 6).map((h) => <li key={h.id}><span>{t(`me.history.${h.what}` as StringKey)}: {h.detail} <span className="muted">· {h.by} · {formatMoment(h.at)}</span></span></li>)}
+            </ul>
+          )}
+        </Load>
+      </section>
+    </div>
+  )
+}

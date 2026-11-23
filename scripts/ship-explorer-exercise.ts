@@ -3,7 +3,7 @@
 // and are signed up for at the fitness desk (the doc says embarkation day), so they carry a price and a limited number of places.
 //
 // The doc's week maps onto day kinds as in the Entertainment content: Day 1 `embark`, Day 2 `firstSea`, Day 3 `earlyPortOdd`, Day 6 `lastPort`, Day 4 `portEven`, Day 5 `laterSea`, Day 7 `last`.
-import type { HoursRule } from '../src/domain/explorer/types.ts'
+import type { HoursRule } from '../src/features/explorer/domain/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
 
 /** Open round the clock; staff are on duty during the day. */

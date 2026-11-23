@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { t } from '../i18n'
-import { screenHits } from '../routes/screenWords'
+import { t } from '../shared/i18n'
+import { screenHits } from '../app/routes/screenWords'
 import { searchContent } from './searchIndex'
 
 describe('search covers every screen', () => {
@@ -30,8 +30,8 @@ describe('searching written answers', () => {
 
 describe('search answers for one page', () => {
   it('includes Stanley\'s per-page answers, each tied to a real screen', async () => {
-    const { pageQaEntries } = await import('../ai/stanleyLibrary')
-    const { SCREEN_BY_ID } = await import('../routes/screens')
+    const { pageQaEntries } = await import('../features/stanley/logic/stanleyLibrary')
+    const { SCREEN_BY_ID } = await import('../app/routes/screens')
     const entries = pageQaEntries()
     expect(entries.length).toBeGreaterThan(0)
     expect(entries.filter((e) => e.screens[0] && !e.screens[0].startsWith('tab.') && !SCREEN_BY_ID.has(e.screens[0])).map((e) => e.id)).toEqual([])

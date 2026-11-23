@@ -1,6 +1,6 @@
 # Teaching Stanley: adding a noun, a verb or a topic
 
-Stanley's understanding of a question (`src/ai/understand/`) is plain data plus a small scorer. It runs on the device, with no model. This is the short way to widen it. Background and design: `docs/stanley-answers-plan.md`.
+Stanley's understanding of a question (`src/features/stanley/logic/understand/`) is plain data plus a small scorer. It runs on the device, with no model. This is the short way to widen it. Background and design: `docs/stanley-answers-plan.md`.
 
 ## 1. Find what to add
 
@@ -26,7 +26,7 @@ For a long tail topic (a line of `screenSpec.ts`) a guest recognised only by who
 
 - **A screen to reach:** add one line to `screenSpec.ts` (id, nouns, plain questions, the screen). The lexicon, topic table, destinations and corpus are built from it, so it is added in one place.
 - **A topic with its own pills:** add it to `topics.ts` with its concepts, the acts that fit, the stages it matters in, and its pill destinations (`destinations.ts`). At most three pills are ever shown.
-- Give the pill words in `src/i18n/locales/enCore.ts` (`understand.pill.<destination>`, `understand.topic.<id>`): short, sentence case, verbs first, no "AI" wording, no names.
+- Give the pill words in `src/shared/i18n/locales/enCore.ts` (`understand.pill.<destination>`, `understand.topic.<id>`): short, sentence case, verbs first, no "AI" wording, no names.
 
 ## 4. Add corpus lines (`corpus/`)
 

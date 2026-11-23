@@ -1,14 +1,14 @@
 // The Explorer content of each ship (docs/explorer-harmony-plan.md): the venues of the six Explorers with their hours, the events that run at them and the menus of the
 // restaurants. One authored copy: `npm run shipexplorer:gen` writes it to server/Princess.Api/Content/ship-explorer.json (embedded, served through
-// GET /bookings/{number}/onboard/explorer/...). `src/domain/explorer/shipExplorer.test.ts` fails when the file is stale or breaks a rule.
+// GET /bookings/{number}/onboard/explorer/...). `src/features/explorer/domain/shipExplorer.test.ts` fails when the file is stale or breaks a rule.
 //
 // So far this carries Dining (rooms from the directory the app already has, the bars, events and menus), Spa (spa, salon, thermal suite, sanctuary, their treatments and events),
 // Entertainment (show rooms, music lounges, pool decks, Princess Live!, the casino and their events) and Exercise (gym, studios, courts, tracks, pools and their classes) and Shopping (boutiques, gallery, pop-up markets and their events) and Activities (card tables, talks, workshops, meet-ups, Camp Discovery, open decks and their events) for all three ships.
 import '../src/testing/setup.ts'
 import { DIRECTORY, type DirectoryVenue } from '../src/domain/menus.ts'
 import { VENUES as SUN_VENUES, type Venue } from '../src/domain/dining.ts'
-import type { ExplorerKind, HoursRule } from '../src/domain/explorer/types.ts'
-import type { TemplateDayKind } from '../src/domain/explorer/dayMapping.ts'
+import type { ExplorerKind, HoursRule } from '../src/features/explorer/domain/types.ts'
+import type { TemplateDayKind } from '../src/features/explorer/domain/dayMapping.ts'
 import { shipVenueBundles } from './ship-venue-data.ts'
 import { diningBars, diningEvents, diningMenus, extraDiningVenues } from './ship-explorer-dining.ts'
 import type { Flag, Mark, MenuDish } from './ship-explorer-diets.ts'

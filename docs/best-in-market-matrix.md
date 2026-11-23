@@ -43,10 +43,10 @@ Written 2026-11-08 for phase BM2 of `docs/archive/best-in-market-plan.md`. Sourc
 Section 3 of `docs/archive/best-in-market-plan.md` asked six things to be settled. Results:
 
 1. **IDN-04 and IDN-05 (relationship types and per-task permissions): a real gap.** Party (`src/domain/party.ts`), helper (`src/domain/account.ts`) and family link (`src/domain/homeLink.ts`) are three separate models. The helper permission set is only `view`, `documents`, `payments`, `profile`. There is no permission for check-in, editing a booking, seeing the folio, messaging or sharing location, and no household or shipmate type. This is BM5, and it is a design job before it is code.
-2. **TRU-07 (operational status centre): partial, and not what it looks like.** `/me/status` (`StatusScreen` in `src/ui/aboard/SupportScreens.tsx`) lists service health from the client's demo scenarios (`systemStatus(demo.scenarios, ...)`), not from a server health or incident feed. The front end must not know data is simulated, so the fix is a served status feed; the screen can then drop the scenario read. Server work, so a phase of its own.
+2. **TRU-07 (operational status centre): partial, and not what it looks like.** `/me/status` (`StatusScreen` in `src/features/aboard/ui/SupportScreens.tsx`) lists service health from the client's demo scenarios (`systemStatus(demo.scenarios, ...)`), not from a server health or incident feed. The front end must not know data is simulated, so the fix is a served status feed; the screen can then drop the scenario read. Server work, so a phase of its own.
 3. **MNG-03 (sync states): partial.** `SyncChip` knows three states: just now, updated at, offline. Pending (queued in the outbox), unavailable and not linked are not shown by it.
 4. **COM-04 (acknowledged critical delivery with fallback): not built.** `decideDelivery` in `src/domain/delivery.ts` returns `sent` for every critical message and stops. There is no acknowledged state and no fallback channel. This needs the real senders (NOT-01) before it can be tested, so it waits for the provider decision.
-5. **MOB-02 (updates never interrupt a critical task): met by design.** `src/runtime/update.ts` never reloads on its own; the guest taps the banner. The BM3 item "hold updates during pass, muster, pay" can be dropped, or reduced to hiding the banner on those screens. Draft retention across a deploy is unchecked.
+5. **MOB-02 (updates never interrupt a critical task): met by design.** `src/app/runtime/update.ts` never reloads on its own; the guest taps the banner. The BM3 item "hold updates during pass, muster, pay" can be dropped, or reduced to hiding the banner on those screens. Draft retention across a deploy is unchecked.
 6. **A11Y-07, EMB-03, GTS-14: confirmed not code.** They need research sessions and safety sign-off.
 
 New gaps found while building the matrix:
@@ -77,223 +77,223 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 
 | ID | Pri | Status | Basis | Evidence | Gap |
 |---|---|---|---|---|---|
-| DRM-01 | P0 | Built | F | `src/ui/discover/Landing.tsx`, `src/ui/discover/SailingsScreen.tsx` | Sign-in prompt timing not checked |
-| DRM-02 | P1 | Built | F | `src/ui/discover/ExploreScreen.tsx`, `src/domain/regions.ts`, `src/domain/regions.test.ts` | Filter state kept on combine unchecked |
+| DRM-01 | P0 | Built | F | `src/features/discover/ui/Landing.tsx`, `src/features/discover/ui/SailingsScreen.tsx` | Sign-in prompt timing not checked |
+| DRM-02 | P1 | Built | F | `src/features/discover/ui/ExploreScreen.tsx`, `src/domain/regions.ts`, `src/domain/regions.test.ts` | Filter state kept on combine unchecked |
 | DRM-03 | P0 | Built | F | `src/domain/sailings.ts`, `src/domain/sailingsServed.test.ts`, `src/domain/catalogueParity.test.ts` | Three ships and 2027 sailings: catalogue is served by the server |
-| DRM-04 | P1 | Built | F | `src/domain/priceCalendar.ts`, `src/domain/priceCalendar.test.ts`, `src/ui/discover/PriceCalendar.tsx` | Quote time label unchecked |
-| DRM-05 | P1 | Built | F | `src/ui/discover/DecideScreen.tsx`, `src/ui/ahead/QuizScreen.tsx`, `src/domain/dream.ts` | One-question-at-a-time unchecked |
-| DRM-06 | P1 | Built | F | `src/ui/discover/TrialDayScreen.tsx`, `src/domain/discoverDelights.ts` | Ship-specific caveats unchecked |
+| DRM-04 | P1 | Built | F | `src/domain/priceCalendar.ts`, `src/domain/priceCalendar.test.ts`, `src/features/discover/ui/PriceCalendar.tsx` | Quote time label unchecked |
+| DRM-05 | P1 | Built | F | `src/features/discover/ui/DecideScreen.tsx`, `src/features/ahead/ui/QuizScreen.tsx`, `src/domain/dream.ts` | One-question-at-a-time unchecked |
+| DRM-06 | P1 | Built | F | `src/features/discover/ui/TrialDayScreen.tsx`, `src/domain/discoverDelights.ts` | Ship-specific caveats unchecked |
 | DRM-07 | P2 | Partial | F | `src/domain/catalogueBrowse.ts`, `src/domain/catalogueBrowse.test.ts` | BM34, BM54: the sailings screen filters by holiday, summer break, a big trip (14+ nights), spring break and a short getaway (5 nights or fewer), matched on date and length only and labelled so; no content-team occasion tags (anniversary, reunion), no optional-service matching; the choice is not saved or shared |
-| DRM-08 | P1 | Built | F | `src/domain/family.ts`, `src/ui/discover/ShipScreen.tsx` | Child-private rule not read |
-| DRM-09 | P1 | Partial | F | `src/domain/fares.ts`, `src/ui/aboard/Parties.tsx` | BM30: decide screen lists each room type for one guest with the solo supplement on its own line; no solo-only inventory or hosted social events exist, and the page says so; no roommate matching |
-| DRM-10 | P0 | Built | F | `src/domain/accessReference.ts`, `src/domain/accessReference.test.ts`, `src/ui/AccessAreaNote.tsx` | One filter across ship, cabin, port and excursion; unknown shown as unknown (`src/domain/journeyAccess.ts`) |
-| DRM-11 | P0 | Built | F | `src/domain/tripCost.ts`, `src/domain/tripCost.test.ts`, `src/ui/discover/TripCostScreen.tsx` | None found |
-| DRM-12 | P1 | Partial | F | `src/domain/route.ts`, `src/ui/discover/SailingScreen.tsx` | Interactive map not checked; text itinerary exists |
-| DRM-13 | P1 | Built | F | `src/domain/shipCatalogue.ts`, `src/domain/shipCatalogue.test.ts`, `src/ui/discover/CompareShipsScreen.tsx` | Effective dates unchecked |
-| DRM-14 | P1 | Built | F | `src/domain/board.ts`, `src/ui/plan/PlanningScreens.tsx` | BM53: the booker can close voting (no more votes, result kept) and copy the result as text without voter names. The poll holds no fare or payment details |
-| DRM-15 | P1 | Built | F | `src/ui/party/ShareScreens.tsx`, `src/domain/partyShare.ts` | Expiry and read-only rule unchecked |
-| DRM-16 | P2 | Partial | F | `src/domain/fareAlert.ts`, `src/ui/plan/FareAlertCard.tsx` | BM53: an alert tied to the booked sailing and room type in US dollars, with a price the guest sets; pause, resume and delete in one tap. Watches the simulated fare history of the guest's own booking only; nothing is sent when it is met |
-| DSC-01 | P0 | Built | F | `src/ui/discover/CompareSailingsScreen.tsx`, `src/domain/offerCompare.ts`, `src/domain/offerCompare.test.ts` | "At least four" not asserted |
+| DRM-08 | P1 | Built | F | `src/domain/family.ts`, `src/features/discover/ui/ShipScreen.tsx` | Child-private rule not read |
+| DRM-09 | P1 | Partial | F | `src/domain/fares.ts`, `src/features/aboard/ui/Parties.tsx` | BM30: decide screen lists each room type for one guest with the solo supplement on its own line; no solo-only inventory or hosted social events exist, and the page says so; no roommate matching |
+| DRM-10 | P0 | Built | F | `src/domain/accessReference.ts`, `src/domain/accessReference.test.ts`, `src/shared/ui/AccessAreaNote.tsx` | One filter across ship, cabin, port and excursion; unknown shown as unknown (`src/domain/journeyAccess.ts`) |
+| DRM-11 | P0 | Built | F | `src/domain/tripCost.ts`, `src/domain/tripCost.test.ts`, `src/features/discover/ui/TripCostScreen.tsx` | None found |
+| DRM-12 | P1 | Partial | F | `src/domain/route.ts`, `src/features/discover/ui/SailingScreen.tsx` | Interactive map not checked; text itinerary exists |
+| DRM-13 | P1 | Built | F | `src/domain/shipCatalogue.ts`, `src/domain/shipCatalogue.test.ts`, `src/features/discover/ui/CompareShipsScreen.tsx` | Effective dates unchecked |
+| DRM-14 | P1 | Built | F | `src/domain/board.ts`, `src/features/plan/ui/PlanningScreens.tsx` | BM53: the booker can close voting (no more votes, result kept) and copy the result as text without voter names. The poll holds no fare or payment details |
+| DRM-15 | P1 | Built | F | `src/features/party/ui/ShareScreens.tsx`, `src/domain/partyShare.ts` | Expiry and read-only rule unchecked |
+| DRM-16 | P2 | Partial | F | `src/domain/fareAlert.ts`, `src/features/plan/ui/FareAlertCard.tsx` | BM53: an alert tied to the booked sailing and room type in US dollars, with a price the guest sets; pause, resume and delete in one tap. Watches the simulated fare history of the guest's own booking only; nothing is sent when it is met |
+| DSC-01 | P0 | Built | F | `src/features/discover/ui/CompareSailingsScreen.tsx`, `src/domain/offerCompare.ts`, `src/domain/offerCompare.test.ts` | "At least four" not asserted |
 | DSC-02 | P0 | Built | F | `src/domain/portTier.ts`, `src/domain/portTier.test.ts`, `src/domain/nightsRules.ts` | None found |
-| DSC-03 | P1 | Built | F | `src/domain/tender.ts`, `src/ui/discover/TenderOutlook.tsx`, `src/domain/portPilot.ts` | None found |
-| DSC-04 | P0 | Built | F | `src/ui/discover/CabinChooserScreen.tsx`, `src/domain/cabinScore.ts`, `src/domain/cabinScore.test.ts` | None found |
-| DSC-05 | P1 | Partial | F | `src/domain/deckPlan.ts`, `src/ui/onboard/DeckPlan.tsx`, `src/ui/book/RoomStep.tsx` | BM26: cabin map with keyboard buttons and inventory recheck on choose; no server hold step, so the server's cabinTaken at booking is the final check |
+| DSC-03 | P1 | Built | F | `src/domain/tender.ts`, `src/features/discover/ui/TenderOutlook.tsx`, `src/domain/portPilot.ts` | None found |
+| DSC-04 | P0 | Built | F | `src/features/discover/ui/CabinChooserScreen.tsx`, `src/domain/cabinScore.ts`, `src/domain/cabinScore.test.ts` | None found |
+| DSC-05 | P1 | Partial | F | `src/domain/deckPlan.ts`, `src/features/onboard/ui/DeckPlan.tsx`, `src/features/book/ui/RoomStep.tsx` | BM26: cabin map with keyboard buttons and inventory recheck on choose; no server hold step, so the server's cabinTaken at booking is the final check |
 | DSC-06 | P1 | Partial | F | `src/domain/cabinScore.ts`, `src/domain/shipRooms.ts` | BM25: indicators tagged typical or unknown; none confirmed (no source); no guest reports collected |
-| DSC-07 | P1 | Partial | F | `src/ui/discover/CabinPhotos.tsx` | Photos missing (S1-06 in `docs/archive/gap-analysis-plan.md`) |
-| DSC-08 | P0 | Built | F | `src/domain/pricing.ts`, `src/domain/pricingServed.test.ts`, `src/ui/book/FareStep.tsx` | None found |
+| DSC-07 | P1 | Partial | F | `src/features/discover/ui/CabinPhotos.tsx` | Photos missing (S1-06 in `docs/archive/gap-analysis-plan.md`) |
+| DSC-08 | P0 | Built | F | `src/domain/pricing.ts`, `src/domain/pricingServed.test.ts`, `src/features/book/ui/FareStep.tsx` | None found |
 | DSC-09 | P1 | Built | F | `src/domain/packages.ts`, `src/domain/spendForecast.ts`, `src/domain/spendForecast.test.ts` | None found |
 | DSC-10 | P2 | Built | F | `src/domain/cabinScore.ts`, `src/domain/shortlist.ts` | Explainability of ship/sailing fit score unchecked |
-| DSC-11 | P0 | Built | F | `src/domain/accessReference.ts`, `src/ui/plan/AssistanceScreen.tsx` | Whole-journey comparison table and checklist on the difficulty screen (`src/ui/plan/JourneyAccess.tsx`) |
+| DSC-11 | P0 | Built | F | `src/domain/accessReference.ts`, `src/features/plan/ui/AssistanceScreen.tsx` | Whole-journey comparison table and checklist on the difficulty screen (`src/features/plan/ui/JourneyAccess.tsx`) |
 | DSC-12 | P1 | Partial | F | `src/domain/cabins.ts` | BM26: free staterooms close together shown for a party; connecting doors unknown; booking holds one stateroom only |
-| DSC-13 | P2 | Partial | R | `src/domain/discoverDelights.ts`, `src/ui/delights/DiscoverDelights.tsx` | BM25: walk times by deck or lift on each cabin; no stairs, closures or verified step-free route data |
-| DSC-14 | P1 | Built | F | `src/ui/discover/CompareShipsScreen.tsx` | Room-control capability is a flag only |
+| DSC-13 | P2 | Partial | R | `src/domain/discoverDelights.ts`, `src/features/delights/ui/DiscoverDelights.tsx` | BM25: walk times by deck or lift on each cabin; no stairs, closures or verified step-free route data |
+| DSC-14 | P1 | Built | F | `src/features/discover/ui/CompareShipsScreen.tsx` | Room-control capability is a flag only |
 | DSC-15 | P1 | Not built | F | none | No guest reviews by ship, sailing, cabin or port; needs a source |
-| DSC-16 | P1 | Built | F | `src/ui/discover/SavedScreen.tsx`, `src/domain/shortlist.ts`, `src/domain/shortlist.test.ts` | Server-held, so phone and desktop agree |
-| BOK-01 | P0 | Built | F | `src/ui/book/ResumeScreen.tsx`, `src/domain/booking.ts`, `src/domain/booking.test.ts` | Close mid-payment and resume not run end to end (a-tier-matrix row 2) |
-| BOK-02 | P0 | Built | F | `src/ui/book/GuestsStep.tsx`, `src/domain/signup.ts` | None found |
+| DSC-16 | P1 | Built | F | `src/features/discover/ui/SavedScreen.tsx`, `src/domain/shortlist.ts`, `src/domain/shortlist.test.ts` | Server-held, so phone and desktop agree |
+| BOK-01 | P0 | Built | F | `src/features/book/ui/ResumeScreen.tsx`, `src/domain/booking.ts`, `src/domain/booking.test.ts` | Close mid-payment and resume not run end to end (a-tier-matrix row 2) |
+| BOK-02 | P0 | Built | F | `src/features/book/ui/GuestsStep.tsx`, `src/domain/signup.ts` | None found |
 | BOK-03 | P1 | Out of reach | F | none | Camera passport scan needs a device (`docs/archive/gap-analysis-plan.md`) |
-| BOK-04 | P0 | Built | F | `src/ui/plan/` hold screen `/plan/hold`, `src/domain/booking.ts` | Server-issued hold id and expiry: server side not read |
-| BOK-05 | P0 | Built | R | `src/ui/book/FareStep.tsx`, `src/domain/fares.ts` | BM54: checkout stores the fare and terms versions accepted; the quote carries both versions and `book` sends them back, so a change since the quote is refused as `termsChanged` and nothing is charged until the guest reviews the new rules (`BookingConflict`). C# not compiled. |
-| BOK-06 | P0 | Built | F | `src/ui/book/ReviewStep.tsx`, `src/domain/pricing.ts` | None found |
-| BOK-07 | P0 | Built | F | `src/ui/book/PayStep.tsx`, `src/domain/pricingServed.test.ts` | Revalidation is server side; not read |
-| BOK-08 | P0 | Simulated | F | `src/ui/book/PayPanel.tsx`, `src/ui/ConfirmCharge.tsx` | Card charging is a backend mock; raw numbers must not be stored locally (see SEC-02) |
-| BOK-09 | P0 | Built | F | `src/data/outbox.ts`, `src/ui/ConfirmCharge.tsx`, `src/domain/moneyShield.test.ts` | Server idempotency covered by C# tests, not run |
-| BOK-10 | P1 | Partial | F | `src/domain/contributions.ts`, `src/ui/plan/ContributionsCard.tsx`, `src/domain/ledgerSplit.ts` | BM53: the booker splits a total among the families on the booking with an amount and deadline each; a payer sees only their own row; the booker sees paid, pending and failed. Statuses are set by the booker; no invitation or payment is sent and no card details exist |
-| BOK-11 | P1 | Built | F | `src/ui/book/BalanceScreen.tsx`, `src/ui/book/InstalmentPlanner.tsx` | None found |
-| BOK-12 | P1 | Built | F | `src/domain/creditLines.ts`, `src/ui/book/PerksPanel.tsx` | BM53: the credit shows its source, the amount held, the amount used and what is left, and says why it is not used (not chosen, or the card minimum). Future cruise credit is the only source |
-| BOK-13 | P1 | Built | F | `src/ui/book/DiningStep.tsx`, `src/ui/plan/PackagesScreen.tsx`, `src/ui/ahead/UpgradesScreen.tsx` | Insurance and transfers wording unchecked |
-| BOK-14 | P0 | Built | F | `src/ui/book/ReviewStep.tsx` | None found |
-| BOK-15 | P0 | Built | F | `src/ui/plan/` contract screen `/plan/contract`, `src/ui/book/Policy.tsx` | Versioned acceptance record on server not read |
-| BOK-16 | P0 | Built | F | `src/ui/book/ConfirmedScreen.tsx` | Confirmation only after server confirms: not read |
-| MNG-01 | P0 | Partial | F | `src/ui/account/TripsScreen.tsx`, `src/domain/account.ts` | Advisor and external channels: `/home/advisors` informs; linking external bookings unchecked |
+| BOK-04 | P0 | Built | F | `src/features/plan/ui/` hold screen `/plan/hold`, `src/domain/booking.ts` | Server-issued hold id and expiry: server side not read |
+| BOK-05 | P0 | Built | R | `src/features/book/ui/FareStep.tsx`, `src/domain/fares.ts` | BM54: checkout stores the fare and terms versions accepted; the quote carries both versions and `book` sends them back, so a change since the quote is refused as `termsChanged` and nothing is charged until the guest reviews the new rules (`BookingConflict`). C# not compiled. |
+| BOK-06 | P0 | Built | F | `src/features/book/ui/ReviewStep.tsx`, `src/domain/pricing.ts` | None found |
+| BOK-07 | P0 | Built | F | `src/features/book/ui/PayStep.tsx`, `src/domain/pricingServed.test.ts` | Revalidation is server side; not read |
+| BOK-08 | P0 | Simulated | F | `src/features/book/ui/PayPanel.tsx`, `src/shared/ui/ConfirmCharge.tsx` | Card charging is a backend mock; raw numbers must not be stored locally (see SEC-02) |
+| BOK-09 | P0 | Built | F | `src/shared/data/outbox.ts`, `src/shared/ui/ConfirmCharge.tsx`, `src/domain/moneyShield.test.ts` | Server idempotency covered by C# tests, not run |
+| BOK-10 | P1 | Partial | F | `src/domain/contributions.ts`, `src/features/plan/ui/ContributionsCard.tsx`, `src/domain/ledgerSplit.ts` | BM53: the booker splits a total among the families on the booking with an amount and deadline each; a payer sees only their own row; the booker sees paid, pending and failed. Statuses are set by the booker; no invitation or payment is sent and no card details exist |
+| BOK-11 | P1 | Built | F | `src/features/book/ui/BalanceScreen.tsx`, `src/features/book/ui/InstalmentPlanner.tsx` | None found |
+| BOK-12 | P1 | Built | F | `src/domain/creditLines.ts`, `src/features/book/ui/PerksPanel.tsx` | BM53: the credit shows its source, the amount held, the amount used and what is left, and says why it is not used (not chosen, or the card minimum). Future cruise credit is the only source |
+| BOK-13 | P1 | Built | F | `src/features/book/ui/DiningStep.tsx`, `src/features/plan/ui/PackagesScreen.tsx`, `src/features/ahead/ui/UpgradesScreen.tsx` | Insurance and transfers wording unchecked |
+| BOK-14 | P0 | Built | F | `src/features/book/ui/ReviewStep.tsx` | None found |
+| BOK-15 | P0 | Built | F | `src/features/plan/ui/` contract screen `/plan/contract`, `src/features/book/ui/Policy.tsx` | Versioned acceptance record on server not read |
+| BOK-16 | P0 | Built | F | `src/features/book/ui/ConfirmedScreen.tsx` | Confirmation only after server confirms: not read |
+| MNG-01 | P0 | Partial | F | `src/features/account/ui/TripsScreen.tsx`, `src/domain/account.ts` | Advisor and external channels: `/home/advisors` informs; linking external bookings unchecked |
 | MNG-02 | P0 | Built | F | `src/domain/readiness.ts`, `src/domain/readinessBoard.ts`, `src/domain/readinessBoard.test.ts` | None found |
-| MNG-03 | P0 | Built | R | `src/ui/SyncChip.tsx`, `src/domain/syncAge.ts`, `src/domain/syncAge.test.ts` | `SyncChip` shows current, stale, pending, unavailable, not linked (BM19); no screen passes `lookup` yet |
-| MNG-04 | P0 | Built | F | `src/domain/papersCheck.ts`, `src/domain/papersCheck.test.ts`, `src/ui/account/PapersCheck.tsx` | None found |
-| MNG-05 | P0 | Partial | R | `src/ui/account/DocumentsScreen.tsx`, `src/domain/documents.ts` | BM41: push previews of payment, travel and schedule-change alerts are redacted (`PushRules.Redact`); documents access-scoped. Still open: no encryption-at-rest or export/delete evidence read |
-| MNG-06 | P1 | Built | F | `src/ui/plan/PlanScreen.tsx`, `src/domain/readinessBoard.ts` | Private documents hidden: not read |
-| MNG-07 | P1 | Built | R | `src/ui/account/HelperScreen.tsx`, `src/domain/account.ts` | Seven permissions now (BM6 to BM12). See IDN-05 |
-| MNG-08 | P1 | Built | F | `src/domain/packing.ts`, `src/ui/plan/PackingScreen.tsx` | None found |
-| MNG-09 | P1 | Partial | F | `src/ui/plan/TravelItems.tsx`, `src/domain/travel.ts` | BM53: the saved plan lists each item with provider, contact, timing and what to do if it goes wrong; outside companies are marked "not confirmed by Princess". No guest-entered booking reference is held (the page says to keep your own) |
-| MNG-10 | P0 | Built | F | `src/ui/book/BalanceScreen.tsx`, `src/ui/account/PaymentsScreen.tsx` | None found |
-| MNG-11 | P0 | Partial | R | `src/ui/plan/AssistanceScreen.tsx`, `src/domain/assistance.ts` | BM45: team, ETA, reason when none, escalate; owner is a team and nobody is paged |
+| MNG-03 | P0 | Built | R | `src/shared/ui/SyncChip.tsx`, `src/domain/syncAge.ts`, `src/domain/syncAge.test.ts` | `SyncChip` shows current, stale, pending, unavailable, not linked (BM19); no screen passes `lookup` yet |
+| MNG-04 | P0 | Built | F | `src/domain/papersCheck.ts`, `src/domain/papersCheck.test.ts`, `src/features/account/ui/PapersCheck.tsx` | None found |
+| MNG-05 | P0 | Partial | R | `src/features/account/ui/DocumentsScreen.tsx`, `src/domain/documents.ts` | BM41: push previews of payment, travel and schedule-change alerts are redacted (`PushRules.Redact`); documents access-scoped. Still open: no encryption-at-rest or export/delete evidence read |
+| MNG-06 | P1 | Built | F | `src/features/plan/ui/PlanScreen.tsx`, `src/domain/readinessBoard.ts` | Private documents hidden: not read |
+| MNG-07 | P1 | Built | R | `src/features/account/ui/HelperScreen.tsx`, `src/domain/account.ts` | Seven permissions now (BM6 to BM12). See IDN-05 |
+| MNG-08 | P1 | Built | F | `src/domain/packing.ts`, `src/features/plan/ui/PackingScreen.tsx` | None found |
+| MNG-09 | P1 | Partial | F | `src/features/plan/ui/TravelItems.tsx`, `src/domain/travel.ts` | BM53: the saved plan lists each item with provider, contact, timing and what to do if it goes wrong; outside companies are marked "not confirmed by Princess". No guest-entered booking reference is held (the page says to keep your own) |
+| MNG-10 | P0 | Built | F | `src/features/book/ui/BalanceScreen.tsx`, `src/features/account/ui/PaymentsScreen.tsx` | None found |
+| MNG-11 | P0 | Partial | R | `src/features/plan/ui/AssistanceScreen.tsx`, `src/domain/assistance.ts` | BM45: team, ETA, reason when none, escalate; owner is a team and nobody is paged |
 | MNG-12 | P1 | Built | F | `src/domain/medicalCard.ts`, `src/domain/care.test.ts`, `src/domain/medicalCard.ts` | Audience-specific sharing unchecked |
-| MNG-13 | P1 | Built | F | `src/ui/book/changes.ts`, `src/domain/planChange.ts`, `src/domain/planChange.test.ts` | None found |
-| MNG-14 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | Category filters unchecked |
-| MNG-15 | P1 | Partial | F | `src/domain/countdowns.ts`, `src/domain/deadlineLog.ts`, `src/ui/home/DeadlineNotes.tsx` | BM54: a fourth kind, the next special-assistance cut-off not yet asked for, with its source ("the notice each request needs"). Excursions and documents have no cut-off date in the data, so they have no countdown |
-| MNG-16 | P2 | Partial | F | `src/ui/account/ProfileScreen.tsx`, `src/ui/DisplaySettings.tsx` | BM31, BM54: the profile lists where each saved preference is used; food and access needs can be kept out of later bookings (`Profile.keepOut`, `dbo.Profiles.KeepOut`, the booking prefill skips them). Bedding and requests are not carried into a booking, so they have no switch; no cabin-location or message preferences. C# and SQL not run |
-| MNG-17 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx` | Status data is simulated by the server |
-| MNG-18 | P1 | Built | F | `src/ui/account/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Large-print and low-ink variants unchecked |
-| PRE-01 | P0 | Built | R | `src/ui/plan/WeekPlanner.tsx`, `src/ui/plan/PlanScreen.tsx`, `src/domain/plan.ts` | BM54: the plan shows accepted planned items (week planner and assistant) under "Planned, not booked" with a badge, apart from confirmed tours and dinners; one already booked at the same time is left out (`plannedForDay`) |
+| MNG-13 | P1 | Built | F | `src/features/book/ui/changes.ts`, `src/domain/planChange.ts`, `src/domain/planChange.test.ts` | None found |
+| MNG-14 | P1 | Built | F | `src/features/account/ui/NotificationsScreen.tsx`, `src/domain/notifications.ts` | Category filters unchecked |
+| MNG-15 | P1 | Partial | F | `src/domain/countdowns.ts`, `src/domain/deadlineLog.ts`, `src/features/home/ui/DeadlineNotes.tsx` | BM54: a fourth kind, the next special-assistance cut-off not yet asked for, with its source ("the notice each request needs"). Excursions and documents have no cut-off date in the data, so they have no countdown |
+| MNG-16 | P2 | Partial | F | `src/features/account/ui/ProfileScreen.tsx`, `src/shared/ui/DisplaySettings.tsx` | BM31, BM54: the profile lists where each saved preference is used; food and access needs can be kept out of later bookings (`Profile.keepOut`, `dbo.Profiles.KeepOut`, the booking prefill skips them). Bedding and requests are not carried into a booking, so they have no switch; no cabin-location or message preferences. C# and SQL not run |
+| MNG-17 | P1 | Built | F | `src/features/finish/ui/LoyaltyScreen.tsx` | Status data is simulated by the server |
+| MNG-18 | P1 | Built | F | `src/features/account/ui/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Large-print and low-ink variants unchecked |
+| PRE-01 | P0 | Built | R | `src/features/plan/ui/WeekPlanner.tsx`, `src/features/plan/ui/PlanScreen.tsx`, `src/domain/plan.ts` | BM54: the plan shows accepted planned items (week planner and assistant) under "Planned, not booked" with a badge, apart from confirmed tours and dinners; one already booked at the same time is left out (`plannedForDay`) |
 | PRE-02 | P0 | Built | F | `src/domain/autopilot.ts`, `src/domain/autopilot.test.ts`, `src/domain/planChange.ts` | None found |
-| PRE-03 | P0 | Built | F | `src/ui/plan/DiningScreen.tsx`, `src/domain/prebook.test.ts` | None found |
-| PRE-04 | P0 | Built | F | `src/domain/prebook.test.ts`, `src/ui/book/changes.ts` | Original kept until new confirmed: server side not read (see TRU-05) |
-| PRE-05 | P1 | Simulated | F | `src/ui/plan/SlotWatch.tsx`, `src/ui/onboard/Waits.tsx` | Position from source feed is simulated |
-| PRE-06 | P1 | Simulated | F | `src/ui/onboard/Waits.tsx`, `src/domain/queue.ts` | Queues are simulated; only integrated types may be shown |
-| PRE-07 | P1 | Built | F | `src/ui/plan/ExcursionsScreen.tsx`, `src/domain/excursionFit.ts`, `server/Princess.Api/Domain/ExcursionRules.cs` | BM52: each tour shows its exertion level, and a step-free tour whose access depends on a boat, van or tender landing carries `confirmAccess` ("confirm with the operator before you book"), also in the fit finder. The flag is authored for four tours; the server is not compiled |
+| PRE-03 | P0 | Built | F | `src/features/plan/ui/DiningScreen.tsx`, `src/domain/prebook.test.ts` | None found |
+| PRE-04 | P0 | Built | F | `src/domain/prebook.test.ts`, `src/features/book/ui/changes.ts` | Original kept until new confirmed: server side not read (see TRU-05) |
+| PRE-05 | P1 | Simulated | F | `src/features/plan/ui/SlotWatch.tsx`, `src/features/onboard/ui/Waits.tsx` | Position from source feed is simulated |
+| PRE-06 | P1 | Simulated | F | `src/features/onboard/ui/Waits.tsx`, `src/domain/queue.ts` | Queues are simulated; only integrated types may be shown |
+| PRE-07 | P1 | Built | F | `src/features/plan/ui/ExcursionsScreen.tsx`, `src/domain/excursionFit.ts`, `server/Princess.Api/Domain/ExcursionRules.cs` | BM52: each tour shows its exertion level, and a step-free tour whose access depends on a boat, van or tender landing carries `confirmAccess` ("confirm with the operator before you book"), also in the fit finder. The flag is authored for four tours; the server is not compiled |
 | PRE-08 | P0 | Built | F | `src/domain/excursionFit.ts`, `src/domain/excursionFit.test.ts` | None found |
-| PRE-09 | P1 | Built | F | `src/ui/onboard/RouteFinder.tsx`, `src/domain/portDelights.ts`, `src/domain/landPath.ts` | None found |
-| PRE-10 | P1 | Built | F | `src/ui/onboard/Tickets.tsx`, `src/domain/tickets.ts`, `src/domain/tickets.test.ts` | BM52: each ticket lists the guests' wheelchair, listening or large-print requests with their status (received, confirmed, passed on). Requests belong to the booking, not to one show, and are made on the assistance screen; no per-show request |
-| PRE-11 | P1 | Built | F | `src/ui/aboard/OrderExtras.tsx`, `src/domain/shopExtras.ts` | Spa booking: `/ship/spa` |
-| PRE-12 | P1 | Built | F | `src/ui/ahead/ClubsScreen.tsx`, `src/domain/ahead.ts` | BM52: the confirmation is worded as parent or guardian consent and shown as a state; who may sign the child out (named people, or the teen alone only if allowed, never under 13) is listed; only the child's booker can register (server `Manages`) and a child's own account sees a guardian-only note |
-| PRE-13 | P1 | Built | F | `src/ui/plan/GroupBoard.tsx`, `src/domain/groupBoard.test.ts` | None found |
-| PRE-14 | P1 | Built | F | `src/domain/spendForecast.ts`, `src/domain/spendForecast.test.ts`, `src/ui/plan/SpendForecastCard.tsx` | None found |
-| PRE-15 | P1 | Built | F | `src/domain/entitlements.ts`, `src/domain/entitlements.test.ts`, `src/ui/plan/PackagesScreen.tsx`, `server/Princess.Api/Services/PlanService.cs` | BM52: `PackagesView.window` (from departure to the last day, status notStarted, active or expired); the screen states the window and, once expired, keeps the list under an "expired" heading as a record. The window is the whole sailing for every item; no per-item expiry |
-| PRE-16 | P0 | Built | F | `src/domain/medicalCard.ts`, `src/ui/plan/MedicalScreen.tsx`, `src/ui/aboard/SafetyScreens.tsx` | Venue acknowledgement is simulated |
-| PRE-17 | P1 | Partial | F | `src/ui/aboard/GroupTable.tsx`, `src/domain/services.ts` | BM52: the table shows one shared time and the seats by cabin, and says when it is split across cabins. Friends are a name and cabin only, so there are no friend replies; no search for a shared time across linked bookings |
-| PRE-18 | P0 | Partial | R | `src/ui/book/Policy.tsx`, `src/domain/policy.ts` | BM42: refund timing now labelled an estimate. Still open: no provider-confirmed state |
-| GTS-01 | P0 | Built | R | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/ui/checkin/steps.tsx` | BM54: each receipt line is draft, submitted (saved with us) or confirmed (saved and the check-in finished), from the server (`ReceiptItemDto.State`) with a client fallback; "confirmed" means accepted into the finished check-in, not verified by the terminal. C# not compiled. |
-| GTS-02 | P0 | Built | F | `src/ui/checkin/` receipt route `/home/check-in/receipt`, `src/domain/checkin.ts` | None found |
-| GTS-03 | P0 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/hooks/useSavedCopy.ts`, `src/gates/offlineDay.test.ts` | Printable pass and dead-phone card unchecked |
-| GTS-04 | P0 | Built | F | `src/ui/boarding/EmbarkPlanScreen.tsx`, `src/domain/embark.ts`, `src/domain/embark.test.ts` | None found |
-| GTS-05 | P0 | Built | F | `src/ui/boarding/EmbarkScreen.tsx`, `src/domain/boarding.ts` | None found |
-| GTS-06 | P1 | Built | F | `src/domain/journey.ts`, `src/domain/journey.test.ts`, `src/ui/plan/JourneyScreen.tsx` | Location only on request: unchecked |
-| GTS-07 | P1 | Simulated | F | `src/feeds/flight.ts`, `src/domain/delay.ts`, `src/domain/delay.test.ts` | Flight feed is a mock |
-| GTS-08 | P0 | Built | F | `src/ui/home/DelayedScreen.tsx`, `src/domain/delay.ts` | "One tap" not asserted |
-| GTS-09 | P1 | Partial | F | `src/domain/deckGraph.ts`, `src/ui/boarding/CompanionScreen.tsx` | BM28 checked: no terminal map or route data exists in the app or server; needs a source |
-| GTS-10 | P1 | Partial | F | `src/domain/arrivalSignal.ts`, `src/ui/plan/ArrivalSignals.tsx`, `src/ui/home/MeetingPointScreen.tsx` | BM53: one-time departed, arrived and at-meeting-point marks, sendable only before embarkation and no longer shown after it. Kept on the guest's own account: not yet delivered to other party members |
-| GTS-11 | P1 | Built | F | `src/ui/finish/` luggage route `/home/luggage`, `src/domain/embark.ts` | None found |
-| GTS-12 | P0 | Built | F | `src/ui/home/` clearance route `/home/clearance`, `src/domain/papersCheck.ts` | None found |
+| PRE-09 | P1 | Built | F | `src/features/onboard/ui/RouteFinder.tsx`, `src/domain/portDelights.ts`, `src/domain/landPath.ts` | None found |
+| PRE-10 | P1 | Built | F | `src/features/onboard/ui/Tickets.tsx`, `src/domain/tickets.ts`, `src/domain/tickets.test.ts` | BM52: each ticket lists the guests' wheelchair, listening or large-print requests with their status (received, confirmed, passed on). Requests belong to the booking, not to one show, and are made on the assistance screen; no per-show request |
+| PRE-11 | P1 | Built | F | `src/features/aboard/ui/OrderExtras.tsx`, `src/domain/shopExtras.ts` | Spa booking: `/ship/spa` |
+| PRE-12 | P1 | Built | F | `src/features/ahead/ui/ClubsScreen.tsx`, `src/domain/ahead.ts` | BM52: the confirmation is worded as parent or guardian consent and shown as a state; who may sign the child out (named people, or the teen alone only if allowed, never under 13) is listed; only the child's booker can register (server `Manages`) and a child's own account sees a guardian-only note |
+| PRE-13 | P1 | Built | F | `src/features/plan/ui/GroupBoard.tsx`, `src/domain/groupBoard.test.ts` | None found |
+| PRE-14 | P1 | Built | F | `src/domain/spendForecast.ts`, `src/domain/spendForecast.test.ts`, `src/features/plan/ui/SpendForecastCard.tsx` | None found |
+| PRE-15 | P1 | Built | F | `src/domain/entitlements.ts`, `src/domain/entitlements.test.ts`, `src/features/plan/ui/PackagesScreen.tsx`, `server/Princess.Api/Services/PlanService.cs` | BM52: `PackagesView.window` (from departure to the last day, status notStarted, active or expired); the screen states the window and, once expired, keeps the list under an "expired" heading as a record. The window is the whole sailing for every item; no per-item expiry |
+| PRE-16 | P0 | Built | F | `src/domain/medicalCard.ts`, `src/features/plan/ui/MedicalScreen.tsx`, `src/features/aboard/ui/SafetyScreens.tsx` | Venue acknowledgement is simulated |
+| PRE-17 | P1 | Partial | F | `src/features/aboard/ui/GroupTable.tsx`, `src/domain/services.ts` | BM52: the table shows one shared time and the seats by cabin, and says when it is split across cabins. Friends are a name and cabin only, so there are no friend replies; no search for a shared time across linked bookings |
+| PRE-18 | P0 | Partial | R | `src/features/book/ui/Policy.tsx`, `src/domain/policy.ts` | BM42: refund timing now labelled an estimate. Still open: no provider-confirmed state |
+| GTS-01 | P0 | Built | R | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/features/checkin/ui/steps.tsx` | BM54: each receipt line is draft, submitted (saved with us) or confirmed (saved and the check-in finished), from the server (`ReceiptItemDto.State`) with a client fallback; "confirmed" means accepted into the finished check-in, not verified by the terminal. C# not compiled. |
+| GTS-02 | P0 | Built | F | `src/features/checkin/ui/` receipt route `/home/check-in/receipt`, `src/domain/checkin.ts` | None found |
+| GTS-03 | P0 | Built | F | `src/features/boarding/ui/PassScreen.tsx`, `src/shared/hooks/useSavedCopy.ts`, `src/gates/offlineDay.test.ts` | Printable pass and dead-phone card unchecked |
+| GTS-04 | P0 | Built | F | `src/features/boarding/ui/EmbarkPlanScreen.tsx`, `src/domain/embark.ts`, `src/domain/embark.test.ts` | None found |
+| GTS-05 | P0 | Built | F | `src/features/boarding/ui/EmbarkScreen.tsx`, `src/domain/boarding.ts` | None found |
+| GTS-06 | P1 | Built | F | `src/domain/journey.ts`, `src/domain/journey.test.ts`, `src/features/plan/ui/JourneyScreen.tsx` | Location only on request: unchecked |
+| GTS-07 | P1 | Simulated | F | `src/shared/feeds/flight.ts`, `src/domain/delay.ts`, `src/domain/delay.test.ts` | Flight feed is a mock |
+| GTS-08 | P0 | Built | F | `src/features/home/ui/DelayedScreen.tsx`, `src/domain/delay.ts` | "One tap" not asserted |
+| GTS-09 | P1 | Partial | F | `src/domain/deckGraph.ts`, `src/features/boarding/ui/CompanionScreen.tsx` | BM28 checked: no terminal map or route data exists in the app or server; needs a source |
+| GTS-10 | P1 | Partial | F | `src/domain/arrivalSignal.ts`, `src/features/plan/ui/ArrivalSignals.tsx`, `src/features/home/ui/MeetingPointScreen.tsx` | BM53: one-time departed, arrived and at-meeting-point marks, sendable only before embarkation and no longer shown after it. Kept on the guest's own account: not yet delivered to other party members |
+| GTS-11 | P1 | Built | F | `src/features/finish/ui/` luggage route `/home/luggage`, `src/domain/embark.ts` | None found |
+| GTS-12 | P0 | Built | F | `src/features/home/ui/` clearance route `/home/clearance`, `src/domain/papersCheck.ts` | None found |
 | GTS-13 | P2 | Simulated | F | `src/domain/embark.ts`, `server/Princess.Api/Domain/EmbarkQueueRules.cs` | Only from a verified feed: the feed is a mock |
-| GTS-14 | P0 | Partial | F | `src/ui/plan/AssistanceScreen.tsx`, `src/domain/assistance.ts` | Assistance confirmation needs operator sign-off (doc says safety review) |
-| GTS-15 | P1 | Built | R | `src/domain/phoneSetup.ts`, `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx` | Night-before test built in BM3 (`src/domain/nightBefore.ts`) |
-| GTS-16 | P1 | Built | F | `src/ui/home/` medallion route `/home/medallion` | None found |
-| EMB-01 | P0 | Partial | R | `src/domain/boarding.ts`, `src/ui/boarding/EmbarkScreen.tsx` | Boarded comes from the server with a manifest or scan source (BM45); manifest simulated, no scan writer |
-| EMB-02 | P0 | Built | R | `src/ui/onboard/SafetyScreens.tsx`, `src/domain/safety.ts` | Closed in BM18 |
-| EMB-03 | P0 | Out of reach | F | `src/ui/onboard/SafetyScreens.tsx` | Needs verified accessible alternative from the safety owner |
+| GTS-14 | P0 | Partial | F | `src/features/plan/ui/AssistanceScreen.tsx`, `src/domain/assistance.ts` | Assistance confirmation needs operator sign-off (doc says safety review) |
+| GTS-15 | P1 | Built | R | `src/domain/phoneSetup.ts`, `src/domain/offlineCapsule.ts`, `src/features/plan/ui/CapsuleCard.tsx` | Night-before test built in BM3 (`src/domain/nightBefore.ts`) |
+| GTS-16 | P1 | Built | F | `src/features/home/ui/` medallion route `/home/medallion` | None found |
+| EMB-01 | P0 | Partial | R | `src/domain/boarding.ts`, `src/features/boarding/ui/EmbarkScreen.tsx` | Boarded comes from the server with a manifest or scan source (BM45); manifest simulated, no scan writer |
+| EMB-02 | P0 | Built | R | `src/features/onboard/ui/SafetyScreens.tsx`, `src/domain/safety.ts` | Closed in BM18 |
+| EMB-03 | P0 | Out of reach | F | `src/features/onboard/ui/SafetyScreens.tsx` | Needs verified accessible alternative from the safety owner |
 | EMB-04 | P1 | Built | F | `src/domain/embarkDelights.ts`, `src/domain/embarkDelights.test.ts` | None found |
-| EMB-05 | P1 | Built | F | `src/ui/extras/RoomScreen.tsx`, `src/domain/room.ts` | None found |
-| EMB-06 | P1 | Built | F | `src/ui/finish/` luggage route, `src/domain/embark.ts` | Source and certainty label unchecked |
-| EMB-07 | P1 | Partial | F | `src/ui/aboard/RequestsScreen.tsx`, `src/domain/services.ts` | BM53: case reference, opened time and owning team shown; preferred contact (message, call, knock) is sent in the note; a second tap on an item with an open case points to it instead of opening another. No photo attachment; no way to add detail to an open case |
-| EMB-08 | P1 | Built | F | `src/ui/home/` medallion route | Troubleshooting content unchecked |
-| EMB-09 | P1 | Built | F | `src/ui/onboard/NavigationScreens.tsx`, `src/domain/navigation.ts` | Short/long/step-free modes unchecked |
-| EMB-10 | P1 | Built | F | `src/domain/meetingPoint.ts`, `src/domain/meetingPoint.test.ts`, `src/ui/home/MeetingPointScreen.tsx` | None found |
-| EMB-11 | P0 | Built | F | `src/ui/extras/WifiScreen.tsx`, `src/domain/wifi.ts`, `src/settings/settings.ts` | Save-data signal read; battery not (MOB-24) |
-| EMB-12 | P1 | Built | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/shipVenues.ts`, `src/domain/shipVenues.test.ts` | None found |
-| EMB-13 | P2 | Partial | F | `src/ui/onboard/SkyScreen.tsx` | BM28: open-deck viewpoints with step-free filter on the sky screen; no pier-side or sight-line data, so none called best |
-| EMB-14 | P1 | Built | F | `src/domain/family.ts`, `src/ui/extras/FamilyScreen.tsx` | None found |
-| EMB-15 | P0 | Built | F | `src/ui/onboard/SafetyScreens.tsx`, `src/gates/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts` | None found |
-| SEA-01 | P0 | Built | F | `src/ui/onboard/OnboardHome.tsx`, `src/domain/tileLive.ts`, `src/domain/tileLive.test.ts` | "Labelled, not inferred" unchecked |
-| SEA-02 | P0 | Built | F | `src/ui/plan/WeekPlanner.tsx`, `src/ui/onboard/Planner.tsx`, `src/domain/plan.ts` | None found |
-| SEA-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx`, `src/gates/offlineDay.test.ts` | BM1 |
-| SEA-04 | P1 | Partial | F | `src/domain/answerCards.ts`, `src/ui/aboard/InfoScreens.tsx`, search route `/ship/search` | BM50: the answer cards (Wi-Fi, dinner, late) carry a source, a scope (whole ship or today) and an "as of" time, and the results end with the ship-information source line; still only three topics have direct answers |
-| SEA-05 | P1 | Partial | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/menus.ts` | BM50: open, closed or temporarily unavailable with a ship-time stamp (`venueState`, `unavailableSince`); the server does not send `unavailableSince` yet, so nothing shows as unavailable until it does |
-| SEA-06 | P0 | Built | F | `src/ui/onboard/DeckMapScreen.tsx`, `src/domain/deckGraph.ts`, `src/domain/deckGraph.test.ts`, `src/ui/deckPlan.test.tsx` | None found |
-| SEA-07 | P1 | Partial | F | `src/domain/arrivalPing.ts`, `src/ui/onboard/NavigationScreens.tsx` | Manual and landmark check-in; no Medallion location (out of reach) |
-| SEA-08 | P2 | Simulated | F | `src/domain/portCrowd.ts`, `src/ui/onboard/Waits.tsx` | Telemetry is a mock |
-| SEA-09 | P0 | Built | F | `src/ui/onboard/ReservationsScreen.tsx`, `src/ui/plan/DiningScreen.tsx` | None found |
-| SEA-10 | P1 | Simulated | F | `src/domain/queue.ts`, `src/ui/onboard/Waits.tsx` | Queue adapters mocked |
-| SEA-11 | P1 | Simulated | F | `src/ui/extras/OrderScreen.tsx`, `src/domain/orders.ts`, `src/domain/extras.test.ts` | Order feed is a mock |
-| SEA-12 | P1 | Built | F | `src/domain/orders.ts`, `src/ui/extras/OrderScreen.tsx` | None found |
-| SEA-13 | P0 | Built | F | `src/domain/entitlements.ts`, `src/ui/plan/PackagesScreen.tsx` | "Used vs remaining" not asserted (a-tier-matrix row 12) |
-| SEA-14 | P0 | Built | F | `src/ui/onboard/BillScreen.tsx`, `src/domain/folio.ts`, `src/domain/ledgerSplit.ts` | Pending vs posted split in ledgerSplit |
-| SEA-15 | P1 | Built | F | `src/domain/budget.ts`, `src/domain/budget.test.ts`, `src/ui/onboard/BudgetCard.tsx` | None found |
-| SEA-16 | P1 | Partial | F | `src/ui/aboard/ChatSafe.tsx`, `src/ui/onboard/ChatScreen.tsx`, `src/domain/chat.ts` | BM53: own messages show sent or seen; party chat has no push kind, so no message text reaches a lock screen (tested). Block and report existed. No guardian-consent state for a child |
-| SEA-17 | P1 | Built | F | `src/ui/ahead/ClubsScreen.tsx`, `src/ui/aboard/` teen route `/ship/teen` | Authorised pickup unchecked |
-| SEA-18 | P1 | Partial | F | `src/domain/eventAccess.ts`, `src/ui/onboard/EventAccess.tsx`, `src/ui/onboard/Tickets.tsx` | BM53: captions, hearing loop, wheelchair seating, step-free route, quiet seating and low light shown for six events, only where authored as verified. Requests stay booking-wide on the assistance screen, not per event |
-| SEA-19 | P0 | Built | F | `src/ui/aboard/SafetyScreens.tsx`, `src/domain/medicalCard.ts` (route `/ship/allergy-chain`) | Venue acknowledgement is simulated |
-| SEA-20 | P0 | Partial | R | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/account/` cases route | BM45: escalate, confirm and reopen with history; stage still follows the clock, no crew workflow |
-| SEA-21 | P2 | Out of reach | F | `src/ui/extras/RoomScreen.tsx` | Needs ship room-control integration |
-| SEA-22 | P1 | Built | F | `src/domain/briefing.ts`, `src/domain/briefing.test.ts`, `src/ui/home/BriefingScreen.tsx` | None found |
-| SEA-23 | P1 | Built | F | `src/domain/sky.ts`, `src/domain/sky.test.ts`, `src/ui/onboard/SkyScreen.tsx` | Telemetry simulated |
-| SEA-24 | P1 | Built | F | `src/ui/extras/HealthScreens.tsx`, `src/domain/health.ts` | None found |
-| SEA-25 | P0 | Built | F | `src/settings/settings.ts`, `src/ui/extras/WifiScreen.tsx` | Save-data signal only; battery not (MOB-24) |
-| POR-01 | P0 | Built | F | `src/ui/onboard/PortPilot.tsx`, `src/domain/portPilot.ts`, `src/domain/portPilot.test.ts` | None found |
-| POR-02 | P0 | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |
-| POR-03 | P0 | Built | F | `src/ui/onboard/PortGuideScreen.tsx`, `src/domain/portsServed.ts` | Download progress per port unchecked |
-| POR-04 | P0 | Built | F | `src/ui/onboard/PortCard.tsx`, `src/domain/excursions.ts` | None found |
-| POR-05 | P0 | Built | F | `src/domain/tender.ts`, `src/ui/discover/TenderOutlook.tsx`, `src/ui/onboard/PortDayScreen.tsx` | Feed simulated |
+| EMB-05 | P1 | Built | F | `src/features/extras/ui/RoomScreen.tsx`, `src/domain/room.ts` | None found |
+| EMB-06 | P1 | Built | F | `src/features/finish/ui/` luggage route, `src/domain/embark.ts` | Source and certainty label unchecked |
+| EMB-07 | P1 | Partial | F | `src/features/aboard/ui/RequestsScreen.tsx`, `src/domain/services.ts` | BM53: case reference, opened time and owning team shown; preferred contact (message, call, knock) is sent in the note; a second tap on an item with an open case points to it instead of opening another. No photo attachment; no way to add detail to an open case |
+| EMB-08 | P1 | Built | F | `src/features/home/ui/` medallion route | Troubleshooting content unchecked |
+| EMB-09 | P1 | Built | F | `src/features/onboard/ui/NavigationScreens.tsx`, `src/domain/navigation.ts` | Short/long/step-free modes unchecked |
+| EMB-10 | P1 | Built | F | `src/domain/meetingPoint.ts`, `src/domain/meetingPoint.test.ts`, `src/features/home/ui/MeetingPointScreen.tsx` | None found |
+| EMB-11 | P0 | Built | F | `src/features/extras/ui/WifiScreen.tsx`, `src/domain/wifi.ts`, `src/shared/settings/settings.ts` | Save-data signal read; battery not (MOB-24) |
+| EMB-12 | P1 | Built | F | `src/features/onboard/ui/VenuesScreen.tsx`, `src/domain/shipVenues.ts`, `src/domain/shipVenues.test.ts` | None found |
+| EMB-13 | P2 | Partial | F | `src/features/onboard/ui/SkyScreen.tsx` | BM28: open-deck viewpoints with step-free filter on the sky screen; no pier-side or sight-line data, so none called best |
+| EMB-14 | P1 | Built | F | `src/domain/family.ts`, `src/features/extras/ui/FamilyScreen.tsx` | None found |
+| EMB-15 | P0 | Built | F | `src/features/onboard/ui/SafetyScreens.tsx`, `src/gates/offlineDay.test.ts`, `src/shared/hooks/useSavedCopy.ts` | None found |
+| SEA-01 | P0 | Built | F | `src/features/onboard/ui/OnboardHome.tsx`, `src/domain/tileLive.ts`, `src/domain/tileLive.test.ts` | "Labelled, not inferred" unchecked |
+| SEA-02 | P0 | Built | F | `src/features/plan/ui/WeekPlanner.tsx`, `src/features/onboard/ui/Planner.tsx`, `src/domain/plan.ts` | None found |
+| SEA-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/features/plan/ui/CapsuleCard.tsx`, `src/gates/offlineDay.test.ts` | BM1 |
+| SEA-04 | P1 | Partial | F | `src/domain/answerCards.ts`, `src/features/aboard/ui/InfoScreens.tsx`, search route `/ship/search` | BM50: the answer cards (Wi-Fi, dinner, late) carry a source, a scope (whole ship or today) and an "as of" time, and the results end with the ship-information source line; still only three topics have direct answers |
+| SEA-05 | P1 | Partial | F | `src/features/onboard/ui/VenuesScreen.tsx`, `src/domain/menus.ts` | BM50: open, closed or temporarily unavailable with a ship-time stamp (`venueState`, `unavailableSince`); the server does not send `unavailableSince` yet, so nothing shows as unavailable until it does |
+| SEA-06 | P0 | Built | F | `src/features/onboard/ui/DeckMapScreen.tsx`, `src/domain/deckGraph.ts`, `src/domain/deckGraph.test.ts`, `src/shared/ui/deckPlan.test.tsx` | None found |
+| SEA-07 | P1 | Partial | F | `src/domain/arrivalPing.ts`, `src/features/onboard/ui/NavigationScreens.tsx` | Manual and landmark check-in; no Medallion location (out of reach) |
+| SEA-08 | P2 | Simulated | F | `src/domain/portCrowd.ts`, `src/features/onboard/ui/Waits.tsx` | Telemetry is a mock |
+| SEA-09 | P0 | Built | F | `src/features/onboard/ui/ReservationsScreen.tsx`, `src/features/plan/ui/DiningScreen.tsx` | None found |
+| SEA-10 | P1 | Simulated | F | `src/domain/queue.ts`, `src/features/onboard/ui/Waits.tsx` | Queue adapters mocked |
+| SEA-11 | P1 | Simulated | F | `src/features/extras/ui/OrderScreen.tsx`, `src/domain/orders.ts`, `src/domain/extras.test.ts` | Order feed is a mock |
+| SEA-12 | P1 | Built | F | `src/domain/orders.ts`, `src/features/extras/ui/OrderScreen.tsx` | None found |
+| SEA-13 | P0 | Built | F | `src/domain/entitlements.ts`, `src/features/plan/ui/PackagesScreen.tsx` | "Used vs remaining" not asserted (a-tier-matrix row 12) |
+| SEA-14 | P0 | Built | F | `src/features/onboard/ui/BillScreen.tsx`, `src/domain/folio.ts`, `src/domain/ledgerSplit.ts` | Pending vs posted split in ledgerSplit |
+| SEA-15 | P1 | Built | F | `src/domain/budget.ts`, `src/domain/budget.test.ts`, `src/features/onboard/ui/BudgetCard.tsx` | None found |
+| SEA-16 | P1 | Partial | F | `src/features/aboard/ui/ChatSafe.tsx`, `src/features/chat/ui/ChatScreen.tsx`, `src/features/chat/domain/chat.ts` | BM53: own messages show sent or seen; party chat has no push kind, so no message text reaches a lock screen (tested). Block and report existed. No guardian-consent state for a child |
+| SEA-17 | P1 | Built | F | `src/features/ahead/ui/ClubsScreen.tsx`, `src/features/aboard/ui/` teen route `/ship/teen` | Authorised pickup unchecked |
+| SEA-18 | P1 | Partial | F | `src/domain/eventAccess.ts`, `src/features/onboard/ui/EventAccess.tsx`, `src/features/onboard/ui/Tickets.tsx` | BM53: captions, hearing loop, wheelchair seating, step-free route, quiet seating and low light shown for six events, only where authored as verified. Requests stay booking-wide on the assistance screen, not per event |
+| SEA-19 | P0 | Built | F | `src/features/aboard/ui/SafetyScreens.tsx`, `src/domain/medicalCard.ts` (route `/ship/allergy-chain`) | Venue acknowledgement is simulated |
+| SEA-20 | P0 | Partial | R | `src/features/aboard/ui/RequestsScreen.tsx`, `src/features/account/ui/` cases route | BM45: escalate, confirm and reopen with history; stage still follows the clock, no crew workflow |
+| SEA-21 | P2 | Out of reach | F | `src/features/extras/ui/RoomScreen.tsx` | Needs ship room-control integration |
+| SEA-22 | P1 | Built | F | `src/domain/briefing.ts`, `src/domain/briefing.test.ts`, `src/features/home/ui/BriefingScreen.tsx` | None found |
+| SEA-23 | P1 | Built | F | `src/domain/sky.ts`, `src/domain/sky.test.ts`, `src/features/onboard/ui/SkyScreen.tsx` | Telemetry simulated |
+| SEA-24 | P1 | Built | F | `src/features/extras/ui/HealthScreens.tsx`, `src/domain/health.ts` | None found |
+| SEA-25 | P0 | Built | F | `src/shared/settings/settings.ts`, `src/features/extras/ui/WifiScreen.tsx` | Save-data signal only; battery not (MOB-24) |
+| POR-01 | P0 | Built | F | `src/features/onboard/ui/PortPilot.tsx`, `src/domain/portPilot.ts`, `src/domain/portPilot.test.ts` | None found |
+| POR-02 | P0 | Built | F | `src/shared/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |
+| POR-03 | P0 | Built | F | `src/features/onboard/ui/PortGuideScreen.tsx`, `src/domain/portsServed.ts` | Download progress per port unchecked |
+| POR-04 | P0 | Built | F | `src/features/onboard/ui/PortCard.tsx`, `src/domain/excursions.ts` | None found |
+| POR-05 | P0 | Built | F | `src/domain/tender.ts`, `src/features/discover/ui/TenderOutlook.tsx`, `src/features/onboard/ui/PortDayScreen.tsx` | Feed simulated |
 | POR-06 | P0 | Built | F | `src/domain/allaboard.ts`, `src/domain/portPilot.test.ts` | None found |
-| POR-07 | P1 | Partial | F | `src/domain/accessReference.ts`, `src/ui/onboard/PortGuideScreen.tsx` | BM28 checked: no per-port pier-to-ship route data exists; needs a source |
-| POR-08 | P1 | Built | F | `src/ui/onboard/RouteFinder.tsx`, `src/domain/landPath.ts` | None found |
-| POR-09 | P1 | Built | F | `src/ui/aboard/` safe-ashore route `/ship/safe-ashore`, `src/domain/portContent.ts` | Contacts verified by operator: out of reach |
-| POR-10 | P1 | Built | F | `src/domain/rates.ts`, `src/rates` | Cached reference rate shown with age: unchecked |
+| POR-07 | P1 | Partial | F | `src/domain/accessReference.ts`, `src/features/onboard/ui/PortGuideScreen.tsx` | BM28 checked: no per-port pier-to-ship route data exists; needs a source |
+| POR-08 | P1 | Built | F | `src/features/onboard/ui/RouteFinder.tsx`, `src/domain/landPath.ts` | None found |
+| POR-09 | P1 | Built | F | `src/features/aboard/ui/` safe-ashore route `/ship/safe-ashore`, `src/domain/portContent.ts` | Contacts verified by operator: out of reach |
+| POR-10 | P1 | Built | F | `src/domain/rates.ts`, `src/features/rates/logic` | Cached reference rate shown with age: unchecked |
 | POR-11 | P1 | Built | F | `src/domain/portDelights.ts`, `src/domain/portDelights.test.ts` | Offline: phrases live in the port copy |
-| POR-12 | P1 | Built | F | `src/ui/onboard/PortDayScreen.tsx`, `src/domain/storm.ts` | None found |
+| POR-12 | P1 | Built | F | `src/features/onboard/ui/PortDayScreen.tsx`, `src/domain/storm.ts` | None found |
 | POR-13 | P1 | Built | F | `src/domain/meetingPoint.ts`, `src/domain/arrivalPing.ts` | None found |
-| POR-14 | P1 | Built | F | `src/domain/portParty.ts`, `src/domain/portParty.test.ts`, `src/ui/onboard/PortParty.tsx` | None found |
-| POR-15 | P0 | Built | F | `src/domain/disruption.ts`, `src/domain/disruptionHub.ts`, `src/ui/home/DisruptionHubScreen.tsx` | Hub text is authored in the client |
-| POR-16 | P0 | Built | F | `src/ui/home/DisruptionHubScreen.tsx`, `src/ui/onboard/SafetyScreens.tsx` | Contacts verified by operator: out of reach |
-| DEB-01 | P0 | Built | F | `src/ui/finish/DisembarkScreen.tsx`, `src/domain/disembark.ts` | None found |
-| DEB-02 | P0 | Built | R | `src/ui/finish/DisembarkScreen.tsx` | Closed in BM18 |
-| DEB-03 | P0 | Built | F | `src/ui/finish/` bags route `/home/disembark/bags` | None found |
-| DEB-04 | P0 | Partial | R | `src/ui/finish/FinalBillScreen.tsx`, `src/domain/folio.ts` | BM44: folio lines carry a state (posted, pending, disputed, refunded, adjusted); final bill lists refunds and adjustments apart. Nothing sets pending yet; no receipt export read |
-| DEB-05 | P0 | Built | R | `src/ui/finish/CasesScreen.tsx` | BM54: the case form says which team looks after it and the days to a first answer (same hours as the server); each case shows its team, and the answer due time as before |
-| DEB-06 | P1 | Built | F | `src/ui/finish/` sweep route `/home/disembark/sweep` | None found |
-| DEB-07 | P1 | Built | F | `src/ui/finish/FinalNightScreen.tsx`, `src/domain/shipVenues.ts` | Departure-day hours unchecked |
-| DEB-08 | P0 | Built | F | `src/ui/finish/CustomsScreen.tsx` | Official sources linked: unchecked |
-| DEB-09 | P1 | Built | F | `src/ui/finish/OnwardScreen.tsx` | None found |
-| DEB-10 | P1 | Built | F | `src/ui/finish/` flight route `/home/disembark/flight` | None found |
-| DEB-11 | P1 | Built | F | `src/ui/finish/CasesScreen.tsx`, lost-found route `/ship/lost-found` | None found |
-| DEB-12 | P1 | Built | F | `src/ui/account/PrintScreen.tsx`, `src/domain/export.ts` | None found |
-| DEB-13 | P1 | Built | F | `src/ui/finish/` ride route `/home/disembark/ride` | None found |
-| DEB-14 | P0 | Built | F | `src/ui/finish/CasesScreen.tsx` | None found |
-| DEB-15 | P1 | Built | F | `src/domain/finishMore.ts`, `src/domain/finishMore.test.ts`, `src/ui/onboard/FinishMoreScreens.tsx` | None found |
-| REM-01 | P0 | Built | F | `src/ui/finish/HistoryScreen.tsx`, `src/ui/account/TripScreen.tsx` | None found |
-| REM-02 | P1 | Built | F | `src/domain/tripDiary.ts`, `src/domain/tripDiary.test.ts`, `src/ui/account/DiaryScreen.tsx` | None found |
-| REM-03 | P1 | Built | F | `src/domain/memoryBook.ts`, `src/domain/memoryBook.test.ts`, `src/ui/account/MemoryScreen.tsx` | Photos missing (a-tier-matrix row 20) |
-| REM-04 | P1 | Built | F | `src/domain/albumRules.ts`, `src/domain/albumRules.test.ts`, `src/ui/extras/PhotosScreen.tsx` | BM51: the album says who can see it (people on the booking only, no public link, no download button), a guest takes back only their own photos, one at a time or all at once; nothing is shared until its owner chooses |
-| REM-05 | P1 | Simulated | F | `src/ui/extras/PhotosScreen.tsx` | Photo archive purchase is a mock; resumable download unchecked |
-| REM-06 | P0 | Built | F | `src/ui/finish/FeedbackScreen.tsx` | Route to service recovery is server side: unchecked |
-| REM-07 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: "checked {time}" from the served `syncedAt`, and a report form (`POST /me/loyalty-summary/reports`, table `LoyaltyReports`) with the guest's own reports and their state; no staff screen answers a report yet, and the server is not compiled |
-| REM-08 | P1 | Built | F | `src/ui/finish/RebookScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: each date lists why it is offered (`reasons`); stateroom type and party size are editable and reset (`?category=&guests=`, also sent with a hold); the screen says health and children's details are not used. Only those two inputs; no stored preferences or past-trip inputs |
-| REM-09 | P1 | Built | F | `src/ui/finish/RebookScreen.tsx` | Consent for stored details unchecked |
-| REM-10 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx`, `src/domain/wallet.ts`, `src/domain/wallet.test.ts` | BM51: each future cruise credit with source, original and left, currency, expiry, who can use it, the redemptions, and a line that says when the amounts used do not add up to what was spent. Onboard credit from holds is not in the wallet |
-| REM-11 | P1 | Built | F | `src/ui/finish/FeedbackScreen.tsx` | Progressive survey unchecked |
-| REM-12 | P1 | Built | F | `src/domain/finishMore.ts`, `src/ui/onboard/FinishMoreScreens.tsx` | Receipt unchecked |
-| REM-13 | P2 | Built | F | `src/domain/wrapped.ts`, `src/domain/wrapped.test.ts`, `src/domain/recap.ts`, `src/ui/ai/RecapScreen.tsx` | None found |
-| REM-14 | P2 | Partial | F | `src/ui/finish/LoyaltyScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: referral invitations are a first name only (no contact kept or shown), can be added and taken back until the friend books, and the incentive and when it is paid are stated; no reunion tool |
+| POR-14 | P1 | Built | F | `src/domain/portParty.ts`, `src/domain/portParty.test.ts`, `src/features/onboard/ui/PortParty.tsx` | None found |
+| POR-15 | P0 | Built | F | `src/domain/disruption.ts`, `src/domain/disruptionHub.ts`, `src/features/home/ui/DisruptionHubScreen.tsx` | Hub text is authored in the client |
+| POR-16 | P0 | Built | F | `src/features/home/ui/DisruptionHubScreen.tsx`, `src/features/onboard/ui/SafetyScreens.tsx` | Contacts verified by operator: out of reach |
+| DEB-01 | P0 | Built | F | `src/features/finish/ui/DisembarkScreen.tsx`, `src/domain/disembark.ts` | None found |
+| DEB-02 | P0 | Built | R | `src/features/finish/ui/DisembarkScreen.tsx` | Closed in BM18 |
+| DEB-03 | P0 | Built | F | `src/features/finish/ui/` bags route `/home/disembark/bags` | None found |
+| DEB-04 | P0 | Partial | R | `src/features/finish/ui/FinalBillScreen.tsx`, `src/domain/folio.ts` | BM44: folio lines carry a state (posted, pending, disputed, refunded, adjusted); final bill lists refunds and adjustments apart. Nothing sets pending yet; no receipt export read |
+| DEB-05 | P0 | Built | R | `src/features/finish/ui/CasesScreen.tsx` | BM54: the case form says which team looks after it and the days to a first answer (same hours as the server); each case shows its team, and the answer due time as before |
+| DEB-06 | P1 | Built | F | `src/features/finish/ui/` sweep route `/home/disembark/sweep` | None found |
+| DEB-07 | P1 | Built | F | `src/features/finish/ui/FinalNightScreen.tsx`, `src/domain/shipVenues.ts` | Departure-day hours unchecked |
+| DEB-08 | P0 | Built | F | `src/features/finish/ui/CustomsScreen.tsx` | Official sources linked: unchecked |
+| DEB-09 | P1 | Built | F | `src/features/finish/ui/OnwardScreen.tsx` | None found |
+| DEB-10 | P1 | Built | F | `src/features/finish/ui/` flight route `/home/disembark/flight` | None found |
+| DEB-11 | P1 | Built | F | `src/features/finish/ui/CasesScreen.tsx`, lost-found route `/ship/lost-found` | None found |
+| DEB-12 | P1 | Built | F | `src/features/account/ui/PrintScreen.tsx`, `src/domain/export.ts` | None found |
+| DEB-13 | P1 | Built | F | `src/features/finish/ui/` ride route `/home/disembark/ride` | None found |
+| DEB-14 | P0 | Built | F | `src/features/finish/ui/CasesScreen.tsx` | None found |
+| DEB-15 | P1 | Built | F | `src/domain/finishMore.ts`, `src/domain/finishMore.test.ts`, `src/features/onboard/ui/FinishMoreScreens.tsx` | None found |
+| REM-01 | P0 | Built | F | `src/features/finish/ui/HistoryScreen.tsx`, `src/features/account/ui/TripScreen.tsx` | None found |
+| REM-02 | P1 | Built | F | `src/domain/tripDiary.ts`, `src/domain/tripDiary.test.ts`, `src/features/account/ui/DiaryScreen.tsx` | None found |
+| REM-03 | P1 | Built | F | `src/domain/memoryBook.ts`, `src/domain/memoryBook.test.ts`, `src/features/account/ui/MemoryScreen.tsx` | Photos missing (a-tier-matrix row 20) |
+| REM-04 | P1 | Built | F | `src/domain/albumRules.ts`, `src/domain/albumRules.test.ts`, `src/features/extras/ui/PhotosScreen.tsx` | BM51: the album says who can see it (people on the booking only, no public link, no download button), a guest takes back only their own photos, one at a time or all at once; nothing is shared until its owner chooses |
+| REM-05 | P1 | Simulated | F | `src/features/extras/ui/PhotosScreen.tsx` | Photo archive purchase is a mock; resumable download unchecked |
+| REM-06 | P0 | Built | F | `src/features/finish/ui/FeedbackScreen.tsx` | Route to service recovery is server side: unchecked |
+| REM-07 | P1 | Built | F | `src/features/finish/ui/LoyaltyScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: "checked {time}" from the served `syncedAt`, and a report form (`POST /me/loyalty-summary/reports`, table `LoyaltyReports`) with the guest's own reports and their state; no staff screen answers a report yet, and the server is not compiled |
+| REM-08 | P1 | Built | F | `src/features/finish/ui/RebookScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: each date lists why it is offered (`reasons`); stateroom type and party size are editable and reset (`?category=&guests=`, also sent with a hold); the screen says health and children's details are not used. Only those two inputs; no stored preferences or past-trip inputs |
+| REM-09 | P1 | Built | F | `src/features/finish/ui/RebookScreen.tsx` | Consent for stored details unchecked |
+| REM-10 | P1 | Built | F | `src/features/finish/ui/LoyaltyScreen.tsx`, `src/domain/wallet.ts`, `src/domain/wallet.test.ts` | BM51: each future cruise credit with source, original and left, currency, expiry, who can use it, the redemptions, and a line that says when the amounts used do not add up to what was spent. Onboard credit from holds is not in the wallet |
+| REM-11 | P1 | Built | F | `src/features/finish/ui/FeedbackScreen.tsx` | Progressive survey unchecked |
+| REM-12 | P1 | Built | F | `src/domain/finishMore.ts`, `src/features/onboard/ui/FinishMoreScreens.tsx` | Receipt unchecked |
+| REM-13 | P2 | Built | F | `src/domain/wrapped.ts`, `src/domain/wrapped.test.ts`, `src/domain/recap.ts`, `src/features/stanley/ui/RecapScreen.tsx` | None found |
+| REM-14 | P2 | Partial | F | `src/features/finish/ui/LoyaltyScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: referral invitations are a first name only (no contact kept or shown), can be added and taken back until the friend books, and the incentive and when it is paid are stated; no reunion tool |
 | REM-15 | P2 | Simulated | F | `server/Princess.Api/Domain/PrintRules.cs`, `server/Princess.Api/Services/Providers.cs` | Print provider is a mock; no front-end screen found |
-| REM-16 | P0 | Built | F | `src/ui/account/PrivacyScreen.tsx`, `src/domain/privacy.ts`, `src/domain/dataRules.ts` | None found |
+| REM-16 | P0 | Built | F | `src/features/account/ui/PrivacyScreen.tsx`, `src/domain/privacy.ts`, `src/domain/dataRules.ts` | None found |
 
 ## Phone and PWA requirements (MOB)
 
 | ID | Pri | Status | Basis | Evidence | Gap |
 |---|---|---|---|---|---|
-| MOB-01 | P0 | Built | F | `vite.config.ts`, `index.html`; install guidance in `src/ui/plan/PhoneScreen.tsx`, `src/domain/phoneSetup.ts` | Contextual install prompt text unchecked |
-| MOB-02 | P0 | Built | R | `src/runtime/update.ts`, `src/ui/UpdateBanner.tsx` | The guest chooses when to switch, so no forced reload anywhere; draft retention across deploys unchecked (`src/hooks/useDraft.ts`) |
-| MOB-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx`, `src/domain/offlineCapsule.test.ts` | Guest chooses optional kinds and the last test is stored (BM19) |
-| MOB-04 | P0 | Built | R | `src/data/outbox.ts`, `src/hooks/useDraft.ts`, `src/data/capsule.ts` | Export/restore of waiting items and corrupt-list handling (BM19); drafts are server-side, `localStorage` kept by decision |
-| MOB-05 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useAction.ts`, `src/api/bounded.ts` | `src/domain/offlineContract.ts` and `OfflineNote` (BM19) |
-| MOB-06 | P1 | Built | F | `src/push/push.ts`, `src/push/push.test.ts`, `src/hooks/usePushState.ts`, `src/ui/account/PushPanels.tsx` | Delivery is simulated on the server |
-| MOB-07 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39, BM54: alert links carry the trip and ship change, and now a reservation, a case and a port day (`reservation`, `case`, `port` and `date`); the screen says when the reservation is gone, the case closed or the port day passed. The server builds these links but has no reservation or case alert yet, so only the port-day one is sent today |
-| MOB-08 | P1 | Built | F | `src/ui/account/MemoryScreen.tsx`, `src/ui/delights/HighlightReel.tsx`, `src/ui/plan/AwayScreen.tsx` | Fallback when share unsupported unchecked |
-| MOB-09 | P1 | Partial | F | `src/ui/checkin/PhotoCoach.tsx`, `src/ui/media/Pictures.tsx` | Capture for pictures exists; passport scan and tag scan are out of reach |
+| MOB-01 | P0 | Built | F | `vite.config.ts`, `index.html`; install guidance in `src/features/plan/ui/PhoneScreen.tsx`, `src/domain/phoneSetup.ts` | Contextual install prompt text unchecked |
+| MOB-02 | P0 | Built | R | `src/app/runtime/update.ts`, `src/shared/ui/UpdateBanner.tsx` | The guest chooses when to switch, so no forced reload anywhere; draft retention across deploys unchecked (`src/shared/hooks/useDraft.ts`) |
+| MOB-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/features/plan/ui/CapsuleCard.tsx`, `src/domain/offlineCapsule.test.ts` | Guest chooses optional kinds and the last test is stored (BM19) |
+| MOB-04 | P0 | Built | R | `src/shared/data/outbox.ts`, `src/shared/hooks/useDraft.ts`, `src/shared/data/capsule.ts` | Export/restore of waiting items and corrupt-list handling (BM19); drafts are server-side, `localStorage` kept by decision |
+| MOB-05 | P0 | Built | F | `src/shared/data/outbox.ts`, `src/shared/hooks/useAction.ts`, `src/shared/api/bounded.ts` | `src/domain/offlineContract.ts` and `OfflineNote` (BM19) |
+| MOB-06 | P1 | Built | F | `src/shared/push/push.ts`, `src/shared/push/push.test.ts`, `src/shared/hooks/usePushState.ts`, `src/features/account/ui/PushPanels.tsx` | Delivery is simulated on the server |
+| MOB-07 | P1 | Partial | F | `src/shared/push/push.ts`, `src/shared/ui/pushScreens.test.tsx` | BM39, BM54: alert links carry the trip and ship change, and now a reservation, a case and a port day (`reservation`, `case`, `port` and `date`); the screen says when the reservation is gone, the case closed or the port day passed. The server builds these links but has no reservation or case alert yet, so only the port-day one is sent today |
+| MOB-08 | P1 | Built | F | `src/features/account/ui/MemoryScreen.tsx`, `src/features/delights/ui/HighlightReel.tsx`, `src/features/plan/ui/AwayScreen.tsx` | Fallback when share unsupported unchecked |
+| MOB-09 | P1 | Partial | F | `src/features/checkin/ui/PhotoCoach.tsx`, `src/features/media/ui/Pictures.tsx` | Capture for pictures exists; passport scan and tag scan are out of reach |
 | MOB-10 | P1 | Partial | F | none | BM29: `CodeScanner` uses `BarcodeDetector` where present, typed-code fallback; code finds a place or own link only, never proof; no device check |
-| MOB-11 | P1 | Built | F | `src/hooks/useWakeLock.ts`, `src/hooks/useWakeLock.test.tsx`, `src/ui/boarding/PassScreen.tsx` | Muster card and map route use unchecked |
-| MOB-12 | P0 | Built | F | `src/styles`, `src/ui/a11y.test.tsx` | Touch target size asserted only by the audit |
-| MOB-13 | P1 | Partial | F | `src/ui/delights/PortDelights.tsx`, `src/domain/landPath.ts` | BM29: guest-started one-shot location on the port guide shows distance and direction to the approximate port point; nothing stored; no device check |
-| MOB-14 | P0 | Built | R | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/ui/onboard/shipTime.ts` | Closed in BM18 |
+| MOB-11 | P1 | Built | F | `src/shared/hooks/useWakeLock.ts`, `src/shared/hooks/useWakeLock.test.tsx`, `src/features/boarding/ui/PassScreen.tsx` | Muster card and map route use unchecked |
+| MOB-12 | P0 | Built | F | `src/styles`, `src/shared/ui/a11y.test.tsx` | Touch target size asserted only by the audit |
+| MOB-13 | P1 | Partial | F | `src/features/delights/ui/PortDelights.tsx`, `src/domain/landPath.ts` | BM29: guest-started one-shot location on the port guide shows distance and direction to the approximate port point; nothing stored; no device check |
+| MOB-14 | P0 | Built | R | `src/shared/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/features/onboard/ui/shipTime.ts` | Closed in BM18 |
 | MOB-15 | P1 | Built | F | `src/domain/calendar.ts`, `calendar.test.ts` | Zoned times in UTC, SEQUENCE and cancel tested (BM4); no caller sends an update or cancel yet |
 | MOB-16 | P2 | Out of reach | F | `server/Princess.Api/Services/Providers.cs` | Wallet passes are simulated on the server only; the document marks P2 |
-| MOB-17 | P1 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/ui/onboard/SafetyScreens.tsx`, `src/domain/calm.ts` | High-contrast full-screen check unchecked |
-| MOB-18 | P1 | Built | F | `src/ui/CopyText.tsx`, `src/domain/contacts.ts`, `src/ui/aboard/SupportScreens.tsx` | `contacts.ts` has no test |
-| MOB-19 | P1 | Built | F | `src/ui/home/SummaryScreen.tsx`, `src/ui/home/BriefingScreen.tsx`, `src/ui/delights/DiscoverDelights.tsx` | `speechSynthesis`; user-initiated |
-| MOB-20 | P2 | Built | F | `src/ui/home/AskScreen.tsx` | `SpeechRecognition`; optional |
-| MOB-21 | P2 | Built | F | `src/settings/haptics.ts`, `src/settings/haptics.test.ts` | None found |
-| MOB-22 | P2 | Partial | F | `src/domain/navigation.ts`, `src/ui/onboard/NavigationScreens.tsx` | BM29: optional device compass turns the port arrow, north-up fallback; no device check |
-| MOB-23 | P0 | Built | F | `src/push/push.ts`, `src/domain/delivery.ts`, `src/domain/countdowns.ts` | `LocalReminders` shows due reminders while open or on next open (BM19) |
-| MOB-24 | P1 | Built | R | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts` | Battery-aware refresh built in BM3 (`src/data/battery.ts`, `refreshFactor`) |
-| MOB-25 | P1 | Built | F | `src/ui/media/Pictures.tsx`, `src/media/shrink.ts`, `src/domain/media.ts` | Preview before sending, delete, and location stripped on redraw |
+| MOB-17 | P1 | Built | F | `src/features/boarding/ui/PassScreen.tsx`, `src/features/onboard/ui/SafetyScreens.tsx`, `src/domain/calm.ts` | High-contrast full-screen check unchecked |
+| MOB-18 | P1 | Built | F | `src/shared/ui/CopyText.tsx`, `src/domain/contacts.ts`, `src/features/aboard/ui/SupportScreens.tsx` | `contacts.ts` has no test |
+| MOB-19 | P1 | Built | F | `src/features/home/ui/SummaryScreen.tsx`, `src/features/home/ui/BriefingScreen.tsx`, `src/features/delights/ui/DiscoverDelights.tsx` | `speechSynthesis`; user-initiated |
+| MOB-20 | P2 | Built | F | `src/features/home/ui/AskScreen.tsx` | `SpeechRecognition`; optional |
+| MOB-21 | P2 | Built | F | `src/shared/settings/haptics.ts`, `src/shared/settings/haptics.test.ts` | None found |
+| MOB-22 | P2 | Partial | F | `src/domain/navigation.ts`, `src/features/onboard/ui/NavigationScreens.tsx` | BM29: optional device compass turns the port arrow, north-up fallback; no device check |
+| MOB-23 | P0 | Built | F | `src/shared/push/push.ts`, `src/domain/delivery.ts`, `src/domain/countdowns.ts` | `LocalReminders` shows due reminders while open or on next open (BM19) |
+| MOB-24 | P1 | Built | R | `src/shared/settings/settings.ts`, `src/shared/hooks/visibleInterval.ts` | Battery-aware refresh built in BM3 (`src/shared/data/battery.ts`, `refreshFactor`) |
+| MOB-25 | P1 | Built | F | `src/features/media/ui/Pictures.tsx`, `src/features/media/logic/shrink.ts`, `src/domain/media.ts` | Preview before sending, delete, and location stripped on redraw |
 
 ## Quality-of-life concepts (QOL)
 
@@ -301,88 +301,88 @@ Priority is not given per concept in the document.
 
 | ID | Pri | Status | Basis | Evidence | Gap |
 |---|---|---|---|---|---|
-| QOL-01 | - | Built | F | `src/domain/autopilot.ts`, `src/domain/autopilot.test.ts`, `src/ui/plan/AutopilotScreen.tsx` | None found |
-| QOL-02 | - | Simulated | F | `src/domain/queue.ts`, `src/ui/onboard/Waits.tsx` | Queue adapters mocked; the document warns against faking |
-| QOL-03 | - | Built | F | `src/domain/trustLedger.ts`, `src/domain/trustLedger.test.ts`, `src/ui/account/LedgerScreen.tsx` | None found |
-| QOL-04 | - | Built | R | `src/ui/plan/CapsuleCard.tsx`, `src/domain/offlineCapsule.ts` | BM19: see MOB-03 |
-| QOL-05 | - | Built | F | `src/ui/home/DisruptionHubScreen.tsx`, `src/routes/nav.ts`, `src/ui/HelpSheet.tsx` | Get-help button on every route asserted in `src/ui/render.test.tsx` |
+| QOL-01 | - | Built | F | `src/domain/autopilot.ts`, `src/domain/autopilot.test.ts`, `src/features/plan/ui/AutopilotScreen.tsx` | None found |
+| QOL-02 | - | Simulated | F | `src/domain/queue.ts`, `src/features/onboard/ui/Waits.tsx` | Queue adapters mocked; the document warns against faking |
+| QOL-03 | - | Built | F | `src/domain/trustLedger.ts`, `src/domain/trustLedger.test.ts`, `src/features/account/ui/LedgerScreen.tsx` | None found |
+| QOL-04 | - | Built | R | `src/features/plan/ui/CapsuleCard.tsx`, `src/domain/offlineCapsule.ts` | BM19: see MOB-03 |
+| QOL-05 | - | Built | F | `src/features/home/ui/DisruptionHubScreen.tsx`, `src/app/routes/nav.ts`, `src/shared/ui/HelpSheet.tsx` | Get-help button on every route asserted in `src/shared/ui/render.test.tsx` |
 | QOL-06 | - | Simulated | F | `src/domain/portCrowd.ts`, `server/Princess.Api/Domain/EmbarkQueueRules.cs` | Crowd telemetry is a mock |
-| QOL-07 | - | Built | F | `src/ui/plan/GroupBoard.tsx`, `src/domain/groupBoard.ts`, `src/domain/portParty.ts` | None found |
+| QOL-07 | - | Built | F | `src/features/plan/ui/GroupBoard.tsx`, `src/domain/groupBoard.ts`, `src/domain/portParty.ts` | None found |
 | QOL-08 | - | Built | F | `src/domain/arrivalPing.ts`, `src/domain/meetingPoint.ts`, `src/domain/arrivalPing.test.ts` | None found |
-| QOL-09 | - | Built | F | `src/domain/medicalCard.ts`, `src/ui/aboard/SafetyScreens.tsx` | Never says "safe"; venue acknowledgement is simulated |
+| QOL-09 | - | Built | F | `src/domain/medicalCard.ts`, `src/features/aboard/ui/SafetyScreens.tsx` | Never says "safe"; venue acknowledgement is simulated |
 | QOL-10 | - | Partial | F | `src/domain/deckGraph.ts`, `src/domain/navigation.ts` | BM27: guest marks a lift bank closed and the route is worked out again without it; no closure feed, so it is the guest's report |
 | QOL-11 | - | Built | F | `src/domain/portPilot.ts`, `src/domain/allaboard.ts`, `src/domain/portPilot.test.ts` | None found |
 | QOL-12 | - | Built | F | `src/domain/entitlements.ts`, `src/domain/spendForecast.ts` | None found |
-| QOL-13 | - | Built | F | `src/domain/cabinScore.ts`, `src/ui/discover/CabinChooserScreen.tsx` | None found |
-| QOL-14 | - | Built | F | `src/domain/answerCards.ts`, `src/domain/answerCards.test.ts`, `src/ai/stanley.ts` | None found |
-| QOL-15 | - | Built | F | `src/domain/recompose.ts`, `src/ui/plan/RecomposerCard.tsx` | BM53: pick a day on the storm screen to list the reservations that day and up to two other tours that fit; nothing is cancelled or rebooked. The day is chosen by the guest, not fed by weather data |
+| QOL-13 | - | Built | F | `src/domain/cabinScore.ts`, `src/features/discover/ui/CabinChooserScreen.tsx` | None found |
+| QOL-14 | - | Built | F | `src/domain/answerCards.ts`, `src/domain/answerCards.test.ts`, `src/features/stanley/logic/stanley.ts` | None found |
+| QOL-15 | - | Built | F | `src/domain/recompose.ts`, `src/features/plan/ui/RecomposerCard.tsx` | BM53: pick a day on the storm screen to list the reservations that day and up to two other tours that fit; nothing is cancelled or rebooked. The day is chosen by the guest, not fed by weather data |
 | QOL-16 | - | Built | F | `src/domain/moneyShield.ts`, `src/domain/moneyShield.test.ts`, `src/domain/ledgerSplit.ts` | None found |
-| QOL-17 | - | Partial | F | `src/domain/deckPlan.ts`, `src/ui/onboard/DeckPlan.tsx` | BM32: deck-map screen teaches four deck rules and, for a typed cabin number (not saved), lists decks up/down, ends and lift banks to six common places plus a side-on deck list; no ship art or illustrated cutaway, no confidence or help-request measure |
-| QOL-18 | - | Partial | F | `src/domain/highlightReel.ts`, `src/domain/photos.ts`, `src/ui/delights/HighlightReel.tsx` | BM33: photos screen proposes a day-by-day story from the guest's favourites and own diary notes, each can be left out, then copied as text; no book or video renderer, no generative text, no export or completion measure |
+| QOL-17 | - | Partial | F | `src/domain/deckPlan.ts`, `src/features/onboard/ui/DeckPlan.tsx` | BM32: deck-map screen teaches four deck rules and, for a typed cabin number (not saved), lists decks up/down, ends and lift banks to six common places plus a side-on deck list; no ship art or illustrated cutaway, no confidence or help-request measure |
+| QOL-18 | - | Partial | F | `src/domain/highlightReel.ts`, `src/domain/photos.ts`, `src/features/delights/ui/HighlightReel.tsx` | BM33: photos screen proposes a day-by-day story from the guest's favourites and own diary notes, each can be left out, then copied as text; no book or video renderer, no generative text, no export or completion measure |
 | QOL-19 | - | Built | F | `src/domain/disruptionHub.ts`, `src/domain/disruptionHub.test.ts` | None found |
-| QOL-20 | - | Partial | F | `src/domain/passport.ts`, `src/ui/plan/PassportCard.tsx` | BM53: for booking, transfers, ship and excursions the guest sees which requests that recipient would get, shares, and revokes; medical card never included. Acknowledgement is shown if present but nothing records one yet |
-| QOL-21 | - | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |
-| QOL-22 | - | Built | F | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/finish/CasesScreen.tsx` | None found |
+| QOL-20 | - | Partial | F | `src/domain/passport.ts`, `src/features/plan/ui/PassportCard.tsx` | BM53: for booking, transfers, ship and excursions the guest sees which requests that recipient would get, shares, and revokes; medical card never included. Acknowledgement is shown if present but nothing records one yet |
+| QOL-21 | - | Built | F | `src/shared/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |
+| QOL-22 | - | Built | F | `src/features/aboard/ui/RequestsScreen.tsx`, `src/features/finish/ui/CasesScreen.tsx` | None found |
 
 ## Cross-stage foundations
 
 | ID | Pri | Status | Basis | Evidence | Gap |
 |---|---|---|---|---|---|
-| IDN-01 | P0 | Partial | R | `src/auth/httpProvider.ts`, `src/auth/httpProvider.test.ts`, `src/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | BM35: sign out everywhere; BM46: device list with per-device sign-out; BM54: new-device notice on the list. No step-up check yet |
-| IDN-02 | P0 | Built | F | `src/ui/boarding/FindPassScreen.tsx`, `src/domain/signup.ts` | Guess-resistance is server side: not read |
-| IDN-03 | P0 | Partial | F | `server/Princess.Api/Auth/AuthService.cs` (`RegisterAsync`), `src/ui/SignInFlows.tsx` | BM38: sign-up asks when name and date of birth match an adult account and flags the new one for a person; BM47: admin card to settle a flag (`src/ui/account/ReviewCard.tsx`, `ReviewEndpoints.cs`); no merge and no booking-link matching |
+| IDN-01 | P0 | Partial | R | `src/shared/auth/httpProvider.ts`, `src/shared/auth/httpProvider.test.ts`, `src/shared/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | BM35: sign out everywhere; BM46: device list with per-device sign-out; BM54: new-device notice on the list. No step-up check yet |
+| IDN-02 | P0 | Built | F | `src/features/boarding/ui/FindPassScreen.tsx`, `src/domain/signup.ts` | Guess-resistance is server side: not read |
+| IDN-03 | P0 | Partial | F | `server/Princess.Api/Auth/AuthService.cs` (`RegisterAsync`), `src/shared/ui/SignInFlows.tsx` | BM38: sign-up asks when name and date of birth match an adult account and flags the new one for a person; BM47: admin card to settle a flag (`src/features/account/ui/ReviewCard.tsx`, `ReviewEndpoints.cs`); no merge and no booking-link matching |
 | IDN-04 | P0 | Partial | R | `src/domain/party.ts`, `src/domain/account.ts`, `src/domain/homeLink.ts`, `src/domain/people.ts` | Party, helper and family link exist as three separate models. Shared vocabulary of relationships and tasks since BM37 (`src/domain/relationships.ts`); the stores are still three, and no cabin party, linked group or shipmate. BM5 |
 | IDN-05 | P0 | Partial | R | `src/domain/account.ts` (`PERMISSIONS`) | Helper now has view, documents, payments, profile, folio, checkin and trip (BM6 to BM12). BM37 maps each permission to the eight tasks. Still no edit-booking or message permission (server work); location is never shared |
-| IDN-06 | P0 | Built | F | `src/ui/plan/FamilyLinkScreen.tsx`, `src/domain/homeLink.ts`, `src/ui/ahead/ClubsScreen.tsx` | Authorised pickup unchecked |
-| IDN-07 | P1 | Partial | F | `src/ui/account/HelperScreen.tsx`, `src/ui/party/ShareScreens.tsx` | Revoke exists per feature; BM5 built the "who can see what" card on `/me/helper` (`src/domain/access.ts`); BM37: every active or waiting row has an immediate Stop now / Cancel invitation |
-| IDN-08 | P1 | Partial | F | `src/ui/home/` advisors route `/home/advisors` | Access for advisor-booked guests unchecked |
-| TRU-01 | P0 | Built | F | `src/ui/account/LedgerScreen.tsx`, `src/ui/finish/HistoryScreen.tsx`, `src/ui/account/ActivityScreen.tsx` | None found |
+| IDN-06 | P0 | Built | F | `src/features/plan/ui/FamilyLinkScreen.tsx`, `src/domain/homeLink.ts`, `src/features/ahead/ui/ClubsScreen.tsx` | Authorised pickup unchecked |
+| IDN-07 | P1 | Partial | F | `src/features/account/ui/HelperScreen.tsx`, `src/features/party/ui/ShareScreens.tsx` | Revoke exists per feature; BM5 built the "who can see what" card on `/me/helper` (`src/domain/access.ts`); BM37: every active or waiting row has an immediate Stop now / Cancel invitation |
+| IDN-08 | P1 | Partial | F | `src/features/home/ui/` advisors route `/home/advisors` | Access for advisor-booked guests unchecked |
+| TRU-01 | P0 | Built | F | `src/features/account/ui/LedgerScreen.tsx`, `src/features/finish/ui/HistoryScreen.tsx`, `src/features/account/ui/ActivityScreen.tsx` | None found |
 | TRU-02 | P0 | Built | F | `src/domain/trustLedger.ts`, `docs/audit-trail.md` | None found |
-| TRU-03 | P0 | Partial | R | `src/domain/trustLedger.ts`, `src/ui/StatusBadge.tsx` | BM54: one vocabulary of nine states (`src/domain/lifecycle.ts`, `LifecycleBadge`, move rules and old-word mapping) used on the check-in receipt. Other screens still use the older six badge kinds; moving them over is open |
-| TRU-04 | P0 | Built | F | `src/data/outbox.ts`, `docs/audit-trail.md` | C# idempotency tests not run |
-| TRU-05 | P0 | Built | F | `src/ui/book/changes.ts`, `src/domain/prebook.test.ts`, `src/ui/failedReschedule.test.tsx` | Failed dinner move on screen: original stays, plain message (table taken, or a retry note); the rule itself lives in the server, not read |
-| TRU-06 | P0 | Built | F | `src/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, `src/gates/offlineDay.test.ts` | Source label per item unchecked |
-| TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | BM36: served health for seven service areas (`/help/status`); BM54: an incident feed (`GET /help/incidents`, `Status:Incidents` in configuration) with start time, message and end, shown on the Status screen; the runbook says how to declare one. Still no paging of staff (PERF-07). C# not compiled |
-| TRU-08 | P1 | Built | F | `src/ui/book/ChoiceError.tsx`, `src/ui/book/problems.ts`, `src/ui/plan/refused.ts` | Plain-language refusals on key flows |
-| AST-01 | P1 | Built | F | `src/ai/stanley.ts`, `src/ai/stanleyRoute.ts`, `src/ai/stanleyRoute.test.ts` | None found |
-| AST-02 | P1 | Built | F | `src/ai/guard.ts`, `src/ai/stanleyAsk.ts`, `src/ai/answerFreshness.test.ts` | BM50: every answer source has a label; all but the authored library say "as of" a time, and the library says it is not live |
+| TRU-03 | P0 | Partial | R | `src/domain/trustLedger.ts`, `src/shared/ui/StatusBadge.tsx` | BM54: one vocabulary of nine states (`src/domain/lifecycle.ts`, `LifecycleBadge`, move rules and old-word mapping) used on the check-in receipt. Other screens still use the older six badge kinds; moving them over is open |
+| TRU-04 | P0 | Built | F | `src/shared/data/outbox.ts`, `docs/audit-trail.md` | C# idempotency tests not run |
+| TRU-05 | P0 | Built | F | `src/features/book/ui/changes.ts`, `src/domain/prebook.test.ts`, `src/shared/ui/failedReschedule.test.tsx` | Failed dinner move on screen: original stays, plain message (table taken, or a retry note); the rule itself lives in the server, not read |
+| TRU-06 | P0 | Built | F | `src/shared/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, `src/gates/offlineDay.test.ts` | Source label per item unchecked |
+| TRU-07 | P0 | Partial | R | `src/features/aboard/ui/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | BM36: served health for seven service areas (`/help/status`); BM54: an incident feed (`GET /help/incidents`, `Status:Incidents` in configuration) with start time, message and end, shown on the Status screen; the runbook says how to declare one. Still no paging of staff (PERF-07). C# not compiled |
+| TRU-08 | P1 | Built | F | `src/features/book/ui/ChoiceError.tsx`, `src/features/book/ui/problems.ts`, `src/features/plan/ui/refused.ts` | Plain-language refusals on key flows |
+| AST-01 | P1 | Built | F | `src/features/stanley/logic/stanley.ts`, `src/features/stanley/logic/stanleyRoute.ts`, `src/features/stanley/logic/stanleyRoute.test.ts` | None found |
+| AST-02 | P1 | Built | F | `src/features/stanley/logic/guard.ts`, `src/features/stanley/logic/stanleyAsk.ts`, `src/features/stanley/logic/answerFreshness.test.ts` | BM50: every answer source has a label; all but the authored library say "as of" a time, and the library says it is not live |
 | AST-03 | P1 | Built | F | `src/domain/answerCards.ts`, `src/domain/answerCards.test.ts` | None found |
-| AST-04 | P0 | Built | F | `src/ui/ai/StanleyConfirm.tsx` (confirmation); `src/ai/guard.ts` is the separate handoff screen | None found |
-| AST-05 | P0 | Built | F | `src/ai/guard.ts`, `src/domain/answerCards.ts` | Human routes are mocked |
-| AST-06 | P1 | Built | F | `src/ui/ai/HandoffCard.tsx`, `src/domain/handoff.ts`, `src/domain/handoff.test.ts` | Consent step unchecked |
-| AST-07 | P1 | Built | F | `src/domain/searchIndex.ts`, `src/ui/home/AskScreen.tsx` | None found |
-| AST-08 | P2 | Built | F | `src/ui/home/SummaryScreen.tsx` (route `/ship/read-aloud`), `src/ui/home/AskScreen.tsx` | None found |
-| COM-01 | P0 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | None found |
+| AST-04 | P0 | Built | F | `src/features/stanley/ui/StanleyConfirm.tsx` (confirmation); `src/features/stanley/logic/guard.ts` is the separate handoff screen | None found |
+| AST-05 | P0 | Built | F | `src/features/stanley/logic/guard.ts`, `src/domain/answerCards.ts` | Human routes are mocked |
+| AST-06 | P1 | Built | F | `src/features/stanley/ui/HandoffCard.tsx`, `src/domain/handoff.ts`, `src/domain/handoff.test.ts` | Consent step unchecked |
+| AST-07 | P1 | Built | F | `src/domain/searchIndex.ts`, `src/features/home/ui/AskScreen.tsx` | None found |
+| AST-08 | P2 | Built | F | `src/features/home/ui/SummaryScreen.tsx` (route `/ship/read-aloud`), `src/features/home/ui/AskScreen.tsx` | None found |
+| COM-01 | P0 | Built | F | `src/features/account/ui/NotificationsScreen.tsx`, `src/domain/notifications.ts` | None found |
 | COM-02 | P0 | Built | F | `src/domain/delivery.ts`, `src/domain/delivery.test.ts` | Marketing consent vs critical separation visible in `delivery.ts` |
-| COM-03 | P0 | Simulated | F | `src/domain/delivery.ts`, `src/push/push.ts` | Email and SMS delivery simulated (NOT-01 in `docs/archive/gap-analysis-plan.md`) |
+| COM-03 | P0 | Simulated | F | `src/domain/delivery.ts`, `src/shared/push/push.ts` | Email and SMS delivery simulated (NOT-01 in `docs/archive/gap-analysis-plan.md`) |
 | COM-04 | P0 | Partial | R | `server/Princess.Api/Domain/PushRules.cs` (`FallbackDue`), `server/Princess.Api/Services/PushService.cs`, `server/Princess.Api/Services/PingramSender.cs` | BM40: safety alerts have an acknowledged state and fall back to text, then email, after 10 minutes. Pingram sender written, never run against the live service |
-| COM-05 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/calm.ts` | None found |
-| COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39, BM54: as MOB-07; reservation and case alerts themselves do not exist on the server yet |
-| OFF-01 | P0 | Built | F | `src/data/outbox.ts`, `src/gates/offlineDay.test.ts` | Offline contract table with a route-coverage test (BM19) |
-| OFF-02 | P0 | Built | F | `src/gates/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts`, `src/domain/offlineCapsule.ts` | None found |
+| COM-05 | P1 | Built | F | `src/features/account/ui/NotificationsScreen.tsx`, `src/domain/calm.ts` | None found |
+| COM-06 | P1 | Partial | F | `src/shared/push/push.ts`, `src/shared/ui/pushScreens.test.tsx` | BM39, BM54: as MOB-07; reservation and case alerts themselves do not exist on the server yet |
+| OFF-01 | P0 | Built | F | `src/shared/data/outbox.ts`, `src/gates/offlineDay.test.ts` | Offline contract table with a route-coverage test (BM19) |
+| OFF-02 | P0 | Built | F | `src/gates/offlineDay.test.ts`, `src/shared/hooks/useSavedCopy.ts`, `src/domain/offlineCapsule.ts` | None found |
 | OFF-03 | P0 | Built | F | `src/domain/offlineCache.ts`, `src/domain/offlineCapsule.ts`, `src/gates/offlineDay.test.ts` | "Verify with crew" shown on the capsule card |
-| OFF-04 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useOutbox.ts` | Conflict resolution unchecked |
-| OFF-05 | P0 | Built | F | `src/api/bounded.ts`, `src/data/outbox.ts` | None found |
-| OFF-06 | P1 | Built | F | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts`, `src/ui/DeferredImage.tsx`, `src/ui/dataLightImages.test.tsx` | Photos wait for a tap in data-light mode; no autoplay (tested) |
-| OFF-07 | P1 | Built | R | `src/domain/offlineCapsule.ts`, `src/data/capsule.ts` | BM19: export and restore of waiting items, unreadable-list handling; eviction surfaced since BM1 |
-| A11Y-01 | P0 | Built | F | `src/ui/a11y.test.tsx`, `src/ui/Dialog.tsx` | Audit is jsdom only |
-| A11Y-02 | P0 | Partial | F | `src/design/textSize.ts`, `src/design/textSize.test.ts` | Screen-reader and 320 px reflow by hand only |
-| A11Y-03 | P0 | Built | F | `src/ui/a11y.test.tsx`, `src/gates/darkPatterns.test.ts` | None found |
-| A11Y-04 | P0 | Built | F | `src/ui/DisplaySettings.tsx`, `src/domain/calm.ts`, `src/domain/calm.test.ts` | Captions and transcripts: no media found to caption |
-| A11Y-05 | P0 | Built | F | `src/ui/aboard/SupportScreens.tsx`, `src/ui/account/PrintScreen.tsx` | Documented non-app route unchecked |
-| A11Y-06 | P0 | Built | F | `src/ui/AccessAreaNote.tsx`, `src/domain/accessReference.ts` | None found |
+| OFF-04 | P0 | Built | F | `src/shared/data/outbox.ts`, `src/shared/hooks/useOutbox.ts` | Conflict resolution unchecked |
+| OFF-05 | P0 | Built | F | `src/shared/api/bounded.ts`, `src/shared/data/outbox.ts` | None found |
+| OFF-06 | P1 | Built | F | `src/shared/settings/settings.ts`, `src/shared/hooks/visibleInterval.ts`, `src/shared/ui/DeferredImage.tsx`, `src/shared/ui/dataLightImages.test.tsx` | Photos wait for a tap in data-light mode; no autoplay (tested) |
+| OFF-07 | P1 | Built | R | `src/domain/offlineCapsule.ts`, `src/shared/data/capsule.ts` | BM19: export and restore of waiting items, unreadable-list handling; eviction surfaced since BM1 |
+| A11Y-01 | P0 | Built | F | `src/shared/ui/a11y.test.tsx`, `src/shared/ui/Dialog.tsx` | Audit is jsdom only |
+| A11Y-02 | P0 | Partial | F | `src/shared/design/textSize.ts`, `src/shared/design/textSize.test.ts` | Screen-reader and 320 px reflow by hand only |
+| A11Y-03 | P0 | Built | F | `src/shared/ui/a11y.test.tsx`, `src/gates/darkPatterns.test.ts` | None found |
+| A11Y-04 | P0 | Built | F | `src/shared/ui/DisplaySettings.tsx`, `src/domain/calm.ts`, `src/domain/calm.test.ts` | Captions and transcripts: no media found to caption |
+| A11Y-05 | P0 | Built | F | `src/features/aboard/ui/SupportScreens.tsx`, `src/features/account/ui/PrintScreen.tsx` | Documented non-app route unchecked |
+| A11Y-06 | P0 | Built | F | `src/shared/ui/AccessAreaNote.tsx`, `src/domain/accessReference.ts` | None found |
 | A11Y-07 | P1 | Out of reach | F | none | Needs research sessions with real people |
-| A11Y-08 | P1 | Not built | F | `src/i18n` | English only by project rule; Spanish files are untouched |
+| A11Y-08 | P1 | Not built | F | `src/shared/i18n` | English only by project rule; Spanish files are untouched |
 | SEC-01 | P0 | Built | F | `src/gates/security.test.ts`, `docs/security-performance-plan.md`, `docs/audit-trail.md` | Encryption at rest is a deployment matter |
 | SEC-02 | P0 | Built | F | `src/gates/auditGate.test.ts`, `src/gates/security.test.ts` | Source scan guards storage |
 | SEC-03 | P0 | Built | F | `src/domain/dataRules.ts`, `src/domain/privacy.ts` | Purpose limitation in code unchecked |
-| SEC-04 | P0 | Built | R | `src/ui/account/PrivacyScreen.tsx`, `src/ui/DataSettings.tsx`, `src/sync/consent.ts` | None found |
-| SEC-05 | P0 | Built | F | `src/domain/arrivalPing.ts`, `src/domain/homeLink.ts`, `src/sync/consent.ts` | None found |
-| SEC-06 | P0 | Built | R | `src/ui/plan/FamilyLinkScreen.tsx`, `src/ui/aboard/ChatSafe.tsx` | Reconciled: age rules enforced on the server (`ChatService`, no phone numbers, links or photos for under-18s); photo gate in `ChatSafe` |
-| SEC-07 | P1 | Partial | F | `src/auth/httpProvider.ts` | BM35 sign out everywhere; BM46 device list; BM54 a "new device signed in" notice on the device list (devices not yet shown on this device, "That was me" to dismiss). No step-up check |
+| SEC-04 | P0 | Built | R | `src/features/account/ui/PrivacyScreen.tsx`, `src/shared/ui/DataSettings.tsx`, `src/shared/sync/consent.ts` | None found |
+| SEC-05 | P0 | Built | F | `src/domain/arrivalPing.ts`, `src/domain/homeLink.ts`, `src/shared/sync/consent.ts` | None found |
+| SEC-06 | P0 | Built | R | `src/features/plan/ui/FamilyLinkScreen.tsx`, `src/features/aboard/ui/ChatSafe.tsx` | Reconciled: age rules enforced on the server (`ChatService`, no phone numbers, links or photos for under-18s); photo gate in `ChatSafe` |
+| SEC-07 | P1 | Partial | F | `src/shared/auth/httpProvider.ts` | BM35 sign out everywhere; BM46 device list; BM54 a "new device signed in" notice on the device list (devices not yet shown on this device, "That was me" to dismiss). No step-up check |
 | SEC-08 | P1 | Out of reach | F | `docs/security-performance-plan.md` | Pen test and vendor review are outside code |
-| UX-01 | P0 | Built | F | `src/routes/coverage.test.ts`, `src/routes/stageNav.test.ts` | Parity is by shared code |
-| UX-02 | P0 | Partial | F | `src/styles`, `src/ui/Shell.tsx` | BM49: from 1280px the comparison and difficulty screens use a wider page, sticky table headers and first column, and a side filter column (`.page--wide`, `.workspace` in `layout.css`); not looked at in a browser (project rule), so Partial |
-| UX-03 | P0 | Built | F | `src/routes/nav.test.ts` | Reachable-zone placement is by hand |
-| UX-04 | P1 | Built | F | `src/sync/sync.ts`, `src/sync/sync.test.ts`, `src/ui/DataSettings.tsx` | Server-held; the project rule |
-| UX-05 | P1 | Built | F | `src/ui/account/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Folio and ticket printing unchecked |
+| UX-01 | P0 | Built | F | `src/app/routes/coverage.test.ts`, `src/app/routes/stageNav.test.ts` | Parity is by shared code |
+| UX-02 | P0 | Partial | F | `src/styles`, `src/shared/ui/Shell.tsx` | BM49: from 1280px the comparison and difficulty screens use a wider page, sticky table headers and first column, and a side filter column (`.page--wide`, `.workspace` in `layout.css`); not looked at in a browser (project rule), so Partial |
+| UX-03 | P0 | Built | F | `src/app/routes/nav.test.ts` | Reachable-zone placement is by hand |
+| UX-04 | P1 | Built | F | `src/shared/sync/sync.ts`, `src/shared/sync/sync.test.ts`, `src/shared/ui/DataSettings.tsx` | Server-held; the project rule |
+| UX-05 | P1 | Built | F | `src/features/account/ui/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Folio and ticket printing unchecked |

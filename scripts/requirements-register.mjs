@@ -38,13 +38,13 @@ function walk(dir, out = []) {
   return out
 }
 const srcFiles = walk('src'), serverFiles = walk('server/Princess.Api')
-const EN = 'src/i18n/locales/en.ts'
+const EN = 'src/shared/i18n/locales/en.ts'
 const cache = new Map()
 const text = (p) => cache.get(p) ?? (cache.set(p, rd(p)), cache.get(p))
 
-// 'src' and 'any' leave out the English strings file and the assistant's canned answers (src/ai), which mention almost everything.
+// 'src' and 'any' leave out the English strings file and the assistant's canned answers (src/features/stanley/logic), which mention almost everything.
 // Use 'en' to look for wording in the strings file, or a path (comma separated list allowed) to look in particular files.
-const plain = (f) => f !== EN && !f.startsWith('src/ai/')
+const plain = (f) => f !== EN && !f.startsWith('src/features/stanley/logic/')
 function filesFor(scope) {
   return scope.split(',').flatMap((one) => {
     if (one === 'en') return [EN]

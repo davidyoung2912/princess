@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { backupCount, buildBackup, mergeBackup, parseBackup, scanOutboxes } from './deviceBackup'
-import type { OutboxItem } from '../data/outbox'
+import type { OutboxItem } from '../shared/data/outbox'
 
 const item = (id: string): OutboxItem => ({ id, kind: 'chat', payload: { text: `hello ${id}` }, queuedAt: 1, attempts: 0, nextAt: 1 })
 const store = (data: Record<string, string>) => ({ length: Object.keys(data).length, key: (i: number) => Object.keys(data)[i] ?? null, getItem: (k: string) => data[k] ?? null })

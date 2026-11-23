@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { CASE_TOPICS } from '../ai/stanleyHandoff'
-import { en } from '../i18n/locales/en'
+import { CASE_TOPICS } from '../features/stanley/logic/stanleyHandoff'
+import { en } from '../shared/i18n/locales/en'
 import { buildHandoff, defaultParts, FIELD_MAX, HANDOFF_MAX, TOPIC_FIELDS, topicLines } from './handoff'
 
 const booking = { guest: 'Ana Silva', sailing: '2027-03-20', party: 2, open: 3 }

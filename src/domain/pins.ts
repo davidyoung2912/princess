@@ -1,5 +1,5 @@
-import { MAX_PINS } from '../settings/settings'
-import { parseVenuePinKey, togglePinKey, venuePinKey, type PinResult } from './explorer/venueOrder'
+import { MAX_PINS } from '../shared/settings/settings'
+import { parseVenuePinKey, togglePinKey, venuePinKey, type PinResult } from '../features/explorer/domain/venueOrder'
 
 /** A pinned screen is stored among the guest's favourites as `screen:<id>`, a pinned venue as `venue:<shipId>.<venueId>`. The server holds the list, in the order the guest arranged. */
 export const screenPinKey = (id: string): string => `screen:${id}`

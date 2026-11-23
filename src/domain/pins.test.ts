@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { pinsToUpload, reorderScreenKeys, screenIdsOf, screenPinKey, toggleScreenKey, toggleVenueKey, venueKeysOf } from './pins'
-import { MAX_VENUE_PINS, venuePinKey } from './explorer/venueOrder'
+import { MAX_VENUE_PINS, venuePinKey } from '../features/explorer/domain/venueOrder'
 
 describe('screen pins', () => {
   it('reads the screen ids of a favourites list in order, leaving other kinds out', () => {

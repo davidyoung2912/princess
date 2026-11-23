@@ -1,0 +1,182 @@
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useLocation } from 'react-router'
+import { MAX_MESSAGE, screen } from '../logic/guard'
+import { awayAnswer, awayTopic, type AwayTopic } from '../logic/stanleyAway'
+import { useAwayFacts } from '../../../shared/hooks/useAwayFacts'
+import { clockHhmm, planSnapshot, type ActionContext } from '../logic/stanleyAction'
+import { decideStanley } from '../logic/stanleyDecide'
+import { answerOf } from '../logic/stanleyLibrary'
+import { savedFacts } from '../../../shared/feeds/stanleyFacts'
+import { answerActions, type StanleySource } from '../logic/stanleyRoute'
+import { assistantMobility } from '../../../domain/bookingPrep'
+import { useMemory } from '../../../shared/hooks/useMemory'
+import { countTier, type Tier } from '../diagnostics/stanleyTiers'
+import { countUnderstood } from '../diagnostics/stanleyUnderstood'
+import { keepUnanswered } from '../diagnostics/stanleyUnanswered'
+import { answerFromData, choiceOf, composeReply, EMPTY_THREAD, hintOf, liveShip, previousOf, readQuestion, remember } from '../logic/understand'
+import { cardText } from '../logic/stanleyCard'
+import { portDays } from '../logic/understand/portDays'
+import { getContext, subscribeContext } from '../../account/logic/context'
+import { useSailing } from '../../../shared/hooks/useDemo'
+import { useCurrentDay, useDayPlan } from '../../../shared/hooks/useDayPlan'
+import { useOnboardToday } from '../../../shared/hooks/useOnboardToday'
+import { itinerary, shipZoneAt } from '../../../domain/sailings'
+import { useSettings } from '../../../shared/hooks/useSettings'
+import { stanleyLevelFor } from '../../../shared/settings/settings'
+import { screenForPath } from '../../../app/routes/screens'
+import { useJourneyPosition } from '../../../shared/hooks/useJourneyPosition'
+import { countAsk } from '../../../shared/hooks/useStatsTracker'
+import { askStanley, cooldownSeconds, getStanleyStatus, getStanleyThread, loadStanleyStatus, revealSteps, setStanleyThread, stanleyProblem, subscribeStanley, type StanleyMessage, type StanleyTurn } from '../logic/stanley'
+import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../../domain/contacts'
+import { t, type StringKey } from '../../../shared/i18n'
+import { useVisibleInterval } from '../../../shared/hooks/useVisibleInterval'
+import { fetchStanleyStatus, sendStanley } from '../../../app/runtime'
+
+const ABOARD: readonly string[] = ['embark', 'sea', 'port', 'disembark']
+
+/** Stanley's own wording for a reply; only an answer carries text from the server. */
+function wording(turn: StanleyTurn): string {
+  switch (turn.kind) {
+    case 'answer': return turn.text
+    case 'blocked': return t('stanley.blocked')
+    case 'offtopic': return t('stanley.offtopic')
+    case 'handoff': return t(`ai.handoff.${turn.handoff ?? 'person'}` as StringKey, { phone: GUEST_SERVICES_NUMBER, emergency: EMERGENCY_NUMBER })
+    case 'unavailable': return t(`stanley.unavailable.${turn.fallback ?? 'bad'}` as StringKey)
+    default: return t('stanley.unreachable')
+  }
+}
+
+/** What the last turns were about, for a follow-up like "and how much?". In memory only, shared by the dialog and the chat, and forgotten after ten minutes or a change of stage (see understand/thread.ts). */
+let thread = EMPTY_THREAD
+/** The away topic last answered, for a follow-up while the guest is off the ship. */
+let awayLast: AwayTopic | null = null
+
+/** Whether a question is waiting for its answer. Kept outside the hook so the Stanley chat's history can show the waiting dots where the answer will land. */
+let waiting = false
+const waitingListeners = new Set<() => void>()
+const setBusy = (on: boolean) => { waiting = on; waitingListeners.forEach((fn) => fn()) }
+export const useStanleyBusy = (): boolean => useSyncExternalStore((fn) => { waitingListeners.add(fn); return () => { waitingListeners.delete(fn) } }, () => waiting, () => waiting)
+
+/**
+ * Asking Stanley, shared by his dialog and the Stanley chat page so a question can be asked and answered where the guest already is.
+ * The thread is the in-memory one both show; `submit` adds the question, waits (busy shows the typing dots) and adds the answer.
+ */
+export function useStanleyAsk() {
+  const { stage } = useJourneyPosition()
+  const hasBooking = !!useSyncExternalStore(subscribeContext, getContext, getContext)?.booking
+  const sailing = useSailing()
+  const dayPlan = useDayPlan(useCurrentDay())
+  const ports = useMemo(() => portDays(itinerary(sailing)), [sailing])
+  const allAboardAt = useOnboardToday(hasBooking).data?.portDay?.state.at ?? null
+  const [settings] = useSettings()
+  // While the guest is off the ship Stanley answers on the phone, about the port and getting back, and never calls the server.
+  const awayFacts = useAwayFacts()
+  const screenId = screenForPath(useLocation().pathname)?.id
+  const { state: mem } = useMemory()
+  const [problem, setProblem] = useState<string | null>(null)
+  const busy = useStanleyBusy()
+  const [reveal, setReveal] = useState<{ id: string; steps: string[]; i: number } | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+  const messages = useSyncExternalStore(subscribeStanley, getStanleyThread, getStanleyThread)
+  const status = useSyncExternalStore(subscribeStanley, getStanleyStatus, getStanleyStatus)
+  useEffect(() => { void loadStanleyStatus(fetchStanleyStatus) }, [])
+  // Keep the trip facts on this phone while there is a signal, so they can be shown when there is none.
+  useEffect(() => { if (hasBooking) void savedFacts.load() }, [hasBooking])
+  const cooldown = cooldownSeconds(messages, now)
+  useVisibleInterval(() => setNow(Date.now()), 1000, cooldown > 0)
+  useVisibleInterval(() => setReveal((r) => (r && r.i + 1 < r.steps.length ? { ...r, i: r.i + 1 } : null)), 80, reveal !== null)
+
+  const submit = async (text: string, onAccepted?: () => void) => {
+    if (busy) return
+    setNow(Date.now())
+    if (cooldownSeconds(getStanleyThread(), Date.now())) return
+    const p = stanleyProblem(text)
+    if (p === 'empty') return
+    if (p) { setProblem(t(`stanley.problem.${p}` as StringKey, { max: MAX_MESSAGE })); return }
+    setProblem(null)
+    const at = Date.now()
+    const asked: StanleyMessage = { id: `u-${at}-${messages.length}`, role: 'user', text: text.trim(), at }
+    const withUser = [...getStanleyThread(), asked]
+    setStanleyThread(withUser)
+    onAccepted?.()
+    // A typed answer to a clarifying question ("the first one", "yes", "no") is answered here and never sent on; anything else may lean on the last topic.
+    const choice = screen(asked.text) ? null : choiceOf(asked.text, thread, at, stage)
+    if (choice) {
+      const picked = 'pick' in choice
+      const understoodPick = picked ? readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports, previous: { topic: choice.pick, acts: thread.acts, entities: thread.entities, force: true } }) : null
+      const composedPick = understoodPick ? composeReply(understoodPick, { kind: 'offtopic', existing: [] }, { text: asked.text, stage }) : null
+      thread = understoodPick ? remember(thread, understoodPick, Date.now(), stage) : { ...thread, options: [] }
+      setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: composedPick?.text ?? t('understand.declined'), at: Date.now(), kind: 'answer', actions: composedPick?.actions ?? [] }])
+      countUnderstood([`outcome:${picked ? 'confident' : 'skipped'}`, ...(composedPick?.topic ? [`topic:${composedPick.topic}`] : [])])
+      setNow(Date.now())
+      return
+    }
+    const previous = previousOf(thread, at, stage)
+    // Away from the ship: the safety screen still comes first (an emergency goes to the handoff below); anything else is answered here, from what the app holds.
+    if (awayFacts && !screen(asked.text)) {
+      // The follow-ups ("and a taxi?", "what about lunch?") lean on the last turn here as they do on the ship.
+      const understoodAway = readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports, previous })
+      thread = remember(thread, understoodAway, Date.now(), stage)
+      // A short follow-up with no topic word of its own ("and how much?") is about the away topic just answered.
+      const topic = awayTopic(asked.text) ?? (understoodAway.carried ? awayLast : null)
+      awayLast = topic
+      const away = composeReply(understoodAway, { kind: 'answer', source: 'library', existing: [] }, { text: asked.text, stage })
+      setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: awayAnswer(topic, awayFacts, t as (k: string, p?: Record<string, string | number>) => string), at: Date.now(), kind: 'answer', actions: away.actions }])
+      countUnderstood([`outcome:${away.outcome}`])
+      countTier('library', `away:${topic ?? 'none'}`)
+      setNow(Date.now())
+      return
+    }
+    setBusy(true)
+    // One front door: the authored library first (free, on the device), then a ship fact; everything else, including a request to change something, goes to the server's gateway, which picks the source or prepares a preview.
+    // The safety screen comes first, so an emergency is never answered from a library or a model. The server's switch can turn the library off.
+    const decision = decideStanley(asked.text, { stage, libraryOn: status.library })
+    const known = decision.kind === 'library' ? decision.entry : null
+    const route = decision.kind === 'ship' ? decision : null
+    let source: StanleySource = 'model'
+    let link: string | undefined
+    let entryId: string | undefined
+    let turn: StanleyTurn
+    const id = `a-${at}-${withUser.length}`
+    // A plain question about a named thing (hours, where, price, what it is) is answered from the app's own data, as a card; the safety screen and the library have already had their turn, and a question about the guest goes on to the server.
+    const understood = readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports, previous })
+    // A question that tripped the safety screen is never carried into the next one.
+    thread = screen(asked.text) ? EMPTY_THREAD : remember(thread, understood, Date.now(), stage)
+    countAsk()
+    const direct = !known && !route && decision.kind === 'server' ? answerFromData(asked.text, understood, stage && ABOARD.includes(stage) ? liveShip(sailing, Date.now()) : null) : null
+    if (direct) { source = 'ship'; turn = { kind: 'answer', text: cardText(direct), handoff: null, fallback: null, card: direct } }
+    else if (known) { source = 'library'; link = known.link; entryId = known.id; turn = { kind: 'answer', text: answerOf(known), handoff: null, fallback: null } }
+    else if (route?.kind === 'ship') { source = 'ship'; turn = { kind: 'answer', text: route.fact.a, handoff: null, fallback: null } }
+    else {
+      // The server turns a request to change something into a typed preview; it needs today's plan and the all-aboard time to name an item or a reminder's basis.
+      const actionContext: ActionContext = { plan: hasBooking && dayPlan.ready ? planSnapshot(dayPlan.rows, dayPlan.alternatives, dayPlan.day) : [], sailingId: sailing.id }
+      if (allAboardAt !== null) actionContext.allAboard = { at: clockHhmm(allAboardAt, shipZoneAt(sailing, allAboardAt)), label: 'ship time' }
+      turn = await askStanley(sendStanley, withUser, { context: { stage, screen: screenId, sailingId: sailing.id, level: stanleyLevelFor(settings) }, mobility: assistantMobility(mem.access), actionContext, hint: hintOf(understood) })
+      if (turn.tier === 'trip' || turn.tier === 'before') source = turn.tier
+      else if (turn.tier === 'resolver' || turn.tier === 'action') source = 'trip'
+    }
+    const citations = turn.citations ?? []
+    const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
+    const own = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
+    // Understand the question with no model: pills for the likeliest screens under the answer, and where there was no answer at all, words and pills of its own.
+    const composed = composeReply(understood, { kind: turn.kind, source, scripted: (turn.tier === 'model' || turn.tier === 'unanswered') && turn.source === 'scripted', existing: own }, { text: asked.text, stage })
+    const actions = composed.actions
+    const shown: StanleyTurn = composed.replaced ? { kind: 'answer', text: composed.text ?? '', handoff: null, fallback: null } : turn
+    countUnderstood([`outcome:${composed.replaced ? 'replaced' : composed.outcome}`, ...(composed.topic ? [`topic:${composed.topic}`] : [])])
+    // Only when the guest opted in (Diagnostics settings), and never a question that went to a person.
+    if (turn.kind !== 'handoff' && !screen(asked.text) && (composed.outcome === 'miss' || composed.outcome === 'ambiguous') && !(turn.kind === 'answer' && answered && !composed.replaced)) keepUnanswered(asked.text, composed.outcome)
+    const answered2 = composed.replaced ? composed.outcome === 'confident' : answered
+    const tier: Tier = turn.kind === 'handoff' ? 'handoff' : shown.kind === 'answer' && answered2 ? (composed.replaced ? 'library' : source) : 'unanswered'
+    countTier(tier, known ? `library:${known.id}` : route?.kind === 'ship' ? `ship:${route.fact.id}` : undefined)
+    const saved = turn.kind === 'unreachable' && turn.fallback === 'network' && hasBooking ? savedFacts.now() ?? [] : []
+    const reply: StanleyMessage = { id, role: 'assistant', text: saved.length > 0 ? t('stanley.offline.saved') : wording(shown), saved: saved.length > 0 ? saved : undefined, at: Date.now(), kind: shown.kind, handoff: shown.handoff, fallback: shown.fallback, source: shown.kind === 'answer' && !composed.replaced ? source : undefined, citations, card: composed.replaced ? undefined : turn.card ?? undefined, action: composed.replaced ? undefined : turn.action ?? undefined, actions, entryId }
+    setStanleyThread([...getStanleyThread(), reply])
+    setNow(Date.now())
+    setBusy(false)
+    // An answer appears a few words at a time, as if it were arriving; with reduced motion it simply appears.
+    if (shown.kind !== 'answer' || reply.card || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    setReveal({ id: reply.id, steps: revealSteps(reply.text), i: 0 })
+  }
+
+  return { submit, busy, problem, setProblem, reveal, cooldown, messages, status, stage, screenId, awayFacts }
+}

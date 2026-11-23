@@ -1,0 +1,70 @@
+import { describe, expect, it } from 'vitest'
+import { searchContent } from '../../domain/searchIndex'
+import { parseRecent, pushRecent } from '../../domain/recentSearches'
+import { t } from '../../shared/i18n'
+import { JOURNEY_OF_STAGE, JOURNEY_STAGES } from './hubs'
+import { ROUTES } from './routes'
+import { FIND_TASKS, SCREEN_WORDS, screenHits } from './screenWords'
+import { STAGE_IDS } from '../../domain/sailings'
+
+describe('journey stages (N2.1)', () => {
+  it('maps every point of the sailing to one of the eleven stages and names each stage', () => {
+    expect(JOURNEY_STAGES).toHaveLength(11)
+    for (const id of STAGE_IDS) expect(JOURNEY_STAGES).toContain(JOURNEY_OF_STAGE[id])
+    for (const s of JOURNEY_STAGES) expect(t(`journey.stage.${s}`).length).toBeGreaterThan(2)
+  })
+})
+
+describe('one search (N2.3)', () => {
+  const hits = (q: string) => searchContent(q, screenHits(t)).map((h) => h.to)
+
+  it('has at least two plain phrases for every screen', () => {
+    for (const r of ROUTES.filter((x) => x.tab !== null && !x.path.includes(':') && x.path !== '/kit')) {
+      const phrases = (SCREEN_WORDS[r.path] ?? '').split(';').map((x) => x.trim()).filter(Boolean)
+      expect(phrases.length, r.path).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it('finds each screen by two of its plain phrases', () => {
+    const misses: string[] = []
+    for (const [path, words] of Object.entries(SCREEN_WORDS)) {
+      const phrases = words.split(';').map((x) => x.trim()).filter((x) => x.length >= 2)
+      const found = phrases.filter((p) => hits(p).includes(path))
+      if (found.length < 2) misses.push(`${path} found by ${found.length} of ${phrases.length}`)
+    }
+    expect(misses).toEqual([])
+  })
+
+  it('has no phrase for a screen that does not exist', () => {
+    const known = new Set(ROUTES.map((r) => r.path))
+    for (const p of Object.keys(SCREEN_WORDS)) expect(known.has(p), p).toBe(true)
+  })
+
+  it('finds the 25 stage tasks in the first five results (Search, then the result: two taps)', () => {
+    expect(FIND_TASKS).toHaveLength(25)
+    for (const task of FIND_TASKS) expect(hits(task.phrase).slice(0, 5), `${task.id}: ${task.phrase}`).toContain(task.path)
+  })
+
+  it('finds the examples from the plan: allergy, taxi price, late, towel', () => {
+    expect(hits('allergy')).toContain('/plan/allergy')
+    expect(hits('taxi price')).toContain('/home/disembark/onward')
+    expect(hits('late')).toContain('/home/delayed')
+    expect(hits('towel')).toContain('/ship/requests')
+  })
+})
+
+describe('recent searches', () => {
+  it('keeps the newest first, without repeats, at most five', () => {
+    let list = pushRecent([], { to: '/a', title: 'A' })
+    for (const x of ['b', 'c', 'd', 'e', 'f']) list = pushRecent(list, { to: `/${x}`, title: x })
+    list = pushRecent(list, { to: '/d', title: 'D' })
+    expect(list.map((r) => r.to)).toEqual(['/d', '/f', '/e', '/c', '/b'])
+  })
+
+  it('reads a stored list safely', () => {
+    expect(parseRecent(null)).toEqual([])
+    expect(parseRecent('nonsense')).toEqual([])
+    expect(parseRecent('{"to":"/x"}')).toEqual([])
+    expect(parseRecent('[{"to":"https://evil.example","title":"x"},{"to":"/ok","title":"Ok"},{"to":1}]')).toEqual([{ to: '/ok', title: 'Ok' }])
+  })
+})

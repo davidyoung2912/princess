@@ -7,7 +7,7 @@ Source: section 8 of `docs/princess_passenger_pain_points_pwa_research.md`. The 
 | Research measure | What exists | Where | Limit |
 | --- | --- | --- | --- |
 | Completion of the top tasks, and time to find | `taskFunnel`: per top-15 task, how often its first screen opened, how often its last screen opened within the two-tap rule before Home, and the median seconds | Me > Settings > Diagnostics, "How the top tasks went on this phone" | Screens only; it cannot tell a guest who succeeded from one who wandered there. Help-only tasks are left out. On this phone only, never sent |
-| Taps to key tasks | `TOP_TASKS` and `navProblems()` assert the two-tap rule | `src/routes/nav.test.ts` | Counts designed taps, not real ones |
+| Taps to key tasks | `TOP_TASKS` and `navProblems()` assert the two-tap rule | `src/app/routes/nav.test.ts` | Counts designed taps, not real ones |
 | Cached records with a visible age | `src/gates/offlineDay.test.ts` fails the build when a screen shows a kept copy without its age | test suite | Code check, not a user check |
 | Essential screens available offline | `MUST_WORK_OFFLINE` kinds asserted; the Phone screen "Download my cruise" reports what was and was not saved; the night-before test | tests, Phone screen | Airplane-mode behaviour is not proven without a device |
 | Voyage pack download | last result kept on the phone (done, failed, size, time) | Phone screen | Per phone |

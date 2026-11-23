@@ -24,7 +24,7 @@ Detail for each item is in the phase sections below. "Owner" means it needs a de
 
 ## R1 Continuity
 
-Built: scroll position remembered per history entry and restored on Back (`src/routes/scrollMemory.ts`, `Shell.tsx`); filters mirrored into the address on dining and activity explorers, excursions, ports, venues and the day planner (`useMirrorParams`); saving or un-saving with no signal is held and sent on reconnect (`src/data/favouriteQueue.ts`).
+Built: scroll position remembered per history entry and restored on Back (`src/app/routes/scrollMemory.ts`, `Shell.tsx`); filters mirrored into the address on dining and activity explorers, excursions, ports, venues and the day planner (`useMirrorParams`); saving or un-saving with no signal is held and sent on reconnect (`src/shared/data/favouriteQueue.ts`).
 
 Open:
 - Other list screens still keep filters in component state only: spa explorer, sailings compare, cabin chooser, reservations list, chat people. Scroll restore covers them, but chips reset.
@@ -59,7 +59,7 @@ Open:
 
 ## R4 Download my cruise
 
-Built: a "Download my cruise" card on the Phone screen above the saved-copy card (`CruisePackCard`, `useCruisePack`, `src/data/cruisePack.ts`). It reads, with a connection, the pass, muster and emergency cards, embarkation, check-in receipt, health card, dinners, spa, cabin, family, every day's programme, shore tours per port day, the bill and the going-home views, and keeps each under the exact name the screen reads, so those screens open from the copy. The guest picks sections and leaves out ports, sees an estimate, sees progress, can stop, sees what was and was not saved with a reason (no room, not published yet, could not reach), and can retry only the failures. The last result is kept on the phone. Items the guest switched off in the saved-copy list are skipped. Storage stays on the current format (IndexedDB deferred by the owner).
+Built: a "Download my cruise" card on the Phone screen above the saved-copy card (`CruisePackCard`, `useCruisePack`, `src/shared/data/cruisePack.ts`). It reads, with a connection, the pass, muster and emergency cards, embarkation, check-in receipt, health card, dinners, spa, cabin, family, every day's programme, shore tours per port day, the bill and the going-home views, and keeps each under the exact name the screen reads, so those screens open from the copy. The guest picks sections and leaves out ports, sees an estimate, sees progress, can stop, sees what was and was not saved with a reason (no room, not published yet, could not reach), and can retry only the failures. The last result is kept on the phone. Items the guest switched off in the saved-copy list are skipped. Storage stays on the current format (IndexedDB deferred by the owner).
 
 Open:
 - Port guides, the Stanley port pack (`portPack`), deck-plan images and venue menus are not in the pack: the app bundle carries deck plans and venues, the port pack is fetched per day by its own screen. Add the port pack to the tours section.

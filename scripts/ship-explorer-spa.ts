@@ -1,6 +1,6 @@
 // The Spa Explorer content of each ship (docs/princess-spa-casino.md): the spa, salon, thermal suite and sanctuary, the treatments that can be booked at them, and the events that run
 // there (tours, seminars, port-day specials). Authored concept content; the start times and prices the doc leaves out are chosen here for review.
-import type { HoursRule } from '../src/domain/explorer/types.ts'
+import type { HoursRule } from '../src/features/explorer/domain/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow, SpaTreatmentRow } from './ship-explorer-data.ts'
 
 /** The spa is open 8 am to 10 pm every day of the cruise, from 11:30 on embarkation day (the guided tours run first); closed on the morning of disembarkation. */

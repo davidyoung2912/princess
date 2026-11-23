@@ -1,0 +1,147 @@
+import { useState } from 'react'
+import { HelpTip } from '../../../shared/ui/HelpTip'
+import { FieldLabel } from '../../../shared/ui/Field'
+import { CATEGORIES, CHANNELS, EXPLORER_LEADS, type Category, type Channel, type NotificationPrefs } from '../../../domain/notifications'
+import { formatDate } from '../../../domain/cruise'
+import { formatMoney } from '../../../domain/money'
+import { api } from '../../../app/runtime'
+import { useAction } from '../../../shared/hooks/useAction'
+import { useMine } from '../../../shared/hooks/useMine'
+import { t, th, type StringKey, headingCase } from '../../../shared/i18n'
+import { Banner, type BannerKind } from '../../../shared/ui/Banner'
+import { Button, LinkButton } from '../../../shared/ui/Button'
+import { Card } from '../../../shared/ui/Card'
+import { ActionError, Load } from './parts'
+import { splitHeld, withQuietHours } from '../../../domain/aboardMore'
+import { shipZoneAt } from '../../../domain/sailings'
+import { PORTS } from '../../../domain/sailings'
+import { timeIn } from '../../../domain/timezones'
+import { useNow, useSailing } from '../../../shared/hooks/useDemo'
+import { useMemory } from '../../../shared/hooks/useMemory'
+import { NUDGE_CHOICES } from '../../../domain/nudges'
+import { useSettings } from '../../../shared/hooks/useSettings'
+import { CalendarFeed, DeliveryLog, EmailCheck, PhoneCheck, PushSwitch } from './PushPanels'
+
+const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', instalmentDue: '/me/payments', instalmentAutoFailed: '/me/payments', instalmentTaken: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', tenderWatch: '/home/cruise', flightWatch: '/home/disembark/onward', checkinOpens: '/me/trips' } as const
+
+/** Notifications centre and preferences (MNG-14): what needs attention, and how and when to be told. */
+export function NotificationsScreen() {
+  const data = useMine(() => api.notifications.list())
+  const markRead = useAction((ids: string[]) => api.notifications.markRead(ids))
+  const now = useNow()
+  const sailing = useSailing()
+  const { state: mem } = useMemory()
+  const at = timeIn(now, shipZoneAt(sailing, now))
+  return (
+    <div className="page">
+      <Load state={data}>
+        {({ notices, prefs }) => {
+          const { shown, held } = splitHeld(notices, withQuietHours(mem.aboard.dnd, prefs.quiet), at)
+          const unread = shown.filter((n) => !n.read)
+          const row = (n: (typeof notices)[number]) => {
+            const kind: BannerKind = n.category === 'critical' ? 'danger' : n.read ? 'info' : 'warning'
+            const params = { date: n.params.date ? formatDate(String(n.params.date)) : '', count: Number(n.params.count ?? 0), amount: formatMoney(Number(n.params.amount ?? 0)), band: t(`tenderOutlook.band.${String(n.params.band ?? 'mixed')}` as StringKey), flight: String(n.params.flight ?? ''), minutes: Number(n.params.minutes ?? 0), port: PORTS[String(n.params.port) as keyof typeof PORTS]?.name ?? String(n.params.port ?? '') }
+            return (
+              <Banner key={n.id} kind={kind} title={n.id === 'checkinOpens' && n.params.open ? t('notices.checkinOpen') : t(`notices.${n.id === 'flightWatch' ? `flightWatch.${String(n.params.state)}` : n.id}` as StringKey, params)} action={<LinkButton to={n.id === 'tenderWatch' ? `/home/ports/${String(n.params.port)}` : LINKS[n.id]} variant="secondary">{t('notices.open')}</LinkButton>}>
+                <p className="muted">{t(`notices.cat.${n.category}` as StringKey)}{n.read ? ` · ${t('notices.read')}` : ''}</p>
+              </Banner>
+            )
+          }
+          return (
+            <>
+              <section aria-labelledby="inbox-h" data-tour="notif-inbox">
+                <h2 id="inbox-h">{th('notices.title')}</h2>
+                {notices.length === 0 && <Card info><p>{t('notices.none')}</p></Card>}
+                {shown.map(row)}
+                {held.length > 0 && (
+                  <details className="explain">
+                    <summary>{headingCase(t('notices.held', { count: held.length }))}</summary>
+                    <p className="muted">{t('notices.heldBody')}</p>
+                    {held.map(row)}
+                  </details>
+                )}
+                {unread.length > 0 && <Button variant="secondary" disabled={markRead.busy} onClick={async () => { await markRead.run(unread.map((n) => n.id)); data.retry() }}>{t('notices.markRead')}</Button>}
+                <ActionError error={markRead.error} />
+              </section>
+              <PushSwitch />
+              <Prefs prefs={prefs} onSaved={data.retry} />
+              <EmailCheck />
+              <PhoneCheck />
+              <Nudges />
+              <DeliveryLog />
+              <CalendarFeed />
+            </>
+          )
+        }}
+      </Load>
+    </div>
+  )
+}
+
+function Prefs({ prefs, onSaved }: { prefs: NotificationPrefs; onSaved: () => void }) {
+  const [draft, setDraft] = useState(prefs)
+  const [saved, setSaved] = useState(false)
+  const save = useAction((p: NotificationPrefs) => api.notifications.savePrefs(p))
+  const flip = (c: Category, ch: Channel) => { setSaved(false); setDraft({ ...draft, channels: { ...draft.channels, [c]: { ...draft.channels[c], [ch]: !draft.channels[c][ch] } } }) }
+  const quiet = (patch: Partial<NotificationPrefs['quiet']>) => { setSaved(false); setDraft({ ...draft, quiet: { ...draft.quiet, ...patch } }) }
+  return (
+    <section aria-labelledby="prefs-h" data-tour="notif-prefs">
+      <h2 id="prefs-h">{th('notices.prefs')}</h2>
+      <p>{t('notices.prefsIntro')}</p>
+      {CATEGORIES.map((c) => (
+        <fieldset key={c}>
+          <legend>{t(`notices.cat.${c}` as StringKey)}</legend>
+          <p className="field__hint">{t(`notices.cat.${c}.hint` as StringKey)}</p>
+          {CHANNELS.map((ch) => (
+            <label key={ch} className="choice">
+              <input type="checkbox" checked={draft.channels[c][ch]} disabled={c === 'critical'} onChange={() => flip(c, ch)} />
+              <span>{t(`notices.ch.${ch}` as StringKey)}</span>
+            </label>
+          ))}
+          {c === 'critical' && <p className="muted">{t('notices.criticalLocked')}</p>}
+        </fieldset>
+      ))}
+      <fieldset>
+        <legend>{t('notices.quiet')}</legend>
+<HelpTip about={t('notices.quiet')}>{t('helptip.quietNotices')}</HelpTip>
+        <label className="choice"><input type="checkbox" checked={draft.quiet.on} onChange={() => quiet({ on: !draft.quiet.on })} /><span>{t('notices.quietOn')}</span></label>
+        <div className="time-pair">
+          <div className="field"><label htmlFor="q-from">{t('notices.quietFrom')}</label><input id="q-from" className="field__input" type="time" value={draft.quiet.from} disabled={!draft.quiet.on} onChange={(e) => quiet({ from: e.target.value })} /></div>
+          <div className="field"><label htmlFor="q-to">{t('notices.quietTo')}</label><input id="q-to" className="field__input" type="time" value={draft.quiet.to} disabled={!draft.quiet.on} onChange={(e) => quiet({ to: e.target.value })} /></div>
+        </div>
+        <p className="muted">{t('notices.quietHint')}</p>
+      </fieldset>
+      <fieldset>
+        <legend>{t('notices.explorer')}</legend>
+        <div className="field">
+          <label htmlFor="explorer-lead">{t('notices.explorerLead')}</label>
+          <select id="explorer-lead" className="field__input" value={draft.explorerLead} onChange={(e) => { setSaved(false); setDraft({ ...draft, explorerLead: Number(e.target.value) }) }}>
+            {EXPLORER_LEADS.map((m) => <option key={m} value={m}>{m === 0 ? t('notices.explorerOff') : t('notices.explorerMinutes', { count: m })}</option>)}
+          </select>
+        </div>
+        <p className="muted">{t('notices.explorerHint')}</p>
+      </fieldset>
+      <ActionError error={save.error} />
+      <Button disabled={save.busy} onClick={async () => { if (await save.run(draft)) { setSaved(true); onSaved() } }}>{save.busy ? t('account.saving') : t('account.save')}</Button>
+      <p role="status" className="muted">{saved ? t('notices.saved') : ''}</p>
+    </section>
+  )
+}
+
+/** How many unprompted suggestions a day, including none (XA-03). Safety and booking notices are not suggestions and always arrive. */
+function Nudges() {
+  const [settings, update] = useSettings()
+  return (
+    <section aria-labelledby="nudge-h">
+      <h2 id="nudge-h">{th('nudges.title')}</h2>
+      <p>{t('nudges.body')}</p>
+      <div className="field">
+        <FieldLabel htmlFor="nudge-n" help={t('helptip.nudges')}>{t('nudges.label')}</FieldLabel>
+        <select id="nudge-n" className="field__input" value={settings.nudgesPerDay} onChange={(e) => update({ nudgesPerDay: Number(e.target.value) as typeof settings.nudgesPerDay })}>
+          {NUDGE_CHOICES.map((n) => <option key={n} value={n}>{n === 0 ? t('nudges.none') : t('nudges.count', { count: n })}</option>)}
+        </select>
+      </div>
+      <p className="muted">{t('nudges.exempt')}</p>
+    </section>
+  )
+}

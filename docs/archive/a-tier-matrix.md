@@ -5,8 +5,8 @@ Written 2026-11-02 for phase N1 of `docs/archive/next-level-plan.md`. It answers
 How to read the evidence columns:
 
 - **Logic test**: a vitest file that imports the domain module (checked by import, so a test may cover only part of a module). The server's C# has its own 774 test facts in `server/Princess.Api.Tests`, which this project's rules say not to run, so they are not counted as evidence here.
-- **Screen proof**: what checks the *screen* (not just the logic). Today that is: every route renders its title, landmarks and help button (`src/ui/render.test.tsx`), the accessibility audit (`src/ui/a11y.test.tsx`), the two-tap rule for 15 tasks (`src/routes/nav.test.ts`), and a few source-scan promise tests (`src/h5Promises.test.ts` to `src/h8Promises.test.ts`, `src/darkPatterns.test.ts`, `src/offlineDay.test.ts`).
-- **Screen proof, updated after N1.2**: `src/ui/dataScreens.test.tsx` renders the screens behind the 15 top tasks with data, in jsdom, against a stubbed network. Rows whose screen is one of those say so. All other screens are still proved only by the route render test.
+- **Screen proof**: what checks the *screen* (not just the logic). Today that is: every route renders its title, landmarks and help button (`src/shared/ui/render.test.tsx`), the accessibility audit (`src/shared/ui/a11y.test.tsx`), the two-tap rule for 15 tasks (`src/app/routes/nav.test.ts`), and a few source-scan promise tests (`src/h5Promises.test.ts` to `src/h8Promises.test.ts`, `src/darkPatterns.test.ts`, `src/offlineDay.test.ts`).
+- **Screen proof, updated after N1.2**: `src/shared/ui/dataScreens.test.tsx` renders the screens behind the 15 top tasks with data, in jsdom, against a stubbed network. Rows whose screen is one of those say so. All other screens are still proved only by the route render test.
 - **Gap**: what is *not* proved.
 - The clear-to-use sentence is from the journey doc and has no automated check unless a row says so.
 

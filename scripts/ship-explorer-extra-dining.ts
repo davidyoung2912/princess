@@ -1,7 +1,7 @@
 // The dining venues the first Explorer pass missed (docs/princess-restuarants.md, princess-bars.md): the specialty and experiential rooms, the poolside and pizza counters, the coffee
 // and ice-cream bars, the pop-up and the bars of each ship. Authored concept content like the rest of the Explorer: plausible rooms in the right class, names from the docs.
 // None can be reserved yet (`bookable: 'none'`): walk in, or ask the maître d'. Each carries a short standing menu (`dishes`, or `drinks` for a bar).
-import type { HoursRule } from '../src/domain/explorer/types.ts'
+import type { HoursRule } from '../src/features/explorer/domain/types.ts'
 
 export interface ExtraDining {
   /** The venue id without the ship's prefix. */

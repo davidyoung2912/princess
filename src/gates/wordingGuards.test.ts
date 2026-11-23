@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { en } from '../i18n/locales/en'
+import { en } from '../shared/i18n/locales/en'
 
 /**
  * Wording guards (BM17, layer L3 of docs/best-in-market-plan-2.md). Some acceptance clauses are sentences the guest must be able to read, and no

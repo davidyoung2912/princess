@@ -4,7 +4,7 @@
  * The text is in the locale file under `knowhow.<topic>.title`, `.tip.<n>` and `.link` (the label of the one related screen). Nothing here states a price or a cruise-line
  * policy as fact: tips say what is usual and send the guest to the document or screen that holds the real answer.
  */
-import type { JourneyStage } from '../routes/hubs'
+import type { JourneyStage } from '../app/routes/hubs'
 
 export interface KnowHowTopic {
   id: string

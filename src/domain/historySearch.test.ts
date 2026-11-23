@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { HistoryTrip } from '../api/finishTypes'
+import type { HistoryTrip } from '../shared/api/finishTypes'
 import { matchTrips } from './historySearch'
 
 const trip = (id: string, title: string, ship: string, departure: string): HistoryTrip => ({ id, title, ship, departure, ports: [{ code: 'HNL', name: 'Honolulu', lat: 0, lon: 0 }], nights: 7, current: false, cancelled: false, fareCents: null, documents: [] })

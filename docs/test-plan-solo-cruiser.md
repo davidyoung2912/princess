@@ -50,7 +50,7 @@ So a self-registered account will sit in stages 1 to 4 (Dream, Discover, Book, M
 - "Solo" shows up in four places. Look for each as you go: the quiz answer **Just me**, the **solo supplement** line in the cost, the **Sailing on your own** card on "Is This Cruise for Me?", and the **Solo Safety Timer** (`S45`) and **I'm OK Check** (`S46`) once aboard.
 - Every screen has a coloured header with a unique title (h1) and a subtext. Check this on every screen you open.
 - After each stage change, expect a one-time **"Welcome to your next stage"** page and, when new tabs appear, a one-line note on Home.
-- The tab bar for each stage is in section 1. The page names (`H16`, `S45` and so on) are the screen IDs from `src/routes/screens.ts`, with the path in brackets.
+- The tab bar for each stage is in section 1. The page names (`H16`, `S45` and so on) are the screen IDs from `src/app/routes/screens.ts`, with the path in brackets.
 
 ### 0.5 Cross-cutting checks (do once per stage, takes two minutes)
 

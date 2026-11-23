@@ -7,8 +7,8 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 
 - One phase at a time. Tests with each phase. Verify with `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, and `npm run api:check` when the `Api` interface changes. Never a full `dotnet test`; no browser or Playwright testing.
 - Commit and stop after each phase; commit or push only when asked.
-- Logic lives in plain TypeScript under `src/domain` (node-testable); React stays thin. Strings go in `src/i18n/locales/en.ts`. Every new route goes in `src/routes/routes.ts`, `src/screens.ts` and `src/routes/screenWords.ts`, and is reachable from a hub in `src/routes/hubs.ts`.
-- Front end first, as in H1 to H8: small per-person state goes through the existing memory store (`src/hooks/useMemory.ts`); anything that needs the server to follow the guest between devices is listed as "not done" at the end of the phase rather than bundled in.
+- Logic lives in plain TypeScript under `src/domain` (node-testable); React stays thin. Strings go in `src/shared/i18n/locales/en.ts`. Every new route goes in `src/app/routes/routes.ts`, `src/app/screens.ts` and `src/app/routes/screenWords.ts`, and is reachable from a hub in `src/app/routes/hubs.ts`.
+- Front end first, as in H1 to H8: small per-person state goes through the existing memory store (`src/shared/hooks/useMemory.ts`); anything that needs the server to follow the guest between devices is listed as "not done" at the end of the phase rather than bundled in.
 - Simulated data is a pure function over the demo clock or a seed, and the front end never says it is simulated beyond the existing concept notices.
 - Every delight is optional and quiet (UX-02, XT-10), works at large text and with reduced motion, and counts against the nudge budget if it speaks unprompted.
 - Each phase's notes go into this file, and the status table below is updated.
@@ -93,7 +93,7 @@ Postcard to future self (D8-1); where I have sailed map (D8-2); favourites ranke
 
 ### 5.3 Built (2026-11-02)
 
-Front end only; no REST contract changes. Logic in `src/domain/delights.ts` (19 tests in `delights.test.ts`); cards in `src/ui/delights/Delights.tsx`; a shared `CopyText` component for text the guest sends themselves.
+Front end only; no REST contract changes. Logic in `src/domain/delights.ts` (19 tests in `delights.test.ts`); cards in `src/features/delights/ui/Delights.tsx`; a shared `CopyText` component for text the guest sends themselves.
 
 - **D2-1, D2-2** on the booking guests step: shows the name as printed (`SMITH/JANE`) and hints for both names in one box, titles, digits, quotes, single letters and a possible swap. Hints never block.
 - **D2-3** on the booking confirmation: number in groups of four, spoken form for a screen reader, copy button.
@@ -110,7 +110,7 @@ Front end only; no REST contract changes. Logic in `src/domain/delights.ts` (19 
 
 ### 6.1 Built (2026-11-02)
 
-Front end only; no REST contract changes. `calendar.ts` now also writes timed events (clock time with no zone) and tentative holds. Cards share one model (`Card`) and one layout (`cardLayout`) for paper and the saved PNG; `src/ui/delights/Cards.tsx` renders them, with print, save-as-image and copy-the-words buttons. 11 tests in `export.test.ts`.
+Front end only; no REST contract changes. `calendar.ts` now also writes timed events (clock time with no zone) and tentative holds. Cards share one model (`Card`) and one layout (`cardLayout`) for paper and the saved PNG; `src/features/delights/ui/Cards.tsx` renders them, with print, save-as-image and copy-the-words buttons. 11 tests in `export.test.ts`.
 
 - **D2-4** on the booking confirmation: one file with the sailing, check-in opens and closes, final payment (only when a balance is left) and sail-away.
 - **D4-7** on the Plan screen: the whole week, or one day from its card, to a calendar; days with nothing booked add nothing.
@@ -129,7 +129,7 @@ Front end only; no REST contract changes. `calendar.ts` now also writes timed ev
 
 ## 7. Phase DL3 in detail: discover and cabin helpers
 
-**Goal:** nine small helpers on the sailing, cabin chooser and decide screens, as pure tested functions (`src/domain/discoverDelights.ts`, 20 tests) with thin cards in `src/ui/delights/DiscoverDelights.tsx`.
+**Goal:** nine small helpers on the sailing, cabin chooser and decide screens, as pure tested functions (`src/domain/discoverDelights.ts`, 20 tests) with thin cards in `src/features/delights/ui/DiscoverDelights.tsx`.
 
 ### 7.1 Built (2026-11-02)
 
@@ -148,7 +148,7 @@ Front end only; no REST contract changes.
 
 ## 8. Phase DL4 in detail: plan polish
 
-**Goal:** seven small additions to the Plan screen and the pay-your-share ledger, as pure tested functions (`src/domain/planPolish.ts`, 15 tests) with thin cards in `src/ui/delights/PlanPolish.tsx`.
+**Goal:** seven small additions to the Plan screen and the pay-your-share ledger, as pure tested functions (`src/domain/planPolish.ts`, 15 tests) with thin cards in `src/features/delights/ui/PlanPolish.tsx`.
 
 ### 8.1 Built (2026-11-02)
 
@@ -178,7 +178,7 @@ Front end only; no REST contract changes. State is the new `polish` part of the 
 
 ## 9. Phase DL5 in detail: prepare
 
-**Goal:** ten small additions to Home, the readiness, clearance, quiz, decide, saved and guests screens, as pure tested functions (`src/domain/prepareDelights.ts`, 27 tests) with thin cards in `src/ui/delights/PrepareDelights.tsx`. No new routes.
+**Goal:** ten small additions to Home, the readiness, clearance, quiz, decide, saved and guests screens, as pure tested functions (`src/domain/prepareDelights.ts`, 27 tests) with thin cards in `src/features/delights/ui/PrepareDelights.tsx`. No new routes.
 
 ### 9.1 Built (2026-11-02)
 
@@ -215,7 +215,7 @@ Front end only; no REST contract changes. State is the new `prepare` part of the
 
 ## 10. Phase DL6 in detail: travel day and embark
 
-**Goal:** twelve small additions to the getting-there, check-in, embarkation, Wi-Fi, pass and memory screens, as pure tested functions (`src/domain/embarkDelights.ts`, 15 tests) with thin cards in `src/ui/delights/EmbarkDelights.tsx`. No new routes.
+**Goal:** twelve small additions to the getting-there, check-in, embarkation, Wi-Fi, pass and memory screens, as pure tested functions (`src/domain/embarkDelights.ts`, 15 tests) with thin cards in `src/features/delights/ui/EmbarkDelights.tsx`. No new routes.
 
 ### 10.1 Built (2026-11-02)
 
@@ -245,7 +245,7 @@ Front end only; no REST contract changes. Ticket stubs are the new `embark` part
 
 ## 11. Phase DL7 in detail: sea days
 
-**Goal:** the sea-day delights as pure tested functions (`src/domain/seaDelights.ts`, 14 tests) with thin cards in `src/ui/delights/SeaDelights.tsx`. No new routes.
+**Goal:** the sea-day delights as pure tested functions (`src/domain/seaDelights.ts`, 14 tests) with thin cards in `src/features/delights/ui/SeaDelights.tsx`. No new routes.
 
 ### 11.1 Built (2026-11-02)
 
@@ -277,7 +277,7 @@ Front end only; no REST contract changes. Favourites, diary, parked spot, kept t
 
 ## 12. Phase DL8 in detail: ports and the way home
 
-**Goal:** the port-day and last-day delights as pure tested functions (`src/domain/portDelights.ts`, 17 tests) with thin cards in `src/ui/delights/PortDelights.tsx`. No new routes and no REST changes.
+**Goal:** the port-day and last-day delights as pure tested functions (`src/domain/portDelights.ts`, 17 tests) with thin cards in `src/features/delights/ui/PortDelights.tsx`. No new routes and no REST changes.
 
 ### 12.1 Built (2026-11-02)
 
@@ -289,7 +289,7 @@ Pins, the kept day card and the last look are the new `ports` part of the per-pe
 - **D6A-7** port stamps: one for each port reached, worked out from the route and ship date, so nothing is stored.
 - **D6A-8** pin a favourite spot with a note per port (30 pins, private).
 - **D6A-9** offline day card: plain text of the leave-by time, ship phone, the driver words and the port's pins; copy it, or keep it on the phone (it is also in the saved port-day copy, so it opens with no signal).
-- **D7-1** empty-cabin photo on the disembark screen: shrunk and kept in this browser's local storage only (`src/memory/devicePhoto.ts`); never uploaded; deletable.
+- **D7-1** empty-cabin photo on the disembark screen: shrunk and kept in this browser's local storage only (`src/features/memory/logic/devicePhoto.ts`); never uploaded; deletable.
 - **D7-2** final-day strip: ship ties up, last breakfast (90 minutes after arrival, an authored concept time), the guest's group or walk-off time, and cabin empty, in time order.
 - **D7-4** onboard credit note: shown only when the account is in credit (credits more than charges); informational.
 - **D7-6** last look: a tick and a line, kept for the memory book.
@@ -305,7 +305,7 @@ Pins, the kept day card and the last look are the new `ports` part of the per-pe
 
 ## 13. Phase DL9 in detail: memory and return
 
-**Goal:** the last five delights as pure tested functions (`src/domain/rememberDelights.ts`, 14 tests) with thin cards in `src/ui/delights/RememberDelights.tsx`. No new routes and no REST changes.
+**Goal:** the last five delights as pure tested functions (`src/domain/rememberDelights.ts`, 14 tests) with thin cards in `src/features/delights/ui/RememberDelights.tsx`. No new routes and no REST changes.
 
 ### 13.1 Built (2026-11-02)
 

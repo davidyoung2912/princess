@@ -13,7 +13,7 @@ A guest must be able to move between phone and desktop and find all account data
 
 ## Finding (audit, 2026-11-01)
 
-Nothing under `server/`, `db/` or `src/api/` has changed since Phase G6 (`491bc9e`). Phases H1 to H8 kept all new state on the device, as their plans said. Every `Api` group is REST-backed; the gap is the state that never goes through `Api`.
+Nothing under `server/`, `db/` or `src/shared/api/` has changed since Phase G6 (`491bc9e`). Phases H1 to H8 kept all new state on the device, as their plans said. Every `Api` group is REST-backed; the gap is the state that never goes through `Api`.
 
 ### Device-only stores today
 
@@ -98,9 +98,9 @@ Built 2026-11-01. Nothing committed yet.
 - **Schema:** `dbo.UserState` and `dbo.BookingState` in `db/01-schema.sql`, named in data model section 4 and the routes in the new section 6.8 (`npm run db:check` passes; `npm run api:check` passes).
 - **Server (not compiled or run; the project rule is no `dotnet test`, and I did not run `dotnet build` either):** `Domain/StateRules.cs` (key whitelist and size caps), `Data/StateStores.cs` and `DapperStateStore.cs`, `Services/StateService.cs`, `Endpoints/StateEndpoints.cs`, DTOs in `JourneyContracts.cs`, registration in `Program.cs`. Booking routes need membership to read and an adult member to write.
 - **Server tests written, not run:** `StateTests.cs` (rules, two devices, stale version, bad key/body, delete, booking sharing and the child's read-only access), `Support/InMemoryState.cs`, wired into `ApiFactory`. **Run `dotnet build` and the `State*` tests once before relying on any of it.**
-- **Client:** `src/sync/sync.ts` (framework-free manager: debounced push, pull at sign-in / tab shown / back online, version tracking, clash handling, one-time import of a known person's device copy), `httpRemote.ts`, `index.ts` (singleton, remote set only with `VITE_API_URL`), `bindings.ts` (settings, offers, shop, phone). Stores call `sync.changed(...)` after each update and expose `applyRemote*` to take a server copy without echoing it back. Wired in `src/runtime/index.ts`. Mock mode is unchanged (no remote, every call does nothing).
+- **Client:** `src/shared/sync/sync.ts` (framework-free manager: debounced push, pull at sign-in / tab shown / back online, version tracking, clash handling, one-time import of a known person's device copy), `httpRemote.ts`, `index.ts` (singleton, remote set only with `VITE_API_URL`), `bindings.ts` (settings, offers, shop, phone). Stores call `sync.changed(...)` after each update and expose `applyRemote*` to take a server copy without echoing it back. Wired in `src/app/runtime/index.ts`. Mock mode is unchanged (no remote, every call does nothing).
 - **Account-level settings** (`simple`, `calm`, `captions`, `units`, `region`, `chargeCheck`, `nudgesPerDay`) sync; theme, contrast, text size, reduce motion and data-light stay per device (`SYNCED_FIELDS` in `settings.ts`).
-- **Verified:** `npm run test` (1736 passed, including `src/sync/*.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run db:check`, `npm run api:check`.
+- **Verified:** `npm run test` (1736 passed, including `src/shared/sync/*.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run db:check`, `npm run api:check`.
 - **Not done:**
   - **Sign-out flush.** Changes waiting at sign-out are not sent (the token is gone by then); a pending change is lost if the guest signs out inside the 800 ms pause or while offline.
   - **Accounts with no persona.** Stores key the device copy by persona id, so every account that is not one of the twelve shares the `''` copy. The sync module never uploads that shared copy and resets it on sign-in; the real fix is keying by user id.
@@ -116,7 +116,7 @@ Built 2026-11-01.
 
 - **Consent first.** New account-level setting `syncPrivate` (default off, synced with the other account settings). Privacy centre card "Private notes and health details" (REST mode only) explains what is kept, who can read it, that this version stores it with ordinary account data (not yet the separate encrypted store of Phase 4), and that turning it off deletes the account copy. `medical.intro` now says the card can follow the guest if they choose.
 - **Memory binding.** `memory` (including `planning`, `aboard`, `finish`) syncs through `UserState` key `memory`, but only while `syncPrivate` is on. `Binding.enabled` gates push, pull and change tracking; with it off nothing is read from or sent to the server.
-- **Turning on** (`src/sync/consent.ts`, `setKeepPrivate`) pulls: the account copy is taken if there is one, otherwise this device's copy is sent. **Turning off** calls `sync.withdraw('memory')`, which deletes the server copy (new `Remote.remove`, `DELETE /me/state/memory`) and retries at the next pull if offline. The device keeps its own copy.
+- **Turning on** (`src/shared/sync/consent.ts`, `setKeepPrivate`) pulls: the account copy is taken if there is one, otherwise this device's copy is sent. **Turning off** calls `sync.withdraw('memory')`, which deletes the server copy (new `Remote.remove`, `DELETE /me/state/memory`) and retries at the next pull if offline. The device keeps its own copy.
 - **New device:** `pull()` fetches the settings first, then looks again at keys that were gated, so a consent that arrived in the same pull enables `memory` at once.
 - **Verified:** `npm run test` (1742 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`. No server code changed in this phase, so no schema or REST checks were needed.
 - **Not done:**
@@ -129,9 +129,9 @@ Built 2026-11-01.
 
 Built 2026-11-01.
 
-- **User scope.** `trip`, `pilot` and `hub` sync through `UserState` like the Phase 1 stores (`updateX` calls `sync.changed`, new `applyRemoteX`; bindings in `src/sync/bindings.ts`). No consent switch: the plan puts them at low and medium sensitivity.
+- **User scope.** `trip`, `pilot` and `hub` sync through `UserState` like the Phase 1 stores (`updateX` calls `sync.changed`, new `applyRemoteX`; bindings in `src/shared/sync/bindings.ts`). No consent switch: the plan puts them at low and medium sensitivity.
 - **Booking scope.** `port` and `party` sync through `BookingState` (`/bookings/{number}/state/{key}`). New in `sync.ts`: `Binding.scope: 'booking'`, `Binding.localFor` (the stores are keyed by the booker, the sync owner is the signed-in persona, so `bookerOf` maps one to the other), optional `scope` argument on `Remote.get/put/remove`, and `Remote.bookingNumber()`. The number is the current trip (same rule as `httpApi.ts`: the `current` trip, else the first upcoming), looked up at each `pull()`; a new number starts those documents afresh, and a person with no trip keeps them on the device.
-- **Two adults at once.** `src/sync/merges.ts`: party keeps every invitation and note from both sides; port keeps the later presence per person, both sides' meeting places, split families and expenses, and this device's plan and settings. A removal made on one side comes back after a clash (the cost of keeping both additions).
+- **Two adults at once.** `src/shared/sync/merges.ts`: party keeps every invitation and note from both sides; port keeps the later presence per person, both sides' meeting places, split families and expenses, and this device's plan and settings. A removal made on one side comes back after a clash (the cost of keeping both additions).
 - **Children.** A supervised child can read the booking's documents but the server refuses their writes (`forbidden`); the sync module drops that change without an error and the next pull gives them the adults' copy.
 - **Verified:** `npm run test` (1751 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`. No server code or schema changed, so no schema check, and nothing server-side was run.
 - **Not done:**
@@ -177,7 +177,7 @@ Built 2026-11-01.
 Built 2026-11-01. Only this slice of Phase 5 was built.
 
 - **Server (not compiled or run; no `dotnet` commands per the project rules):** `Domain/RatesRules.cs` (the sample rates and a daily drift, with the same hash as the client's `stubRates`, so both sides give the same table), `Endpoints/ReferenceEndpoints.cs` (`GET /rates`, signed-in), registered in `Program.cs`. Tests written, not run: `RatesTests.cs`, and the route is in `SwaggerCoverageTests.Routes`. Data model section 6.9 lists the route.
-- **Client:** `fetchRates` in `src/runtime/index.ts` (null in mock mode). `useRates` uses it for "Update rates" and refreshes an out-of-date table when a rates screen opens; if the server cannot be reached the saved table stays and is called out of date. Mock mode still uses the local stub.
+- **Client:** `fetchRates` in `src/app/runtime/index.ts` (null in mock mode). `useRates` uses it for "Update rates" and refreshes an out-of-date table when a rates screen opens; if the server cannot be reached the saved table stays and is called out of date. Mock mode still uses the local stub.
 - **Verified:** `npm run test` (1754 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Not done (rest of Phase 5):**
   - **Simulated feeds** (flight status, weather and forecast, traffic, ship pulse and lines, port crowd, storm chance, sky). The server has no `IWeatherService` or `IShipTelemetry` yet (weather is a rules function in `PlanRules`/`AboardRules`); the client simulations in `src/domain/*` are unchanged. Each needs a route, a contract and a client switch.
@@ -202,7 +202,7 @@ Built 2026-11-01.
 Built 2026-11-01. The first simulated feed moved behind the server; it is the pattern for the others.
 
 - **Server (not compiled or run):** `GET /feeds/sky?date=&port=` returns `{ uv, tempF, rainFrom, rainTo, source: 'sim' }` from `Domain/FeedRules.cs` (the client's `simWeather` ported, same hash, so values match). A missing or out-of-range query is `400 badFeedQuery`. Tests written, not run (`FeedRulesTests` in `RatesTests.cs`); Swagger list and data model 6.9 updated.
-- **Client:** `src/feeds/sky.ts` (fetcher set by the runtime in REST mode, per-day cache cleared on sign-in or out, `skyNow` gives the server value or the local simulation) and `useSky` hook, used by `useDayPlan`. The effect is in `useSky`, not `useDayPlan`, because `h5Promises.test.ts` forbids effects there. Mock mode is unchanged.
+- **Client:** `src/shared/feeds/sky.ts` (fetcher set by the runtime in REST mode, per-day cache cleared on sign-in or out, `skyNow` gives the server value or the local simulation) and `useSky` hook, used by `useDayPlan`. The effect is in `useSky`, not `useDayPlan`, because `h5Promises.test.ts` forbids effects there. Mock mode is unchanged.
 - **Verified:** `npm run test` (1761 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Not done:** the other feeds (flight status, traffic, ship pulse and lines, port crowd, storm chance, sky objects, ship heading) still run on the client. The server also has two older weather stubs (`PlanRules.WeatherFor`, `AboardRules.WeatherOn`) that give different figures from this feed; they should be unified when a real provider is chosen. Fare history, boards, port content, `/demo/*` also open.
 
@@ -211,7 +211,7 @@ Built 2026-11-01. The first simulated feed moved behind the server; it is the pa
 Built 2026-11-01.
 
 - **Server (not compiled or run):** `GET /feeds/flight?number=&date=` returns `{ state, delayMinutes, source: 'sim' }` from `FeedRules.Flight` (the client's `flightStatus` ported with the same FNV hash). A bad number or date is `400 badFeedQuery`. Tests written, not run (`FlightFeedTests`); Swagger list and data model 6.9 updated.
-- **Client:** `src/feeds/flight.ts` (fetcher set by the runtime in REST mode, cache cleared on sign-in or out) and the `useFlightStatus` hook, used by `JourneyScreen`. Mock mode unchanged; a failed fetch keeps the simulation.
+- **Client:** `src/shared/feeds/flight.ts` (fetcher set by the runtime in REST mode, cache cleared on sign-in or out) and the `useFlightStatus` hook, used by `JourneyScreen`. Mock mode unchanged; a failed fetch keeps the simulation.
 - **Verified:** `npm run test` (1764 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Not done:** route conditions (traffic and sky on the way to the port, `routeConditions`), ship pulse and lines, port crowd, storm chance, sky objects, ship heading; fare history and the boards; port content; `/demo/*`.
 
@@ -220,7 +220,7 @@ Built 2026-11-01.
 Built 2026-11-01.
 
 - **Server (not compiled or run):** `GET /feeds/route?departure=&crowd=` returns `{ traffic, sky, leaveEarlierMinutes, source: 'sim' }` from `FeedRules.Route` (client `conditionsFor` ported). The client sends the arrival window's crowd rather than the window, so the server does not need the window table. Bad date or crowd is `400 badFeedQuery`. Tests written, not run (`RouteFeedTests`); Swagger list and data model 6.9 updated.
-- **Client:** `journey.ts` split `routeConditions` into `crowdOfWindow` and `conditionsFor` (wrapper kept). `src/feeds/route.ts`, `useRouteConditions`, used by `JourneyScreen`; mock mode unchanged.
+- **Client:** `journey.ts` split `routeConditions` into `crowdOfWindow` and `conditionsFor` (wrapper kept). `src/shared/feeds/route.ts`, `useRouteConditions`, used by `JourneyScreen`; mock mode unchanged.
 - **Verified:** `npm run test` (1767 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Not done:** ship pulse and lines, port crowd, storm chance, sky objects, ship heading; fare history and the boards; port content; `/demo/*`.
 
@@ -229,7 +229,7 @@ Built 2026-11-01.
 Built 2026-11-01.
 
 - **Server (not compiled or run):** `GET/PUT /demo/state` (`DemoEndpoints`, `DemoService`, `DemoRules`), `IDemoStore.GetStateAsync/SaveStateAsync` (Dapper and in-memory). Demo accounts only; others get 404. Scenario ids mirror `src/domain/scenarios.ts` (`DemoRules.ScenarioIds`, kept in step by hand). Tests written, not run (`DemoTests.cs`); Swagger list and data model 6.7 updated.
-- **Client:** `src/demo/publish.ts` (payload from the clock, fire-and-forget publisher) called from the demo store on each change; the runtime sets the publisher in REST mode and only for `isDemo` sessions. Mock mode unchanged.
+- **Client:** `src/features/demo/logic/publish.ts` (payload from the clock, fire-and-forget publisher) called from the demo store on each change; the runtime sets the publisher in REST mode and only for `isDemo` sessions. Mock mode unchanged.
 - **Verified:** `npm run test` (1769 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Not done:**
   - **Server speed.** The server stores the speed but `UserClock` applies the offset only, so a running fast clock drifts on the server between sends; the screens' own clock is exact.
@@ -243,7 +243,7 @@ Built 2026-11-01.
 Decided 2026-11-01 after reading the remaining items in the code.
 
 - **Deterministic simulations already agree across devices.** Ship pulse and lines (`pulse.ts`), quiet spaces, port crowd, storm chance, sky objects, ship heading, `fareHistory`, the lounger board, `FOUND`, guaranteed-cabin odds and the like are pure functions of a seed (a booking number, a sailing, a date) and the demo clock. Two devices on the same account and clock get the same answer, so nothing account-critical is stranded on one device. The things a guest *does* with them (lounger hold, lost reports, sightings, price watch choices) are in `memory`, `trip` or `pilot`, which sync.
-- **Why no routes for them yet.** A route would only copy the same function to C# (the pulse tables and the ship's port schedule would be duplicated and have to be kept in step by hand) with no change in what a guest sees. Slices 3 to 5 did that for the sky, flight and route feeds because they are the ones a real provider (weather, flight status, traffic) would replace first; the pattern (`src/feeds/*`, `FeedRules`, a fetcher set by the runtime) is there to copy when a provider is chosen.
+- **Why no routes for them yet.** A route would only copy the same function to C# (the pulse tables and the ship's port schedule would be duplicated and have to be kept in step by hand) with no change in what a guest sees. Slices 3 to 5 did that for the sky, flight and route feeds because they are the ones a real provider (weather, flight status, traffic) would replace first; the pattern (`src/shared/feeds/*`, `FeedRules`, a fetcher set by the runtime) is there to copy when a provider is chosen.
 - **Parked until a real source or a product need exists:** the on-board feeds above; port content, ship packing, dress nights and day stories (authored text; the server already serves packing through `PackingView` and ports through `ref.Ports`, so the question is whether the client copies should be removed, which is a content decision); `ref.Excursions` columns for difficulty (a schema and seed change with nothing the guest would notice); `POST /demo/jump` and `/demo/reset`.
 - **Still to do from earlier phases** (unchanged): sign-out flush, accounts with no persona, sync indicator, per-user settings keys, the calm profile and family contacts consent decision, screen copy that says "stays on this device", port ledger rows, plan changes into the day plan, signed family links, budget unification.
 - **Nothing in Phases 4 and 5 has been compiled or run on the server.** Before relying on any of it, run `dotnet build` and the new tests (`State*`, `Rates*`, `Reference*`, `Feed*`, `FlightFeed*`, `RouteFeed*`, `Demo*`) once.

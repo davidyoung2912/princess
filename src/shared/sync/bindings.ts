@@ -1,0 +1,254 @@
+import { applyRemoteThread, EMPTY_THREAD, getThread, mergeThreads, normalizeThread } from '../../features/stanley/logic/history'
+import { EMPTY_HOME } from '../../domain/homeLink'
+import { EMPTY_HUB, applyRemoteFamily, applyRemoteHub, getHub, hubRestOf, normalizeHub } from '../../features/hub/logic/store'
+import { EMPTY_TRIP, applyRemoteTrip, getTrip, normalizeTrip } from '../../features/journey/logic/store'
+import { EMPTY_CALM } from '../../domain/calm'
+import { EMPTY_PILOT, applyRemoteCalm, applyRemotePilot, getPilot, normalizePilot, pilotRestOf } from '../../features/pilot/logic/store'
+import { EMPTY_PARTY, normalizePartyState } from '../../domain/party'
+import { applyRemoteParty, getParty } from '../../features/party/logic/store'
+import { bookerOfPerson } from '../../features/account/logic/context'
+import { mergeOffers, mergeParty } from './merges'
+import { EMPTY_OFFER_STATE, normalizeOfferState } from '../../domain/offers'
+import { normalizeDone } from '../../domain/phoneSetup'
+import { EMPTY_EXTRAS, normalizeExtras } from '../../domain/shopExtras'
+import { applyRemoteHealth, applyRemoteMemoryRest, applyRemoteReminder, applyRemoteTravellers, cleanRest, EMPTY_MEMORY, getMemory, healthOf, postcardsOf, reminderOf, restOf, travellersOf } from '../../features/memory/logic/store'
+import { mergeRecent, EMPTY_RECENT } from '../../app/routes/recent'
+import { applyRemoteRecent, getRecent } from '../recent/store'
+import { mergeWelcome, EMPTY_WELCOME } from '../../app/routes/stageWelcome'
+import { mergeProgress, EMPTY_PROGRESS } from '../../app/routes/stageProgress'
+import { applyRemoteProgress, getProgress } from '../../app/stageProgress/store'
+import { EMPTY_CHOICES, mergeChoices } from '../../features/guide/logic/choices'
+import { EMPTY_FIT, mergeFit } from '../../features/guide/logic/fit'
+import { applyRemoteFit, getFit } from '../../features/guide/logic/fitStore'
+import { applyRemoteChoices, getChoices } from '../../features/guide/logic/choicesStore'
+import { applyRemoteHints, getHints, markHintsLoaded } from '../settings/hints'
+import { EMPTY_HINTS, mergeHints } from '../settings/hintsState'
+import { applyRemoteWelcome, getWelcome, markWelcomeLoaded } from '../../app/stageWelcome/store'
+import { applyRemoteOffers, getOfferState } from '../../features/offers/logic/store'
+import { applyRemotePhone, getPhone } from '../../features/phone/logic/store'
+import { applySyncedSettings, getSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
+import { applyRemoteShop, getExtras } from '../../features/shop/logic/store'
+import { applyRemoteSharing, getSharing } from '../../features/sharing/logic/store'
+import { NOTHING_SHARED, normalizeSharing } from '../../domain/partyShare'
+import { sync } from './index'
+import type { Binding } from './sync'
+
+const json = (v: unknown): string => JSON.stringify(v)
+
+const settings: Binding = {
+  key: 'settings',
+  read: () => getSyncedSettings(),
+  apply: (_id, raw) => applySyncedSettings(raw),
+  isEmpty: () => syncedSettingsAreDefault(),
+}
+
+const offers: Binding = {
+  key: 'offers',
+  read: (id) => getOfferState(id),
+  apply: (id, raw) => applyRemoteOffers(id, raw === null ? EMPTY_OFFER_STATE : normalizeOfferState(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_OFFER_STATE),
+  merge: mergeOffers,
+}
+
+const shop: Binding = {
+  key: 'shop',
+  read: (id) => getExtras(id),
+  apply: (id, raw) => applyRemoteShop(id, raw === null ? EMPTY_EXTRAS : normalizeExtras(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_EXTRAS),
+}
+
+/** The phone steps are a list; the server keeps documents that are objects. */
+const phone: Binding = {
+  key: 'phone',
+  read: (id) => ({ done: getPhone(id) }),
+  apply: (id, raw) => applyRemotePhone(id, raw === null ? [] : normalizeDone((raw as { done?: unknown }).done)),
+  isEmpty: (raw) => ((raw as { done: unknown[] }).done).length === 0,
+}
+
+/**
+ * Health details and private notes. Held back until the guest agrees (Settings: syncPrivate); the whole document is one key, so when it is off
+ * nothing from it reaches the server, and switching it off deletes the server's copy.
+ */
+const memory: Binding = {
+  key: 'memory',
+  read: (id) => restOf(getMemory(id)),
+  apply: (id, raw) => applyRemoteMemoryRest(id, raw),
+  isEmpty: (raw) => json(raw) === json(restOf(EMPTY_MEMORY)),
+  clean: cleanRest,
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** Saved travellers (names, dates of birth, citizenship): their own document, encrypted on the server, and held back by the same consent switch. */
+const travellers: Binding = {
+  key: 'travellers',
+  read: (id) => travellersOf(getMemory(id)),
+  apply: (id, raw) => applyRemoteTravellers(id, raw),
+  isEmpty: (raw) => (raw as { travellers: unknown[] }).travellers.length === 0,
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** "Remind me in a week": a date and a sailing id, in the clear, so the server can send one note when the time comes. Set only by the guest's own tap. */
+const reminder: Binding = {
+  key: 'reminder',
+  read: (id) => reminderOf(getMemory(id)),
+  apply: (id, raw) => applyRemoteReminder(id, raw),
+  isEmpty: (raw) => json(raw) === '{}',
+}
+
+/** The unread postcards' ids (never their words), so the server can say one is waiting. It follows the memory document, so it waits for the same consent; the words come back with that document. */
+const postcards: Binding = {
+  key: 'postcards',
+  read: (id) => postcardsOf(getMemory(id)),
+  apply: () => {},
+  isEmpty: (raw) => (raw as { items: unknown[] }).items.length === 0,
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** The medical card, access profile and allergy flag: their own document, encrypted on the server, and held back by the same consent switch. */
+const health: Binding = {
+  key: 'health',
+  read: (id) => healthOf(getMemory(id)),
+  apply: (id, raw) => applyRemoteHealth(id, raw),
+  isEmpty: (raw) => json(raw) === json(healthOf(EMPTY_MEMORY)),
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** Door-to-ship plan, packing, bag log and embarkation plan. */
+const trip: Binding = {
+  key: 'trip',
+  read: (id) => getTrip(id),
+  apply: (id, raw) => applyRemoteTrip(id, raw === null ? EMPTY_TRIP : normalizeTrip(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_TRIP),
+}
+
+/** Plan changes and their log, slot watches, week preferences. The calm profile is its own document (below). */
+const pilot: Binding = {
+  key: 'pilot',
+  read: (id) => pilotRestOf(getPilot(id)),
+  apply: (id, raw) => applyRemotePilot(id, { ...(raw === null ? EMPTY_PILOT : normalizePilot(raw)), calm: getPilot(id).calm }),
+  isEmpty: (raw) => json(raw) === json(EMPTY_PILOT),
+  clean: (raw) => (raw && typeof raw === 'object' ? { ...(raw as object), calm: EMPTY_CALM } : raw),
+}
+
+/** The sensory / calm profile. Held back until the guest agrees (Settings: syncPrivate): it can describe a person's needs. */
+const calm: Binding = {
+  key: 'calm',
+  read: (id) => getPilot(id).calm,
+  apply: (id, raw) => applyRemoteCalm(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_CALM),
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** Delay, callback request and follow-ups. The family-at-home page is its own document (below). */
+const hub: Binding = {
+  key: 'hub',
+  read: (id) => hubRestOf(getHub(id)),
+  apply: (id, raw) => applyRemoteHub(id, { ...(raw === null ? EMPTY_HUB : normalizeHub(raw)), home: getHub(id).home }),
+  isEmpty: (raw) => json(raw) === json(EMPTY_HUB),
+  clean: (raw) => (raw && typeof raw === 'object' ? { ...(raw as object), home: EMPTY_HOME } : raw),
+}
+
+/** Family contacts (names and email addresses), their links, postcards and the link secret. Held back until the guest agrees (Settings: syncPrivate). */
+const family: Binding = {
+  key: 'family',
+  read: (id) => getHub(id).home,
+  apply: (id, raw) => applyRemoteFamily(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_HOME),
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** A booking's stores are kept under its booker, so everyone on the booking reads and writes the same copy. */
+const bookerOf = bookerOfPerson
+
+/** Travel-party invitations and shared notes: one document for the whole booking. */
+const party: Binding = {
+  key: 'party',
+  scope: 'booking',
+  localFor: bookerOf,
+  read: (id) => getParty(id),
+  apply: (id, raw) => applyRemoteParty(id, raw === null ? EMPTY_PARTY : normalizePartyState(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_PARTY),
+  merge: mergeParty,
+}
+
+/** What the guest shares with the rest of their party: four switches, all off by default. The server reads them to decide what other people on the booking may see, so this one is not held back by the private-notes consent. */
+const sharing: Binding = {
+  key: 'sharing',
+  read: (id) => getSharing(id),
+  apply: (id, raw) => applyRemoteSharing(id, raw === null ? NOTHING_SHARED : normalizeSharing(raw)),
+  isEmpty: (raw) => json(raw) === json(NOTHING_SHARED),
+}
+
+/** The concierge conversation. Held back until the guest agrees (Settings: syncPrivate), like private notes: what they asked may say a lot about them. */
+const concierge: Binding = {
+  key: 'concierge',
+  read: (id) => getThread(id),
+  apply: (id, raw) => applyRemoteThread(id, raw === null ? EMPTY_THREAD : normalizeThread(raw)),
+  isEmpty: (raw) => (raw as { messages: unknown[] }).messages.length === 0,
+  merge: mergeThreads,
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** The last three screens visited, so Home can offer to pick up where the guest left off. App paths and times only. */
+const recent: Binding = {
+  key: 'recent',
+  read: (id) => getRecent(id),
+  apply: (id, raw) => applyRemoteRecent(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_RECENT),
+  merge: mergeRecent,
+}
+
+/** The stage welcomes the guest has seen, so a welcome shown on one device is not shown again on another. */
+const stageWelcome: Binding = {
+  key: 'stageWelcome',
+  read: (id) => getWelcome(id),
+  apply: (id, raw) => applyRemoteWelcome(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_WELCOME),
+  merge: mergeWelcome,
+  pulled: (id) => markWelcomeLoaded(id),
+}
+
+/** The steps of each stage's welcome the guest has opened, so progress made on one device shows on another. */
+const stageProgress: Binding = {
+  key: 'stageProgress',
+  read: (id) => getProgress(id),
+  apply: (id, raw) => applyRemoteProgress(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_PROGRESS),
+  merge: mergeProgress,
+}
+
+/** The guide tasks the guest put aside ("Not for me", "Later"), so a choice made on one device holds on another. */
+const guideChoices: Binding = {
+  key: 'guideChoices',
+  read: (id) => getChoices(id),
+  apply: (id, raw) => applyRemoteChoices(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_CHOICES),
+  merge: mergeChoices,
+}
+
+/** The guest's answers to "make this plan fit me" (first cruise, alone, quiet offers), so they follow the guest across devices. */
+const guideFit: Binding = {
+  key: 'guideFit',
+  read: (id) => getFit(id),
+  apply: (id, raw) => applyRemoteFit(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_FIT),
+  merge: mergeFit,
+}
+
+/** The page tips and first-visit tour steps the guest has dismissed, so a tip dismissed on one device is not shown again on another. */
+const hints: Binding = {
+  key: 'hints',
+  read: (id) => getHints(id),
+  apply: (id, raw) => applyRemoteHints(id, raw),
+  isEmpty: (raw) => raw === EMPTY_HINTS || json(raw) === json(EMPTY_HINTS),
+  merge: mergeHints,
+  pulled: (id) => markHintsLoaded(id),
+}
+
+let registered = false
+/** Connects the stores to the sync module. Safe to call more than once. */
+export function registerSyncBindings(): void {
+  if (registered) return
+  registered = true
+  for (const b of [settings, offers, recent, stageWelcome, stageProgress, guideChoices, guideFit, hints, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
+}

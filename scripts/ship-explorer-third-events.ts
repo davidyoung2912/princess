@@ -2,7 +2,7 @@
 // most specialty restaurants and several bars had none (so a guest saw a menu but nothing to book or plan around), port days were thin on food and drink, the first afternoon had little
 // beyond the muster, and children and teens had 16 events in a week. Authored concept content like the rest of the Explorer: start times and lengths are chosen here for review.
 // One table is shared by the three ships. A role names a few candidate venues by id without the ship prefix; the first one the ship has is used, and a ship with none skips the row.
-import type { HoursRule } from '../src/domain/explorer/types.ts'
+import type { HoursRule } from '../src/features/explorer/domain/types.ts'
 import type { ExplorerEventRow } from './ship-explorer-data.ts'
 
 const ROLES: Record<string, string[]> = {

@@ -2283,7 +2283,7 @@ If a channel is not received after 20 seconds the line says so and offers the fi
 
 ## 39. Analytics events and dashboards
 
-Events go through the existing diagnostics path (`src/diagnostics`), carry **no reminder text, names or places**, and are aggregated by the measures in section 27. Properties are enumerations, counts and durations only.
+Events go through the existing diagnostics path (`src/shared/diagnostics`), carry **no reminder text, names or places**, and are aggregated by the measures in section 27. Properties are enumerations, counts and durations only.
 
 | Event | When | Properties |
 |---|---|---|

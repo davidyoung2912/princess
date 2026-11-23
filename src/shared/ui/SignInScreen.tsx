@@ -1,0 +1,119 @@
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
+import logo from '../../assets/princess.webp'
+import { AuthError } from '../auth/provider'
+import { SESSION_ENDED } from '../auth/httpProvider'
+import { Banner } from './Banner'
+import { t, th } from '../i18n'
+import { auth, retryReference } from '../../app/runtime'
+import { referenceState, subscribeReference } from '../../domain/referenceStatus'
+import { LanguageSwitch } from './LanguageSwitch'
+import { Button } from './Button'
+import { Card } from './Card'
+import { ErrorSummary, Field } from './Field'
+import { CodeFlow, SignUpForm } from './SignInFlows'
+
+type Mode = 'signin' | 'signup' | 'forgot' | 'magic'
+
+/** The sign-in page: username plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
+// TEMPORARY, development builds only: pre-fill the "port-solo-1" test account (boarding on day one of the 7-day sailing) so testing is one click.
+const DEV_LOGIN = import.meta.env.PROD ? '' : 'portsolo1'
+
+export function SignInScreen() {
+  const [mode, setMode] = useState<Mode>('signin')
+  // A new account sends the guest back here with their username and password filled in; they press Sign in themselves.
+  const [fresh, setFresh] = useState<{ username: string; password: string } | null>(null)
+  // Switching mode swaps the page in place, so start the new one at the top (its header card included).
+  useEffect(() => { window.scrollTo(0, 0) }, [mode])
+  if (mode === 'signup') return <main className="signin" id="main"><SignUpForm onBack={() => setMode('signin')} onCreated={(username, password) => { setFresh({ username, password }); setMode('signin') }} /></main>
+  if (mode === 'forgot' || mode === 'magic') return <main className="signin" id="main"><CodeFlow purpose={mode === 'forgot' ? 'reset' : 'magic'} onBack={() => setMode('signin')} /></main>
+  return <PasswordSignIn go={setMode} fresh={fresh} />
+}
+
+function PasswordSignIn({ go, fresh }: { go: (m: Mode) => void; fresh: { username: string; password: string } | null }) {
+  const [identifier, setIdentifier] = useState(fresh?.username ?? DEV_LOGIN)
+  const [password, setPassword] = useState(fresh?.password ?? DEV_LOGIN)
+  const [remember, setRemember] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [missing, setMissing] = useState<{ id?: string; pw?: string }>({})
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    const next = { id: identifier.trim() ? undefined : t('signin.identifier.required'), pw: password ? undefined : t('signin.password.required') }
+    setMissing(next)
+    if (next.id || next.pw) { setError(''); return }
+    setBusy(true)
+    setError('')
+    try {
+      await auth.signIn({ method: 'password', identifier, password, remember })
+      setPassword('')
+    } catch (err) {
+      setError(t(err instanceof AuthError && err.code === 'offline' ? 'signin.error.offline' : err instanceof AuthError && err.code === 'unavailable' ? 'signin.error.unavailable' : 'signin.error.bad'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Read once: a session the server ended on purpose says so here, then the note is gone.
+  const [ended] = useState(() => { try { const v = sessionStorage.getItem(SESSION_ENDED) === '1'; sessionStorage.removeItem(SESSION_ENDED); return v } catch { return false } })
+  const problems = [missing.id, missing.pw, error].filter((x): x is string => !!x)
+  return (
+    <main className="page signin" id="main">
+      <img className="signin__logo" src={logo} alt="Princess Voyages" width="512" height="512" />
+      <h1>{th('signin.title')}</h1>
+      <p>{t('signin.intro')}</p>
+      {ended && <Banner kind="info" title={t('signin.ended.title')}><p>{t('signin.ended.body')}</p></Banner>}
+      <ErrorSummary title={t('signin.problems')} errors={problems} />
+      <Card>
+        <form onSubmit={(e) => void submit(e)} noValidate>
+          <Field label={t('signin.identifier')} hint={t('signin.identifier.hint')} value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} error={missing.id} />
+          <Field label={t('signin.password')} type="password" reveal value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" error={missing.pw} />
+          <label className="choice">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+            <span>{t('signin.remember')}</span>
+          </label>
+          <Button type="submit" block disabled={busy}>{busy ? t('signin.busy') : t('signin.submit')}</Button>
+        </form>
+      </Card>
+      <LanguageSwitch />
+      <ul className="plain-list signin__modes">
+        <li><Button variant="secondary" onClick={() => go('forgot')}>{t('signin.mode.forgot')}</Button></li>
+        <li><Button variant="secondary" onClick={() => go('magic')}>{t('signin.mode.magic')}</Button></li>
+        <li><Button variant="secondary" onClick={() => go('signup')}>{t('signin.mode.signup')}</Button></li>
+      </ul>
+    </main>
+  )
+}
+
+/** Shows the sign-in page instead of the app while there is no session. */
+export function SignInGate({ children }: { children: ReactNode }) {
+  const session = useSyncExternalStore(auth.subscribe, auth.current, auth.current)
+  const navigate = useNavigate()
+  const signedIn = !!session
+  const was = useRef(signedIn)
+  useEffect(() => {
+    // Just signed in: whatever address was open, start on the landing page.
+    if (signedIn && !was.current) void navigate('/', { replace: true })
+    was.current = signedIn
+  }, [signedIn, navigate])
+  if (!session) return <SignInScreen />
+  return <ReferenceGate>{children}</ReferenceGate>
+}
+
+/** Waits for the sailings, ports and catalogue before the app draws, so no screen reads an empty table. Offline with a kept copy, it goes straight through. */
+function ReferenceGate({ children }: { children: ReactNode }) {
+  const state = useSyncExternalStore(subscribeReference, referenceState, referenceState)
+  if (state === 'ready') return <>{children}</>
+  return (
+    <main className="page" id="main">
+      {state === 'failed' ? (
+        <>
+          <p role="alert">{t('ref.failed')}</p>
+          <Button onClick={retryReference}>{t('ref.retry')}</Button>
+        </>
+      ) : <p role="status">{t('ref.loading')}</p>}
+    </main>
+  )
+}
+

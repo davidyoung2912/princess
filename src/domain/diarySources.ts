@@ -2,7 +2,7 @@ import { venueById } from './dining'
 import { excursionById } from './excursions'
 import type { DiaryKind } from './tripDiary'
 import type { ItineraryDay } from './sailings'
-import { t } from '../i18n'
+import { t } from '../shared/i18n'
 
 /**
  * Diary lines made from things the guest booked or kept (X7c): dinners, tours ashore and photos. Pure, so it is tested in node.

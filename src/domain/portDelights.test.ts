@@ -110,7 +110,7 @@ describe('normalizePorts', () => {
 
 describe('ports in the memory document', () => {
   it('survives a save and load, and is part of what syncs', async () => {
-    const { normalizeMemory, EMPTY_MEMORY, restOf } = await import('../memory/store')
+    const { normalizeMemory, EMPTY_MEMORY, restOf } = await import('../features/memory/logic/store')
     const m = { ...EMPTY_MEMORY, ports: normalizePorts({ pins: [{ id: 'a', port: 'cozumel', note: 'Best coffee', at: 1 }], lastLook: { done: true, note: 'Pink sky' } }) }
     const back = normalizeMemory(JSON.parse(JSON.stringify(restOf(m))))
     expect(back.ports.pins[0].note).toBe('Best coffee')

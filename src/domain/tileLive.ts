@@ -1,4 +1,4 @@
-import type { StringKey } from '../i18n'
+import type { StringKey } from '../shared/i18n'
 import { formatMoney, type Cents } from './money'
 import type { PaymentState } from './trip'
 import { timeIn } from './timezones'

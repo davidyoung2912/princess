@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { screen } from '../ai/guard'
+import { screen } from '../features/stanley/logic/guard'
 import { buildHandoff, defaultParts, HANDOFF_MAX, hasMessage } from './handoff'
 
 const booking = { guest: 'Ana Reyes', sailing: '2026-11-08', party: 2, open: 3 }

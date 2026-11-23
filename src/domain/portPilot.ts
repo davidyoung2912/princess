@@ -1,5 +1,5 @@
 import { LAST_TENDER_MINUTES, type PortDay } from './allaboard'
-import type { StringKey } from '../i18n'
+import type { StringKey } from '../shared/i18n'
 import type { PortKnowledge } from './portContent'
 
 /**

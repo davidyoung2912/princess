@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { emptyDraft } from './booking'
-import { en } from '../i18n/locales/en'
+import { en } from '../shared/i18n/locales/en'
 import { alertPaths, casesFact, draftFact, loyaltyFact, medallionFact, statusFact, tabsNeedingAttention, unreadFact, allAboardFact, billFact, clubsFact, familyFact, laundryFact, minutesText, musterFact, ordersFact, wifiFact, assistanceFact, checkinFact, diningFact, excursionsFact, floatByTone, localDate, needsAttention, packagesFact, paymentFact, sourcesFor, tileLines, tonightsDinner, type Say } from './tileLive'
 
 /** Real English, with the `count` plural forms picked the way `t` picks them. */

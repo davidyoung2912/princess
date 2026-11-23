@@ -1,18 +1,18 @@
 // Test support only (nothing in the app imports src/testing). Renders the real app, in jsdom, against a stubbed network: the real API client, guards, stores and
 // screens run, and only `fetch` is replaced by a table of fixture answers. A path with no fixture answers 404 and is recorded, so a test can say what a screen asked for.
-import { forgetSharedLoads } from '../hooks/useSharedMine'
+import { forgetSharedLoads } from '../shared/hooks/useSharedMine'
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { vi } from 'vitest'
-import { AppRoutes } from '../App'
-import { auth, startRuntime } from '../runtime'
+import { AppRoutes } from '../app/App'
+import { auth, startRuntime } from '../app/runtime'
 import { markReferenceAllReady } from '../domain/referenceStatus'
-import { SCREENS } from '../screens'
-import { getContext, setContext } from '../account/context'
-import { routeForPath } from '../routes/nav'
-import { JOURNEY_STAGES } from '../routes/hubs'
-import { screenForPath, stageUses } from '../routes/screens'
-import { accessAt } from '../routes/stageNav'
+import { SCREENS } from '../app/screens'
+import { getContext, setContext } from '../features/account/logic/context'
+import { routeForPath } from '../app/routes/nav'
+import { JOURNEY_STAGES } from '../app/routes/hubs'
+import { screenForPath, stageUses } from '../app/routes/screens'
+import { accessAt } from '../app/routes/stageNav'
 
 export type Answer = unknown | ((url: URL, init?: RequestInit) => unknown)
 export type Fixtures = Record<string, Answer>
@@ -49,7 +49,7 @@ export async function signInAs(): Promise<void> {
   markReferenceAllReady()
   await auth.signIn({ method: 'password', identifier: 'tester', password: 'x' })
   // The context is fetched after the sign-in event; wait until the person is known.
-  const { getContext } = await import('../account/context')
+  const { getContext } = await import('../features/account/logic/context')
   await waitFor(() => { if (!getContext()) throw new Error('no context yet') })
 }
 

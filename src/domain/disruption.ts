@@ -1,4 +1,4 @@
-import type { StringKey } from '../i18n'
+import type { StringKey } from '../shared/i18n'
 import type { ScenarioId } from './scenarios'
 
 /** Changes to the trip the ship or the line makes (SUP-06, SAF-06, MNG-15): what changed, what the guest can choose, what they are offered, and a record that they saw it. Texts are authored concept values. */

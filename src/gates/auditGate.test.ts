@@ -34,7 +34,7 @@ describe('audit gate', () => {
 
   it('reads VITE_API_URL in exactly one place', () => {
     const readers = allSource().filter((f) => /VITE_API_URL/.test(withoutComments(textOf(f))))
-    expect(readers).toEqual(['src/runtime/index.ts'])
+    expect(readers).toEqual(['src/app/runtime/index.ts'])
   })
 
   it('has no persona table: nothing imports a list of demo people or translates their ids', () => {
@@ -53,7 +53,7 @@ describe('audit gate', () => {
   })
 
   it('has no screen importing an authored catalogue or simulation module beyond the known list', () => {
-    const found = files('src/ui').filter((f) => importsCatalogue(readFileSync(f, 'utf8'))).map((f) => f.replaceAll('\\', '/')).sort()
+    const found = files('src').filter((f) => /\/ui\//.test(f.replaceAll('\\', '/'))).filter((f) => importsCatalogue(readFileSync(f, 'utf8'))).map((f) => f.replaceAll('\\', '/')).sort()
     expect(found).toEqual([])
   })
 
@@ -68,6 +68,6 @@ describe('audit gate', () => {
   })
 })
 
-const LOCAL_STORAGE_OK = ['src/testing/', 'src/ai/', 'src/data/', 'src/design/', 'src/demo/', 'src/hub/', 'src/journey/', 'src/memory/', 'src/offers/', 'src/party/', 'src/phone/', 'src/pilot/', 'src/port/', 'src/runtime/', 'src/settings/', 'src/sharing/', 'src/shop/', 'src/sync/', 'src/auth/', 'src/diagnostics/', 'src/rates/', 'src/feeds/feed.ts', 'src/hooks/useOutbox.ts', 'src/hooks/useSavedCopy.ts']
+const LOCAL_STORAGE_OK = ['src/testing/', 'src/features/stanley/logic/', 'src/shared/data/', 'src/shared/design/', 'src/features/demo/logic/', 'src/features/hub/logic/', 'src/features/journey/logic/', 'src/features/memory/logic/', 'src/features/offers/logic/', 'src/features/party/logic/', 'src/features/phone/logic/', 'src/features/pilot/logic/', 'src/features/port/logic/', 'src/app/runtime/', 'src/shared/settings/', 'src/features/sharing/logic/', 'src/features/shop/logic/', 'src/shared/sync/', 'src/shared/auth/', 'src/shared/diagnostics/', 'src/features/rates/logic/', 'src/shared/feeds/feed.ts', 'src/shared/hooks/useOutbox.ts', 'src/shared/hooks/useSavedCopy.ts']
 /** Screens that keep a small device-only setting themselves (diagnostics switch, a support draft, the pass finder). */
-const KNOWN_LOCAL_STORAGE_OUTSIDE: string[] = ['src/ui/DiagnosticsSettings.tsx', 'src/ui/aboard/SupportScreens.tsx']
+const KNOWN_LOCAL_STORAGE_OUTSIDE: string[] = ['src/features/aboard/ui/SupportScreens.tsx', 'src/shared/ui/DiagnosticsSettings.tsx']

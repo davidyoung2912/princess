@@ -68,7 +68,7 @@ As built:
 
 ### Phase 3: presentation (front end) — built
 
-- `src/api` types and `httpApi.ts`; a pure `domain/chatUrgency.ts` (labels, sort, announce mode) with tests.
+- `src/shared/api` types and `httpApi.ts`; a pure `domain/chatUrgency.ts` (labels, sort, announce mode) with tests.
 - Message bubble label and icon; list ordering and pin; the badge; the composer's urgency control (shown only to people who may send urgent; important for everyone) with a clear explanation.
 - `ChatToast`: persistent urgent notice with **Got it**, assertive announcement, ignores calm mode and the pop-ups setting; static under reduced motion. Contrast checked in both themes.
 - Text in `en.ts` only.

@@ -6,7 +6,7 @@ import { REDOWNLOAD_DAYS } from './photos'
 import { SERVICE_RATE } from './orders'
 
 // Load every domain module, so each one's `limit(...)` registrations run whatever the other tests imported.
-import.meta.glob(['./*.ts', '!./*.test.ts'], { eager: true })
+import.meta.glob(['./*.ts', '!./*.test.ts', '../features/*/domain/*.ts', '!../features/*/domain/*.test.ts'], { eager: true })
 
 describe('normalizeLimits', () => {
   it('reads numbers and strings', () => {

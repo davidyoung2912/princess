@@ -1,9 +1,9 @@
 # Stage experience: tabs, tiles and screens by stage
 
-Generated from `STAGE_TABS` in `src/routes/screens.ts` (the single registry; it replaced `HUBS`, `STAGE_MENUS` and `QUICK`). The design and
+Generated from `STAGE_TABS` in `src/app/routes/screens.ts` (the single registry; it replaced `HUBS`, `STAGE_MENUS` and `QUICK`). The design and
 reasoning are in `stage-experience-plan.md`. The stage comes from the server (`stage`, `focusSailingId` and the reason in the context
 endpoint). Every stage has **Home** first and **Me** last with two or three stage tabs between. Screens a stage does not use are hidden from
-its tabs, Home and search. Tests in `src/routes/screens.test.ts` and `coverage.test.ts` keep this data honest.
+its tabs, Home and search. Tests in `src/app/routes/screens.test.ts` and `coverage.test.ts` keep this data honest.
 
 ## Summary
 

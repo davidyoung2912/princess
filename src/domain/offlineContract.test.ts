@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { en } from '../i18n/locales/en'
-import { ROUTES } from '../routes/routes'
+import { en } from '../shared/i18n/locales/en'
+import { ROUTES } from '../app/routes/routes'
 import { OFFLINE_CONTRACT, offlineModeOf } from './offlineContract'
 
 // proves: MOB-05#1, MOB-05#2, OFF-01#1, OFF-01#2

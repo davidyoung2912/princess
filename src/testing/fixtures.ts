@@ -1,6 +1,6 @@
 // Test support only. One signed-in person with a booking, aboard on day 3, as the server would describe them. Typed against the API types where the
 // type is small; the rest are checked by the app's own guards when a screen reads them. Times are on the server clock `NOW`.
-import type { BoardingView, DiningView, ExcursionsView, FamilyView, FolioView, OnboardToday, OrderMenuView, PackagesView, ProgramView, TripsView } from '../api/types'
+import type { BoardingView, DiningView, ExcursionsView, FamilyView, FolioView, OnboardToday, OrderMenuView, PackagesView, ProgramView, TripsView } from '../shared/api/types'
 import fixture from './reference-fixture.json'
 
 /** 3:00 pm UTC on 2 March 2027: day 3 of the 28 February sailing. */

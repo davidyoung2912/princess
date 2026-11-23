@@ -1,4 +1,4 @@
-import type { TextSize } from '../design/textSize'
+import type { TextSize } from '../shared/design/textSize'
 
 /** The types for people on a trip. A person is whoever the server describes (`GET /me/context`); nothing here is a list of people. */
 export type Tier = 'none' | 'gold' | 'ruby' | 'platinum' | 'elite'

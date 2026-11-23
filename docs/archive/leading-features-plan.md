@@ -7,7 +7,7 @@ Source: `docs/leading-features-requirements.md` (IDs below are from that file; d
 
 - One phase at a time. Tests with each phase. Verify with `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, and `npm run api:check` when the `Api` interface changes. Never a full `dotnet test`; no browser or Playwright testing.
 - Commit and stop after each phase; commit or push only when asked.
-- Logic lives in plain TypeScript under `src/domain` (node-testable); React screens stay thin. Strings go in `src/i18n/en.ts`. Every route goes in `src/routes/routes.ts` and `src/screens.ts` (a test fails otherwise), and is covered by the existing accessibility audit.
+- Logic lives in plain TypeScript under `src/domain` (node-testable); React screens stay thin. Strings go in `src/shared/i18n/en.ts`. Every route goes in `src/app/routes/routes.ts` and `src/app/screens.ts` (a test fails otherwise), and is covered by the existing accessibility audit.
 - Both modes keep working: the mock API and the REST API. **H1 to H6 are front end first**: new state stays on the device per person (as in G3, G5, G6) behind small stores, and any server storage is listed as "not done" at the end of the phase rather than bundled in.
 - Simulated feeds (crowds, flight status, sky and so on) are built as pure functions over a seed and the demo clock, with a `source` field so a real feed can replace them.
 - Offer restraint (UX-02) and the two-tap rule (UX-01) bind every phase. Anything that talks to the guest unprompted counts against the nudge budget built in H1 (XA-03).
@@ -87,7 +87,7 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 - **Why am I seeing this (XT-05):** `offerReasons` and a disclosure on each offer card. The existing "Not for this trip" is the stop control; a per-kind mute was not built.
 - **Nothing renews (XT-06):** `renewalNotice` (refuses a renewing item without a date and amount), a promise card on Money, and string and Wi-Fi-plan tests. Nothing in the app renews today.
 - **Trust ledger (XT-07):** `src/domain/trustLedger.ts` and `/me/ledger`. **Reduced scope:** payments and onboard account lines only; the page says so.
-- **Phone setup and Wi-Fi guard (XT-01, S3-07):** `src/domain/phoneSetup.ts`, `/plan/phone`, tick state per person on the device (`src/phone/store.ts`), a stage-aware reminder, a notice on the Wi-Fi screen and a per-device data coach (`wifiAdvice`). Guidance only; the app cannot see the phone.
+- **Phone setup and Wi-Fi guard (XT-01, S3-07):** `src/domain/phoneSetup.ts`, `/plan/phone`, tick state per person on the device (`src/features/phone/logic/store.ts`), a stage-aware reminder, a notice on the Wi-Fi screen and a per-device data coach (`wifiAdvice`). Guidance only; the app cannot see the phone.
 - **Notification budget (XA-03):** `src/domain/nudges.ts` (`rankNudges`, `takeNudge`), `Settings.nudgesPerDay` (0, 1, 3 default, 5), set in the notifications centre. Today only the Home offer card obeys it (0 hides it). `rankNudges` and `takeNudge` are ready for H2 and H5 but have no other caller yet.
 - **Dark-pattern tests (XT-10):** `src/darkPatterns.test.ts`.
 - **Verified:** `npm run test` (1167 passed), `npm run lint`, `npx tsc -b`, `npm run build`. `npm ci` was needed first because `node_modules` was absent; the lockfile did not change.
@@ -95,7 +95,7 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 
 ## 6. Phase H2 notes
 
-Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/hub/store.ts` (one record: family page, delay, callback, follow-ups).
+Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/features/hub/logic/store.ts` (one record: family page, delay, callback, follow-ups).
 
 - **Disruption Hub (XD-01, XD-02, XD-03):** `src/domain/disruptionHub.ts` adds hub detail to every disruption in `disruption.ts` (what it means, what is already done, knock-on items already refunded, moved, cancelled or kept, what was given, when, and what the guest must do, what happens next). `/home/disruption` shows it with the same choice buttons and acknowledgement as `/home/updates`, which stays. The Home changes banner now opens the hub. Knock-on items are authored concept values, not computed from the guest's bookings.
 - **Callback (XD-04):** `requestCallback`, `queueEstimate`, `callbackStatus`: a pretend queue (place 1 to 6, four minutes a place, lapses after two hours, `source: 'sim'`). The desk number is printed on the page for offline use.
@@ -108,7 +108,7 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 
 ## 7. Phase H3 notes
 
-Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per booking on the device in `src/port/store.ts` (kept under the booker like the party notes, so everyone on the booking sees the same record on this device).
+Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per booking on the device in `src/features/port/logic/store.ts` (kept under the booker like the party notes, so everyone on the booking sees the same record on this device).
 
 - **Port Day Pilot (S6A-01):** `src/domain/portPilot.ts` `planPortDay` works backward from all-aboard: safety buffer (30, 45 or 60 minutes), return queue by crowd, gate walk (pier) or last tender (tender day), then the trip back, giving a leave-by time, a time-at-destination figure and whether a chosen excursion fits (`latestStart` gives the latest start). Times show in ship time with local time beside them; a late tender moves the first time ashore, never the deadline. On `/ship/port`.
 - **Crowd and ships in port (S6A-02):** `src/domain/portCrowd.ts`: a stable simulated count per port and date (`source: 'sim'`), a crowd level, an hourly shape, the quietest window, and a "the ship is quiet" note when a port is busy.
@@ -125,7 +125,7 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 
 ## 8. Phase H4 notes
 
-Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/journey/store.ts` (door-to-ship plan, packing ticks, bag log, embarkation plan).
+Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/features/journey/logic/store.ts` (door-to-ship plan, packing ticks, bag log, embarkation plan).
 
 - **Door-to-ship timeline (S4A-01, S4A-11, S4A-12):** `src/domain/journey.ts` `buildJourney` works back from the terminal and forward from landing or the road time to give each leg, the spare time before the gangway closes (13:30) and a status: on track (2 hours or more), tight (1 to 2 hours), at risk (under 1 hour). Staying the night before starts the day at the hotel, with a checkout and leave-hotel time. `/plan/getting-there`.
 - **Fly the day before (S4A-02):** `flyEarlyAdvice` recommends it when same-day spare time is under two hours, sets a hotel night beside the cost of missing the ship (authored guides, tagged "(verify)"), and names a landing time that would be comfortable.
@@ -142,7 +142,7 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 
 ## 9. Phase H5 notes
 
-Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/pilot/store.ts` (plan changes and their log, slot watches, week preferences, the inclusion settings). Calm mode is a display setting (`Settings.calm`).
+Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/features/pilot/logic/store.ts` (plan changes and their log, slot watches, week preferences, the inclusion settings). Calm mode is a display setting (`Settings.calm`).
 
 - **One change rule (S6-02, XA-02):** `src/domain/planChange.ts`. Autopilot and the assistant both make a `Change`: it starts as a proposal with a preview; only an explicit accept applies it; accept is refused if it would make the day cross itself where it did not before, or after the day (Autopilot) or two hours (assistant) is over; an accepted change can be undone inside that period; a dropped item stays in the list struck through until the day ends; every decision stays in the log. A source test (`src/h5Promises.test.ts`) checks that no effect or timer calls accept or book.
 - **Autopilot day (S6-02):** `/plan/autopilot`. "Check now" finds the ship's own mid-day changes (a show moved or cancelled), simulated rain and a what-if for late tenders, and proposes: move a show, swap a cancelled event for one that fits, move outdoor events indoors (a shore tour is left to its operator), start a tour later with a warning when the margin gets thin. A proposal is offered once per cause and day.
@@ -159,7 +159,7 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 
 ## 10. Phase H6 notes
 
-Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/memory/store.ts` (journal, "what I would change", drinks and anniversary choices, contacts, blocks, package use, fit answers, budget). It is cleared with the other `princess:` keys.
+Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/features/memory/logic/store.ts` (journal, "what I would change", drinks and anniversary choices, contacts, blocks, package use, fit answers, budget). It is cleared with the other `princess:` keys.
 
 - **Cabin chooser (S1-02 to S1-05, S1-07, S1-08):** `src/domain/cabinScore.ts`, `/home/cabins`. Sleep, motion and noise are each 1 to 5 (5 best) with the reasons in words (thrusters, engines, the Dome, lifts, the pool deck), from the authored sample plan in `cabins.ts`. Filters for quiet, calm seas, accessible, clear view and still free. Sun side from the ship's heading each day (`HEADINGS`, `source: 'sim'`): morning, afternoon, both or shaded, and an interior says nothing. Compare up to three, with the all-in price (gratuities and taxes already in), and a "not included in this fare" list from the entitlement numbers.
 - **Dream and decide (S0-01 to S0-05, S0-10):** `src/domain/dream.ts`, `/home/decide`. An honest-fit page (who it suits, who it does not, seven "tick what is true for you" questions with plain answers, the tender port first), the six real fears and a glossary, a budget-first search (what fits, what is left each person each day, the nearest misses when nothing fits), a quality note per sailing (crowds, weather, hurricane season, school holidays, price; each with its "why", `source: 'sim'`), a decision summary (decided, still to do, could change my mind) to send to someone, and an invitation as text.
@@ -217,7 +217,7 @@ Built 2026-11-01. Front end only; no REST contract changes.
 Built 2026-11-01. Front end only; no REST contract changes (the handoff uses the existing `support.email`).
 
 - **Plain-English summaries (XA-05):** `src/domain/plainSummary.ts`, `/home/summary`. The day, the bill, or one of the four notices (terms, health, minimum age, pregnancy), at three levels: short (main points), plain (everything, a line each) and step by step (numbered, with the reason for each charge). Rules over the original, not a model: nothing is reworded. A notice keeps the original's own sentences (short keeps those with a number or a rule word). The original is always in the card beside it, with a link to its screen. `unsupportedNumbers` checks that a summary has no time, amount or number the original lacks. Read aloud from a button, or copy. "Summarise my day" and "summarise my bill" in Ask your cruise give the plain level, with the source and a link to the page. Made only when asked; nothing sent or saved.
-- **Handoff with context (XA-06):** `src/domain/handoff.ts`, `src/ui/ai/HandoffCard.tsx`. When the concierge hands a guest to a person, the card shows the whole message: the question, the booking facts (name, sailing, number of guests, open checklist items) and the last of the conversation (at most 1000 characters; oldest turns go first). The guest ticks which parts to include, can edit the text, and sends it with a button. A medical handoff leaves the conversation out until the guest ticks it. An emergency makes no message: it shows the number. No card, passport or health data is ever added by the app.
+- **Handoff with context (XA-06):** `src/domain/handoff.ts`, `src/features/stanley/ui/HandoffCard.tsx`. When the concierge hands a guest to a person, the card shows the whole message: the question, the booking facts (name, sailing, number of guests, open checklist items) and the last of the conversation (at most 1000 characters; oldest turns go first). The guest ticks which parts to include, can edit the text, and sends it with a button. A medical handoff leaves the conversation out until the guest ticks it. An emergency makes no message: it shows the number. No card, passport or health data is ever added by the app.
 - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`. Four new cases in `assistantEval.test.ts` and two promise tests in `src/h7Promises.test.ts`.
 - **Signature feature 11 (Ask your cruise, XA-01 to XA-06) is now complete** on the front end.
 - **Not done:** summaries of free text the app does not hold (a long notice from the line is not in the app); a summary reworded by a model (kept rule-based so it cannot invent); the handoff arriving in the chat thread or the crew's own view (the message goes into Contact us as an email request, as before); XA-07 preference memory and XA-10 cost caps and a server-side key proxy (left on the backlog; the proxy needs backend work).
@@ -225,7 +225,7 @@ Built 2026-11-01. Front end only; no REST contract changes (the handoff uses the
 
 ## 12. H8 slice 0: requirements audit (2026-11-01)
 
-Method: every ID in `docs/leading-features-requirements.md` (183) checked against the phases this file records as built, the route list in `src/screens.ts`, and keyword checks of `src/domain` and `src/ui`. This is an inventory, not a line-by-line review: each "partly" item is opened and confirmed when its slice starts. No code changed.
+Method: every ID in `docs/leading-features-requirements.md` (183) checked against the phases this file records as built, the route list in `src/app/screens.ts`, and keyword checks of `src/domain` and `src/ui`. This is an inventory, not a line-by-line review: each "partly" item is opened and confirmed when its slice starts. No code changed.
 
 **Result: 107 built, 76 open.** The 107 are H1 to H5 in full, H6 except the items below, and the H7 slices 1 to 5 (S2-01, S2-05, S3-02, S3-04, S3-05, S3-11, S6-07, XA-04, XA-05, XA-06, XA-09). S6A-09, S6A-11 and S6A-12 look uncited in code but are built (`src/domain/portContent.ts`: don't-bring-it-back lists, day passes, local-law notes), so they are not open.
 
@@ -241,7 +241,7 @@ Corrections to the H7 backlog list: XG-04 and XG-05 sit with H6's "not done" ite
 
 ## 13. H8 slice A, part 1: booking and preparation (2026-11-01)
 
-Front end only; no REST contract changes. Pure logic in `src/domain/bookingPrep.ts`, screens in `src/ui/plan/PrepScreens.tsx` (routes under `/plan`, linked from Plan), state per person in the H6 memory store (`hold`, `access`, `allergy`, `shares`). Promise tests in `src/h8Promises.test.ts`.
+Front end only; no REST contract changes. Pure logic in `src/domain/bookingPrep.ts`, screens in `src/features/plan/ui/PrepScreens.tsx` (routes under `/plan`, linked from Plan), state per person in the H6 memory store (`hold`, `access`, `allergy`, `shares`). Promise tests in `src/h8Promises.test.ts`.
 
 - **S2-02 price-drop watch** (`/plan/price-watch`): a simulated weekly fare history (same every time for a booking), lowest seen, whether re-pricing is allowed through the existing `priceDrop` rule, the saving and three steps; "Ask a person" goes to Contact us.
 - **S2-03 short hold** (`/plan/hold`): 48 hours on the device; the time left is in words and shows on that screen only; lapses in words. Not tied to any cruise-line inventory, and the screen says so.
@@ -255,7 +255,7 @@ Front end only; no REST contract changes. Pure logic in `src/domain/bookingPrep.
 
 ## 14. H8 slice A, part 2: booking and preparation (2026-11-01)
 
-Front end only; no REST contract changes. Logic in `src/domain/prepMore.ts`, screens in `src/ui/plan/PrepMoreScreens.tsx`, Home cards in `src/ui/home/PrepCards.tsx`; memory store gains `companionOff` and `pasted`. Promise tests in `src/h8Promises.test.ts`.
+Front end only; no REST contract changes. Logic in `src/domain/prepMore.ts`, screens in `src/features/plan/ui/PrepMoreScreens.tsx`, Home cards in `src/features/home/ui/PrepCards.tsx`; memory store gains `companionOff` and `pasted`. Promise tests in `src/h8Promises.test.ts`.
 
 - **S2-10 audit:** the draft is already saved by the booking funnel and `/book/resume/:id` reopens it. Added a Home card "Pick up your booking" shown only when a draft with something in it exists.
 - **S3-03 weekly companion:** one note per week from eight weeks out (`companionWeek`), a Home card that is silent when the nudge budget is zero or calm mode is on, with a one-tap "Turn these off".
@@ -273,7 +273,7 @@ Slice A is now complete apart from the part 1 gaps (screens that should read the
 
 ## 15. H8 slice B: planning and groups on one device (2026-11-01)
 
-Front end only; no REST contract changes. Logic in `src/domain/planning.ts`, screens in `src/ui/plan/PlanningScreens.tsx` (routes under `/plan`), state per person in the H6 memory store under one `planning` field. Promise tests in `src/h8Promises.test.ts`.
+Front end only; no REST contract changes. Logic in `src/domain/planning.ts`, screens in `src/features/plan/ui/PlanningScreens.tsx` (routes under `/plan`), state per person in the H6 memory store under one `planning` field. Promise tests in `src/h8Promises.test.ts`.
 
 - **S4-03 honest difficulty** (`/plan/difficulty`): distance, steps, heat, shade, seats, restrooms and wet footing authored for all twelve excursions (tested), with concerns matched to the accessibility profile from slice A.
 - **S4-04 comparator** (`/plan/compare`): ship against independent, with cost (estimate at 65 percent of the ship price), what happens if late, flexibility and cancelling.
@@ -291,7 +291,7 @@ Front end only; no REST contract changes. Logic in `src/domain/planning.ts`, scr
 
 ## 16. H8 slice C: on board (2026-11-01)
 
-Front end only; no REST contract changes. Logic in `src/domain/aboardMore.ts`, screens in `src/ui/onboard/AboardMoreScreens.tsx` (routes under `/ship`, linked from the Ship tab under "More on board"), state per person in the H6 memory store under one `aboard` field. Promise tests in `src/h8Promises.test.ts`. Reminder features say plainly on the screen that nothing is sent to anyone.
+Front end only; no REST contract changes. Logic in `src/domain/aboardMore.ts`, screens in `src/features/onboard/ui/AboardMoreScreens.tsx` (routes under `/ship`, linked from the Ship tab under "More on board"), state per person in the H6 memory store under one `aboard` field. Promise tests in `src/h8Promises.test.ts`. Reminder features say plainly on the screen that nothing is sent to anyone.
 
 - **S6-09 seasickness first aid** (`/ship/seasick`): calmest places (midship, deck 8 or lower, step-free), what helps, when to see the doctor, a one-tap request whose reply is simulated after 30 minutes.
 - **S6-10 lounger fair use** (`/ship/loungers`): a simulated board of eight; your hold is real on the device (40 minutes, "due back in X min", lapses), report one left too long.
@@ -306,7 +306,7 @@ Front end only; no REST contract changes. Logic in `src/domain/aboardMore.ts`, s
 
 ## 17. H8 slice D: the last day, trust and care (2026-11-01)
 
-Front end only; no REST contract changes. Logic in `src/domain/finishMore.ts`, screens in `src/ui/onboard/FinishMoreScreens.tsx`, state per person in the H6 memory store under one `finish` field. Promise tests in `src/h8Promises.test.ts`. Notes and lists are on the screen and say plainly that nothing is sent to anyone.
+Front end only; no REST contract changes. Logic in `src/domain/finishMore.ts`, screens in `src/features/onboard/ui/FinishMoreScreens.tsx`, state per person in the H6 memory store under one `finish` field. Promise tests in `src/h8Promises.test.ts`. Notes and lists are on the screen and say plainly that nothing is sent to anyone.
 
 - **S7-01, S7-06 flight and low-stress** (`/home/disembark/flight`): rates each way off against the flight time, picks the latest that leaves enough spare time, warns on an impossible or very early flight; low-stress mode wants 90 minutes spare, leaves an hour earlier, shows no offers, and has a tick for "I asked for an assist".
 - **S7-02, S7-03** (`/home/disembark/sweep`, `/home/disembark/bags`): cabin sweep with one-tap "all checked"; bag night with the hallway countdown and "out" and "collected".
@@ -315,13 +315,13 @@ Front end only; no REST contract changes. Logic in `src/domain/finishMore.ts`, s
 - **S6-26 ask the ship** (`/ship/ask-ship`): authored facts, "I do not have an answer" with Guest Services otherwise.
 - **XI-08, XI-09, XI-10, XI-11** (`/ship/safe-ashore`, `/ship/allergy-chain`, `/me/gentle`, `/me/anxiety`): notes by traveller type, the allergy chain from the S3-13 pre-flag to each venue (simulated acknowledgements), gentle wording and a memorial note, breathing and grounding with no scores and a path to a person.
 - **S1-01, S4-11** (`/plan/fare-check`, `/plan/gifts`): fare low, typical or high against a simulated history and the tier that fits the guest's habits; gift ideas filtered by budget, occasion, noted allergens and alcohol, on a screen of its own.
-- **Audited, already built:** XA-10's client part (`withinLimit` and the scripted fallback in `src/ai/concierge.ts`), S6A-08 to S6A-12 (`portContent.ts`).
+- **Audited, already built:** XA-10's client part (`withinLimit` and the scripted fallback in `src/features/stanley/logic/concierge.ts`), S6A-08 to S6A-12 (`portContent.ts`).
 - **Verified:** `npm run test` (1686 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done:** XI-06 spoken wayfinding and XI-07 visual and vibration alerts; XA-08 voice mode; assistant actions beyond the day plan (request an item, add an excursion); nudge wiring of Home cards for the briefing, Autopilot, storm notice and back-aboard; S6A-14 port snapshot; S4-08 80 and 100 percent notes; S6-23 crew thanks check; XG-06 reunion mode; S8-09 to S8-12 re-check; per-room fare indicator is a simulated history, not a feed; low-stress mode is read only on the flight screen (other screens do not yet hide offers); gentle wording is stored but other screens do not yet read it; no reminder reaches another device or person.
 
 ## 18. H8 slice D, part 2: nudges, quiet modes, assistant and access leftovers (2026-11-01)
 
-Front end only; no REST contract changes. Logic added to `src/domain/finishMore.ts`; screens added to `src/ui/onboard/FinishMoreScreens.tsx`; Home cards in `src/ui/home/NudgeCards.tsx`.
+Front end only; no REST contract changes. Logic added to `src/domain/finishMore.ts`; screens added to `src/features/onboard/ui/FinishMoreScreens.tsx`; Home cards in `src/features/home/ui/NudgeCards.tsx`.
 
 - **Nudge wiring:** `NudgeCards` is the one place Home shows unprompted cards (briefing, Autopilot proposals, storm notice, back aboard). They share the guest's daily budget, highest priority first. "Back aboard" is a safety notice and always shows; calm mode, do not disturb and a budget of none hold back the rest. Offers and the weekly companion now also hide in low-stress mode and gentle wording (`offersQuiet`).
 - **Assistant (XA actions, XA-08):** "Can I have two more towels" becomes a preview (item, quantity capped at the usual limit) on `/home/ask`; only the Confirm tap places it, through the existing requests API, with a Cancel while it is still only received. Not offered to child accounts. Adding an excursion already went through `planChange` and is unchanged. Voice mode (where the browser has speech recognition) only fills the question box; Send and Confirm stay taps.
@@ -338,11 +338,11 @@ Front end only; no REST contract changes.
 
 - **Low-stress and gentle wording on offers:** `OfferContext.mode` (`offerModeOf`) in `src/domain/offers.ts`. `offersFor` returns nothing in low-stress mode and leaves out offers flagged `celebration` (drinks, photos) in gentle mode. The offers page (`/home/offers`) uses it and says why in a status line; Home already hid its card in both modes.
 - **Do not disturb on the notifications list:** `splitHeld` in `src/domain/aboardMore.ts`. While a schedule is running, non-critical notices move into a "Held" list on `/me/notifications` (nothing is deleted; critical notices stay in view).
-- **Part 2 (same day):** `AccessAreaNote` (`src/ui/AccessAreaNote.tsx`) shows what the accessibility profile asks of the area on the room step, excursions, dining and disembark screens, and only when the profile asks something. The assistant (`ConciergeScreen`) passes `mobility` (from the profile) and `likes` (the taste profile, minus removed items and the global off switch) in its context; the day plan uses the mobility default unless the question says otherwise and says which guesses it used. Gift ideas leave out celebration gifts in gentle mode.
+- **Part 2 (same day):** `AccessAreaNote` (`src/shared/ui/AccessAreaNote.tsx`) shows what the accessibility profile asks of the area on the room step, excursions, dining and disembark screens, and only when the profile asks something. The assistant (`ConciergeScreen`) passes `mobility` (from the profile) and `likes` (the taste profile, minus removed items and the global off switch) in its context; the day plan uses the mobility default unless the question says otherwise and says which guesses it used. Gift ideas leave out celebration gifts in gentle mode.
 - **Verified:** `npm run test` (1705 passed, `npm run lint`, `npx tsc -b`, `npm run build`. Promise tests in `src/h8Promises.test.ts`.
 - **Not done:** the profile is a note on those screens, not a filter of their lists; privacy defaults read by a shared screen; other celebration copy; low-stress on any other upsell surface; held notices are not released as a separate event when the schedule ends (they simply reappear).
 
-**Part 3:** `SharingNote` (`src/ui/SharingNote.tsx`) reads the privacy defaults (XG-02) on the party, cabins and shared-costs screens, says whether plans or spending are shared, and lets the guest change it in place (the medical card has no tick and is never shared). On one device it changes what the screens say they would show; nothing reaches another phone. Still not done: other celebration copy, low-stress on other upsell surfaces, released-notice event after do not disturb, the profile as a filter of lists.
+**Part 3:** `SharingNote` (`src/shared/ui/SharingNote.tsx`) reads the privacy defaults (XG-02) on the party, cabins and shared-costs screens, says whether plans or spending are shared, and lets the guest change it in place (the medical card has no tick and is never shared). On one device it changes what the screens say they would show; nothing reaches another phone. Still not done: other celebration copy, low-stress on other upsell surfaces, released-notice event after do not disturb, the profile as a filter of lists.
 
 **Part 4 (audit of promotional and celebratory copy):** the screens a guest opens on purpose (upgrades, packages, Wi-Fi plans, gift cards, the cart) are left as they are, since quiet modes are about unprompted suggestions. The one unprompted line found was the "gifts for your occasion" prompt on the booking confirmation; it is now hidden in low-stress mode and with gentle wording. The anniversary memory in Wrapped is opt-in and is left alone. Wi-Fi coaching is advice about usage, not an offer.
 

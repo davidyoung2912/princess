@@ -1,4 +1,4 @@
-// Compares the `Api` interface (src/api/types.ts) with the API tables in docs/backend-data-model.md section 6: `npm run api:check`.
+// Compares the `Api` interface (src/shared/api/types.ts) with the API tables in docs/backend-data-model.md section 6: `npm run api:check`.
 // Every method of the interface must be named in a table row, so the REST surface leaves nothing out (the OpenAPI side is checked by the SwaggerCoverageTests in server/).
 // Methods that are in the tables but not in the interface are listed for information (new server-only routes such as `auth.login`).
 import { readFileSync } from 'node:fs'
@@ -12,9 +12,9 @@ const cfg = ts.parseJsonConfigFileContent(ts.readConfigFile(cfgPath, ts.sys.read
 const program = ts.createProgram(cfg.fileNames, cfg.options)
 const checker = program.getTypeChecker()
 
-const typesFile = program.getSourceFiles().find((f) => f.fileName.endsWith('/src/api/types.ts'))
+const typesFile = program.getSourceFiles().find((f) => f.fileName.endsWith('/src/shared/api/types.ts'))
 const decl = typesFile.statements.find((s) => ts.isInterfaceDeclaration(s) && s.name.text === 'Api')
-if (!decl) throw new Error('interface Api not found in src/api/types.ts')
+if (!decl) throw new Error('interface Api not found in src/shared/api/types.ts')
 
 /** "group.method" for every function in the interface, however deeply the groups nest. */
 const interfaceMethods = new Set()

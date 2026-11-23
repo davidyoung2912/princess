@@ -16,7 +16,7 @@
     "db:check": "node scripts/check-schema.mjs",
     "api:check": "node scripts/check-api-coverage.mjs",
     "bundle:check": "node scripts/check-bundle.mjs",
-    "stanley:misses": "vitest run src/ai/understand/missesReport.test.ts --silent=false",
+    "stanley:misses": "vitest run src/features/stanley/logic/understand/missesReport.test.ts --silent=false",
     "content:gen": "vite-node scripts/gen-content.ts",
     "portguides:gen": "vite-node scripts/gen-port-guides.ts",
     "portexcursions:gen": "vite-node scripts/gen-port-excursions.ts",

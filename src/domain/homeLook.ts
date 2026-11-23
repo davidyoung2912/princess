@@ -1,4 +1,4 @@
-import { JOURNEY_STAGES, type JourneyStage } from '../routes/hubs'
+import { JOURNEY_STAGES, type JourneyStage } from '../app/routes/hubs'
 
 /** Pure helpers for the L3 Home look (docs/look-and-feel-recommendations.md, 5.4, 5.5, 6.1, 6.4). */
 

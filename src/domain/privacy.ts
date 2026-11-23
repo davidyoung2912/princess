@@ -1,4 +1,4 @@
-import type { StringKey } from '../i18n'
+import type { StringKey } from '../shared/i18n'
 import { addDays } from './timezones'
 import { limit } from './limits'
 

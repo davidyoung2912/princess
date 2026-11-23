@@ -1,4 +1,4 @@
-import type { ApiErrorCode } from '../api/errors'
+import type { ApiErrorCode } from '../shared/api/errors'
 import type { StageId } from './sailings'
 
 /** A rule that makes some mock calls fail: the first `failTimes` matching calls, then the call recovers. */

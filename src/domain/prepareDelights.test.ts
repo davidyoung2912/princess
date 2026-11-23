@@ -234,7 +234,7 @@ describe('normalizePrepare', () => {
 
 describe('prepare in the memory document', () => {
   it('survives a save and load, and is part of what syncs', async () => {
-    const { normalizeMemory, EMPTY_MEMORY, restOf } = await import('../memory/store')
+    const { normalizeMemory, EMPTY_MEMORY, restOf } = await import('../features/memory/logic/store')
     const m = { ...EMPTY_MEMORY, prepare: normalizePrepare({ nickname: 'Mum', moods: ['reef'], travellers: [{ id: 'a', firstName: 'A', lastName: 'B', dob: '1990-01-01', citizenship: 'us' }] }) }
     const back = normalizeMemory(JSON.parse(JSON.stringify(restOf(m))))
     expect(back.prepare.nickname).toBe('Mum')

@@ -1,4 +1,4 @@
-/** Ship information (OB-06): the captain's announcement for a cruise day. Where the ship is and the sea around it come from the server (`src/feeds/navigation.ts`). */
+/** Ship information (OB-06): the captain's announcement for a cruise day. Where the ship is and the sea around it come from the server (`src/shared/feeds/navigation.ts`). */
 const ANNOUNCEMENTS: readonly string[] = [
   'Welcome aboard. We are under way for the western Caribbean and expect a smooth first night.',
   'A full day at sea. The pools are open, and the Piazza has music from noon.',

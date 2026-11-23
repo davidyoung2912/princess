@@ -3,7 +3,7 @@
 // A bar that is also in Dining (Wheelhouse, O'Malley's) appears here as its own "live music" venue, so its music is in Entertainment and its drinks stay in Dining.
 //
 // The doc's week maps onto day kinds: Day 1 `embark`, Day 2 `firstSea` (formal), Day 3 `earlyPortOdd`, Day 6 `lastPort`, Day 4 `portEven`, Day 5 `laterSea`, Day 7 `last`. A day kind repeats on a longer sailing.
-import type { HoursRule } from '../src/domain/explorer/types.ts'
+import type { HoursRule } from '../src/features/explorer/domain/types.ts'
 import type { ExplorerEventRow, ExplorerVenueRow } from './ship-explorer-data.ts'
 
 const OPEN_DAY: HoursRule[] = [{ kind: 'fixed', when: ['night'], windows: [['07:00', '24:00']] }]

@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { en } from '../i18n/locales/en'
-import { EMPTY_MEMORY } from '../memory/store'
+import { en } from '../shared/i18n/locales/en'
+import { EMPTY_MEMORY } from '../features/memory/logic/store'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
-const SCREENS = ['src/ui/discover/CabinChooserScreen.tsx', 'src/ui/discover/DecideScreen.tsx', 'src/ui/account/WrappedScreen.tsx', 'src/ui/account/MemoryScreen.tsx']
+const SCREENS = ['src/features/discover/ui/CabinChooserScreen.tsx', 'src/features/discover/ui/DecideScreen.tsx', 'src/features/account/ui/WrappedScreen.tsx', 'src/features/account/ui/MemoryScreen.tsx']
 
 /** The promises of Phase H6 (S1-02, S8-01, S8-05, S8-06, S0-05), checked in the source and the text so a later edit cannot quietly break them. */
 describe('Phase H6 promises', () => {
@@ -20,11 +20,11 @@ describe('Phase H6 promises', () => {
 
   it('makes the next trip a draft that books and holds nothing', () => {
     expect(en['memory.nextNote']).toMatch(/Nothing is booked or held/)
-    expect(read('src/ui/account/MemoryScreen.tsx')).not.toMatch(/api\.booking|api\.trip|\.hold\(|\.book\(/)
+    expect(read('src/features/account/ui/MemoryScreen.tsx')).not.toMatch(/api\.booking|api\.trip|\.hold\(|\.book\(/)
   })
 
   it('needs consent before anyone is added, and offers remove, block and report', () => {
-    const text = read('src/ui/account/MemoryScreen.tsx')
+    const text = read('src/features/account/ui/MemoryScreen.tsx')
     expect(en['memory.contactConsent']).toMatch(/agree/)
     expect(text).toMatch(/memory\.block/)
     expect(text).toMatch(/memory\.remove/)

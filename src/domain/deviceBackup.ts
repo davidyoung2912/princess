@@ -1,4 +1,4 @@
-import { isItem, type OutboxItem } from '../data/outbox'
+import { isItem, type OutboxItem } from '../shared/data/outbox'
 
 /**
  * Export and recovery of what is waiting on this phone (MOB-04): the unsent messages and requests in every outbox, as a file the guest can keep

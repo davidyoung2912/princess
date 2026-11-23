@@ -1,4 +1,4 @@
-import type { PackResult } from '../data/cruisePack'
+import type { PackResult } from '../shared/data/cruisePack'
 
 const DAY = 86_400_000
 /** Copies of the programme stop being used after three days, so a download older than this is worth doing again close to sailing. */

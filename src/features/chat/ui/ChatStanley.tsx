@@ -1,0 +1,372 @@
+import { createContext, useContext, useEffect, useState } from 'react'
+import { CalendarPlus, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import stanleyPicture from '../../../assets/stanley-small.png'
+import type { ApiError } from '../../../shared/api/errors'
+import type { ChatCatchUp, ChatIcebreakers, ChatMessage, ChatMessageCheck, ChatPlanPreview, ChatReword, ChatRewordMode, ChatStanleyTap, ChatTerm } from '../../../shared/api/chatTypes'
+import { newClientId } from '../domain/chatThread'
+import { canDraft, catchUpAnnouncement, checkAnnouncement, mayCheck, isAskStanley, cleanMinutes, hasHighlights, LATE_MAX, LATE_MIN, mayHelpWith, PLACE_MAX, stanleyProblem, TIME_MAX } from '../domain/chatStanley'
+import { canAskReword, hasSuggestion, rewordProblem, showRewordHelp, MODE_LABEL } from '../domain/chatWriting'
+import { useAction } from '../../../shared/hooks/useAction'
+import { useStanleyStatus } from '../../../shared/hooks/useStanleyStatus'
+import { api } from '../../../app/runtime'
+import { t, type StringKey } from '../../../shared/i18n'
+import { REPORT_REASONS, type ChatReportReason } from '../../../domain/services'
+import { Button } from '../../../shared/ui/Button'
+import { Dialog } from '../../../shared/ui/Dialog'
+import { Field } from '../../../shared/ui/Field'
+import { ActionError } from '../../account/ui/parts'
+import { useShipTime } from '../../onboard/ui/shipTime'
+
+/** Whether Stanley's help is on in the open conversation. The thread asks the server once and every message reads it from here. */
+const TapContext = createContext<ChatStanleyTap | undefined>(undefined)
+export const StanleyTapProvider = TapContext.Provider
+
+/** The sentence for a refusal or failure, or the general error when there is no sentence for it. */
+function Problem({ error }: { error: ApiError | null }) {
+  if (!error) return null
+  const why = stanleyProblem(error.code, error.message)
+  return why === 'other' ? <ActionError error={error} /> : <p role="alert" className="field__error">{t(`cst.problem.${why}` as StringKey)}</p>
+}
+
+/** Tells the server, as a count and nothing else, that the guest used one of Stanley's suggestions. It never blocks the tap and a failure is ignored. */
+function noteUsed(kind: 'reword' | 'icebreakers' | 'reply'): void {
+  void api.chatConversations.suggestionUsed(kind).catch(() => undefined)
+}
+
+/** A short list of quotes under a heading; nothing is drawn when there are none. */
+function Quotes({ title, lines }: { title: string; lines: readonly string[] }) {
+  if (lines.length === 0) return null
+  return (
+    <>
+      <h3>{title}</h3>
+      <ul className="cst-list">{lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
+    </>
+  )
+}
+
+/**
+ * "Catch me up", shown in a busy thread. The summary opens in a dialog and is private to the person who asked: it is never posted. It says what looks decided, what looks open and the latest lines, as short quotes.
+ */
+export function CatchUpButton({ conversationId }: { conversationId: string }) {
+  const shipTime = useShipTime()
+  const [result, setResult] = useState<ChatCatchUp | null>(null)
+  const ask = useAction(async () => { setResult(await api.chatConversations.catchUp(conversationId)) })
+  return (
+    <>
+      <Button variant="secondary" disabled={ask.busy} onClick={() => void ask.run()}>{t('cst.catchUp')}</Button>
+      <Problem error={ask.error} />
+      {result && (
+        <Dialog title={t('cst.catchUp')} onClose={() => setResult(null)}>
+          <p role="status" className="visually-hidden">{catchUpAnnouncement(result)}</p>
+          <p><strong>{result.label}</strong></p>
+          <p className="muted">{t('cst.private')} {t('cst.read', { count: result.messages, time: shipTime(result.since) })}</p>
+          {result.written && <p className="muted">{t('cst.written')}</p>}
+          {!hasHighlights(result) && <p>{t('cst.nothing')}</p>}
+          <Quotes title={t('cst.decided')} lines={result.decided} />
+          <Quotes title={t('cst.open')} lines={result.open} />
+          <Quotes title={t('cst.latest')} lines={result.latest} />
+        </Dialog>
+      )}
+    </>
+  )
+}
+
+/** The standing notice that anyone here can ask Stanley for a summary, and the creator's switch for it. Nothing is drawn where his help is not offered for a reason the guest cannot change. */
+export function StanleyTapNote({ conversationId, tap, onChanged }: { conversationId: string; tap: ChatStanleyTap | undefined; onChanged: (next: ChatStanleyTap) => void }) {
+  const flip = useAction(async (off: boolean) => { onChanged(await api.chatConversations.setStanleyOff(conversationId, off)) })
+  const hide = useAction(async (muted: boolean) => { onChanged(await api.chatConversations.setStanleyMuted(conversationId, muted)) })
+  if (!tap || tap.reason === 'kind') return null
+  return (
+    <>
+      <p className="muted" role="note">{tap.available ? t('cst.notice') : t(tap.reason === 'child' ? 'cst.childNote' : 'cst.offNote')}</p>
+      {tap.available && <p className="muted" role="note">{t('cst.askNote')}</p>}
+      {tap.available && (
+        <>
+          <div className="button-row"><Button variant="secondary" icon={tap.muted ? Eye : EyeOff} disabled={hide.busy} onClick={() => void hide.run(tap.muted !== true)}>{t(tap.muted ? 'cst.unmute' : 'cst.mute')}</Button></div>
+          <p className="muted">{t('cst.muteBody')}</p>
+          <ActionError error={hide.error} />
+        </>
+      )}
+      {tap.canSwitch && (
+        <>
+          <div className="button-row"><Button variant="secondary" disabled={flip.busy} onClick={() => void flip.run(!tap.off)}>{t(tap.off ? 'cst.switchOn' : 'cst.switchOff')}</Button></div>
+          <p className="muted">{t('cst.switchBody')}</p>
+          <ActionError error={flip.error} />
+        </>
+      )}
+    </>
+  )
+}
+
+/** The poll Stanley made from one message. It is posted only when the guest chooses, through the ordinary poll route. */
+function PlanDialog({ conversationId, preview, onPosted, onClose }: { conversationId: string; preview: ChatPlanPreview; onPosted: () => void; onClose: () => void }) {
+  const post = useAction(async () => {
+    await api.chatConversations.sendTyped(conversationId, { kind: 'poll', question: preview.question, options: preview.options }, newClientId())
+    onPosted()
+    onClose()
+  })
+  return (
+    <Dialog title={t('cst.plan')} onClose={onClose}>
+      <p>{t('cst.planBody')}</p>
+      <p><strong>{preview.question}</strong></p>
+      <ul className="cst-list">{preview.options.map((o) => <li key={o}>{o}</li>)}</ul>
+      <div className="button-row">
+        <Button disabled={post.busy} onClick={() => void post.run()}>{t('cst.planPost')}</Button>
+        <Button variant="secondary" onClick={onClose}>{t('cst.notNow')}</Button>
+      </div>
+      {post.error && <p role="alert" className="field__error">{t(post.error.message === 'blocked' ? 'conv.blocked' : 'conv.failed')}</p>}
+    </Dialog>
+  )
+}
+
+/** The cruise words in one message, in plain words. */
+function WordsDialog({ terms, onClose }: { terms: readonly ChatTerm[]; onClose: () => void }) {
+  return (
+    <Dialog title={t('cst.wordsTitle')} onClose={onClose}>
+      {terms.length === 0 ? <p>{t('cst.wordsNone')}</p> : (
+        <dl>{terms.map((x) => <div key={x.word}><dt><strong>{x.word}</strong></dt><dd>{x.meaning}</dd></div>)}</dl>
+      )}
+    </Dialog>
+  )
+}
+
+/**
+ * "Ask Stanley about this message" (docs/chat-stanley-plan.md, phase 4): a private look at one message from someone else. Stanley names what it asks for and offers polite replies; Report, Mute and Block are
+ * the guest's own taps, each one step. Nothing is sent, stored or told to the sender.
+ */
+function CheckDialog({ conversationId, message, check, onUse, onBlocked, onClose }: { conversationId: string; message: ChatMessage; check: ChatMessageCheck; onUse?: (text: string) => void; onBlocked?: () => void; onClose: () => void }) {
+  const who = message.fromName ?? ''
+  const [reason, setReason] = useState<ChatReportReason>('rude')
+  const [done, setDone] = useState<'reported' | 'muted' | 'blocked' | null>(null)
+  const report = useAction(async () => { await api.aboard.chat.report(message.id, reason); setDone('reported') })
+  const mute = useAction(async () => { await api.chatConversations.mute(conversationId, true, 'day'); setDone('muted') })
+  const block = useAction(async () => { await api.aboard.chat.block(message.from, true); setDone('blocked'); onBlocked?.() })
+  return (
+    <Dialog title={t('cck.title')} onClose={onClose}>
+      <p role="status">{checkAnnouncement(check)}</p>
+      <p><strong>{check.headline}</strong></p>
+      {check.flags.length > 0 && <ul className="plain-bullets">{check.flags.map((f) => <li key={f.key}>{f.text}</li>)}</ul>}
+      <p className="muted">{check.note}</p>
+      {onUse && check.replies.length > 0 && (
+        <>
+          <h3>{t('cck.replies')}</h3>
+          <ul className="plain-bullets">
+            {check.replies.map((r) => (
+              <li key={r}>{r} <Button variant="tertiary" onClick={() => { noteUsed('reply'); onUse(r); onClose() }}>{t('cw.use')}<span className="visually-hidden"> {r}</span></Button></li>
+            ))}
+          </ul>
+          <p className="muted">{t('cck.repliesBody')}</p>
+        </>
+      )}
+      <h3>{t('cck.actions')}</h3>
+      {done ? <p role="status">{t(`cck.done.${done}` as StringKey, { name: who })}</p> : (
+        <>
+          <div className="field">
+            <label htmlFor="cck-reason">{t('safe.reason')}</label>
+            <select id="cck-reason" className="field__input" value={reason} onChange={(e) => setReason(e.target.value as ChatReportReason)}>
+              {REPORT_REASONS.map((r) => <option key={r} value={r}>{t(`safe.r.${r}` as StringKey)}</option>)}
+            </select>
+          </div>
+          <div className="button-row">
+            <Button variant="secondary" disabled={report.busy} onClick={() => void report.run()}>{t('cck.report')}</Button>
+            <Button variant="secondary" disabled={mute.busy} onClick={() => void mute.run()}>{t('cck.mute')}</Button>
+            <Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('cck.block', { name: who || t('cck.them') })}</Button>
+          </div>
+          <p className="muted">{t('cck.actionsBody')}</p>
+        </>
+      )}
+      <ActionError error={report.error ?? mute.error ?? block.error} />
+    </Dialog>
+  )
+}
+
+/**
+ * "Make this a plan", "What does this mean?" and "Ask Stanley about this message" under a plain message. All are private (a plan is posted only when the guest posts the poll). Nothing is drawn when Stanley's
+ * help is off in this conversation or the message is not plain text.
+ */
+export function StanleyMessageActions({ conversationId, message, mine, onPosted, onUse, onBlocked }: { conversationId: string; message: ChatMessage; mine: string; onPosted: () => void; onUse?: (text: string) => void; onBlocked?: () => void }) {
+  const tap = useContext(TapContext)
+  const [preview, setPreview] = useState<ChatPlanPreview | null>(null)
+  const [terms, setTerms] = useState<ChatTerm[] | null>(null)
+  const [check, setCheck] = useState<ChatMessageCheck | null>(null)
+  const plan = useAction(async () => { setPreview(await api.chatConversations.makePlan(conversationId, message.id)) })
+  const words = useAction(async () => { setTerms(await api.chatConversations.explainWords(conversationId, message.id)) })
+  const look = useAction(async () => { setCheck(await api.chatConversations.checkMessage(conversationId, message.id)) })
+  if (!mayHelpWith(tap, message)) return null
+  const mayLook = mayCheck(tap, message, mine)
+  return (
+    <>
+      <button type="button" className="chat-act chat-act--icon" disabled={plan.busy} aria-label={t('cst.plan')} title={t('cst.plan')} onClick={() => void plan.run()}><CalendarPlus aria-hidden="true" /></button>
+      {mayLook && <button type="button" className="chat-act chat-act--icon" disabled={look.busy} aria-label={t('cck.ask')} title={t('cck.ask')} onClick={() => void look.run()}><ShieldCheck aria-hidden="true" /></button>}
+      {(plan.error || words.error || look.error) && <span className="chat-act__problem"><Problem error={plan.error ?? words.error ?? look.error} /></span>}
+      {preview && <PlanDialog conversationId={conversationId} preview={preview} onPosted={onPosted} onClose={() => setPreview(null)} />}
+      {terms && <WordsDialog terms={terms} onClose={() => setTerms(null)} />}
+      {check && <CheckDialog conversationId={conversationId} message={message} check={check} onUse={onUse} onBlocked={onBlocked} onClose={() => setCheck(null)} />}
+    </>
+  )
+}
+
+/**
+ * "Help me write": the guest says what they need (running late, or asking to meet) and Stanley puts a short draft in the message box. Nothing is sent: the guest changes it and sends it themselves.
+ */
+export function HelpMeWrite({ onUse }: { onUse: (text: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [kind, setKind] = useState<'late' | 'meet'>('late')
+  const [minutes, setMinutes] = useState('')
+  const [place, setPlace] = useState('')
+  const [time, setTime] = useState('')
+  const [added, setAdded] = useState(false)
+  const write = useAction(async () => {
+    const text = await api.chatConversations.draftMessage({
+      kind,
+      ...(kind === 'late' && cleanMinutes(minutes) !== undefined ? { minutes: cleanMinutes(minutes) } : {}),
+      ...(place.trim() ? { place: place.trim() } : {}),
+      ...(kind === 'meet' && time.trim() ? { time: time.trim() } : {}),
+    })
+    onUse(text)
+    setAdded(true)
+    setOpen(false)
+  })
+  return (
+    <>
+      <Button type="button" variant="tertiary" onClick={() => { setAdded(false); setOpen(true) }}>{t('cst.draft')}</Button>
+      <p role="status" className="visually-hidden">{added ? t('cst.draftAdded') : ''}</p>
+      {open && (
+        <Dialog title={t('cst.draft')} onClose={() => setOpen(false)}>
+          <p>{t('cst.draftBody')}</p>
+          <fieldset>
+            <legend>{t('cst.draftKind')}</legend>
+            <label><input type="radio" name="cst-kind" checked={kind === 'late'} onChange={() => setKind('late')} /> {t('cst.draftLate')}</label>
+            <label><input type="radio" name="cst-kind" checked={kind === 'meet'} onChange={() => setKind('meet')} /> {t('cst.draftMeet')}</label>
+          </fieldset>
+          {kind === 'late' && <Field label={t('cst.draftMinutes', { min: LATE_MIN, max: LATE_MAX })} inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value)} maxLength={3} />}
+          <Field label={t(kind === 'meet' ? 'cst.draftPlaceMeet' : 'cst.draftPlace')} value={place} onChange={(e) => setPlace(e.target.value)} maxLength={PLACE_MAX} autoComplete="off" />
+          {kind === 'meet' && <Field label={t('cst.draftTime')} hint={t('cst.draftTimeHint')} value={time} onChange={(e) => setTime(e.target.value)} maxLength={TIME_MAX} autoComplete="off" />}
+          <div className="button-row">
+            <Button disabled={write.busy || !canDraft(kind, minutes, place)} onClick={() => void write.run()}>{t('cst.draftGo')}</Button>
+          </div>
+          <Problem error={write.error} />
+        </Dialog>
+      )}
+    </>
+  )
+}
+
+/**
+ * "Ask Stanley" beside the message box: puts his name at the front of the message so the guest sees exactly what will go to him. Nothing is sent by it. When the message already starts with his name, a note says what will happen:
+ * everyone in the chat sees his answer, and he sees the question and the last few messages.
+ */
+export function AskStanleyButton({ onAsk }: { onAsk: () => void }) {
+  const tap = useContext(TapContext)
+  if (tap?.available !== true) return null
+  return <Button type="button" variant="tertiary" onClick={onAsk}>{t('cst.ask')}</Button>
+}
+
+export function AskStanleyNote({ text }: { text: string }) {
+  const tap = useContext(TapContext)
+  if (tap?.available !== true || !isAskStanley(text)) return null
+  return <p className="muted" role="note">{t('cst.askWill')}</p>
+}
+
+/** One line from Stanley with his picture and name. Nothing is drawn when his chat help is off or there is nothing to say. */
+export function StanleyNote({ text }: { text: string | undefined }) {
+  const status = useStanleyStatus()
+  if (!text || status?.on !== true) return null
+  return (
+    <p className="cw-note">
+      <img className="cw-note__pic" src={stanleyPicture} alt="" width="24" height="24" />
+      <span><strong>{t('cw.from')}</strong> {text}</span>
+    </p>
+  )
+}
+
+/** The sentence for a failed call to Stanley's writing help. */
+function WritingProblem({ error }: { error: ApiError | null }) {
+  if (!error) return null
+  const why = rewordProblem(error.code, error.message)
+  return why === 'other' ? <ActionError error={error} /> : <p role="alert" className="field__error">{t(`cw.problem.${why}` as StringKey)}</p>
+}
+
+/**
+ * One suggestion from Stanley for a draft, in a dialog. "Use this" puts it in the message box; the guest still presses Send and can change it first. The draft is sent only because the guest tapped; nothing is stored.
+ */
+function RewordSheet({ text, mode, onUse, onClose }: { text: string; mode: ChatRewordMode; onUse: (suggestion: string) => void; onClose: () => void }) {
+  const [result, setResult] = useState<ChatReword | null>(null)
+  const ask = useAction(async () => { setResult(await api.chatConversations.reword(text, mode)) })
+  const { run } = ask
+  // Asked once, when the sheet opens.
+  useEffect(() => { void run().catch(() => undefined) }, [run])
+  return (
+    <Dialog title={t(MODE_LABEL[mode])} onClose={onClose}>
+      <p role="status">{result ? result.message : t('cw.thinking')}</p>
+      {result && hasSuggestion(result) && <p><strong>{result.suggestion}</strong></p>}
+      <div className="button-row">
+        {result && hasSuggestion(result) && <Button onClick={() => { noteUsed('reword'); onUse(result.suggestion); onClose() }}>{t('cw.use')}</Button>}
+        <Button variant="secondary" onClick={onClose}>{t(result && hasSuggestion(result) ? 'cw.ignore' : 'cw.close')}</Button>
+      </div>
+      <WritingProblem error={ask.error} />
+    </Dialog>
+  )
+}
+
+/** A button that opens a suggestion for the draft in the given mode. */
+function RewordButton({ text, mode, variant = 'tertiary', onUse }: { text: string; mode: ChatRewordMode; variant?: 'secondary' | 'tertiary'; onUse: (suggestion: string) => void }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button type="button" variant={variant} onClick={() => setOpen(true)}>{t(MODE_LABEL[mode])}</Button>
+      {open && <RewordSheet text={text} mode={mode} onUse={onUse} onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
+/** "Help me reword", under the note for a message the word filter refused. The text stays in the box either way. */
+export function HelpMeReword({ problem, text, onUse }: { problem: string | null; text: string; onUse: (suggestion: string) => void }) {
+  const tap = useContext(TapContext)
+  const status = useStanleyStatus()
+  if (!showRewordHelp(problem, status?.on === true && tap?.available === true, text)) return null
+  return <RewordButton text={text} mode="reword" variant="secondary" onUse={onUse} />
+}
+
+/** "Make it friendlier" and "Make it shorter" for a draft, in the message box area. Only where Stanley's help is on and something is written. */
+export function PolishDraft({ text, onUse }: { text: string; onUse: (suggestion: string) => void }) {
+  const tap = useContext(TapContext)
+  const status = useStanleyStatus()
+  if (status?.on !== true || tap?.available !== true || !canAskReword(text)) return null
+  return (
+    <section className="wh__group" aria-label={t('wh.polish')}>
+      <p className="wh__title" aria-hidden="true">{t('wh.polish')}</p>
+      <div className="wh__row">
+        {(['friendlier', 'cheerful', 'shorter', 'clearer', 'formal', 'fix'] as const).map((m) => <RewordButton key={m} text={text} mode={m} onUse={onUse} />)}
+      </div>
+    </section>
+  )
+}
+
+/**
+ * "Say hello with an icebreaker": up to three friendly openers. With `onPick` (an empty chat) a tap puts one in the message box; without it (after a request is sent) they are ideas for when the person says yes.
+ * "More ideas" may ask the model. Nothing is sent for the guest.
+ */
+export function Icebreakers({ onPick }: { onPick?: (line: string) => void }) {
+  const status = useStanleyStatus()
+  const [shown, setShown] = useState<ChatIcebreakers | null>(null)
+  const ask = useAction(async (more: boolean) => { setShown(await api.chatConversations.icebreakers(more)) })
+  if (status?.on !== true) return null
+  return (
+    <div className="cw-ice">
+      <Button type="button" variant="tertiary" disabled={ask.busy} onClick={() => void ask.run(false).catch(() => undefined)}>{t('cw.ice')}</Button>
+      {shown && (
+        <>
+          <p className="muted">{t(onPick ? 'cw.iceBody' : 'cw.iceIdeas')}</p>
+          <ul className="plain-list">
+            {shown.lines.map((line) => (
+              <li key={line}>{onPick ? <button type="button" className="chat-act" onClick={() => { noteUsed('icebreakers'); onPick(line) }}>{line}</button> : line}</li>
+            ))}
+          </ul>
+          {shown.canMore && <Button type="button" variant="tertiary" disabled={ask.busy} onClick={() => void ask.run(true).catch(() => undefined)}>{t('cw.more')}</Button>}
+        </>
+      )}
+      <WritingProblem error={ask.error} />
+    </div>
+  )
+}

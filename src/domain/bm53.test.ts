@@ -8,9 +8,9 @@ import { normalizeContributions, payerView, planContributions, setStatus, summar
 import { creditLine } from './creditLines'
 import { eventAccess } from './eventAccess'
 import { travelItems, EMPTY_PLAN } from './travel'
-import { deliveryOf, CHAT_NOTIFICATION_PREVIEW } from './chat'
+import { deliveryOf, CHAT_NOTIFICATION_PREVIEW } from '../features/chat/domain/chat'
 import { openDuplicate, withContact } from './services'
-import { PUSH_KINDS } from '../push/push'
+import { PUSH_KINDS } from '../shared/push/push'
 import type { ExcursionItem } from './excursions'
 import type { PlanDay } from './plan'
 

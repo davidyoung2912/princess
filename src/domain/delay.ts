@@ -1,4 +1,4 @@
-import type { StringKey } from '../i18n'
+import type { StringKey } from '../shared/i18n'
 import { allAboardEpoch, isPortStage, itinerary, shipHomeZone, type Sailing, type StageId } from './sailings'
 import { zonedToEpoch } from './timezones'
 

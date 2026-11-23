@@ -1,0 +1,175 @@
+import { createElement, useState, type ReactNode } from 'react'
+import { Link, useParams } from 'react-router'
+import type { DishFlag, ExplorerDay, VenueDay } from '../../../shared/api/explorerTypes'
+import type { DietaryId } from '../../../domain/account'
+import { formatMoney } from '../../../domain/money'
+import { clashesWith, type Span } from '../domain/presentation'
+import type { ExplorerKind } from '../domain/types'
+import { useMine } from '../../../shared/hooks/useMine'
+import { usePersona } from '../../../shared/hooks/useDemo'
+import { useExplorerData, useExplorerDay, usePlan, useVenueData, type ExplorerDayState } from '../../../shared/hooks/useExplorer'
+import { t, type StringKey, headingCase } from '../../../shared/i18n'
+import { api } from '../../../app/runtime'
+import { Banner } from '../../../shared/ui/Banner'
+import { LinkButton } from '../../../shared/ui/Button'
+import { Card } from '../../../shared/ui/Card'
+import { BackLink, Saved } from '../../onboard/ui/common'
+import { PickDateButton } from './DateControls'
+import { DishSaveButton } from './DishSave'
+import { venueIcon } from './venueIcon'
+import { DietMarks, DishFlags } from './DietMarks'
+import { EventRow, FilterChips, HoursBadge, MenuPanel } from './Parts'
+import { staffedText, windowsText } from './text'
+import { useVenuePins } from '../../../shared/hooks/useVenuePins'
+import { TimeOfDayIcon } from '../../../shared/ui/TimeOfDay'
+import { PinButton } from './Pins'
+import { SendEventToChat, SendToChat } from '../../onboard/ui/SendToChat'
+import { dishSlug, eventKey } from '../domain/shortlist'
+import { SaveButton } from './SaveButton'
+import { REMINDER_DEFAULT } from '../../../domain/notifications'
+import { navigatePath } from '../domain/navigate'
+import { StanleyPose } from '../../../shared/ui/StanleyPose'
+import { venuePose } from './venueArt'
+import { ShipClockCard, ShipDayInfo } from './ShipClockCard'
+
+export interface VenueContext { venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; reload: () => void }
+
+interface VenueDetailProps {
+  kind: ExplorerKind
+  basePath: string
+  backLabel: string
+  /** What goes under the date controls: the guest's reservations at this venue, for the Explorers that take them. */
+  above?: (c: VenueContext) => ReactNode
+  /** Spans of time the guest already has taken (reservations), so an event that overlaps one is flagged. */
+  busy?: (c: VenueContext) => readonly Span[]
+}
+
+/** The icon of a venue in the list of other places: decorative, the name beside it says the same. */
+function VenueGlyph({ kind, venueKind, title }: { kind: ExplorerKind; venueKind: string; title: string }) {
+  return createElement(venueIcon(kind, venueKind, title), { className: 'exp-split__icon', 'aria-hidden': 'true', focusable: 'false' })
+}
+
+/** The diets and the dish heads-ups to call out for the signed-in guest, so the menus can show first what suits them. */
+function useMyDiets(): { diets: DietaryId[]; avoid: DishFlag[] } {
+  const me = usePersona()
+  const profile = useMine(() => api.account.profile(me!.id), [me?.id])
+  return { diets: profile.data?.profile.dietary ?? [], avoid: profile.data?.profile.avoidFlags ?? [] }
+}
+
+/** The page every Explorer's venue shares: where it is, the day's hours, the guest's reservations, the menu, and every event of the day with a plan toggle. */
+export function VenueDetailPage({ kind, basePath, backLabel, above, busy }: VenueDetailProps) {
+  const { venueId = '' } = useParams()
+  const state = useExplorerDay()
+  const venueCopy = useVenueData(kind, venueId, state.day)
+  const dayCopy = useExplorerData(kind, state.day)
+  const { diets, avoid } = useMyDiets()
+  const siblings = dayCopy.data?.venues ?? []
+  return (
+    <div className="page exp-split">
+      {siblings.length > 1 && (
+        <nav className="exp-split__list" aria-labelledby="exp-others-h">
+          <h2 id="exp-others-h">{headingCase(t('exp.venue.others'))}</h2>
+          <ul>
+            {siblings.map((s) => (
+              <li key={s.venue.id}>
+                <Link to={`${basePath}/${s.venue.id}?day=${state.day}`} aria-current={s.venue.id === venueId ? 'page' : undefined}><VenueGlyph kind={kind} venueKind={s.venue.kind} title={s.venue.title} />{s.venue.title}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      <div className="exp-split__detail">
+      {venueCopy.status === 'error' && venueCopy.data === null ? (
+        <>
+        <ShipClockCard state={state} />
+        <PickDateButton state={state} />
+        <Banner kind="info" title={t('exp.venue.gone')} action={<LinkButton to={basePath} variant="secondary">{backLabel}</LinkButton>}><p>{t('exp.venue.goneBody')}</p></Banner>
+        </>
+      ) : (
+        <Saved copy={venueCopy}>
+          {(venue) => <Body kind={kind} venue={venue} explorerDay={dayCopy.data} state={state} diets={diets} avoid={avoid} above={above} busy={busy} reload={() => { venueCopy.retry(); dayCopy.retry() }} />}
+        </Saved>
+      )}
+      <BackLink to={`${basePath}?day=${state.day}`} label={backLabel} />
+      </div>
+    </div>
+  )
+}
+
+function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, reload }: { kind: ExplorerKind; venue: VenueDay; explorerDay: ExplorerDay | null; state: ExplorerDayState; diets: DietaryId[]; avoid: DishFlag[]; above?: VenueDetailProps['above']; busy?: VenueDetailProps['busy']; reload: () => void }) {
+  const v = venue.venue
+  const pins = useVenuePins([v])
+  const plan = usePlan(state.day, explorerDay?.mine ?? [], explorerDay?.reminders, { added: (title) => t('exp.plan.added', { title }), removed: (title) => t('exp.plan.removed', { title }) })
+  const [interest, setInterest] = useState<string | null>(null)
+  const interests = [...new Set(venue.events.map((e) => e.interest))]
+  const shownEvents = venue.events.filter((e) => (interest === null || e.interest === interest))
+  const ctx: VenueContext = { venue, explorerDay, state, reload }
+  const past = state.day < state.currentDay
+  const taken = busy?.(ctx) ?? []
+  const planned: Span[] = venue.events.filter((e) => plan.planned.has(e.id)).map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, endAt: e.endAt }))
+  return (
+    <>
+      <Card hero labelledBy="exp-venue-h">
+        <PinButton venue={v} pins={pins} />
+        <span className="landing-pose landing-pose--clear-pin calm-hide"><StanleyPose pose={venuePose(kind, v.kind, v.title)} size={88} /></span>
+        <h2 id="exp-venue-h" className="card__title">{v.title}</h2>
+        <p className="muted">{v.deckLabel}</p>
+        <ShipDayInfo state={state} />
+        {(venue.hours.windows.length > 0 || staffedText(venue.hours)) && (
+          <div className="venue-hours">
+            {venue.hours.windows.length > 0 && <p><TimeOfDayIcon time={venue.hours.windows[0][0]} /> <span>{t('exp.venue.hours', { hours: windowsText(venue.hours) })}</span></p>}
+            {staffedText(venue.hours) && <p className="muted">{t('exp.venue.staffed', { hours: staffedText(venue.hours) })}</p>}
+            <p><HoursBadge hours={venue.hours} day={state.day} currentDay={state.currentDay} now={state.now} /></p>
+          </div>
+        )}
+        <p role="status" className="visually-hidden">{pins.message}</p>
+      </Card>
+      <PickDateButton state={state} />
+      {above?.(ctx)}
+      <MenuPanel shipId={v.shipId} venueId={v.id} menus={venue.menus} diets={diets} avoid={avoid} day={state.day} currentDay={state.currentDay} now={state.now} />
+      {((v.family?.length ?? 0) > 0 || (v.kidsMenu?.length ?? 0) > 0) && (
+        <section aria-labelledby="exp-fam-h">
+          <h2 id="exp-fam-h">{headingCase(t('exp.family.title'))}</h2>
+          <ul className="tour__facts">{v.family?.map((f) => <li key={f}>{f}</li>)}</ul>
+          {(v.kidsMenu?.length ?? 0) > 0 && (
+            <>
+              <h3>{headingCase(t('exp.family.menu'))}</h3>
+              <ul className="plain-bullets">{v.kidsMenu?.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} /><DishSaveButton shipId={v.shipId} venueId={v.id} name={d.name} /><SendToChat shareRef={`dish:${v.id}:${dishSlug(d.name)}`} title={d.name} />{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}</ul>
+            </>
+          )}
+        </section>
+      )}
+      <section aria-labelledby="exp-ev-h">
+        <h2 id="exp-ev-h">{headingCase(t('exp.venue.events'))}</h2>
+        <p role="status" className="visually-hidden">{plan.announcement}</p>
+        {plan.failed && <p role="alert" className="field__error">{t('exp.plan.failed')}</p>}
+        {past && venue.events.length > 0 && <p className="muted">{t('exp.venue.readOnly')}</p>}
+        <FilterChips kinds={interests} label={t('exp.interest.label')} value={interest} onChange={setInterest} labels={Object.fromEntries(interests.map((i) => [i, t(`exp.interest.${i}` as StringKey)]))} />
+        {venue.events.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : shownEvents.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : (
+          <ul className="exp-events">
+            {shownEvents.map((e) => (
+              <EventRow key={e.id} event={e} now={state.nowAt} share={e.status === 'cancelled' ? undefined : <><SaveButton itemKey={eventKey(venue.venue.shipId, e.id)} title={e.title} /><SendEventToChat planRef={`${e.id}:${state.day}`} title={e.title} /></>}
+                clash={clashesWith(e, [...taken, ...planned])}
+                plan={past || !explorerDay ? undefined : { planned: plan.planned.has(e.id), busy: plan.busy, onToggle: () => { void plan.toggle(e.id, e.title, !plan.planned.has(e.id)) }, reminder: plan.reminders[e.id] ?? REMINDER_DEFAULT, onReminder: (lead) => { void plan.setReminder(e.id, lead) } }} />
+            ))}
+          </ul>
+        )}
+      </section>
+      <section aria-labelledby="exp-sum-h">
+        <h2 id="exp-sum-h">{headingCase(t('exp.venue.about'))}</h2>
+        <p>{v.short}</p>
+        {v.long !== v.short && <p>{v.long}</p>}
+        <ul className="tour__facts">
+          {v.cover !== undefined && <li>{t('exp.venue.cover', { amount: formatMoney(v.cover) })}</li>}
+          {v.minAge !== undefined && <li>{t('exp.venue.minAge', { age: v.minAge })}</li>}
+          {v.features.map((f) => <li key={f}>{f}</li>)}
+          {v.accessibility.map((f) => <li key={f}>{f}</li>)}
+        </ul>
+      </section>
+      <div className="exp-venue-end">
+        {navigatePath(v) && <LinkButton to={navigatePath(v)!} variant="secondary">{t('exp.nav.link', { title: v.title })}</LinkButton>}
+        <SendToChat shareRef={`venue:${v.id}`} title={v.title} />
+      </div>
+    </>
+  )
+}

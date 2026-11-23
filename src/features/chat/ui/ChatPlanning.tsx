@@ -1,0 +1,456 @@
+import { useEffect, useRef, useState } from 'react'
+import type { ChatConversation, ChatMessage, ChatPoll, ChatPlannable, ChatRsvp, ChatTally } from '../../../shared/api/chatTypes'
+import { isApiError } from '../../../shared/api/errors'
+import { newClientId } from '../domain/chatThread'
+import {
+  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, DECISION_REMINDER_LEAD, answerJob, decisionActions, applyRsvp, applyVote, canAddOption, cleanPollRows, cleanSlotDraft, compromiseSlot, slotRef, type Slot, POLL_MAX_WITH_BUNDLES, type PollRow, eventsOnDay, isBookingPlan, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MIN_OPTIONS, rsvpOf, totalVotes, withHeld,
+} from '../domain/chatPlanning'
+import { bundleLink, eventRef } from '../domain/chatBundles'
+import { cardLink, cleanNote, NOTE_MAX } from '../domain/chatCards'
+import { clock12 } from '../../../domain/planCard'
+import { useAction } from '../../../shared/hooks/useAction'
+import { sendWithin, worthRetrying } from '../../../shared/hooks/useOutbox'
+import { useNow } from '../../../shared/hooks/useDemo'
+import { meetingProblem } from '../../stanley/logic/stanleyGroup'
+import { api, stanleyGroup } from '../../../app/runtime'
+import { t, type StringKey, headingCase } from '../../../shared/i18n'
+import { Button, LinkButton } from '../../../shared/ui/Button'
+import { BoardForm } from './ChatBoard'
+import { useShipTime } from '../../onboard/ui/shipTime'
+
+const votes = (n: number): string => t('cpoll.votes', { count: n })
+
+const RSVP_KEY: Record<ChatRsvp, StringKey> = { going: 'cplan.going', maybe: 'cplan.maybe', no: 'cplan.no' }
+
+/** The tally on the message, kept in step with the thread: a fresh copy from the server replaces ours, and our own tap shows at once. */
+function useTally(initial: ChatTally | undefined): [ChatTally | undefined, (next: ChatTally | undefined) => void] {
+  const [tally, setTally] = useState(initial)
+  const seen = useRef(initial)
+  useEffect(() => {
+    if (initial !== seen.current) { seen.current = initial; setTally(initial) }
+  }, [initial])
+  return [tally, setTally]
+}
+
+/**
+ * A poll (phase 4): the question and each option as a radio button with its votes and share. A vote can be changed until the poll closes; the counts are announced to a screen reader as one sentence, and the answers are
+ * counted, never named. The person who asked it, or an admin, can close it early. It stops taking votes by itself 24 hours after it was sent.
+ */
+export function PollMessage({ conversationId, message, canAct, onChanged, held, onHold }: { conversationId: string; message: ChatMessage; canAct: boolean; onChanged: () => void; held?: string; onHold?: (job: Record<string, string>) => boolean }) {
+  const poll = message.poll!
+  const now = useNow()
+  const shipTime = useShipTime()
+  const [base, setTally] = useTally(message.tally)
+  const tally = withHeld(base, held === undefined ? undefined : { kind: 'vote', value: held })
+  const [announce, setAnnounce] = useState('')
+  const [pick, setPick] = useState(0)
+  const words = { votes, yours: (option: string) => t('cpoll.yours', { option }), closed: t('cpoll.closed'), open: t('cpoll.open') }
+  const vote = useAction(async (option: number) => {
+    const before = base
+    if (before) setTally(applyVote(before, option))
+    try {
+      const next = await sendWithin(api.chatConversations.vote(conversationId, message.id, option))
+      setTally(next)
+      setAnnounce(t('cpoll.announce', { result: pollResultText(poll, next, words) }))
+    } catch (e) {
+      setTally(before)
+      // Without signal the vote is kept and sent when the phone is back; the server still decides whether the poll is open then.
+      if (worthRetrying(e) && onHold?.(answerJob(conversationId, message.id, 'vote', String(option)))) { setAnnounce(t('cpoll.queued')); return }
+      if (isApiError(e) && e.message === 'pollClosed') onChanged()
+      throw e
+    }
+  })
+  const close = useAction(async () => { setTally(await api.chatConversations.closePoll(conversationId, message.id)); onChanged() })
+  const decide = useAction(async (option: number) => { setTally(await api.chatConversations.decidePoll(conversationId, message.id, option)); onChanged() })
+  if (!tally) return <p>{poll.question}</p>
+  const closed = isPollClosed(tally, now)
+  const total = totalVotes(tally.counts)
+  const winners = closed ? leaders(tally.counts) : []
+  const name = `poll-${message.id}`
+  return (
+    <fieldset className="chat-poll" disabled={!canAct || closed || vote.busy}>
+      <legend><span className="chat-card__type"><strong>{t('cpoll.type')}</strong></span> {poll.question}</legend>
+      <ul className="chat-poll__options">
+        {poll.options.map((option, i) => {
+          const count = tally.counts[i] ?? 0
+          const share = percentOf(count, total)
+          return (
+            <li key={option} className={winners.includes(i) ? 'chat-poll__option chat-poll__option--won' : 'chat-poll__option'}>
+              <label>
+                <input type="radio" name={name} checked={tally.mine === i} onChange={() => void vote.run(i)} />
+                <span className="chat-poll__text">{option}</span>
+                {poll.clashes?.includes(i) && <span className="chat-poll__clash"> ({t('cpoll.clash')})</span>}
+                <span className="muted chat-poll__count">{votes(count)} · {share}%</span>
+              </label>
+              <OptionThing poll={poll} index={i} />
+              <span className="chat-poll__bar" aria-hidden="true"><span style={{ inlineSize: `${share}%` }} /></span>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="muted">
+        {closed ? t('cpoll.closed') : tally.closesAt !== undefined ? t('cpoll.closesAt', { time: shipTime(tally.closesAt) }) : t('cpoll.open')}
+        {closed && <> · {winners.length === 0 ? t('cpoll.noVotes') : t('cpoll.winner', { options: winners.map((i) => poll.options[i]).join(', ') })}</>}
+      </p>
+      {poll.slots && !closed && compromiseSlot(tally.counts, poll.clashes) !== null && tally.counts.filter((c) => c === Math.max(...tally.counts)).length > 1 && (
+        <p className="muted">{t('cpoll.compromise', { slot: poll.options[compromiseSlot(tally.counts, poll.clashes)!] ?? '' })}</p>
+      )}
+      <p role="status" className="visually-hidden">{announce}</p>
+      {tally.decided !== undefined && poll.options[tally.decided] !== undefined && <Decision poll={poll} option={tally.decided} conversationId={conversationId} messageId={message.id} tally={tally} setTally={setTally} canAct={canAct} />}
+      {tally.mayDecide && tally.decided === undefined && (
+        <div className="chat-poll__decide">
+          <label className="field__label" htmlFor={`${name}-decide`}>{t('cpoll.decide.pick')}</label>
+          <select id={`${name}-decide`} className="field__input" value={pick} onChange={(e) => setPick(Number(e.target.value))}>
+            {poll.options.map((o, i) => <option key={o} value={i} disabled={poll.gone?.includes(i)}>{o}{winners.includes(i) && closed ? ` (${t('cpoll.decide.leading')})` : ''}</option>)}
+          </select>
+          <Button variant="primary" disabled={decide.busy} aria-label={t('cpoll.decide.label', { option: poll.options[pick] ?? '' })} onClick={() => void decide.run(pick)}>{t('cpoll.decide')}</Button>
+        </div>
+      )}
+      {tally.mayClose && !closed && tally.decided === undefined && (
+        <Button variant="secondary" disabled={close.busy} aria-label={t('cpoll.close.label', { question: poll.question })} onClick={() => void close.run()}>{t('cpoll.close')}</Button>
+      )}
+      {vote.error && <p role="alert" className="field__error">{t(vote.error.message === 'pollClosed' ? 'cpoll.isClosed' : 'cpoll.failed')}</p>}
+      {close.error && <p role="alert" className="field__error">{t('cpoll.closeFailed')}</p>}
+      {decide.error && <p role="alert" className="field__error">{t(decide.error.message === 'gone' ? 'cpoll.decide.gone' : decide.error.message === 'decided' ? 'cpoll.decide.already' : 'cpoll.decide.failed')}</p>}
+    </fieldset>
+  )
+}
+
+/**
+ * Phase B4: what the group decided. Each member chooses for themselves: Add to my day, Remind me (30 minutes ahead; both go through the normal programme), or Open to book a tour or dinner on its own screen.
+ * Nothing here ever books, pays or changes anyone's day without their own tap.
+ */
+function Decision({ poll, option, conversationId, messageId, tally, setTally, canAct }: { poll: ChatPoll; option: number; conversationId: string; messageId: string; tally: ChatTally; setTally: (next: ChatTally) => void; canAct: boolean }) {
+  const bundle = poll.bundles?.[option] ?? null
+  const actions = decisionActions(bundle)
+  const [said, setSaid] = useState('')
+  const add = useAction(async () => { await api.onboard.togglePlanOn(actions.plan!.eventId, actions.plan!.day, true); setSaid(t('cpoll.decide.added')) })
+  const remind = useAction(async () => { await api.onboard.setPlanReminder(actions.plan!.eventId, actions.plan!.day, DECISION_REMINDER_LEAD); setSaid(t('cpoll.decide.reminded')) })
+  const link = bundle ? bundleLink(bundle) : null
+  const title = poll.options[option] ?? ''
+  return (
+    <div className="chat-poll__decision" role="group" aria-label={t('cpoll.decided.label', { option: title })}>
+      <p><strong>{t('cpoll.decided')}</strong> {title}</p>
+      {(actions.plan || link) && (
+        <p className="chat-poll__decision-actions">
+          {actions.plan && <Button variant="secondary" disabled={add.busy} aria-label={t('cpoll.decide.add.label', { option: title })} onClick={() => void add.run()}>{t('cpoll.decide.add')}</Button>}
+          {actions.plan && <Button variant="secondary" disabled={remind.busy} aria-label={t('cpoll.decide.remind.label', { option: title })} onClick={() => void remind.run()}>{t('cpoll.decide.remind')}</Button>}
+          {link && <LinkButton to={link} variant="secondary" aria-label={t('cpoll.decide.open.label', { option: title })}>{actions.book ? t('cpoll.decide.book') : t('card.open')}</LinkButton>}
+        </p>
+      )}
+      <HowWasIt conversationId={conversationId} messageId={messageId} tally={tally} setTally={setTally} canAct={canAct} />
+      <p role="status" className="visually-hidden">{said}</p>
+      {(add.error || remind.error) && <p role="alert" className="field__error">{t('cpoll.decide.dayFailed')}</p>}
+    </div>
+  )
+}
+
+/** Phase B10: "Done, how was it?" on what the group decided. Loved it, It was fine or Not for me; counted for everyone, never named; tapping your own answer again takes it back. */
+const HOW_LABELS = ['cpoll.how.loved', 'cpoll.how.fine', 'cpoll.how.not'] as const
+function HowWasIt({ conversationId, messageId, tally, setTally, canAct }: { conversationId: string; messageId: string; tally: ChatTally; setTally: (next: ChatTally) => void; canAct: boolean }) {
+  const rate = useAction(async (how: number) => {
+    const same = tally.myHow === how
+    setTally(await sendWithin(api.chatConversations.bundleOutcome(conversationId, messageId, !same, same ? undefined : how)))
+  })
+  const counts = tally.how ?? []
+  const total = counts.reduce((a, b) => a + b, 0)
+  return (
+    <div role="group" aria-label={t('cpoll.how')}>
+      <p className="muted">{t('cpoll.how')}</p>
+      <p className="button-row">
+        {HOW_LABELS.map((key, i) => (
+          <Button key={key} variant={tally.myHow === i + 1 ? 'primary' : 'secondary'} aria-pressed={tally.myHow === i + 1} disabled={!canAct || rate.busy} onClick={() => void rate.run(i + 1)}>
+            {t(key)}{(counts[i] ?? 0) > 0 ? ` (${counts[i]})` : ''}
+          </Button>
+        ))}
+      </p>
+      <p role="status" className="visually-hidden">{total > 0 ? t('cpoll.how.total', { count: total }) : ''}</p>
+      {rate.error && <p role="alert" className="field__error">{t('bundle.done.failed')}</p>}
+    </div>
+  )
+}
+
+/** Phase B3: under a poll option that is a thing from the app: where and when, with Open; or "No longer available" when it was one but cannot be opened by this reader now. Nothing for a typed option. */
+function OptionThing({ poll, index }: { poll: ChatPoll; index: number }) {
+  const b = poll.bundles?.[index]
+  if (!b) return poll.gone?.includes(index) ? <span className="muted chat-poll__thing">{t('cpoll.gone')}</span> : null
+  const when = [b.day !== undefined ? t('card.day', { day: b.day }) : '', b.time ? clock12(b.time) : ''].filter(Boolean).join(', ')
+  const link = bundleLink(b)
+  return (
+    <span className="chat-poll__thing">
+      <span className="muted">{[b.subtitle, when, b.place && b.place !== b.title ? b.place : ''].filter(Boolean).join(' · ')}</span>
+      {link && <LinkButton to={link} variant="tertiary" aria-label={t('cpoll.open.label', { title: b.title })}>{t('card.open')}</LinkButton>}
+    </span>
+  )
+}
+
+/**
+ * A plan (phase 4): an event, the day and time, and who is going. Going, Maybe and Can't go are toggle buttons; Going puts the event on your own plan for that day when your trip runs it, and a later answer takes it off again
+ * if the plan put it there. The counts and the names of those going are read as a sentence.
+ */
+export function PlanMessage({ conversationId, message, canAct, held, onHold }: { conversationId: string; message: ChatMessage; canAct: boolean; held?: string; onHold?: (job: Record<string, string>) => boolean }) {
+  const card = message.card!
+  const [base, setTally] = useTally(message.tally)
+  const tally = withHeld(base, held === undefined ? undefined : { kind: 'rsvp', value: held })
+  const [announce, setAnnounce] = useState('')
+  const answer = useAction(async (choice: ChatRsvp) => {
+    const before = base
+    if (before) setTally(applyRsvp(before, choice))
+    try {
+      const next = await sendWithin(api.chatConversations.rsvp(conversationId, message.id, choice))
+      setTally(next)
+      setAnnounce(t('cplan.announce', { answer: t(RSVP_KEY[choice]) }))
+    } catch (e) {
+      setTally(before)
+      if (worthRetrying(e) && onHold?.(answerJob(conversationId, message.id, 'rsvp', choice))) { setAnnounce(t('cplan.queued')); return }
+      throw e
+    }
+  })
+  const when = [card.day !== undefined ? t('card.day', { day: card.day }) : '', card.time ? clock12(card.time) : ''].filter(Boolean).join(', ')
+  const mine = rsvpOf(tally?.mine)
+  const [meetNote, setMeetNote] = useState<StringKey | null>(null)
+  const remind = useAction(async () => {
+    setMeetNote(null)
+    try {
+      await stanleyGroup.meetingReminder({ groupId: conversationId, planId: message.id })
+      setMeetNote('cplan.remind.done')
+    } catch (e) {
+      const p = meetingProblem(isApiError(e) ? e.message : '')
+      setMeetNote(p === 'already' ? 'cplan.remind.already' : p === 'past' ? 'cplan.remind.past' : p === 'time' ? 'cplan.remind.time' : 'cplan.remind.failed')
+    }
+  }, { quiet: true })
+  const booking = isBookingPlan(card)
+  const link = cardLink({ type: 'plan', path: card.path })
+  return (
+    <div className="chat-card chat-card--plan" role="group" aria-label={`${t('card.type.plan')}: ${card.title}`}>
+      <p className="chat-card__type"><strong>{t('card.type.plan')}</strong></p>
+      <p className="chat-card__title">{card.title}</p>
+      {when && <p>{when}</p>}
+      {card.place && <p>{card.place}</p>}
+      {card.note && <p>{card.note}</p>}
+      {tally && (
+        <>
+          <div role="group" aria-label={t('cplan.answer')} className="chat-rsvp">
+            {RSVP_CHOICES.map((c) => (
+              <button key={c} type="button" className="chip" aria-pressed={mine === c} disabled={!canAct || answer.busy} onClick={() => { if (mine !== c) void answer.run(c) }}>{t(RSVP_KEY[c])}</button>
+            ))}
+          </div>
+          <p className="muted">{t('cplan.counts', { going: tally.counts[0] ?? 0, maybe: tally.counts[1] ?? 0, no: tally.counts[2] ?? 0 })}</p>
+          {tally.going && tally.going.length > 0 && <p className="muted">{t('cplan.goingNames', { names: tally.going.join(', ') })}</p>}
+          {tally.addedToPlan && mine === 'going' && <p role="status">{t('cplan.added')}</p>}
+          {mine === 'going' && card.day !== undefined && card.time && (
+            <div className="button-row">
+              <Button variant="tertiary" disabled={!canAct || remind.busy || meetNote === 'cplan.remind.done'} onClick={() => void remind.run()}>{t('cplan.remind.button')}<span className="visually-hidden"> {card.title}</span></Button>
+            </div>
+          )}
+          {meetNote && <p role={meetNote === 'cplan.remind.done' ? 'status' : 'alert'} className={meetNote === 'cplan.remind.done' ? undefined : 'field__error'}>{t(meetNote)}</p>}
+          {booking && link && (
+            <>
+              <p className="muted">{t('cplan.bookNote')}</p>
+              <LinkButton to={link} variant="secondary" aria-label={t('cplan.bookYours.label', { title: card.title })}>{t('cplan.bookYours')}</LinkButton>
+            </>
+          )}
+        </>
+      )}
+      <p role="status" className="visually-hidden">{announce}</p>
+      {answer.error && <p role="alert" className="field__error">{t('cplan.failed')}</p>}
+    </div>
+  )
+}
+
+/** The words for a poll or plan that could not be sent. */
+function planningError(e: unknown): StringKey {
+  if (!isApiError(e)) return 'conv.share.failed'
+  if (e.message === 'shareRef') return 'cplan.stale'
+  if (e.message === 'blocked') return 'conv.blocked'
+  if (e.message === 'contactInfo') return 'conv.contact'
+  if (e.message === 'announcementOnly') return 'announce.only'
+  if (e.code === 'conflict') return 'conv.closed'
+  return 'conv.share.failed'
+}
+
+/** The form for a poll: a question and two to five options, one row each. An empty row is left out; the Ask button stays off until the poll could be sent. */
+function PollForm({ conversationId, events, onSent }: { conversationId: string; events: readonly ChatPlannable[]; onSent: (sent: ChatMessage) => void }) {
+  const [question, setQuestion] = useState('')
+  const [rows, setRows] = useState<PollRow[]>([{ text: '' }, { text: '' }])
+  const [announce, setAnnounce] = useState('')
+  const draft = cleanPollRows(question, rows)
+  const hasBundle = rows.some((r) => r.ref)
+  const ask = useAction(async () => {
+    if (!draft) return
+    const sent = await api.chatConversations.sendTyped(conversationId, { kind: 'poll', question: draft.question, options: draft.options, ...(draft.optionRefs ? { optionRefs: draft.optionRefs } : {}) }, newClientId())
+    setQuestion('')
+    setRows([{ text: '' }, { text: '' }])
+    setAnnounce(t('cpoll.sent'))
+    onSent(sent)
+  })
+  const addThing = (ref: string) => {
+    const found = events.find((e) => e.ref === ref)
+    if (!found) return
+    setAnnounce(t('cpoll.thing', { n: rows.length + 1, title: found.title }))
+    // The first empty typed row is used up before another row is added.
+    setRows((cur) => {
+      const free = cur.findIndex((r) => !r.ref && r.text.trim() === '')
+      const row = { text: found.title, ref: eventRef(found.ref) }
+      return free >= 0 ? cur.map((r, j) => (j === free ? row : r)) : [...cur, row]
+    })
+  }
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); void ask.run() }}>
+      <h3>{headingCase(t('cpoll.heading'))}</h3>
+      <p className="muted">{t('cpoll.hint')}</p>
+      <p role="status" className="visually-hidden">{announce}</p>
+      <div className="field">
+        <label htmlFor="poll-question">{t('cpoll.question')}</label>
+        <input id="poll-question" type="text" value={question} maxLength={QUESTION_MAX} autoComplete="off" onChange={(e) => setQuestion(e.target.value)} />
+      </div>
+      {rows.map((row, i) => (
+        <div key={i} className="field chat-poll__row">
+          <label htmlFor={`poll-option-${i}`}>{t('cpoll.option', { n: i + 1 })}</label>
+          <input id={`poll-option-${i}`} type="text" value={row.text} readOnly={row.ref !== undefined} maxLength={OPTION_MAX} autoComplete="off" onChange={(e) => setRows((cur) => cur.map((o, j) => (j === i ? { text: e.target.value } : o)))} />
+          {rows.length > POLL_MIN_OPTIONS && <button type="button" className="chat-act" aria-label={t('cpoll.removeOption', { n: i + 1 })} onClick={() => setRows((cur) => cur.filter((_, j) => j !== i))}>{t('cgroup.remove')}</button>}
+        </div>
+      ))}
+      {canAddOption(rows.length, hasBundle) && <Button type="button" variant="tertiary" onClick={() => setRows((cur) => [...cur, { text: '' }])}>{t('cpoll.addOption')}</Button>}
+      {events.length > 0 && (rows.length < POLL_MAX_WITH_BUNDLES || rows.some((r) => !r.ref && r.text.trim() === '')) && (
+        <div className="field">
+          <label htmlFor="poll-thing">{t('cpoll.addThing')}</label>
+          <select id="poll-thing" value="" onChange={(e) => addThing(e.target.value)}>
+            <option value="">{t('cpoll.addThing.choose')}</option>
+            {events.map((e) => <option key={e.ref} value={e.ref}>{t('card.day', { day: e.day })} {clock12(e.time)} {e.title}{e.place ? ` (${e.place})` : ''}</option>)}
+          </select>
+        </div>
+      )}
+      <Button type="submit" disabled={ask.busy || !draft}>{t('cpoll.ask')}</Button>
+      {ask.error && <p role="alert" className="field__error">{t(planningError(ask.error))}</p>}
+    </form>
+  )
+}
+
+/** Phase B5: the form for a time poll: what it is for, then two to six times on days of the trip. `days` is how many days the trip has (from the programme events the server listed). */
+function SlotPollForm({ conversationId, days, onSent }: { conversationId: string; days: number; onSent: (sent: ChatMessage) => void }) {
+  const [question, setQuestion] = useState('')
+  const [slots, setSlots] = useState<Slot[]>([])
+  const [day, setDay] = useState(1)
+  const [time, setTime] = useState('19:00')
+  const [announce, setAnnounce] = useState('')
+  const draft = cleanSlotDraft(question, slots, days)
+  const label = (s: Slot): string => `${t('card.day', { day: s.day })}, ${clock12(s.time)}`
+  const ask = useAction(async () => {
+    if (!draft) return
+    const sent = await api.chatConversations.sendTyped(conversationId, { kind: 'poll', question: draft.question, options: [], slots: draft.slots }, newClientId())
+    setQuestion('')
+    setSlots([])
+    setAnnounce(t('cpoll.slots.sent'))
+    onSent(sent)
+  })
+  const add = () => {
+    const slot = { day, time }
+    if (!/^\d\d:\d\d$/.test(time) || slots.some((s) => slotRef(s) === slotRef(slot)) || slots.length >= POLL_MAX_WITH_BUNDLES) return
+    setSlots((cur) => [...cur, slot])
+    setAnnounce(t('cpoll.slots.picked', { slot: label(slot) }))
+  }
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); void ask.run() }}>
+      <h3>{headingCase(t('cpoll.slots.heading'))}</h3>
+      <p className="muted">{t('cpoll.slots.hint')}</p>
+      <p role="status" className="visually-hidden">{announce}</p>
+      <div className="field">
+        <label htmlFor="slots-question">{t('cpoll.slots.question')}</label>
+        <input id="slots-question" type="text" value={question} maxLength={QUESTION_MAX} autoComplete="off" onChange={(e) => setQuestion(e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor="slots-day">{t('cpoll.slots.day')}</label>
+        <select id="slots-day" value={day} onChange={(e) => setDay(Number(e.target.value))}>
+          {Array.from({ length: days }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{t('card.day', { day: d })}</option>)}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="slots-time">{t('cpoll.slots.time')}</label>
+        <input id="slots-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+      </div>
+      <Button type="button" variant="tertiary" onClick={add}>{t('cpoll.slots.add')}</Button>
+      {slots.length > 0 && (
+        <ul>
+          {slots.map((s) => (
+            <li key={slotRef(s)}>{label(s)} <button type="button" className="chat-act" aria-label={t('cpoll.slots.remove', { slot: label(s) })} onClick={() => setSlots((cur) => cur.filter((x) => slotRef(x) !== slotRef(s)))}>{t('cgroup.remove')}</button></li>
+          ))}
+        </ul>
+      )}
+      <Button type="submit" disabled={ask.busy || !draft}>{t('cpoll.slots.ask')}</Button>
+      {ask.error && <p role="alert" className="field__error">{t(planningError(ask.error))}</p>}
+    </form>
+  )
+}
+
+/** The form for a plan: a day of the trip, an event that runs that day on your own sailing, and a short note. */
+function PlanForm({ conversationId, events, onSent }: { conversationId: string; events: readonly ChatPlannable[]; onSent: (sent: ChatMessage) => void }) {
+  const days = planDays(events)
+  const [day, setDay] = useState<number>(days[0] ?? 1)
+  const [ref, setRef] = useState('')
+  const [note, setNote] = useState('')
+  const [announce, setAnnounce] = useState('')
+  const onDay = eventsOnDay(events, day)
+  const send = useAction(async () => {
+    if (!ref) return
+    const sent = await api.chatConversations.sendTyped(conversationId, { kind: 'plan', shareRef: ref, ...(cleanNote(note) ? { note: cleanNote(note) } : {}) }, newClientId())
+    setRef('')
+    setNote('')
+    setAnnounce(t('cplan.sent'))
+    onSent(sent)
+  })
+  if (events.length === 0) return <p className="muted">{t('cplan.none')}</p>
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); void send.run() }}>
+      <h3>{headingCase(t('cplan.heading'))}</h3>
+      <p role="status" className="visually-hidden">{announce}</p>
+      <div className="field">
+        <label htmlFor="plan-day">{t('cplan.day')}</label>
+        <select id="plan-day" value={day} onChange={(e) => { setDay(Number(e.target.value)); setRef('') }}>
+          {days.map((d) => <option key={d} value={d}>{t('card.day', { day: d })}</option>)}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="plan-event">{t('cplan.event')}</label>
+        <select id="plan-event" value={ref} onChange={(e) => setRef(e.target.value)}>
+          <option value="">{t('cplan.event.choose')}</option>
+          {onDay.map((e) => <option key={e.ref} value={e.ref}>{clock12(e.time)} {e.title}{e.place ? ` (${e.place})` : ''}</option>)}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="plan-note">{t('cplan.note')}</label>
+        <input id="plan-note" type="text" value={note} maxLength={NOTE_MAX} autoComplete="off" onChange={(e) => setNote(e.target.value)} />
+      </div>
+      <Button type="submit" disabled={send.busy || !ref}>{t('cplan.send')}</Button>
+      {send.error && <p role="alert" className="field__error">{t(planningError(send.error))}</p>}
+    </form>
+  )
+}
+
+/**
+ * "Plan with the group" under the composer: a poll form and a plan form in one place. The plan form asks the server which programme events the guest's own trip runs the first time it is opened; a poll needs nothing from the server.
+ * Hidden in a group where only admins post and the guest is not one.
+ */
+export function PlanTools({ conversation, onSent }: { conversation: ChatConversation; onSent: (sent: ChatMessage) => void }) {
+  const [open, setOpen] = useState(false)
+  const [events, setEvents] = useState<ChatPlannable[] | null>(null)
+  const [failed, setFailed] = useState(false)
+  const asked = useRef(false)
+  useEffect(() => {
+    if (!open || asked.current) return
+    asked.current = true
+    api.chatConversations.shareable().then((d) => setEvents(d.events ?? []), () => { asked.current = false; setFailed(true) })
+  }, [open])
+  return (
+    <details className="chat-share chat-plan-tools chat-more--tools" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>{headingCase(t('cplan.tools'))}</summary>
+      <p className="muted">{t('cplan.tools.hint')}</p>
+      <PollForm conversationId={conversation.id} events={events ?? []} onSent={onSent} />
+      {open && !events && !failed && <p role="status" className="muted">{t('conv.share.loading')}</p>}
+      {failed && <p role="alert" className="field__error">{t('conv.share.failed')}</p>}
+      {events && events.length > 0 && <SlotPollForm conversationId={conversation.id} days={Math.max(...planDays(events))} onSent={onSent} />}
+      {events && <BoardForm conversationId={conversation.id} events={events} onSent={onSent} />}
+      {events && <PlanForm conversationId={conversation.id} events={events} onSent={onSent} />}
+    </details>
+  )
+}

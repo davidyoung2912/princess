@@ -17,18 +17,18 @@ The document's five strategic bets and most of its P0 list match work this proje
 | Document item | Where it is here |
 | --- | --- |
 | Trust ledger, receipts, states (QOL-03, TRU-01 to 03) | `/me/ledger`, `/me/history`, `/me/activity`, `src/domain/ledgerSplit.ts`, server audit trail (`docs/audit-trail.md`) |
-| Idempotent payments and safe retry (BOK-09, TRU-04) | server idempotency (8 files); client outbox `src/data/outbox.ts` |
-| Service request and case lifecycle (SEA-20, DEB-05, DEB-11, DEB-14, QOL-22) | `/ship/requests`, `/me/cases` (lost item, claim, billing dispute with the folio line), `/ship/lost-found`, `src/ui/finish/CasesScreen.tsx` |
+| Idempotent payments and safe retry (BOK-09, TRU-04) | server idempotency (8 files); client outbox `src/shared/data/outbox.ts` |
+| Service request and case lifecycle (SEA-20, DEB-05, DEB-11, DEB-14, QOL-22) | `/ship/requests`, `/me/cases` (lost item, claim, billing dispute with the folio line), `/ship/lost-found`, `src/features/finish/ui/CasesScreen.tsx` |
 | Helper access (MNG-07) | `/me/helper` |
-| Three clocks, return time budget (POR-02, POR-06, QOL-11, QOL-21) | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `allaboard.ts`, `tender.ts`, `PortPilot` |
+| Three clocks, return time budget (POR-02, POR-06, QOL-11, QOL-21) | `src/shared/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `allaboard.ts`, `tender.ts`, `PortPilot` |
 | Allergy handoff, never "safe" (PRE-16, SEA-19, QOL-09) | `/plan/allergy`, allergy strings in 49 client and 22 server files |
 | Rendezvous without tracking (QOL-08, EMB-10, POR-13) | `src/domain/arrivalPing.ts`, `meetingPoint.ts` |
 | Voyage Autopilot, conflicts, what-if, storm replan (QOL-01, QOL-15, PRE-02) | `/plan/autopilot`, `/plan/what-if`, `/plan/storm`, `src/domain/autopilot.ts` |
 | Group board, poll, shares, revocable links (DRM-14, DRM-15, PRE-13, QOL-07) | `GroupBoard`, `/plan/group-poll`, `/plan/share-links`, `/shared/:token` |
 | Compare sailings and ships, cabin chooser, price watch (DSC-01, DSC-04, DRM-16) | `/home/saved/compare`, `/home/ships/compare`, `/home/cabins`, `/plan/price-watch` |
 | Wake lock, calm mode, quiet hours, notifications centre (MOB-11, COM-05) | `useWakeLock`, `domain/calm.ts`, `NotificationsScreen` |
-| Per-screen saved copies with age (OFF-03, TRU-06) | `src/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, enforced by `src/offlineDay.test.ts` |
-| One assistant, deterministic answers first (QOL-14, AST-03) | `src/domain/answerCards.ts`, `src/ai/` (Stanley) |
+| Per-screen saved copies with age (OFF-03, TRU-06) | `src/shared/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, enforced by `src/offlineDay.test.ts` |
+| One assistant, deterministic answers first (QOL-14, AST-03) | `src/domain/answerCards.ts`, `src/features/stanley/logic/` (Stanley) |
 
 ### Real gaps worth doing
 
@@ -37,7 +37,7 @@ The document's five strategic bets and most of its P0 list match work this proje
 | 1 | No place that shows what is saved on the phone, how old, how big, when it stops being trusted, or whether the browser will keep it | MOB-03, MOB-04, OFF-07, QOL-04, GTS-15 | The document's second-ranked differentiator and a P0. Copies exist per screen; the guest cannot see or test them. **Built in BM1.** |
 | 2 | Night-before readiness test that goes beyond the roaming checklist (pass saved, login valid, battery advice, maps cached) | GTS-15, MOB-02 | BM1 supplies the data; the test is a small follow-on. |
 | 3 | Update never interrupts a critical task | MOB-02 | `UpdateBanner` exists; check that it is held back on pass, muster, pay. |
-| 4 | Ship Wi-Fi boundary and low-data mode | EMB-11, SEA-25, MOB-24 | Largely built: `saveDataRequested` in `src/settings/settings.ts` reads the browser's save-data signal (`docs/archive/gap-analysis-plan.md` still lists NET-04 as open; that list is stale). Check battery-aware refresh only. |
+| 4 | Ship Wi-Fi boundary and low-data mode | EMB-11, SEA-25, MOB-24 | Largely built: `saveDataRequested` in `src/shared/settings/settings.ts` reads the browser's save-data signal (`docs/archive/gap-analysis-plan.md` still lists NET-04 as open; that list is stale). Check battery-aware refresh only. |
 | 5 | Voyage Time Intelligence as one tested service with DST and date-line cases | QOL-21, POR-02 | Clocks exist; the document asks for explicit DST and date-line tests. Check coverage. |
 | 6 | Traceability: no ID-by-ID matrix against this document | Appendix B | Needed so later phases do not re-derive this table. |
 | 7 | Add-to-calendar with correct zone and cancel/update ids | MOB-15 | `src/domain/calendar.ts` exists; verify update and cancel semantics. |
@@ -68,8 +68,8 @@ Each phase is small enough to finish, check and commit on its own. Checks are on
 ### BM1. Offline Capsule on the phone screen (built, not committed)
 
 - **Logic**: `src/domain/offlineCapsule.ts` (what is kept, per kind: age, size, expiry, state fresh/ageing/expired; readiness ready/partial/empty from the three essentials: boarding pass, muster, emergency card; storage state protected/unprotected/low/unknown). Tests: `src/domain/offlineCapsule.test.ts` (11 cases).
-- **Storage access**: `src/data/capsule.ts` (kept in `src/data/` because `src/auditGate.test.ts` limits where `localStorage` may be read), `src/hooks/useCapsule.ts`.
-- **Screen**: `src/ui/plan/CapsuleCard.tsx` on `/plan/phone`: missing essentials with an "Open to save" link, one row per saved copy, "Check now", "Ask the browser to keep them", and the crew-override line (OFF-03). No new route, so the screen registry is unchanged.
+- **Storage access**: `src/shared/data/capsule.ts` (kept in `src/shared/data/` because `src/auditGate.test.ts` limits where `localStorage` may be read), `src/shared/hooks/useCapsule.ts`.
+- **Screen**: `src/features/plan/ui/CapsuleCard.tsx` on `/plan/phone`: missing essentials with an "Open to save" link, one row per saved copy, "Check now", "Ask the browser to keep them", and the crew-override line (OFF-03). No new route, so the screen registry is unchanged.
 - **Not done**: no device test (rule); expiry uses the existing per-kind limits in `offlineCache.ts` and the phone's own time zone; the card reads copies but does not fetch them (a copy is saved when its screen is opened with a signal).
 
 ### BM2. Verified baseline matrix (built, not committed)
@@ -83,7 +83,7 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 ### BM3. Readiness (built, not committed)
 
 - **Night-before test (GTS-15)**: `src/domain/nightBefore.ts` (`nightBeforeTest`: essentials saved, copies fresh, storage protected, notifications on, battery; worst result wins). Button "Run the night-before test" on the Offline Capsule card. Tests: `src/domain/nightBefore.test.ts`.
-- **Battery-aware refresh (MOB-24)**: `refreshFactor` doubles the wait between refreshes on a low battery that is not charging (stacks with data-light's x4); `src/data/battery.ts` follows `getBattery` where the browser has it (Chromium only); applied in `useVisibleInterval`. The battery is read when an interval starts, so a change mid-screen applies from the next screen.
+- **Battery-aware refresh (MOB-24)**: `refreshFactor` doubles the wait between refreshes on a low battery that is not charging (stacks with data-light's x4); `src/shared/data/battery.ts` follows `getBattery` where the browser has it (Chromium only); applied in `useVisibleInterval`. The battery is read when an interval starts, so a change mid-screen applies from the next screen.
 - **Dropped**: update-hold (MOB-02 is met by design, see the matrix).
 - **Not done, moved on**: guest-chosen capsule download (MOB-03) and local reminder fallback (MOB-23). Both need a fetch/schedule design and are proposed for a later phase. The test result is not stored (the audit gate limits `localStorage`), so "last test" shows only for the visit.
 

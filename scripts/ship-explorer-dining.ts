@@ -2,7 +2,7 @@
 // at them (winemaker dinners, tastings, afternoon tea, the pub lunch) and the menus. Authored concept content, with start times the docs leave out chosen here for review.
 import type { DirectoryVenue } from '../src/domain/menus.ts'
 import { dishCopy } from '../src/domain/dishCopy.ts'
-import type { HoursRule } from '../src/domain/explorer/types.ts'
+import type { HoursRule } from '../src/features/explorer/domain/types.ts'
 import { fillSection, flagsOf, kindOf, marksOf, isNas, sectionsOf, type MenuCourse } from './ship-explorer-diets.ts'
 import { EXTRA_DINING, type ExtraDining } from './ship-explorer-extra-dining.ts'
 import type { ExplorerEventRow, ExplorerVenueRow, MealCourseRow, MealMenuRow } from './ship-explorer-data.ts'

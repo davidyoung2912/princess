@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { en } from '../i18n/locales/en'
+import { en } from '../shared/i18n/locales/en'
 import { maxAgeFor } from './offlineCache'
 import { buildCapsule, CAPSULE_KINDS, formatBytes, kindOfKey, readCapsuleEntries, storageState } from './offlineCapsule'
 

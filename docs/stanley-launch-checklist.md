@@ -6,9 +6,9 @@ Run this before each gate (G1 to G4 in `stanley-actions-and-proactive-plan.md` s
 
 | Check | Where |
 |---|---|
-| No "AI" word, no web link, no placeholder or stray spacing, no guarantee wording in reminders, across every Stanley and reminder string (D1, AC-X-01, AC-X-02, decision 19) | `src/ai/stanleyHardening.test.ts` |
-| No secret, debugger or console output in a Stanley source file | `src/ai/stanleyHardening.test.ts` |
-| Markup faults on every Stanley screen (names, alt text, keyboard reach, dialogs, live regions, reduced motion) | `src/ai/stanleyAccessibility.test.ts` |
+| No "AI" word, no web link, no placeholder or stray spacing, no guarantee wording in reminders, across every Stanley and reminder string (D1, AC-X-01, AC-X-02, decision 19) | `src/features/stanley/logic/stanleyHardening.test.ts` |
+| No secret, debugger or console output in a Stanley source file | `src/features/stanley/logic/stanleyHardening.test.ts` |
+| Markup faults on every Stanley screen (names, alt text, keyboard reach, dialogs, live regions, reduced motion) | `src/features/stanley/logic/stanleyAccessibility.test.ts` |
 | Release gates: no unconfirmed mutating action, no cross-party leak, no unsupported critical claim | `src/gates/releaseGates.test.ts` |
 | Classifier invariants, scheduler, switches, permissions (server; **targeted runs by the owner, never a full `dotnet test`**) | `StanleyClassifierTests`, `StanleySchedulerTests`, `StanleySwitchTests`, `StanleyPermissionTests` |
 
@@ -48,7 +48,7 @@ The owner builds and runs these on the server, targeted tests only.
 - [ ] Turn each switch off in turn (`Model`, `Tools`, `Resolver`, `Library`, `Actions`, `Handoff`, `Changes`, `Money`): the safety screen, written help and booking, payment and check-in still work.
 - [ ] Break the model provider, the push provider and the database connection mid-run: the guest sees a calm message, nothing is applied twice, queued confirms re-validate on reconnect.
 - [ ] Offline at sea: missed firings show their true times with "Late"; no blind apply.
-- [ ] Red team: prompt injection (add every hit to `src/ai/eval/injection.json`), asking Stanley to raise his own level, to spend money, to act for another adult, to reveal another traveller's data, to repeat a private reminder.
+- [ ] Red team: prompt injection (add every hit to `src/features/stanley/logic/eval/injection.json`), asking Stanley to raise his own level, to spend money, to act for another adult, to reveal another traveller's data, to repeat a private reminder.
 - [ ] Any S1 or S2 found halts the gate.
 
 ## 6. S1 rehearsal (AC-R13-02; G3)

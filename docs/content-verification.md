@@ -16,8 +16,8 @@ Regenerate the list with: `grep -rn "(verify)" src server/Princess.Api --include
 
 | File:line | Text | Source | Status |
 | --- | --- | --- | --- |
-| src/i18n/locales/en.ts:5062 | 'journey.early.verify': 'These amounts are guides, and the cruise line’s position on a missed sailing should be checked (verify).', | | open |
-| src/i18n/locales/en.ts:5085 | 'journey.verify': 'Check times, prices and pick-up points before you travel (verify).', | | open |
+| src/shared/i18n/locales/en.ts:5062 | 'journey.early.verify': 'These amounts are guides, and the cruise line’s position on a missed sailing should be checked (verify).', | | open |
+| src/shared/i18n/locales/en.ts:5085 | 'journey.verify': 'Check times, prices and pick-up points before you travel (verify).', | | open |
 | src/domain/journey.ts:123 | /** Authored guides, "(verify)" wherever shown. */ | | open |
 | server/Princess.Api/Domain/PortsReference.cs:230 | "Taking coral, shells and sea life from the reef is illegal and fined (verify)", | | open |
 | server/Princess.Api/Domain/PortsReference.cs:231 | "Vaping devices are restricted in Mexico; leave them aboard (verify)", | | open |

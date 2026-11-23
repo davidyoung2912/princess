@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { aboardState, portDayAt, REMINDER_THRESHOLDS, reminderTimes, tenderGroupFor, tenderView, TENDER_GROUPS } from './allaboard'
-import { channelById, chatState, ESCALATE_AFTER_MINUTES, replyAt, SLOW_FACTOR } from './chat'
+import { channelById, chatState, ESCALATE_AFTER_MINUTES, replyAt, SLOW_FACTOR } from '../features/chat/domain/chat'
 import { DECKS, ELEVATORS, MUSTER_STATIONS, musterByLabel, placeById, PLACES, searchPlaces } from './deck'
 import { buildFolio, filterFolio, folioTotals, NO_FOLIO_FILTER, runningTotals, type FolioGuest } from './folio'
 import { computeEntitlements } from './entitlements'

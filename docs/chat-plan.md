@@ -25,7 +25,7 @@ Plan for person-to-person and group chat between guests. Written 2026-11-09. Pha
 
 ## 3. What exists today, and what changes
 
-Already built (MSG-01, MSG-05): `ChatGroups`, `ChatGroupMembers`, `ChatMessages`, `ChatReads`, `ChatBlocks`, `ChatReports`, `ChatService` and `/me/chat/*`, and the screen `src/ui/onboard/ChatScreen.tsx`. Web Push (`PushService`, `IPushSender`, `PushSubscriptions`, `PushDeliveries`) is built but runs only when the app asks (`/me/push/dispatch`); nothing pushes on an event. There is no SignalR.
+Already built (MSG-01, MSG-05): `ChatGroups`, `ChatGroupMembers`, `ChatMessages`, `ChatReads`, `ChatBlocks`, `ChatReports`, `ChatService` and `/me/chat/*`, and the screen `src/features/chat/ui/ChatScreen.tsx`. Web Push (`PushService`, `IPushSender`, `PushSubscriptions`, `PushDeliveries`) is built but runs only when the app asks (`/me/push/dispatch`); nothing pushes on an event. There is no SignalR.
 
 Problems with what exists, which this plan fixes:
 
@@ -199,7 +199,7 @@ Each phase ends with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run b
 
 Designed to section 4.8: the conversation list is the home of Chat, requests are a banner on it, and "New chat" is a single button.
 
-- `src/api` types and `httpApi.ts` calls. The `chat` push kind added to the front end's accepted kinds.
+- `src/shared/api` types and `httpApi.ts` calls. The `chat` push kind added to the front end's accepted kinds.
 - A "People" area in Chat: search, request, requests waiting (accept, decline, block), requests sent (cancel), my chat targets (end), the guardian approvals list.
 - Badge on the Chat tab from `/me/chat/summary`, refreshed on launch, focus and after an action. Offline copy ("Connect when you have signal").
 - Setting: let others find me by name. Setting: show message text in notifications (stored now, used in phase 4). Added `GET/PUT /me/chat/settings` and `UserPrefs.ChatShowPreview` for these (phase 1 had only the column for finding).
@@ -211,7 +211,7 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 - `ChatHub` at `/hubs/chat`, JWT through `access_token`, group `user:{publicId}`; `IRealtimeHub` interface and a real implementation; acknowledgements; push only when no live acknowledgement.
 - Client connection with reconnect and fallback, and live badges. Events are "something changed" nudges; the client refetches over REST, so a lost event costs nothing.
 - Backplane (Redis or Azure SignalR) documented as configuration for more than one server.
-- Built as: `Realtime/` (`ChatHub`, `RealtimeState`, `IRealtimeHub` with `SignalRRealtimeHub`), WebSockets only. `ChatNotifier` nudges an open app first and sends the phone alert off the request after 8 s with no `Ack` (at once when no app is connected to that server). The browser side is `src/realtime/hubClient.ts`, a small JSON-protocol client (no `@microsoft/signalr` package) with reconnect, ping and silence timeout; `useChatSummary` runs it, acknowledges, refetches, and polls every minute while it is down. `useChatLive` lets a screen refetch on a nudge.
+- Built as: `Realtime/` (`ChatHub`, `RealtimeState`, `IRealtimeHub` with `SignalRRealtimeHub`), WebSockets only. `ChatNotifier` nudges an open app first and sends the phone alert off the request after 8 s with no `Ack` (at once when no app is connected to that server). The browser side is `src/features/chat/realtime/hubClient.ts`, a small JSON-protocol client (no `@microsoft/signalr` package) with reconnect, ping and silence timeout; `useChatSummary` runs it, acknowledges, refetches, and polls every minute while it is down. `useChatLive` lets a screen refetch on a nudge.
 
 ### Phase 4: conversations and messages — built
 

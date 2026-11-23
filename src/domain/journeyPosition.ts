@@ -1,4 +1,4 @@
-import { JOURNEY_OF_STAGE, type JourneyStage } from '../routes/hubs'
+import { JOURNEY_OF_STAGE, type JourneyStage } from '../app/routes/hubs'
 import { itinerary, shipZoneAt, stageAt, stageStarts, type Sailing, type StageId } from './sailings'
 import { addDays, dateIn, zonedToEpoch } from './timezones'
 

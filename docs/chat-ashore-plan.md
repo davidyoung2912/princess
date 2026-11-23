@@ -62,7 +62,7 @@ Each phase ends with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run b
 
 ### Phase 2: screen
 
-- `src/api` types and `httpApi.ts`, the switch, the system line, strings, a pure helper and its test for wording and which conversations show the switch.
+- `src/shared/api` types and `httpApi.ts`, the switch, the system line, strings, a pure helper and its test for wording and which conversations show the switch.
 
 ## 6. As built
 

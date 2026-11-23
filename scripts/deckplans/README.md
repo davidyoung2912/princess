@@ -1,6 +1,6 @@
 # Deck plan cabin positions
 
-`src/deckPlans/cabins/<ship>.json` holds each cabin's pixel position on its deck plan image. It was read from the printed cabin numbers with OCR, so it has to be redone whenever the plan images in `public/deckplans` are replaced (for example with Princess's official plans).
+`src/features/deckPlans/logic/cabins/<ship>.json` holds each cabin's pixel position on its deck plan image. It was read from the printed cabin numbers with OCR, so it has to be redone whenever the plan images in `public/deckplans` are replaced (for example with Princess's official plans).
 
 1. In a scratch folder outside the repo, `npm i tesseract.js sharp` and put `ocr.mjs` there.
 2. For each plan: `node ocr.mjs <deck-N.gif> raw2/<ship>-<N>.json <digits|letters>` (`digits` for Sun Princess, `letters` for Sky and Sapphire). Optionally repeat with `THRESH=80` and `THRESH=150` into `raw3/<ship>-<N>-t<threshold>.json` to catch labels the first pass misses.

@@ -12,7 +12,7 @@ const walk = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : /\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) ? [join(dir, e.name).replaceAll('\\', '/')] : []))
 const source = new Map(walk('src').map((f) => [f, readFileSync(f, 'utf8')]))
 const withComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
-const users = [...source].filter(([f, s]) => f !== 'src/hooks/useSavedCopy.ts' && /useSavedCopy[<(]/.test(withComments(s)))
+const users = [...source].filter(([f, s]) => f !== 'src/shared/hooks/useSavedCopy.ts' && /useSavedCopy[<(]/.test(withComments(s)))
 
 /** What a guest must be able to open with no signal (base doc OB-03, CHK-14): each kind must be kept by at least one screen. */
 const MUST_WORK_OFFLINE: Record<string, string> = {
@@ -30,11 +30,11 @@ const MUST_WORK_OFFLINE: Record<string, string> = {
 
 /** Kinds shown through a parent that already carries the age, or that feed another copy rather than a page of their own. Each needs a reason. */
 const AGE_SHOWN_ELSEWHERE: Record<string, string> = {
-  'src/hooks/useOnboardToday.ts': 'a hook; its screens show the copy age through `Saved`',
-  'src/hooks/useExplorer.ts': 'a hook; the Explorer pages show the copy age through `Saved`',
-  'src/ui/explorer/dining/diningView.ts': 'a hook; the Dining Explorer pages show the copy age through `Saved`',
-  'src/ui/explorer/spa/spaView.ts': 'a hook; the Spa Explorer pages show the copy age through `Saved`',
-  'src/hooks/useStanleyMode.ts': 'a hook feeding the Right Now card; the plan screens it points to show the copy age',
+  'src/shared/hooks/useOnboardToday.ts': 'a hook; its screens show the copy age through `Saved`',
+  'src/shared/hooks/useExplorer.ts': 'a hook; the Explorer pages show the copy age through `Saved`',
+  'src/features/explorer/ui/dining/diningView.ts': 'a hook; the Dining Explorer pages show the copy age through `Saved`',
+  'src/features/explorer/ui/spa/spaView.ts': 'a hook; the Spa Explorer pages show the copy age through `Saved`',
+  'src/shared/hooks/useStanleyMode.ts': 'a hook feeding the Right Now card; the plan screens it points to show the copy age',
 }
 
 describe('the offline day', () => {

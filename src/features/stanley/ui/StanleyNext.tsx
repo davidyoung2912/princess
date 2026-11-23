@@ -1,0 +1,33 @@
+import stanley from '../../../assets/stanley-small.png'
+import { stanleyNext } from '../logic/stanleyNext'
+import { useGuideView } from '../../../shared/hooks/useGuideView'
+import { useNow } from '../../../shared/hooks/useDemo'
+import { useSettings } from '../../../shared/hooks/useSettings'
+import { t, type StringKey } from '../../../shared/i18n'
+import { openedFrom } from '../../../app/routes/screens'
+import { stanleyLevelFor } from '../../../shared/settings/settings'
+import { LinkButton } from '../../../shared/ui/Button'
+import { WhyThis } from './WhyThis'
+
+/**
+ * "What should I do next?" at the top of Home, at every stage: one rules-based sentence and a button, from the guest's guide. No model is called.
+ * Shown at Helpful and Chatty; the plan below it stays for everyone.
+ */
+export function StanleyNext() {
+  const { data: view } = useGuideView()
+  const [settings] = useSettings()
+  const now = useNow()
+  const level = stanleyLevelFor(settings)
+  if (!view || level === 'asked' || level === 'off') return null
+  const a = stanleyNext(view, new Date(now).getHours())
+  const step = a.stepKey ? t(a.stepKey as StringKey) : ''
+  const text = t(a.key as StringKey, { step: step.charAt(0).toLowerCase() + step.slice(1) })
+  return (
+    <aside className="stanley-next no-print" aria-label={t('stanley.next.label')}>
+      <img className="stanley-next__face" src={stanley} alt="" width="192" height="192" />
+      <p className="tip__text">{text}</p>
+      <WhyThis kind="tip" fact={t('stanley.why.fact.tip')} what={text} />
+      {a.to && <LinkButton to={a.to} state={openedFrom('blue')} variant="secondary" aria-label={`${t('stanley.next.go')}: ${text}`}>{t('stanley.next.go')}</LinkButton>}
+    </aside>
+  )
+}

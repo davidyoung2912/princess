@@ -1,18 +1,18 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { ApiError } from '../api/errors'
-import { bounded, withRetries } from '../api/bounded'
-import { createHttp } from '../api/http'
-import { MAX_ATTEMPTS, MAX_QUEUED, due, enqueue, failed, gaveUp, isRetryable, loadOutbox, saveOutbox, sent, type OutboxItem } from '../data/outbox'
+import { ApiError } from '../shared/api/errors'
+import { bounded, withRetries } from '../shared/api/bounded'
+import { createHttp } from '../shared/api/http'
+import { MAX_ATTEMPTS, MAX_QUEUED, due, enqueue, failed, gaveUp, isRetryable, loadOutbox, saveOutbox, sent, type OutboxItem } from '../shared/data/outbox'
 import { cacheGet, cachePut, maxAgeFor } from '../domain/offlineCache'
 import { OFFLINE_CONTRACT, offlineModeOf } from '../domain/offlineContract'
 import { ageLabel, chipKind } from '../domain/syncAge'
 import { NOTHING_SHARED, SHARING_FACETS, normalizeSharing } from '../domain/partyShare'
 import { RETENTION, kindsToDelete } from '../domain/privacy'
 import { DRILL_ALTERNATIVES } from '../domain/safety'
-import { ROUTES } from '../routes/routes'
-import { en } from '../i18n/locales/en'
+import { ROUTES } from '../app/routes/routes'
+import { en } from '../shared/i18n/locales/en'
 
 /**
  * The 10 P0 release gates of docs/princess_cruises_expanded_best_in_market_requirements.md section 9.1, as node tests (BM21, layer L4 of
@@ -104,7 +104,7 @@ describe('gate 2: safe retry', () => {
 
   it('the client sends an Idempotency-Key on booking and payment posts, so a retry after a lost reply cannot charge twice', () => {
     // The server accepts the header (BookingEndpoints.cs) and also treats the same draft twice as one booking, but pay-balance has no such draft and the client never sends a key.
-    expect(read('src/api/httpApi.ts') + read('src/api/http.ts')).toMatch(/idempotency-key/i)
+    expect(read('src/shared/api/httpApi.ts') + read('src/shared/api/http.ts')).toMatch(/idempotency-key/i)
   })
 
   it('an idempotent post carries one key, and the resend after a silent refresh carries the same key', async () => {
@@ -125,7 +125,7 @@ describe('gate 2: safe retry', () => {
   })
 
   it('the pay button is disabled while the payment runs', () => {
-    expect(read('src/ui/book/PayPanel.tsx')).toMatch(/disabled=\{[^}]*busy/)
+    expect(read('src/features/book/ui/PayPanel.tsx')).toMatch(/disabled=\{[^}]*busy/)
   })
 })
 
@@ -186,17 +186,17 @@ describe('gate 4: freshness clarity', () => {
   })
 
   it('every screen that shows a saved copy shows its age (see offlineDay.test.ts), and the shell says what to do while offline', () => {
-    const note = read('src/ui/OfflineNote.tsx')
+    const note = read('src/shared/ui/OfflineNote.tsx')
     expect(note).toMatch(/offlineModeOf|OFFLINE_CONTRACT/)
-    expect(read('src/ui/SyncChip.tsx')).toMatch(/chipKind/)
+    expect(read('src/shared/ui/SyncChip.tsx')).toMatch(/chipKind/)
   })
 })
 
 describe('gate 5: human recovery', () => {
   const CRITICAL: Record<string, string> = {
-    'src/ui/boarding/parts.tsx': 'boarding pass',
-    'src/ui/onboard/SafetyScreens.tsx': 'muster, emergency and medical',
-    'src/ui/HelpSheet.tsx': 'help from any screen',
+    'src/features/boarding/ui/parts.tsx': 'boarding pass',
+    'src/features/onboard/ui/SafetyScreens.tsx': 'muster, emergency and medical',
+    'src/shared/ui/HelpSheet.tsx': 'help from any screen',
   }
   const callKeys = Object.keys(strings).filter((k) => /\{number\}/.test(strings[k]) && /call|dial|phone/i.test(strings[k]))
 
@@ -212,11 +212,11 @@ describe('gate 5: human recovery', () => {
   }
 
   it('the help sheet is mounted in the shell, so it is one tap from every screen', () => {
-    expect(read('src/ui/Shell.tsx')).toMatch(/HelpSheet/)
+    expect(read('src/shared/ui/Shell.tsx')).toMatch(/HelpSheet/)
   })
 
   it('the chat screen offers a phone call when it is slow', () => {
-    expect(read('src/ui/onboard/ChatScreen.tsx')).toMatch(/chat\.callMe/)
+    expect(read('src/features/chat/ui/ChatScreen.tsx')).toMatch(/chat\.callMe/)
     expect(strings['chat.callMe']).toBeTruthy()
     expect(strings['chat.slowBody']).toMatch(/phone call/)
   })
@@ -224,7 +224,7 @@ describe('gate 5: human recovery', () => {
 
 describe('gate 6: accessibility', () => {
   it('motion, text size and contrast are all settings the guest controls, and the device preference is honoured', () => {
-    const settings = read('src/settings/settings.ts')
+    const settings = read('src/shared/settings/settings.ts')
     for (const f of ['textSize', 'contrast', 'reduceMotion', 'calm', 'simple']) expect(settings, f).toContain(f)
     expect(read('src/styles/motion.css')).toMatch(/prefers-reduced-motion:\s*reduce/)
     expect(read('src/styles/themes.css')).toMatch(/data-contrast='high'/)
@@ -233,28 +233,28 @@ describe('gate 6: accessibility', () => {
   it('nothing needs a drag, and hover is never the only way to reach something', () => {
     const src = walk('src').map((f) => ({ f, text: read(f) }))
     // The deck plan viewer pans by dragging, but every move also has a button and a key (zoom in and out, fit, arrow keys), so nothing needs the drag.
-    expect(src.filter((s) => /\bonDrag\w*=|draggable=\{?["']?true|onPointerMove=/.test(s.text)).map((s) => s.f)).toEqual(['src/ui/explorer/games/NonogramScreen.tsx', 'src/ui/explorer/games/WordSearchScreen.tsx', 'src/ui/onboard/DeckPlanViewer.tsx'])
+    expect(src.filter((s) => /\bonDrag\w*=|draggable=\{?["']?true|onPointerMove=/.test(s.text)).map((s) => s.f)).toEqual(['src/features/explorer/ui/games/NonogramScreen.tsx', 'src/features/explorer/ui/games/WordSearchScreen.tsx', 'src/features/onboard/ui/DeckPlanViewer.tsx'])
     // Word Search can be dragged across a word, but tapping the first and last letters, or Enter on each from the keyboard, does the same, so nothing needs the drag.
-    expect(read('src/ui/explorer/games/WordSearchScreen.tsx')).toMatch(/onKeyDown=/)
+    expect(read('src/features/explorer/ui/games/WordSearchScreen.tsx')).toMatch(/onKeyDown=/)
     // Nonogram can be dragged along a line to mark several squares, but tapping each square, or F, X and Space from the keyboard, does the same, so nothing needs the drag.
-    expect(read('src/ui/explorer/games/NonogramScreen.tsx')).toMatch(/onKeyDown=/)
-    const viewer = read('src/ui/onboard/DeckPlanViewer.tsx')
+    expect(read('src/features/explorer/ui/games/NonogramScreen.tsx')).toMatch(/onKeyDown=/)
+    const viewer = read('src/features/onboard/ui/DeckPlanViewer.tsx')
     expect(viewer).toMatch(/onClick=\{\(\) => zoomBy/)
     expect(viewer).toMatch(/onKeyDown=/)
     // Hover handlers: a decorative wiggle on a page title (hides nothing), the tile preview card (L7), which opens on keyboard focus too, closes on Escape and only repeats words the tile already shows,
     // and the faces on Stanley's introduction, which are buttons that show their caption on focus and on a tap or click as well.
-    expect(src.filter((s) => /onMouseEnter|onMouseOver/.test(s.text)).map((s) => s.f).sort()).toEqual(['src/ui/PageHeader.tsx', 'src/ui/ScreenList.tsx', 'src/ui/welcome/StanleyIntro.tsx'])
-    expect(read('src/ui/ScreenList.tsx')).toMatch(/onFocus=/)
-    expect(read('src/ui/welcome/StanleyIntro.tsx')).toMatch(/onFocus=[\s\S]*onClick=/)
+    expect(src.filter((s) => /onMouseEnter|onMouseOver/.test(s.text)).map((s) => s.f).sort()).toEqual(['src/features/welcome/ui/StanleyIntro.tsx', 'src/shared/ui/PageHeader.tsx', 'src/shared/ui/ScreenList.tsx'])
+    expect(read('src/shared/ui/ScreenList.tsx')).toMatch(/onFocus=/)
+    expect(read('src/features/welcome/ui/StanleyIntro.tsx')).toMatch(/onFocus=[\s\S]*onClick=/)
   })
 
   it('every screen is checked structurally (one h1, one main, labelled buttons) and for colour contrast', () => {
-    expect(read('src/ui/a11y.test.tsx')).toMatch(/exactly one h1/)
-    expect(read('src/design/contrast.test.ts')).toMatch(/AA|contrast/i)
+    expect(read('src/shared/ui/a11y.test.tsx')).toMatch(/exactly one h1/)
+    expect(read('src/shared/design/contrast.test.ts')).toMatch(/AA|contrast/i)
   })
 
   it('dialogs trap focus and close on Escape', () => {
-    expect(read('src/ui/Dialog.tsx')).toMatch(/Escape/)
+    expect(read('src/shared/ui/Dialog.tsx')).toMatch(/Escape/)
   })
 })
 
@@ -311,12 +311,12 @@ describe('gate 8: privacy', () => {
   })
 
   it('the privacy centre exports the guest\'s data from the server', () => {
-    expect(read('src/api/httpApi.ts')).toMatch(/me\/export/)
+    expect(read('src/shared/api/httpApi.ts')).toMatch(/me\/export/)
   })
 
   it('the privacy centre deletes the guest\'s server-held data, not only this device', () => {
     // "Delete my data" runs wipeAll (this browser). DELETE /me/state exists on the server (docs/runbook.md) but no client call reaches it.
-    expect(read('src/runtime/index.ts')).toMatch(/delete<void>\('\/me\/state'\)/)
+    expect(read('src/app/runtime/index.ts')).toMatch(/delete<void>\('\/me\/state'\)/)
   })
 })
 
@@ -336,7 +336,7 @@ describe('gate 9: cross-surface parity', () => {
   })
 
   it('the phone tab bar and the desktop rail are built from the same five areas', () => {
-    const shell = read('src/ui/Shell.tsx')
+    const shell = read('src/shared/ui/Shell.tsx')
     expect(shell).toMatch(/TABS|tabs/)
     const css = walk('src').length && readdirSync('src/styles').map((f) => read(join('src/styles', f))).join('\n')
     expect(css).toMatch(/@media \(min-width/)
@@ -381,7 +381,7 @@ describe('gate 10: operational readiness', () => {
   })
 
   it('the status screen reads a served status and incident feed, not a client-side demo scenario', () => {
-    expect(read('src/ui/aboard/SupportScreens.tsx')).not.toMatch(/scenario/i)
+    expect(read('src/features/aboard/ui/SupportScreens.tsx')).not.toMatch(/scenario/i)
   })
 
   it('the runbook has an incident section: who owns it, who is told, and how guests are told', () => {
@@ -395,9 +395,9 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
   describe('no unconfirmed mutating action', () => {
     it('only the action card confirms an action (and sends back a confirm the guest tapped while offline, which the server checks again); a change card can only prepare one for the guest to confirm', () => {
       const users = walk('src').filter((f) => /stanleyActions\.confirm\(/.test(read(f)))
-      expect(users.map((f) => f.replace(/\\/g, '/')).sort()).toEqual(['src/ui/StanleyOffline.tsx', 'src/ui/ai/StanleyActionCard.tsx'])
-      expect(read('src/ui/StanleyOffline.tsx')).toMatch(/loadQueue\(\)/)
-      expect(read('src/ui/ai/StanleyChanges.tsx')).toMatch(/stanleyActions\.prepare\(/)
+      expect(users.map((f) => f.replace(/\\/g, '/')).sort()).toEqual(['src/features/stanley/ui/StanleyActionCard.tsx', 'src/shared/ui/StanleyOffline.tsx'])
+      expect(read('src/shared/ui/StanleyOffline.tsx')).toMatch(/loadQueue\(\)/)
+      expect(read('src/features/stanley/ui/StanleyChanges.tsx')).toMatch(/stanleyActions\.prepare\(/)
     })
 
     it('a confirm is its own route, and the server\'s change engine and read tools have no way to confirm or apply anything', () => {
@@ -407,7 +407,7 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
     })
 
     it('the action kinds are the fourteen named kinds (seven from phase 5, then polls, seating, the check-in prefill, the customs draft, the excursion plan, the packing start and the travel plan), so nothing outside the confirm flow can be requested', () => {
-      const kinds = read('src/ai/stanleyAction.ts').match(/const KINDS[^=]*=\s*\[([^\]]+)\]/)?.[1] ?? ''
+      const kinds = read('src/features/stanley/logic/stanleyAction.ts').match(/const KINDS[^=]*=\s*\[([^\]]+)\]/)?.[1] ?? ''
       expect(kinds.split(',').map((k) => k.trim().replace(/'/g, '')).sort()).toEqual(['add_excursion', 'change_seating', 'checkin_prefill', 'create_poll', 'customs_draft', 'draft_case', 'excursion_plan', 'move_dinner', 'order_item', 'packing_start', 'plan_change', 'remind_me', 'reserve_dinner', 'travel_plan'])
     })
   })
@@ -427,8 +427,8 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
 
   describe('no unsupported critical claim', () => {
     it('a deadline, tender, payment, access, entry or safety answer is a high-risk entry with a person to ask and a live review date', async () => {
-      const { LIBRARY } = await import('../ai/stanleyLibrary')
-      const { HIGH_RISK_IDS, isLive, metaOf } = await import('../ai/stanleyLibrary/governance')
+      const { LIBRARY } = await import('../features/stanley/logic/stanleyLibrary')
+      const { HIGH_RISK_IDS, isLive, metaOf } = await import('../features/stanley/logic/stanleyLibrary/governance')
       const high = LIBRARY.filter((e) => HIGH_RISK_IDS.has(e.id))
       expect(high.length).toBe(HIGH_RISK_IDS.size)
       for (const e of high) {
@@ -439,7 +439,7 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
     })
 
     it('a forecast never ranks as an alert, even when the card asks to', async () => {
-      const { normalizeCard } = await import('../ai/stanleyChanges')
+      const { normalizeCard } = await import('../features/stanley/logic/stanleyChanges')
       const opt = { id: 'a', label: 'Look', detail: '', route: '/plan' }
       const base = { id: 'x', fingerprint: 'f', kind: 'tender', source: 'Tender outlook', sourceAt: 1, sourceAtText: '10:00', day: 2, title: 'T', what: 'w', why: 'y', recommended: opt, others: [], affects: [], ifNothing: 'n', where: ['home'], noticedAt: 1 }
       expect(normalizeCard({ ...base, status: 'forecast', consequence: 'conflict', critical: true })?.critical).toBe(false)
@@ -587,7 +587,7 @@ describe('Host gates (chat phase 12d): staff see flags, the roles are measured, 
   })
 
   it('staff can list and close flags from the account page', () => {
-    expect(read('src/ui/account/RoomsStaffCard.tsx')).toContain('hostFlags()')
-    expect(read('src/ui/account/RoomsStaffCard.tsx')).toContain('decideHostFlag')
+    expect(read('src/features/account/ui/RoomsStaffCard.tsx')).toContain('hostFlags()')
+    expect(read('src/features/account/ui/RoomsStaffCard.tsx')).toContain('decideHostFlag')
   })
 })

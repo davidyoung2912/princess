@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { en } from '../i18n/locales/en'
+import { en } from '../shared/i18n/locales/en'
 import { STAGE_IDS } from './sailings'
 import { PHONE_STEPS, normalizeDone, roamingMoment, toggleStep, wifiAdvice } from './phoneSetup'
 

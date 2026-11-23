@@ -1,7 +1,7 @@
 // Prints the contrast ratio of every colour pair in every theme: `npm run contrast`. The same checks fail the test suite.
 import { readFileSync } from 'node:fs'
-import { PAIRS, contrastRatio, minFor } from '../src/design/contrast.ts'
-import { CONTRAST_NAMES, THEME_NAMES, resolvePalette } from '../src/design/palettes.ts'
+import { PAIRS, contrastRatio, minFor } from '../src/shared/design/contrast.ts'
+import { CONTRAST_NAMES, THEME_NAMES, resolvePalette } from '../src/shared/design/palettes.ts'
 
 const css = readFileSync(new URL('../src/styles/themes.css', import.meta.url), 'utf8')
 

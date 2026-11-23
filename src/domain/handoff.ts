@@ -1,5 +1,5 @@
-import type { Handoff } from '../ai/guard'
-import type { CaseTopic } from '../ai/stanleyHandoff'
+import type { Handoff } from '../features/stanley/logic/guard'
+import type { CaseTopic } from '../features/stanley/logic/stanleyHandoff'
 
 /**
  * Handoff with context (XA-06): when the guest asks for a person, what they asked, the last of the conversation and a few booking facts

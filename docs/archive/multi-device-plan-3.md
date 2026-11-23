@@ -12,7 +12,7 @@ Status: **Plan written 2026-11-02 from a second audit of the front end and back 
 ## Decisions (2026-11-02)
 
 1. **Mock mode is dropped.** `VITE_API_URL` becomes required (default `/api/v1` through the Vite proxy). The server must be running for `npm run dev`.
-2. **Server tests replace the mock tests.** The `src/api/*.test.ts` files that exercise the mocks go with them; the C# suite covers the same rules (the user runs it; the project rule is no `dotnet test` here).
+2. **Server tests replace the mock tests.** The `src/shared/api/*.test.ts` files that exercise the mocks go with them; the C# suite covers the same rules (the user runs it; the project rule is no `dotnet test` here).
 3. **Rules over served data may stay on the client** (formatting, sorting, "what is next"). What goes is authored data and anything simulated.
 
 ## Audit findings
@@ -21,14 +21,14 @@ Verified in the code on 2026-11-02. Most are things plans 1 and 2 did not list.
 
 ### A. Identity, time and sailing are device state (most serious)
 
-- `useSailing()` returns `sailingById(demo.sailingId)`, where `demo.sailingId` is device-local (`src/demo/state.ts`; the server's `/demo/state` carries only clock and scenarios). 45 files use it. A real account's trip never picks the sailing; two devices can show two sailings.
+- `useSailing()` returns `sailingById(demo.sailingId)`, where `demo.sailingId` is device-local (`src/features/demo/logic/state.ts`; the server's `/demo/state` carries only clock and scenarios). 45 files use it. A real account's trip never picks the sailing; two devices can show two sailings.
 - `demoNow()` is the client's "now" for **every** account, real ones included. First run is `timeForStage(REFERENCE_SAILING, 'preCruise')` (two weeks before departure), running at real speed from that device's first run. The server uses the real clock for non-demo users (`UserClock`). So a real account's phone and desktop disagree with each other and with the server about the date. 57 files use `useNow()`.
 - `usePersona()` maps the session to one of twelve client-held personas (63 files). A real account is not a persona, so it returns null and screens fall back (`personaById(me.booker)?.firstName ?? ''`, `firstName(id)` returns the raw id, chat names). Names, children, bookers and party members must come from the server.
 - `PERSONAS` is imported by the sign-in and demo screens; the demo account list is client data.
 
 ### B. The in-browser backend still exists
 
-`src/api/*Mock.ts`, `mock.ts`, `auth/mockProvider.ts`, `data/store.ts` + `idbStore.ts` (IndexedDB), `data/sync.ts`, the demo network/latency simulation, and `withHttpGroups(mockApi, …)` all remain. In REST mode every `Api` group is overridden, so the mocks are dead weight there, but they are the second source of truth for rules (for example `arrivalWindows` is used by `planMock`, `checkinMock` and `boarding.ts`).
+`src/shared/api/*Mock.ts`, `mock.ts`, `auth/mockProvider.ts`, `data/store.ts` + `idbStore.ts` (IndexedDB), `data/sync.ts`, the demo network/latency simulation, and `withHttpGroups(mockApi, …)` all remain. In REST mode every `Api` group is overridden, so the mocks are dead weight there, but they are the second source of truth for rules (for example `arrivalWindows` is used by `planMock`, `checkinMock` and `boarding.ts`).
 
 ### C. Authored catalogue compiled into the client
 
@@ -83,21 +83,21 @@ Server:
 - Child/booker names come from the server for every account.
 
 Client:
-- A `useContext()` hook (`src/hooks/useAccountContext.ts`) replaces `usePersona`, `useSailing`, `useNow`'s source and `personaById(...).firstName` in 63/45/57 files. `useNow()` reads `Date.now() + serverOffset` (offset taken from the server's time, refreshed on pull and when the tab is shown).
-- `src/demo/*` shrinks to the demo controls for demo accounts only (jump, speed, scenarios, sailing); real accounts never see or use a simulated clock.
+- A `useContext()` hook (`src/shared/hooks/useAccountContext.ts`) replaces `usePersona`, `useSailing`, `useNow`'s source and `personaById(...).firstName` in 63/45/57 files. `useNow()` reads `Date.now() + serverOffset` (offset taken from the server's time, refreshed on pull and when the tab is shown).
+- `src/features/demo/logic/*` shrinks to the demo controls for demo accounts only (jump, speed, scenarios, sailing); real accounts never see or use a simulated clock.
 - `personas.ts` is cut to what the sign-in screen needs, then served (Phase 2).
 
 Done when: a real account, on two devices opened minutes apart, shows the same date, sailing, names and stage.
 
 ### Phase 2: Remove the in-browser backend
 
-- Delete `src/api/*Mock.ts`, `mock.ts`, `auth/mockProvider.ts`, `data/store.ts`, `idbStore.ts`, `data/sync.ts` (the cross-tab channel stays only if the session needs it), the network/latency simulation and `withHttpGroups`; `api` is the HTTP groups directly. `Api` types and `guards.ts` stay.
+- Delete `src/shared/api/*Mock.ts`, `mock.ts`, `auth/mockProvider.ts`, `data/store.ts`, `idbStore.ts`, `data/sync.ts` (the cross-tab channel stays only if the session needs it), the network/latency simulation and `withHttpGroups`; `api` is the HTTP groups directly. `Api` types and `guards.ts` stay.
 - `VITE_API_URL` required; `usesRealAuth` and every `if (!rest)` branch go; the Vite proxy default is documented in the README.
 - The demo picker becomes a **server** list: `GET /auth/demo-accounts` (demo environment only) and the sign-in screen signs in with it. `PERSONAS` leaves the client.
-- Move the useful `src/api/*.test.ts` assertions to the C# suite where they are not already there (list them first; delete the rest). Keep `guards` and `httpApi.test.ts`.
+- Move the useful `src/shared/api/*.test.ts` assertions to the C# suite where they are not already there (list them first; delete the rest). Keep `guards` and `httpApi.test.ts`.
 - `wipeAll`/`resetDemoData` lose the IndexedDB parts.
 
-Done when: `src/api` has `http.ts`, `httpApi.ts`, `types.ts`, `guards.ts`, `errors.ts` and the type files only, and nothing imports `idbStore`.
+Done when: `src/shared/api` has `http.ts`, `httpApi.ts`, `types.ts`, `guards.ts`, `errors.ts` and the type files only, and nothing imports `idbStore`.
 
 ### Phase 3: Authored data comes from the server
 
@@ -116,7 +116,7 @@ Parity tests (`catalogueParity.test.ts` and hand-kept hashes) are deleted as eac
 ### Phase 4: Simulations move behind the server, and the client stops simulating first
 
 - New providers with simulated implementations and routes: `IEmbarkQueue` (arrival-window queues and welcome forecast), `ISailingQuality` (dream/Decide notes), `ICabinGuide` (heading, sun side, scoring and compare, so `chooseCabins` and `compareMatrix` run on the server), `IServiceStatus` (health of the services, no longer a function of demo scenarios on the client), `IFriendReply` (memory-book replies, only after the consent decision on contacts), `IDisruptionContent` (hub and guides).
-- `src/feeds/feed.ts` changes from "local figure first, server second" to **server only**, with the cached last answer (and "loading" otherwise). The client copies of `pulse`, `portCrowd`, `sky`, `storm`, `fares`, `flight`, `route`, `onboard` simulation functions are deleted, along with the client side of every hash. The fixed-seed formulas stay in C#.
+- `src/shared/feeds/feed.ts` changes from "local figure first, server second" to **server only**, with the cached last answer (and "loading" otherwise). The client copies of `pulse`, `portCrowd`, `sky`, `storm`, `fares`, `flight`, `route`, `onboard` simulation functions are deleted, along with the client side of every hash. The fixed-seed formulas stay in C#.
 - `AskScreen`'s local `ask()` and `domain/assistant.ts` go; the screen uses the server concierge (`/me/concierge`) with its scripted fallback. `ai/scripted.ts`, `ai/tools.ts` and `ai/guard.ts` on the client go with it (the guard already runs on the server).
 - Unify weather: `IWeatherService.Climate` and `Today` both call the `FeedRules` model so packing, the brief and `/feeds/sky` agree; then one real provider replaces all of them.
 - Autopilot's week optimiser and scripted openings: decide whether `optimiseWeek` moves to `POST /me/autopilot/plan` (recommended; it reads catalogues, programme, dining and the guest's plan, all server data, and its accepted changes already reach the programme).
@@ -171,13 +171,13 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule: no `dotnet` c
 
 - **Server:** `GET /me/context` (`Services/ContextService.cs`, DTOs in `JourneyContracts.cs`, route in `AuthEndpoints.cs`) answers `{ person, party, booking, sailingId, phoneZone, nowMs, isDemo }`. The current trip is the soonest confirmed, non-agent booking that has not finished (the rule `TripService` uses); `nowMs` goes through `IUserClock`, so a demo account's demo offset applies and a real account gets real time. Demo state gains `SailingId` and `PhoneZone` (`demo.DemoState` add-column lines in `db/01-schema.sql`, `DemoStateDto`, `DemoStateRow`, `DapperDemoStore`, `DemoRules.Problem` with `badSailing` and `badZone`). Data model section 6.7 describes both. Tests written, not run: `ContextTests.cs`, `DemoTests.TheSailingAndPhoneZoneAreCheckedAndKept`, the route in `SwaggerCoverageTests`.
 - **Client:**
-  - `src/account/context.ts` (framework-free): the context store (`normalizeContext`, `setContext`, `refreshContext`), `serverNow()` (this device's clock plus the offset measured at the middle of the request), `followsServer()` (true for a real account from sign-in, before the answer arrives), `personFrom`, `personFirstName`, `partyPeople`. `src/account/sailing.ts`: `sailingFor` (a real account's trip, else the next sailing that has not left; a demo account's chosen sailing).
+  - `src/features/account/logic/context.ts` (framework-free): the context store (`normalizeContext`, `setContext`, `refreshContext`), `serverNow()` (this device's clock plus the offset measured at the middle of the request), `followsServer()` (true for a real account from sign-in, before the answer arrives), `personFrom`, `personFirstName`, `partyPeople`. `src/features/account/logic/sailing.ts`: `sailingFor` (a real account's trip, else the next sailing that has not left; a demo account's chosen sailing).
   - `runtime/index.ts` loads the context at sign-in, when the tab is shown and when the connection returns, clears it at sign-out, and drops an answer that arrives after the account changed.
   - `demoNow()` is the server's time for a real account and the demo clock only for a demo account (or mock mode). `currentStage`, `jumpToStage` use `sailingFor`.
   - `usePersona()` returns a `Person` (new type in `personas.ts`: `Persona` with `id` and `booker` as strings): the demo persona, or for a real account the person from the context. `useSailing()` and `useNow()` follow the rules above. `useMine` now reloads when a real account changes (before, a real account had no persona and its owner key was always empty).
   - 13 screens and `people.ts` no longer look names up in the persona table (`personFirstName`); 9 screens and hooks take the party from `partyPeople` (the server's party for a real account). `ProfileScreen` accepts only people on the trip. The API types for `account.profile`, `account.saveProfile`, `plan.excursions.addToCart` and `aboard.lastMinute.book` take plain string ids.
   - Demo controls: `DemoPayload` and the server answer carry `sailingId` and `phoneZone`; a new device takes the account's sailing and zone with its clock and scenarios.
-- **Verified:** `npm run test` (1844 passed, including `src/account/context.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`, `npm run db:seed:check`.
+- **Verified:** `npm run test` (1844 passed, including `src/features/account/logic/context.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`, `npm run db:seed:check`.
 - **Not done:**
   - **`PersonaId` is still in the API type files** (return types and most parameters); the wire already carries guids for real people, so those types are wrong for them. They go with the mock layer in Phase 2.
   - **Persona-only code paths remain:** `ai/tools.ts` (`partyOf`), `AtSeaScreen`'s device-signed link branch and the mock `*Mock.ts` files. All go in Phases 2 and 4.
@@ -190,12 +190,12 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule: no `dotnet` c
 
 Built 2026-11-02. **Server C# not compiled or run** (project rule); the new route is registered in `SwaggerCoverageTests` but no test exercises it.
 
-- **Removed:** all `src/api/*Mock.ts`, `mock.ts`, `rng.ts`, `auth/mockProvider.ts`, `data/store.ts`, `idbStore.ts`, `backup.ts`, `errors.ts`, the network/latency simulation in the runtime, `withHttpGroups` (now `toApi`, which joins the REST groups; the groups already covered all of `Api`), `usesRealAuth` and every `if (!rest)` branch, the `fake-indexeddb` dev dependency, and the demo screen's persona picker and pretend-network card. `Export my data` is gone from the device settings (nothing is kept there to export). `sendConcierge`, `staffRequest`, `familyHome` and `fetchRates` are no longer nullable.
+- **Removed:** all `src/shared/api/*Mock.ts`, `mock.ts`, `rng.ts`, `auth/mockProvider.ts`, `data/store.ts`, `idbStore.ts`, `backup.ts`, `errors.ts`, the network/latency simulation in the runtime, `withHttpGroups` (now `toApi`, which joins the REST groups; the groups already covered all of `Api`), `usesRealAuth` and every `if (!rest)` branch, the `fake-indexeddb` dev dependency, and the demo screen's persona picker and pretend-network card. `Export my data` is gone from the device settings (nothing is kept there to export). `sendConcierge`, `staffRequest`, `familyHome` and `fetchRates` are no longer nullable.
 - **One mode:** `API_URL` defaults to `/api/v1`; `startRuntime` restores the session and never signs in on its own. `data/sync.ts` (the cross-tab channel) stays for the session. `data/lifecycle.ts` now only clears this device's keys.
-- **Server:** `GET /auth/demo-accounts` (anonymous; 404 in production) lists the seeded demo accounts; the sign-in page shows them in non-production builds (`src/auth/demoAccounts.ts`). `IUserStore.ListDemoAsync`, `DemoAccountDto`; documented in data model 6.1.
-- **Tests:** deleted the eleven `src/api/*.test.ts` files that drove the mocks and the discover-API block in `domain/discover.test.ts`; `data.test.ts` keeps the reset/wipe and channel tests. **The assertions were not ported to C#** (the plan asked to list and move the useful ones); the rules they covered live in the server services, and the C# suite is the place to check them when the user next runs it. `guards`, `httpApi` and `bounded` tests stay.
+- **Server:** `GET /auth/demo-accounts` (anonymous; 404 in production) lists the seeded demo accounts; the sign-in page shows them in non-production builds (`src/shared/auth/demoAccounts.ts`). `IUserStore.ListDemoAsync`, `DemoAccountDto`; documented in data model 6.1.
+- **Tests:** deleted the eleven `src/shared/api/*.test.ts` files that drove the mocks and the discover-API block in `domain/discover.test.ts`; `data.test.ts` keeps the reset/wipe and channel tests. **The assertions were not ported to C#** (the plan asked to list and move the useful ones); the rules they covered live in the server services, and the C# suite is the place to check them when the user next runs it. `guards`, `httpApi` and `bounded` tests stay.
 - **Verified:** `npm run test` (1519 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`.
-- **Not done (Phase 4 or later):** the device-signed family link branch (`FamilyLinkScreen`, `AtSeaScreen` with `issueLink`/`verifyLink`), the pretend callback queue in `DisruptionHubScreen`, the local feed simulations, `PersonaId` in the API type files and `domain/personas` use in domain code, and the `src/api/personaIds.ts` guid mapping. Stale "mock mode" comments remain in `feeds/*`, `sync/*` and `ai/concierge.ts`.
+- **Not done (Phase 4 or later):** the device-signed family link branch (`FamilyLinkScreen`, `AtSeaScreen` with `issueLink`/`verifyLink`), the pretend callback queue in `DisruptionHubScreen`, the local feed simulations, `PersonaId` in the API type files and `domain/personas` use in domain code, and the `src/shared/api/personaIds.ts` guid mapping. Stale "mock mode" comments remain in `feeds/*`, `sync/*` and `ai/concierge.ts`.
 
 ## Phase 3 record
 
@@ -243,11 +243,11 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new rout
 
 **Server C# not touched** (no change needed: every route already existed). Only the front end changed in this slice.
 
-- **One feed pattern, server only.** `src/feeds/feed.ts` `createFeed(key, normalize, kind?)` has no local value. `now()` is this session's server answer, else the last answer kept on the device (`princess:cache:feed-<kind>:<key>`, only when `kind` is given; feeds keyed by the minute are not kept), else `null`. `load()` asks once per key and session; a failure or a malformed answer leaves what is known. `forget()` (sign-out) clears memory and the kept copies.
+- **One feed pattern, server only.** `src/shared/feeds/feed.ts` `createFeed(key, normalize, kind?)` has no local value. `now()` is this session's server answer, else the last answer kept on the device (`princess:cache:feed-<kind>:<key>`, only when `kind` is given; feeds keyed by the minute are not kept), else `null`. `load()` asks once per key and session; a failure or a malformed answer leaves what is known. `forget()` (sign-out) clears memory and the kept copies.
 - **Converted:** `fares`, `flight`, `portCrowd`, `sky`, `route` (the five hand-written copies of the pattern) now use `createFeed` (`faresFeed`, `flightFeed`, `crowdFeed`, `skyFeed`, `conditionsFeed`); `skyNight`, `storm`, `onboard` (loungers, found, sightings, slot-watch opening) and `pulse` lost their local argument. Kept on device: fares, flight, crowd, sky, route, sky-night, storm, found, sightings.
 - **Deleted from the client:** `crowdFor`, `fareHistory`, `simWeather`, `conditionsFor`/`routeConditions`, `flightStatus`, `skyNight` (with `sunTimes`, `moonAt`, `POSITIONS`, the star table), `stormWatch` (with the monthly chances), `loungerOthers`, `FOUND`, `seenToday`, `simulatedOpening`, and their tests. `domain/sky.ts` and `domain/storm.ts` now hold only the answer shapes (and `bestSpot`). `watchState`/`bookWatch` take the server's opening time as a required argument, `loungerBoard` and `matchFound` take the server's list.
 - **Screens** show a polite `FeedWaiting` banner (`feed.waiting`) in place of figures that have not arrived: sky guide, storm watch, port crowd card, route conditions card, price watch, lounger board, lost and found, sightings, Autopilot's sky line. The briefing leaves out the weather and sunset lines, gentle mode skips its heat and sun notes, the nudge cards skip the storm nudge, and Getting There adds no extra leave-earlier time until the answers arrive. The Port Day Pilot works out its plan with a middling crowd until the crowd arrives (a planning default, not a figure shown).
-- **Audit gate:** `src/feeds/feed.ts` is listed as a cache helper allowed to use `localStorage`.
+- **Audit gate:** `src/shared/feeds/feed.ts` is listed as a cache helper allowed to use `localStorage`.
 - **Verified:** `npm run test` (1572 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done in Phase 4 yet:**
   - **Pulse** was finished in Slice 3.
@@ -343,7 +343,7 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new test
 
 ## Phase 7 record
 
-Built 2026-11-02 as a ratchet, **not** the empty gate the plan described. `src/auditGate.test.ts` now also fails on: any IndexedDB, `idbStore`, `*Mock` or `mockProvider` reference; `VITE_API_URL` read anywhere but `src/runtime/index.ts`; a new file importing the persona table or ids (44 known); a new file naming a `'sim'` source (15 known). The two older lists (101 screens importing authored modules, 3 screens using `localStorage`) are unchanged.
+Built 2026-11-02 as a ratchet, **not** the empty gate the plan described. `src/auditGate.test.ts` now also fails on: any IndexedDB, `idbStore`, `*Mock` or `mockProvider` reference; `VITE_API_URL` read anywhere but `src/app/runtime/index.ts`; a new file importing the persona table or ids (44 known); a new file naming a `'sim'` source (15 known). The two older lists (101 screens importing authored modules, 3 screens using `localStorage`) are unchanged.
 
 - **Why not empty:** the catalogue modules (`sailings`, `pricing`, `excursions`, `dining`, `ports` and so on) still hold authored first-paint copies (kept deliberately in Phase 3), so 101 screens import them for display and formatting. Emptying that list means deleting those copies and every screen waiting on the served table. The persona table is typed into 44 files (`PersonaId`).
 - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`, `npm run db:seed:check`.

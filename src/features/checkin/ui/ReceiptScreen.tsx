@@ -1,0 +1,72 @@
+import { Link } from 'react-router'
+import type { ReceiptItem } from '../../../shared/api/types'
+import { asReceiptView } from '../../../shared/api/guards'
+import { api } from '../../../app/runtime'
+import { useNow, usePersona } from '../../../shared/hooks/useDemo'
+import { useSavedCopy } from '../../../shared/hooks/useSavedCopy'
+import { t, th, type StringKey } from '../../../shared/i18n'
+import { Banner } from '../../../shared/ui/Banner'
+import { LinkButton } from '../../../shared/ui/Button'
+import { Card } from '../../../shared/ui/Card'
+import { LifecycleBadge, StatusBadge } from '../../../shared/ui/StatusBadge'
+import { SyncChip } from '../../../shared/ui/SyncChip'
+import { LoadError } from '../../discover/ui/parts'
+import { formatDateTime } from '../../account/ui/format'
+import { receiptState, type StepId } from '../../../domain/checkin'
+
+const FIX: Record<StepId, string> = {
+  confirm: '/me/profile', document: '/home/check-in/document', photo: '/home/check-in/photo', emergency: '/home/check-in/emergency',
+  payment: '/home/check-in/payment', contract: '/home/check-in/contract', health: '/home/check-in/health', arrival: '/home/check-in/arrival',
+}
+
+/** "What we have on file" (CHK-13): each item saved for each guest, when, and how to correct it. A copy is kept on the phone, so it opens offline. */
+export function ReceiptScreen() {
+  const me = usePersona()
+  const receipt = useSavedCopy('receipt', me?.booker ?? 'none', () => api.checkin.receipt(), asReceiptView, [me?.id])
+  const now = useNow()
+  return (
+    <div className="page">
+      <p>{t('receipt.intro')}</p>
+      {receipt.data ? (
+        <>
+          {receipt.at !== null && <SyncChip updated={new Date(receipt.at)} now={new Date(now)} state={receipt.fromCopy ? 'offline' : 'live'} timeZone="America/New_York" />}
+          {receipt.fromCopy && <Banner kind="offline" title={t('receipt.offline')}><p>{t('receipt.offlineBody')}</p></Banner>}
+          {!receipt.data.complete && <Banner kind="warning" title={t('receipt.notComplete')} action={<LinkButton to="/home/check-in" variant="secondary">{t('route.checkin')}</LinkButton>} />}
+          <p className="muted">{t('trip.booking', { number: receipt.data.number })}{receipt.data.finishedAt ? ` · ${t('checkin.finishedAt', { when: formatDateTime(receipt.data.finishedAt) })}` : ''}</p>
+          {receipt.data.guests.map((g) => (
+            <Card key={g.id} ticket>
+              <h2 className="card__title">{g.name}</h2>
+              <Items items={g.items} guest={g.id} />
+            </Card>
+          ))}
+          <Card ticket>
+            <h2 className="card__title">{th('receipt.booking')}</h2>
+            <Items items={receipt.data.booking} />
+          </Card>
+          <p className="muted">{t('receipt.states')}</p>
+          <p className="muted">{t('receipt.safe')}</p>
+        </>
+      ) : receipt.status === 'error' ? <LoadError retry={receipt.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>}
+      <p className="book-nav"><Link to="/home/check-in">{t('route.checkin')}</Link></p>
+    </div>
+  )
+}
+
+function Items({ items, guest }: { items: ReceiptItem[]; guest?: string }) {
+  return (
+    <ul className="plain-list">
+      {items.map((i) => (
+        <li key={i.step}>
+          <span>
+            <strong>{t(`checkin.step.${i.step}` as StringKey)}</strong>
+            <br /><span className="muted">{i.savedAt === null ? t('receipt.notSaved') : `${i.detail ? `${i.detail} · ` : ''}${t('receipt.savedAt', { when: formatDateTime(i.savedAt) })}`}</span>
+          </span>
+          <span>
+            {i.savedAt === null ? <StatusBadge kind="changed" label={t('receipt.notSavedBadge')} /> : <LifecycleBadge state={receiptState(i)} />}{' '}
+            <Link to={`${FIX[i.step]}${guest && i.step !== 'confirm' ? `?guest=${guest}` : ''}`}>{i.savedAt === null ? t('receipt.add') : t('receipt.correct')}<span className="visually-hidden"> {t(`checkin.step.${i.step}` as StringKey)}</span></Link>
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
