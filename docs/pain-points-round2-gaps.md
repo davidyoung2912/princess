@@ -49,3 +49,15 @@ Open:
 - The "not available yet" cases (a pass before check-in) are listed as failures rather than "will download when ready"; a scheduled re-try when the item opens is not built.
 - Copies expire by kind (programme in 3 days). A download well before sailing therefore needs refreshing close to it; the card says copies show their age but does not remind.
 - Not walked in airplane mode on a phone.
+
+## R5 One party hub
+
+Built: the Travel party screen (`/plan/party`) now opens with `PartyHub`: the people you are connected with (with a link to each chat), your groups, one invitation sheet that makes a QR code and link for "connect with me" or for any group you belong to (copy, the phone's share sheet where there is one, and email), and plain words on what connecting lets people do. A "Your travel party" link sits at the top of Plan and of Chat, so Party is no longer buried. The invite uses chat's existing hand-over codes (15 minutes, 1 hour or a day, stoppable), so there is still one list of people.
+
+Open:
+- **Per-person permissions** (in my party / sees my plans / can message / sees my location, each separate, hide from one person) are not built. The model today is a connection (messaging) plus what you choose to send; a per-person scope needs a server table and endpoints. The hub states what connecting allows in words only.
+- **Group dining/excursions without booking numbers** is not built. A reservation can name only the guests on the booking; adding a person from another cabin needs the booking system's own permission model, which is outside the prototype's backend. Today a dinner is shared into chat (`SendToChat` on each booking) and a poll can decide it, but a decided poll does not create a booking request.
+- The older email-invite and shared-notes parts of the Party screen are still local-only records for the booking (they send nothing). They should be removed or wired to the hub's invitation codes; kept for now because existing tests and the child rules rely on them.
+- "Pending identity verification" is not a separate invitation state in the hub; waiting invitations are managed in Chat > People.
+- The hub is hidden to nobody: before a booking is confirmed the chat calls may refuse and the cards show a load error rather than an explanation.
+- Not walked on a phone.

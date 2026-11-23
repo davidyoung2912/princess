@@ -53,6 +53,7 @@ export function ChatScreen() {
     <div className="page">
       {params.get('gone') === '1' && <Banner kind="info" title={t('chat.goneTitle')}><p>{t('chat.goneBody')}</p></Banner>}
       {!service && <BeforeBookingNote />}
+      {people && <p><Link to="/plan/party">{t('party.hub.link')}</Link></p>}
       {people && <RequestsBanner onOpen={() => { void nav('/chat/people?invitations=1') }} />}
       {people && <SentBanner onOpen={() => { void nav('/chat/people?invitations=1') }} />}
       <Conversations />

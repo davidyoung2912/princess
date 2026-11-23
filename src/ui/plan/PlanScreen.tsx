@@ -32,6 +32,7 @@ export function PlanScreen() {
     <div className="page">
       <KeepsakeSheet title={t('route.plan')} />
       <StanleyChanges screen="plan" />
+      <p><Link to="/plan/party">{t('party.hub.link')}</Link></p>
       {aboard ? <Planner today={aboard} /> : <p>{t('plan.intro')}</p>}
 
       <Load state={list}>

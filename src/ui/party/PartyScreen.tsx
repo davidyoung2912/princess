@@ -11,6 +11,7 @@ import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
 import { Load } from '../account/parts'
 import { firstName } from '../plan/people'
+import { PartyHub } from './PartyHub'
 
 const when = (at: number) => new Date(at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
@@ -39,6 +40,7 @@ export function PartyScreen() {
 
   return (
     <div className="page">
+      <PartyHub />
       <p>{t('party.shared.intro')}</p>
       <SharingNote field="plans" />
       {child && <p className="muted">{t('party.child')}</p>}
