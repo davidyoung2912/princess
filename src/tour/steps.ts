@@ -126,6 +126,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'chatGroups', target: 'chat-groups', side: 'bottom', icon: 'chat', page: true },
   { id: 'chatThread', target: 'chat-thread', side: 'bottom', icon: 'chat', page: true },
   { id: 'chatComposer', target: 'chat-composer', side: 'top', icon: 'chat', page: true },
+  { id: 'chatPersonal', target: 'chat-personal', side: 'bottom', icon: 'people', page: true },
   { id: 'chatNewGroup', target: 'chat-newgroup', side: 'bottom', icon: 'people', page: true },
 ]
 

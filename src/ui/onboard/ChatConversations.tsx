@@ -58,6 +58,7 @@ import { ClearDraft } from '../ClearDraft'
 import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 import { DeleteChat, GroupPage, NewGroupPage } from './ChatGroups'
+import { NewPersonalChatPage } from './ChatPersonal'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { GetPersonButton, RecapCard } from './ChatRelay'
@@ -95,7 +96,8 @@ export function ConversationPage() {
   const { id = '' } = useParams()
   const [params] = useSearchParams()
   const nav = useNavigate()
-  // `/chat/c/new` is the New Chat Group page.
+  // `/chat/c/new` is the New Chat Group page, and `/chat/c/personal` the New Personal Chat page.
+  if (id === 'personal') return <div className="page"><NewPersonalChatPage /></div>
   if (id === 'new') return <div className="page"><NewGroupPage onCreated={() => { void nav('/chat') }} /></div>
   const open = conversationFromSearch(`c=${encodeURIComponent(id)}`)
   if (!open) return <Navigate to="/chat" replace />
@@ -173,6 +175,7 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
         )
       })())}
       {rows && <AwayPeople rows={rows} onChange={(id, on) => setRows((cur) => (cur ? cur.map((c) => (c.id === id ? { ...c, notifyAway: on } : c)) : cur))} />}
+      <p><Button variant="secondary" onClick={() => { void nav('/chat/c/personal') }}>{t('cpersonal.button')}</Button></p>
       <p><Button variant="secondary" onClick={() => { void nav('/chat/c/new') }}>{t('cgroup.new')}</Button></p>
       <DoNotDisturb />
     </section>
