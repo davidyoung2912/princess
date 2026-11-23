@@ -14,6 +14,20 @@ public class ChatBundleRulesTests
     }
 
     [Fact]
+    public void AnEventRefNamesTheEventTypeAndTheBundleTypeFollowsTheEventId()
+    {
+        Assert.Equal(ChatBundleRules.Event, ChatBundleRules.TypeOfRef("event:trivia~1:3"));
+        Assert.Equal("trivia~1:3", ChatBundleRules.PlanRefOf("event:trivia~1:3"));
+        Assert.Null(ChatBundleRules.PlanRefOf("event:"));
+        Assert.Null(ChatBundleRules.PlanRefOf("venue:x"));
+        Assert.Equal(ChatBundleRules.Excursion, ChatBundleRules.TypeOfEvent(ChatPlanningRules.TourEventId("x1")));
+        Assert.Equal(ChatBundleRules.Dinner, ChatBundleRules.TypeOfEvent(ChatPlanningRules.DinnerEventId("sabatini", "19:00")));
+        Assert.Equal(ChatBundleRules.Event, ChatBundleRules.TypeOfEvent("trivia~1"));
+        Assert.True(ChatBundleRules.IsPlannable(ChatBundleRules.Dinner));
+        Assert.False(ChatBundleRules.IsPlannable(ChatBundleRules.Venue));
+    }
+
+    [Fact]
     public void ABundleCarriesNoMoneyOrIdentityAndRoundTrips()
     {
         var card = new ChatCard(ChatCardRules.Venue, "Crown Grill", "Steakhouse", Place: "Deck 7", Path: "/dining-today/crown-grill");

@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import { MAX_AGE, readUrlFilter } from '../../../domain/explorer/urlFilter'
 import { tourKey } from '../../../domain/explorer/shortlist'
 import { SaveButton } from '../SaveButton'
+import { tourEventId } from '../../../domain/chatBundles'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../../api/types'
 import { formatDate, formatTime } from '../../../domain/cruise'
 import { bookingsOnDay, planKey, filterDayOffers, searchOffers, nearestTourDay, NO_DAY_FILTER, offersOnDay, type DayFilter } from '../../../domain/explorer/excursionDay'
@@ -33,7 +34,7 @@ import { TourFit } from './TourFit'
 import { BookingCard } from '../BookingCard'
 import { ReservationScope } from '../ReservationScope'
 import { BackLink } from '../../onboard/common'
-import { SendToChat } from '../../onboard/SendToChat'
+import { SendEventToChat, SendToChat } from '../../onboard/SendToChat'
 import { names } from '../../plan/people'
 import { PlanError, ReadOnly } from '../../plan/common'
 import { CreditBanner, ExcursionCart } from '../../plan/ExcursionCart'
@@ -290,6 +291,7 @@ function OfferCard({ offer, view, day, busy, onAdd, concerns }: { offer: Excursi
         )}
         <PlanToggle offer={offer} view={view} />
         <SaveButton itemKey={tourKey(x.id)} title={x.name} />
+        <SendEventToChat planRef={`${tourEventId(x.id)}:${day}`} title={x.name} />
       </div>
     </li>
   )

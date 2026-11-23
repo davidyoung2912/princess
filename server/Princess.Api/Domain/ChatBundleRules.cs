@@ -21,8 +21,25 @@ public static class ChatBundleRules
 
     public const string Venue = ChatCardRules.Venue, Menu = ChatCardRules.Menu;
 
-    /// <summary>The types the server builds today. More arrive one phase at a time.</summary>
-    public static readonly string[] Types = [Venue, Menu];
+    /// <summary>
+    /// Phase B2: things with a day and a time. Their ref is <c>event:&lt;eventId&gt;:&lt;day&gt;</c> (the same <c>eventId:day</c> a plan uses), and the type the bundle carries is <c>excursion</c> for a tour, <c>dinner</c> for a dinner
+    /// and <c>event</c> for anything else on the programme or in an Explorer (a show, a class, an activity).
+    /// </summary>
+    public const string Event = "event", Excursion = "excursion", Dinner = "dinner";
+
+    /// <summary>The types a ref can name today (the prefix of the ref). More arrive one phase at a time.</summary>
+    public static readonly string[] Types = [Venue, Menu, Event];
+
+    /// <summary>The types a bundle can carry that have a day and a time: they can be proposed (Going, Maybe, No) and added to a day.</summary>
+    public static readonly string[] Plannable = [Event, Excursion, Dinner];
+
+    public static bool IsPlannable(string? type) => type is not null && Plannable.Contains(type);
+
+    /// <summary>The type of a bundle made from an event id: a tour, a dinner or an ordinary event.</summary>
+    public static string TypeOfEvent(string eventId) => ChatPlanningRules.ParseTourEvent(eventId) is not null ? Excursion : ChatPlanningRules.ParseDinnerEvent(eventId) is not null ? Dinner : Event;
+
+    /// <summary>The <c>eventId:day</c> part of an <c>event:</c> ref, or null when the ref is not one.</summary>
+    public static string? PlanRefOf(string? shareRef) => shareRef is { } r && r.StartsWith("event:", StringComparison.Ordinal) && r.Length > 6 ? r[6..] : null;
 
     public static bool IsKnownType(string? type) => type is not null && Types.Contains(type);
 

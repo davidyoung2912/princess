@@ -29,7 +29,7 @@ public static class ShareCodeRules
 
     public static bool PlausibleCode(string? code) => code is { Length: >= 4 and <= 64 } && code.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-');
 
-    private static bool Plain(string? s) => s is { Length: > 0 and <= 80 } && s.All(c => char.IsAsciiLetterOrDigit(c) || c is ':' or '_' or '.' or '-');
+    private static bool Plain(string? s) => s is { Length: > 0 and <= 80 } && s.All(c => char.IsAsciiLetterOrDigit(c) || c is ':' or '_' or '.' or '-' or '~');
 
     /// <summary>The share ref a direct code (<c>t</c> and <c>r</c>) names, or null when the type is not one the server builds or either part holds anything but plain characters.</summary>
     public static string? DirectRef(string? type, string? r) => Plain(type) && Plain(r) && ChatBundleRules.IsKnownType(type) ? $"{type}:{r}" : null;

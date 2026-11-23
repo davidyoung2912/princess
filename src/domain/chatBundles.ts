@@ -12,7 +12,9 @@ export interface BundleType {
   /** The word above the card ("Place", "Menu"). */
   label: StringKey
   /** The screen reader's name for the chat icon on this kind of thing. */
-  family: 'venue' | 'menu'
+  family: 'venue' | 'menu' | 'event' | 'excursion' | 'dinner'
+  /** Phase B2: it has a day and a time, so it can be asked about (Going, Maybe, No) as well as just sent. */
+  plannable?: boolean
   /** How a code for it is made: `direct` for public catalogue data (the address holds the ref, no signal needed), `handoff` for anything personal (a short code the server keeps for a short time). */
   qr: 'direct' | 'handoff'
 }
@@ -21,7 +23,26 @@ export interface BundleType {
 export const BUNDLE_TYPES: Readonly<Record<string, BundleType>> = {
   venue: { label: 'bundle.type.venue', family: 'venue', qr: 'direct' },
   menu: { label: 'bundle.type.menu', family: 'menu', qr: 'direct' },
+  // `event` is also the type of a ref for anything with a day and time; the bundle itself carries `excursion` for a tour and `dinner` for a dinner.
+  event: { label: 'bundle.type.event', family: 'event', qr: 'direct', plannable: true },
+  excursion: { label: 'bundle.type.excursion', family: 'excursion', qr: 'direct', plannable: true },
+  dinner: { label: 'bundle.type.dinner', family: 'dinner', qr: 'direct', plannable: true },
 }
+
+/** The types a ref can start with. A booked excursion or dinner (`excursion:<id>`, `dining:<id>`) is an older card and is not one, though a bundle may carry the type `excursion` (made from an `event:` ref). */
+export const REF_TYPES: readonly string[] = ['venue', 'menu', 'event']
+
+/** The ref of a thing with a day and a time (`event:<eventId>:<day>`): the same `eventId:day` a plan uses, so it can also be sent as a plan. */
+export const eventRef = (planRef: string): string => `event:${planRef}`
+
+/** The plan ref (`eventId:day`) inside an `event:` ref, or null for any other ref. */
+export const planRefOf = (shareRef: string): string | null => (shareRef.startsWith('event:') && shareRef.length > 6 ? shareRef.slice(6) : null)
+
+/** The event id of an excursion in a plan ref. */
+export const tourEventId = (excursionId: string): string => `tour~${excursionId}`
+
+/** Whether a bundle has a day and a time and can be asked about (a type in the registry that is plannable, with a day). */
+export const isPlannable = (b: Pick<ChatBundle, 'type' | 'day'>): boolean => BUNDLE_TYPES[b.type]?.plannable === true && b.day !== undefined
 
 const MAX_TEXT = 200
 
@@ -62,7 +83,7 @@ export function bundleSummary(b: ChatBundle, clock: (time: string) => string): s
 /** The bundle a shared thing becomes: venue and menu refs are sent as bundles, every older ref (an excursion, a dinner, a plan) keeps its own kind so the old cards are untouched. */
 export function shareInput(shareRef: string, kind: 'card' | 'plan', note?: string): { kind: 'bundle' | 'card' | 'plan'; shareRef: string; note?: string } {
   const type = shareRef.split(':')[0] ?? ''
-  if (kind === 'card' && type in BUNDLE_TYPES) return { kind: 'bundle', shareRef, ...(note ? { note } : {}) }
+  if (kind === 'card' && REF_TYPES.includes(type)) return { kind: 'bundle', shareRef, ...(note ? { note } : {}) }
   return kind === 'plan' ? { kind, shareRef, ...(note ? { note } : {}) } : { kind, shareRef }
 }
 

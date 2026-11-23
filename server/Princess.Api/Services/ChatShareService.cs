@@ -180,7 +180,9 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         var type = ChatBundleRules.TypeOfRef(shareRef) ?? throw ApiException.Invalid("shareRef");
         var card = type == ChatBundleRules.Venue && ChatCardRules.ParseVenueRef(shareRef) is { } venueId ? await VenueCardAsync(actor, venueId, ct)
             : type == ChatBundleRules.Menu && ChatCardRules.ParseMenuRef(shareRef) is { } menu ? await MenuCardAsync(actor, menu.VenueId, menu.Meal, ct)
+            : type == ChatBundleRules.Event && ChatBundleRules.PlanRefOf(shareRef) is { } planRef && ChatPlanningRules.ParsePlanRef(planRef) is not null ? await PlanAsync(actor, planRef, null, ct)
             : throw ApiException.Invalid("shareRef");
+        if (type == ChatBundleRules.Event) type = ChatBundleRules.TypeOfEvent(ChatPlanningRules.ParsePlanRef(ChatBundleRules.PlanRefOf(shareRef))!.Value.EventId);
         return ChatBundleRules.FromCard(type, shareRef!, card, note);
     }
 

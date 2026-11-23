@@ -1,5 +1,5 @@
 /** Hand-over by QR code (docs/chat-bundles-plan.md, 5.6, phase Q1). Framework-free: what a code holds, how a scanned address is read, and the lives a handoff code can have. */
-import { BUNDLE_TYPES } from './chatBundles'
+import { BUNDLE_TYPES, REF_TYPES } from './chatBundles'
 
 /** A direct code holds the public item's type and ref in the address itself (no server call to make); a handoff code holds only a short code. */
 export type ShareTarget = { kind: 'direct'; type: string; ref: string } | { kind: 'code'; code: string }
@@ -22,7 +22,7 @@ export const isIntroRef = (shareRef: string): boolean => shareRef === CONNECT_RE
 export const qrKindOf = (shareRef: string): 'direct' | 'handoff' | null => {
   if (isIntroRef(shareRef)) return 'handoff'
   const parts = splitRef(shareRef)
-  return parts && parts.type in BUNDLE_TYPES ? BUNDLE_TYPES[parts.type]!.qr : null
+  return parts && REF_TYPES.includes(parts.type) ? BUNDLE_TYPES[parts.type]!.qr : null
 }
 
 /** The address a direct code holds. */

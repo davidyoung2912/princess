@@ -23,7 +23,7 @@ import { staffedText, windowsText } from './text'
 import { useVenuePins } from '../../hooks/useVenuePins'
 import { TimeOfDayIcon } from '../TimeOfDay'
 import { PinButton } from './Pins'
-import { SendToChat } from '../onboard/SendToChat'
+import { SendEventToChat, SendToChat } from '../onboard/SendToChat'
 import { eventKey } from '../../domain/explorer/shortlist'
 import { SaveButton } from './SaveButton'
 import { REMINDER_DEFAULT } from '../../domain/notifications'
@@ -149,7 +149,7 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
         {venue.events.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : shownEvents.length === 0 ? <p className="muted">{t('exp.venue.noEvents')}</p> : (
           <ul className="exp-events">
             {shownEvents.map((e) => (
-              <EventRow key={e.id} event={e} now={state.nowAt} share={e.status === 'cancelled' ? undefined : <><SaveButton itemKey={eventKey(venue.venue.shipId, e.id)} title={e.title} /><SendToChat kind="plan" shareRef={`${e.id}:${state.day}`} title={e.title} /></>}
+              <EventRow key={e.id} event={e} now={state.nowAt} share={e.status === 'cancelled' ? undefined : <><SaveButton itemKey={eventKey(venue.venue.shipId, e.id)} title={e.title} /><SendEventToChat planRef={`${e.id}:${state.day}`} title={e.title} /></>}
                 clash={clashesWith(e, [...taken, ...planned])}
                 plan={past || !explorerDay ? undefined : { planned: plan.planned.has(e.id), busy: plan.busy, onToggle: () => { void plan.toggle(e.id, e.title, !plan.planned.has(e.id)) }, reminder: plan.reminders[e.id] ?? REMINDER_DEFAULT, onReminder: (lead) => { void plan.setReminder(e.id, lead) } }} />
             ))}

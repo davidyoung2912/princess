@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLE_VERSION, bundleLink, bundleSummary, isKnownBundle, matchConversations, parseBundle, sendToMany, shareInput } from './chatBundles'
+import { BUNDLE_VERSION, bundleLink, bundleSummary, eventRef, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
 
 const venue = { type: 'venue', v: 1, title: 'Crown Grill', subtitle: 'Steakhouse', path: '/dining-today/crown-grill', place: 'Deck 7' }
 
@@ -71,5 +71,16 @@ describe('sendToMany', () => {
     const out = await sendToMany([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }], async (c) => { if (c.id === 'b') throw new Error('no'); sent.push(c.id) })
     expect(sent).toEqual(['a', 'c'])
     expect(out.map((o) => o.ok)).toEqual([true, false, true])
+  })
+
+  it('B2: an event, excursion or dinner is plannable; a booked excursion card is still its own kind', () => {
+    expect(isPlannable({ type: 'excursion', day: 3 })).toBe(true)
+    expect(isPlannable({ type: 'dinner' })).toBe(false)
+    expect(isPlannable({ type: 'venue', day: 3 })).toBe(false)
+    expect(shareInput('excursion:abc', 'card')).toEqual({ kind: 'card', shareRef: 'excursion:abc' })
+    expect(shareInput(eventRef('trivia:3'), 'card', 'hi')).toEqual({ kind: 'bundle', shareRef: 'event:trivia:3', note: 'hi' })
+    expect(planRefOf('event:tour~x1:3')).toBe('tour~x1:3')
+    expect(planRefOf('venue:x')).toBeNull()
+    expect(tourEventId('x1')).toBe('tour~x1')
   })
 })

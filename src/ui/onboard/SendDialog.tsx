@@ -17,6 +17,8 @@ export interface SendItem {
   subtitle?: string
   /** How it goes: the `kind` and `shareRef` the server rebuilds the card from. The note is added here when the kind takes one. */
   input: (note: string) => Parameters<typeof api.chatConversations.sendTyped>[1]
+  /** Phase B2: how it goes when the guest chooses to ask who is going (a plan for the same thing). Only a thing with a day and a time has it. */
+  ask?: (note: string) => Parameters<typeof api.chatConversations.sendTyped>[1]
   /** The ref the server rebuilds it from; when it names a type that has a code, the dialog offers Show QR code. */
   shareRef?: string
   /** Whether the kind carries a note (a bundle or a plan does; an older card does not). */
@@ -37,6 +39,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
   const [outcomes, setOutcomes] = useState<SendOutcome[]>([])
   const [needPick, setNeedPick] = useState(false)
   const [showCode, setShowCode] = useState(false)
+  const [how, setHow] = useState<'send' | 'ask'>('send')
   const ids = useId()
   useEffect(() => {
     let live = true
@@ -52,7 +55,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
     if (targets.length === 0) { setNeedPick(true); return }
     setBusy(true)
     const clean = item.takesNote ? cleanNote(note) : ''
-    const done = await sendToMany(targets, (c) => api.chatConversations.sendTyped(c.id, item.input(clean), newClientId()))
+    const done = await sendToMany(targets, (c) => api.chatConversations.sendTyped(c.id, (how === 'ask' && item.ask ? item.ask(clean) : item.input(clean)), newClientId()))
     setBusy(false)
     setOutcomes((cur) => [...cur.filter((o) => !done.some((d) => d.id === o.id)), ...done])
     setPicked(done.filter((d) => !d.ok).map((d) => d.id))
@@ -101,6 +104,14 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
               </ul>
             </fieldset>
             {needPick && <p id={`${ids}-pick`} role="alert" className="field__error">{t('senddlg.pickOne')}</p>}
+            {item.ask && (
+              <fieldset className="send-dialog__how">
+                <legend>{t('senddlg.how')}</legend>
+                <label className="send-dialog__row"><input type="radio" name={`${ids}-how`} checked={how === 'send'} onChange={() => setHow('send')} /><span>{t('senddlg.how.send')}</span></label>
+                <label className="send-dialog__row"><input type="radio" name={`${ids}-how`} checked={how === 'ask'} aria-describedby={`${ids}-how-hint`} onChange={() => setHow('ask')} /><span>{t('senddlg.how.ask')}</span></label>
+                <p id={`${ids}-how-hint`} className="muted">{t('senddlg.how.askHint')}</p>
+              </fieldset>
+            )}
             {item.takesNote && (
               <div className="field">
                 <label htmlFor={`${ids}-note`}>{t('senddlg.note')}</label>
