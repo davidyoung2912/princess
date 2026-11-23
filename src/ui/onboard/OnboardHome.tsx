@@ -24,6 +24,7 @@ import { HomeBudgetAlert } from './BudgetCard'
 import { UpdatesBanner } from './Updates'
 import { CelebrationDay, DressBadge, FavouritesTonight } from '../delights/SeaDelights'
 import { StanleyMoment } from '../ai/StanleyMoment'
+import { SendEventToChat, SendToChat } from './SendToChat'
 import { useClockMoment } from '../../hooks/useClockMoments'
 
 /** The contextual home on board (OB-01): where the ship is, the all-aboard card, what is on next, tonight's table and the muster drill. Works from the copy saved on the phone. */
@@ -80,7 +81,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
               {onNow.length === 0 && next.length === 0 ? <p className="muted">{t('onb.next.none')}</p> : (
                 <ul className="plain-bullets">
                   {onNow.slice(0, 3).map((e) => <li key={e.id}><strong>{t('onb.happening')}</strong> {e.title}</li>)}
-                  {next.slice(0, 3).map((e) => <li key={e.id}><strong>{shipTime(e.startAt)}</strong> {e.title}{mineNext.includes(e) ? ` (${t('onb.inMyPlan')})` : ''}</li>)}
+                  {next.slice(0, 3).map((e) => <li key={e.id}><strong>{shipTime(e.startAt)}</strong> {e.title}{mineNext.includes(e) ? ` (${t('onb.inMyPlan')})` : ''} <SendEventToChat planRef={`${e.id}:${day}`} title={e.title} /></li>)}
                 </ul>
               )}
               <p><Link to="/plan">{t('onb.next.all')}</Link></p>
@@ -96,7 +97,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
             <Card labelledBy="tonight-h">
               <h2 id="tonight-h" className="card__title">{th('onb.tonight')}</h2>
               {upcoming.length === 0 ? <p>{v.seating ? t('onb.tonight.fixed', { time: formatTime(v.seating) }) : t('onb.tonight.none')}</p> : (
-                <ul className="plain-bullets">{upcoming.map((r) => <li key={r.id}><Link to={`/plan/reservations/${r.id}`}>{venueById(r.venueId)?.name ?? r.venueId}, {r.time}</Link></li>)}</ul>
+                <ul className="plain-bullets">{upcoming.map((r) => <li key={r.id}><Link to={`/plan/reservations/${r.id}`}>{venueById(r.venueId)?.name ?? r.venueId}, {r.time}</Link> <SendToChat shareRef={`dining:${r.id}`} title={venueById(r.venueId)?.name ?? r.venueId} /></li>)}</ul>
               )}
               <p><Link to="/plan/reservations">{t('route.reservations')}</Link></p>
             </Card>

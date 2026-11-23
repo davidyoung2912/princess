@@ -306,6 +306,8 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 
 > **Built 2026-11-23, part 2 (small): recently sent to and release gates** (front end checked with test, lint, tsc and build; no server change). **Done:** the send dialog lists the chats last sent to first (`chatRecents.ts`, ids only, kept on this device in `data/recentSent.ts`); node gates that every bundle type has a label, family and code kind and every shareable game has an adapter. **Not done (B11 part 3):** naming the original sender of a forward (needs the server), chat icon on Home cards, explorer tiles and Stanley answers, thumbnails, state review, accessibility pass, docs.
 
+> **Built 2026-11-23, part 3 (small): chat icon on Home** (front end checked with test, lint, tsc and build; no server change). **Done:** the Home "what is on next" events and tonight's dining reservations carry the send-to-chat icon (an event as a bundle or a plan, a booking as a card; no price or booking number goes). **Not done (B11 part 4):** icon on explorer landing tiles and Stanley answers, naming the original sender of a forward (needs the server), thumbnails, state review, accessibility pass.
+
 ## 7. Risks
 
 - **Scope creep in B2 to B6.** Each planning object is built once, in a fixed order, and each phase is usable on its own.
