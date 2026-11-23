@@ -25,7 +25,7 @@ Status key: [ ] not started, [~] in progress, [x] done.
 | A | 4, 5, 6: venues, events, menus per ship | data audit, guard test, content fills | [x] |
 | B | 7: excursions per port | data audit, candidate catalogue, guard test (wiring open) | [~] |
 | C | 13: stats page integrity | audit, fixes | [x] |
-| D | 1: security | review, fixes | [ ] |
+| D | 1: security | review, fixes | [x] |
 | E | 2: performance | review, fixes | [ ] |
 | F | 3: code health (outside-reviewer view) | review, fixes, scorecard | [ ] |
 | G | 8, 9: pages per stage, journey guidance | review, new guidance | [ ] |
@@ -73,3 +73,19 @@ Exceptions:
 4. **"Earlier voyages on record", "Fares on earlier voyages" and "Your first voyage on record" are real but only for seeded guests**: nothing in the app writes `dbo.PastTrips` (read-only in `TripService`/`DapperFinishStore`), so they are zero for a real guest. Left as is (labelled "on record"); a guest-facing "add an earlier cruise" form would make them live. Listed under Phase G ideas.
 
 Smaller notes: audit-based counts (`logins`, `changes`, `bumps`) can under-count when the bounded audit queue drops its oldest rows under load (Phase 6 of the security and performance plan) and after the 60-day network-data blanking only IP and user agent are lost, not the rows; `questions`, `bangs`, `laughs` and similar chat stats are substring matches on message text (real, but a heuristic); client-tracked stats are per device batches, so a guest who clears browser data loses nothing already sent but loses the unsent minute. Server tests for these rules (`StatsRulesTests.cs`) cannot be run here (no `dotnet`); the new C# line is one `InlineData` for the `asks` key.
+
+### Phase D: security (step 1)
+
+This builds on `docs/security-performance-plan.md` (sign-in hardening, boarding-pass lookup, PII retention, rate limits, forwarded headers; all done). Re-checked from scratch, with the results below.
+
+**Held up (checked, no change needed):** `npm audit --omit=dev` finds 0 vulnerabilities; no secret in tracked files (`.env.production` holds only the public API address; the signing key and connection string are in user-secrets or environment); no `dangerouslySetInnerHTML`, `innerHTML`, `eval` or `new Function` in `src` (and a test keeps it so); secure by default on the server (a fallback authorization policy, `AllowAnonymous` only on 40-odd named endpoints, all stateless or behind the lookup limiter or the global per-address limit); every SQL statement takes values as parameters (the interpolated ones splice only constant column lists and two constant table names, `DapperStateStore`); guest uploads are sniffed by magic bytes, size-limited before they are read, and stripped of EXIF and comment blocks (`MediaRules`); the audit `Target` records route values only and skips secret-looking keys, so the chat socket's `?access_token=` never reaches the audit log; the access token lives in memory only; the page's CSP is injected at build (`script-src 'self'`, no `unsafe-inline` for scripts) and a test pins it; API security headers exist (`SecurityHeaders.cs` with its tests).
+
+**Fixed in this phase:** the static host sent no HTTP security headers at all. The build injects a CSP `<meta>`, which cannot carry `frame-ancestors`, HSTS, `X-Frame-Options`, `nosniff` or `Permissions-Policy`, and nothing in the repo set them (`docs/static-host-headers.md` described them, but there was no `vercel.json`, while `.env.production` says the front end is deployed on Vercel). Added `vercel.json` with those headers, the SPA fallback to `index.html`, a year of immutable cache for `/assets/*` and `no-cache` for the page, the service worker and the manifest; `src/security.test.ts` pins them.
+
+**Open, in priority order:**
+1. *Refresh token in web storage.* The 30-day single-use refresh token is in `sessionStorage` (per tab) or `localStorage` ("Remember me"), so an XSS bug would expose it. The strong CSP and the absence of HTML sinks make that unlikely, and rotation limits replay, but an `httpOnly` `SameSite` cookie is the better design. It needs a decision on hosting layout (the API is on a different site from the front end today: `princessvoyages.runasp.net`), CORS credentials and CSRF protection on `/auth/refresh`. Already recorded as "not done" in the earlier plan.
+2. *Logout does not revoke the access token* (15-minute window; documented earlier).
+3. *Per-process limiter state* (`PassLookupGuard` misses, the 30 s `UserCache`) is not shared between instances: fine on one instance, a gap on several.
+4. *No C# dependency audit was possible here* (no `dotnet`); run `dotnet list package --vulnerable --include-transitive` before release. The four direct packages are current-looking (Dapper 2.1.89, JwtBearer 9.0.22, SqlClient 7.1.1, Swashbuckle 10.3.1).
+5. *`security.txt` still has the placeholder contact* and `Security:Contact` is unset (carried from the earlier plan; needs the owner's real address).
+6. *Anonymous discover endpoints* (`/stanley/discover/*`) do CPU work from the catalogue with no model call; they are covered by the global per-address limit only. A tighter named limiter would be cheap.

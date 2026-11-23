@@ -48,6 +48,25 @@ describe('security guards', () => {
   })
 })
 
+describe('static host headers (docs/static-host-headers.md)', () => {
+  const config = JSON.parse(readFileSync('vercel.json', 'utf8')) as { headers: { source: string; headers: { key: string; value: string }[] }[] }
+  const all = new Map(config.headers.find((h) => h.source === '/(.*)')!.headers.map((h) => [h.key, h.value]))
+
+  it('sends the security headers the document lists on every response', () => {
+    expect(all.get('Strict-Transport-Security')).toMatch(/max-age=\d{8,}/)
+    expect(all.get('X-Frame-Options')).toBe('DENY')
+    expect(all.get('X-Content-Type-Options')).toBe('nosniff')
+    expect(all.get('Referrer-Policy')).toBe('no-referrer')
+    expect(all.get('Permissions-Policy')).toContain('microphone=()')
+  })
+
+  it('caches hashed assets for a year and never caches the page or the service worker', () => {
+    const rule = (source: string) => config.headers.find((h) => h.source === source)?.headers[0].value
+    expect(rule('/assets/(.*)')).toContain('immutable')
+    expect(rule('/(index.html|sw.js|registerSW.js|manifest.webmanifest)')).toBe('no-cache')
+  })
+})
+
 describe('responsible disclosure (SEC-10)', () => {
   const txt = readFileSync('public/.well-known/security.txt', 'utf8')
   it('has the fields RFC 9116 requires and a policy page that exists', () => {
