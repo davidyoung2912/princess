@@ -225,13 +225,15 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
             throw ApiException.Conflict("answered");
     }
 
-    /// <summary>Either person stops chatting. The other is not told who did: the person simply shows as no longer available.</summary>
+    /// <summary>Either person leaves a personal chat. The chat is deleted for both, and the other person's open app is told so it leaves their list.</summary>
     public async Task EndAsync(UserRecord actor, Guid id, CancellationToken ct)
     {
         var row = await store.GetAsync(id, ct) ?? throw ApiException.NotFound();
         if (actor.Id != row.RequesterId && actor.Id != row.TargetId) throw ApiException.NotFound();
         if (row.Status != ChatConnectionRules.Accepted) throw ApiException.Conflict("notConnected");
         if (!await store.EndAsync(row.Id, actor.Id, await clock.NowAsync(actor, ct), ct)) throw ApiException.Conflict("notConnected");
+        var otherId = actor.Id == row.RequesterId ? row.TargetId : row.RequesterId;
+        if (row.ConversationId is Guid conversationId) await notifier.PersonalChatEndedAsync(otherId, conversationId, ct);
     }
 
     // ---- shaping ----

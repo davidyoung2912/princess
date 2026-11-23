@@ -222,9 +222,18 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
     public async Task<bool> EndAsync(long id, long byUserId, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        return await c.ExecuteAsync(Sql.Cmd("""
-            UPDATE dbo.ChatConnections SET Status = 'ended', EndedByUserId = @byUserId, EndedAt = @now, UpdatedAt = @now WHERE Id = @id AND Status = 'accepted'
-            """, new { id, byUserId, now }, null, ct)) == 1;
+        await using var tx = await c.BeginTransactionAsync(ct);
+        var ended = (await c.QueryAsync<long?>(Sql.Cmd("""
+            UPDATE dbo.ChatConnections SET Status = 'ended', EndedByUserId = @byUserId, EndedAt = @now, UpdatedAt = @now
+            OUTPUT DELETED.GroupId
+            WHERE Id = @id AND Status = 'accepted'
+            """, new { id, byUserId, now }, tx, ct))).ToList();
+        if (ended.Count == 0) return false;
+        // A personal chat is permanent while both people are in it. When either leaves, the chat goes for both: pins have a plain link to the group so they go first, then the messages and members cascade.
+        if (ended[0] is long groupId)
+            await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatPins WHERE GroupId = @groupId; DELETE FROM dbo.ChatGroups WHERE Id = @groupId", new { groupId }, tx, ct));
+        await tx.CommitAsync(ct);
+        return true;
     }
 
     public async Task MarkAnswersSeenAsync(long userId, DateTime now, CancellationToken ct)

@@ -107,6 +107,12 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
         return Deliver(userId, kind, new PushNotice($"chat:{kind}:{conversationId:N}:{userId}", "chat", "chat", false, 60, "/chat", title, body, new() { ["conversation"] = conversationId.ToString("N") }, ChatConversationRules.NoticeTag(conversationId)), true, ct);
     }
 
+    /// <summary>
+    /// The other person left a personal chat, so it is gone for both. Told at once like a deleted group (an open app drops it from its list and closes the thread), with words that fit a chat between two people. Nothing of what was said is named.
+    /// </summary>
+    public Task PersonalChatEndedAsync(long userId, Guid conversationId, CancellationToken ct) =>
+        Deliver(userId, "chatDeleted", new PushNotice($"chat:chatDeleted:{conversationId:N}:{userId}", "chat", "chat", false, 60, "/chat", "A personal chat ended", "The other person left your personal chat, so it has been removed.", new() { ["conversation"] = conversationId.ToString("N") }, ChatConversationRules.NoticeTag(conversationId)), true, ct);
+
     private Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct) =>
         Deliver(userId, kind, new PushNotice(ChatConnectionRules.NoticeKey(kind, connectionId), "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["connection"] = connectionId.ToString("N") }), true, ct);
 

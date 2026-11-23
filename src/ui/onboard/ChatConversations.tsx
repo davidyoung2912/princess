@@ -58,7 +58,7 @@ import { ClearDraft } from '../ClearDraft'
 import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 import { DeleteChat, GroupPage, NewGroupPage } from './ChatGroups'
-import { NewPersonalChatPage } from './ChatPersonal'
+import { LeavePersonalChat, NewPersonalChatPage } from './ChatPersonal'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { GetPersonButton, RecapCard } from './ChatRelay'
@@ -778,6 +778,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     <section aria-labelledby="thread-h" data-tour="chat-thread">
       <h2 id="thread-h"><span className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</span></h2>
       {permanent && <p className="muted" role="note">{t('stanley.chat.permanent')}</p>}
+      {conversation?.kind === 'direct' && <LeavePersonalChat conversationId={id} name={name} onLeft={onBack} />}
       {conversation && conversation.kind !== 'direct' && !permanent && !room && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
