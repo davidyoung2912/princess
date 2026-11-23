@@ -14,7 +14,7 @@ public sealed class DapperPhoneLookupStore(IDbConnectionFactory db) : IPhoneLook
     public async Task<List<(long UserId, string Phone)>> FindByTailAsync(string tail, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        var rows = await c.QueryAsync<Row>(Sql.Cmd("SELECT TOP (50) UserId, Phone FROM dbo.Profiles WHERE Phone LIKE N'%' + @tail", new { tail }, null, ct));
+        var rows = await c.QueryAsync<Row>(Sql.Cmd("SELECT TOP (50) UserId, Phone FROM dbo.Profiles WHERE PhoneTail = @tail", new { tail }, null, ct));
         return [.. rows.Select(r => (r.UserId, r.Phone))];
     }
 

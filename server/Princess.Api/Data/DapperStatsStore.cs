@@ -20,19 +20,19 @@ public sealed class DapperStatsStore(IDbConnectionFactory db) : IStatsStore
           (SELECT COUNT(*) FROM dbo.AuditEvents WHERE Category = 'request' AND Outcome = 'success' AND ActorPublicId = @pid) AS changes,
           (SELECT COUNT(*) FROM dbo.AuditEvents WHERE Outcome IN ('denied', 'error') AND ActorPublicId = @pid) AS bumps,
           -- chat
-          (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id) AS msgs,
-          (SELECT ISNULL(SUM(CAST(LEN([Text]) AS BIGINT)), 0) FROM dbo.ChatMessages WHERE FromUserId = @id) AS chars,
-          (SELECT ISNULL(SUM(CAST(LEN(LTRIM(RTRIM([Text]))) - LEN(REPLACE(LTRIM(RTRIM([Text])), N' ', N'')) + 1 AS BIGINT)), 0) FROM dbo.ChatMessages WHERE FromUserId = @id AND LEN(LTRIM(RTRIM([Text]))) > 0) AS words,
-          (SELECT ISNULL(MAX(LEN([Text])), 0) FROM dbo.ChatMessages WHERE FromUserId = @id) AS longest_msg,
-          (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id AND [Text] LIKE N'%?%') AS questions,
-          (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id AND [Text] LIKE N'%!%') AS bangs,
-          (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id AND ([Text] LIKE N'%haha%' OR [Text] LIKE N'%lol%')) AS laughs,
-          (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id AND [Text] LIKE N'%thank%') AS thanks_said,
+          cm.msgs AS msgs,
+          cm.chars AS chars,
+          cm.words AS words,
+          cm.longest_msg AS longest_msg,
+          cm.questions AS questions,
+          cm.bangs AS bangs,
+          cm.laughs AS laughs,
+          cm.thanks_said AS thanks_said,
           (SELECT COUNT(*) FROM dbo.ChatMessagePhotos p JOIN dbo.ChatMessages m ON m.Id = p.MessageId WHERE m.FromUserId = @id)
             + (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id AND Photo IS NOT NULL) AS chat_photos,
-          (SELECT COUNT(DISTINCT CAST([At] AS DATE)) FROM dbo.ChatMessages WHERE FromUserId = @id) AS chat_days,
-          (SELECT MIN([At]) FROM dbo.ChatMessages WHERE FromUserId = @id) AS first_msg_at,
-          (SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @id AND [Text] LIKE N'%good morning%') AS mornings_said,
+          cm.chat_days AS chat_days,
+          cm.first_msg_at AS first_msg_at,
+          cm.mornings_said AS mornings_said,
           (SELECT COUNT(*) FROM dbo.ChatGroupMembers WHERE UserId = @id) AS groups,
           (SELECT COUNT(*) FROM dbo.ChatConnections WHERE Status = 'accepted' AND (RequesterId = @id OR TargetId = @id)) AS connections,
           (SELECT COUNT(*) FROM dbo.ChatReactions WHERE UserId = @id) AS reacts_given,
@@ -127,6 +127,21 @@ public sealed class DapperStatsStore(IDbConnectionFactory db) : IStatsStore
           (SELECT ISNULL(SUM(b.TotalCents), 0) FROM dbo.Bookings b WHERE b.Id IN (SELECT Id FROM @bk) AND b.Status = 'confirmed') AS booking_cents,
           (SELECT ISNULL(SUM(FareCents), 0) FROM dbo.PastTrips WHERE UserId = @id AND Cancelled = 0) AS past_fare_cents,
           (SELECT COUNT(DISTINCT LEFT(ItemKey, CHARINDEX(N':', ItemKey + N':') - 1)) FROM dbo.Favourites WHERE UserId = @id) AS fav_kinds
+        FROM (SELECT 1 AS one) AS dual
+        OUTER APPLY (
+          SELECT COUNT(*) AS msgs,
+                 ISNULL(SUM(CAST(LEN([Text]) AS BIGINT)), 0) AS chars,
+                 ISNULL(SUM(CASE WHEN LEN(LTRIM(RTRIM([Text]))) > 0 THEN CAST(LEN(LTRIM(RTRIM([Text]))) - LEN(REPLACE(LTRIM(RTRIM([Text])), N' ', N'')) + 1 AS BIGINT) ELSE 0 END), 0) AS words,
+                 ISNULL(MAX(LEN([Text])), 0) AS longest_msg,
+                 COUNT(CASE WHEN [Text] LIKE N'%?%' THEN 1 END) AS questions,
+                 COUNT(CASE WHEN [Text] LIKE N'%!%' THEN 1 END) AS bangs,
+                 COUNT(CASE WHEN [Text] LIKE N'%haha%' OR [Text] LIKE N'%lol%' THEN 1 END) AS laughs,
+                 COUNT(CASE WHEN [Text] LIKE N'%thank%' THEN 1 END) AS thanks_said,
+                 COUNT(DISTINCT CAST([At] AS DATE)) AS chat_days,
+                 MIN([At]) AS first_msg_at,
+                 COUNT(CASE WHEN [Text] LIKE N'%good morning%' THEN 1 END) AS mornings_said
+          FROM dbo.ChatMessages WHERE FromUserId = @id
+        ) AS cm
         """;
 
     // The favourites: one word each, from the most common row. Several statements, one round trip.

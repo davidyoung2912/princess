@@ -559,7 +559,7 @@ CREATE TABLE dbo.Users (
   Slug NVARCHAR(30) NULL,                       -- seed personas only: gerald, maya ...
   AccountNumber CHAR(10) NOT NULL,
   Username NVARCHAR(40) NOT NULL,               -- the sign-in credential: unique, at least 6 characters for a new account
-  SampleSailingId VARCHAR(40) NULL,             -- the sample itinerary a guest with no booking uses for the Explorers; ignored once they book
+  SampleSailingId NVARCHAR(40) NULL,             -- the sample itinerary a guest with no booking uses for the Explorers; ignored once they book
   ChatNickname NVARCHAR(30) NULL,               -- optional name shown in every chat; the username is shown when it is empty
   ChatName AS (ISNULL(ChatNickname, Username)) PERSISTED,
   Email NVARCHAR(254) NULL,                     -- optional and may be shared between accounts
@@ -582,6 +582,7 @@ CREATE TABLE dbo.Users (
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Users_UpdatedAt DEFAULT SYSUTCDATETIME(),
   RowVersion ROWVERSION NOT NULL,
   CONSTRAINT UX_Users_AccountNumber UNIQUE (AccountNumber),
+  CONSTRAINT FK_Users_Sailings_Sample FOREIGN KEY (SampleSailingId) REFERENCES ref.Sailings (Id) ON DELETE SET NULL,
   CONSTRAINT FK_Users_Users_Booker FOREIGN KEY (BookerUserId) REFERENCES dbo.Users (Id),
   CONSTRAINT CK_Users_AccountNumber CHECK (AccountNumber LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
   CONSTRAINT CK_Users_Role CHECK (Role IN ('guest','staff','admin')),
@@ -609,6 +610,7 @@ CREATE TABLE dbo.Profiles (
   LastName AS (CASE WHEN CHARINDEX(N' ', LegalName) = 0 THEN N'' ELSE RIGHT(LegalName, CHARINDEX(N' ', REVERSE(LegalName)) - 1) END) PERSISTED,
   Dob DATE NOT NULL,
   Phone NVARCHAR(30) NULL,
+  PhoneTail AS (RIGHT(Phone, 4)) PERSISTED,      -- last four characters, so an inbound text's sender is found by index seek, not a leading-wildcard scan
   Citizenship VARCHAR(5) NOT NULL CONSTRAINT DF_Profiles_Citizenship DEFAULT 'us',
   Bedding VARCHAR(12) NOT NULL CONSTRAINT DF_Profiles_Bedding DEFAULT 'noPreference',
   SpecialRequests NVARCHAR(500) NOT NULL CONSTRAINT DF_Profiles_SpecialRequests DEFAULT N'',
@@ -622,6 +624,7 @@ CREATE TABLE dbo.Profiles (
   CONSTRAINT CK_Profiles_Citizenship CHECK (Citizenship IN ('us','other')),
   CONSTRAINT CK_Profiles_Bedding CHECK (Bedding IN ('queen','twin','noPreference'))
 );
+CREATE INDEX IX_Profiles_PhoneTail ON dbo.Profiles (PhoneTail) INCLUDE (Phone) WHERE PhoneTail IS NOT NULL;
 END
 IF COL_LENGTH(N'dbo.Profiles', N'KeepOut') IS NULL ALTER TABLE dbo.Profiles ADD KeepOut VARCHAR(60) NOT NULL CONSTRAINT DF_Profiles_KeepOut DEFAULT '';
 -- Dish heads-ups (alcohol, raw, spicy) the guest wants flagged on menus, comma separated; all three are on for a new account.
@@ -4115,10 +4118,12 @@ GO
 IF OBJECT_ID(N'dbo.StanleyOpsProposal', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.StanleyOpsProposal (
+  Id TINYINT NOT NULL CONSTRAINT DF_StanleyOpsProposal_Id DEFAULT 1 CONSTRAINT PK_StanleyOpsProposal PRIMARY KEY,
   [Off] BIT NOT NULL,
   Reason NVARCHAR(200) NOT NULL,
   ByPublicId UNIQUEIDENTIFIER NOT NULL,
-  [At] DATETIME2(0) NOT NULL
+  [At] DATETIME2(0) NOT NULL,
+  CONSTRAINT CK_StanleyOpsProposal_Single CHECK (Id = 1)   -- at most one row
 );
 END
 GO
@@ -4151,4 +4156,90 @@ CREATE TABLE dbo.UserDays (
   CONSTRAINT FK_UserDays_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
 );
 END
+GO
+
+/* =====================================================================================================
+   Foreign-key support indexes (SQL review): every dbo foreign key has an index that leads with its columns, so a
+   cascade or retention delete on the parent seeks instead of scanning the child. Added in one block so the
+   per-table definitions above stay readable. Safe to re-run.
+   ===================================================================================================== */
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_JourneyEvents_SailingId' AND object_id = OBJECT_ID(N'dbo.JourneyEvents')) CREATE INDEX IX_JourneyEvents_SailingId ON dbo.JourneyEvents ([SailingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_StanleyPolls_OwnerUserId' AND object_id = OBJECT_ID(N'dbo.StanleyPolls')) CREATE INDEX IX_StanleyPolls_OwnerUserId ON dbo.StanleyPolls ([OwnerUserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Bookings_CategoryId' AND object_id = OBJECT_ID(N'dbo.Bookings')) CREATE INDEX IX_Bookings_CategoryId ON dbo.Bookings ([CategoryId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Bookings_FareId' AND object_id = OBJECT_ID(N'dbo.Bookings')) CREATE INDEX IX_Bookings_FareId ON dbo.Bookings ([FareId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BookingDrafts_SailingId' AND object_id = OBJECT_ID(N'dbo.BookingDrafts')) CREATE INDEX IX_BookingDrafts_SailingId ON dbo.BookingDrafts ([SailingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BookingDrafts_CategoryId' AND object_id = OBJECT_ID(N'dbo.BookingDrafts')) CREATE INDEX IX_BookingDrafts_CategoryId ON dbo.BookingDrafts ([CategoryId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BookingDrafts_FareId' AND object_id = OBJECT_ID(N'dbo.BookingDrafts')) CREATE INDEX IX_BookingDrafts_FareId ON dbo.BookingDrafts ([FareId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_IdempotencyKeys_UserId' AND object_id = OBJECT_ID(N'dbo.IdempotencyKeys')) CREATE INDEX IX_IdempotencyKeys_UserId ON dbo.IdempotencyKeys ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Acceptances_LegalId_Version' AND object_id = OBJECT_ID(N'dbo.Acceptances')) CREATE INDEX IX_Acceptances_LegalId_Version ON dbo.Acceptances ([LegalId], [Version]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_LinkedBookings_BookingId' AND object_id = OBJECT_ID(N'dbo.LinkedBookings')) CREATE INDEX IX_LinkedBookings_BookingId ON dbo.LinkedBookings ([BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_TourBookings_BookingId_SailingId' AND object_id = OBJECT_ID(N'dbo.TourBookings')) CREATE INDEX IX_TourBookings_BookingId_SailingId ON dbo.TourBookings ([BookingId], [SailingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_TourBookings_SailingId_Day' AND object_id = OBJECT_ID(N'dbo.TourBookings')) CREATE INDEX IX_TourBookings_SailingId_Day ON dbo.TourBookings ([SailingId], [Day]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_TourBookingGuests_TourBookingId_BookingId' AND object_id = OBJECT_ID(N'dbo.TourBookingGuests')) CREATE INDEX IX_TourBookingGuests_TourBookingId_BookingId ON dbo.TourBookingGuests ([TourBookingId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_TourBookingGuests_BookingId_UserId' AND object_id = OBJECT_ID(N'dbo.TourBookingGuests')) CREATE INDEX IX_TourBookingGuests_BookingId_UserId ON dbo.TourBookingGuests ([BookingId], [UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_TourCartLines_ExcursionId' AND object_id = OBJECT_ID(N'dbo.TourCartLines')) CREATE INDEX IX_TourCartLines_ExcursionId ON dbo.TourCartLines ([ExcursionId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_TourCartGuests_BookingId_UserId' AND object_id = OBJECT_ID(N'dbo.TourCartGuests')) CREATE INDEX IX_TourCartGuests_BookingId_UserId ON dbo.TourCartGuests ([BookingId], [UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DiningReservations_BookingId_SailingId' AND object_id = OBJECT_ID(N'dbo.DiningReservations')) CREATE INDEX IX_DiningReservations_BookingId_SailingId ON dbo.DiningReservations ([BookingId], [SailingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DiningReservations_SailingId_Day' AND object_id = OBJECT_ID(N'dbo.DiningReservations')) CREATE INDEX IX_DiningReservations_SailingId_Day ON dbo.DiningReservations ([SailingId], [Day]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DiningReservationGuests_ReservationId_BookingId' AND object_id = OBJECT_ID(N'dbo.DiningReservationGuests')) CREATE INDEX IX_DiningReservationGuests_ReservationId_BookingId ON dbo.DiningReservationGuests ([ReservationId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DiningReservationGuests_BookingId_UserId' AND object_id = OBJECT_ID(N'dbo.DiningReservationGuests')) CREATE INDEX IX_DiningReservationGuests_BookingId_UserId ON dbo.DiningReservationGuests ([BookingId], [UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DiningDietaryRequests_ReservationId_BookingId' AND object_id = OBJECT_ID(N'dbo.DiningDietaryRequests')) CREATE INDEX IX_DiningDietaryRequests_ReservationId_BookingId ON dbo.DiningDietaryRequests ([ReservationId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DiningDietaryRequests_UserId' AND object_id = OBJECT_ID(N'dbo.DiningDietaryRequests')) CREATE INDEX IX_DiningDietaryRequests_UserId ON dbo.DiningDietaryRequests ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_SpaAppointments_BookingId_SailingId' AND object_id = OBJECT_ID(N'dbo.SpaAppointments')) CREATE INDEX IX_SpaAppointments_BookingId_SailingId ON dbo.SpaAppointments ([BookingId], [SailingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_SpaAppointments_SailingId_Day' AND object_id = OBJECT_ID(N'dbo.SpaAppointments')) CREATE INDEX IX_SpaAppointments_SailingId_Day ON dbo.SpaAppointments ([SailingId], [Day]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_SpaAppointmentGuests_AppointmentId_BookingId' AND object_id = OBJECT_ID(N'dbo.SpaAppointmentGuests')) CREATE INDEX IX_SpaAppointmentGuests_AppointmentId_BookingId ON dbo.SpaAppointmentGuests ([AppointmentId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_SpaAppointmentGuests_BookingId_UserId' AND object_id = OBJECT_ID(N'dbo.SpaAppointmentGuests')) CREATE INDEX IX_SpaAppointmentGuests_BookingId_UserId ON dbo.SpaAppointmentGuests ([BookingId], [UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_WaitlistGuests_WaitlistId_BookingId' AND object_id = OBJECT_ID(N'dbo.WaitlistGuests')) CREATE INDEX IX_WaitlistGuests_WaitlistId_BookingId ON dbo.WaitlistGuests ([WaitlistId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_WaitlistGuests_BookingId_UserId' AND object_id = OBJECT_ID(N'dbo.WaitlistGuests')) CREATE INDEX IX_WaitlistGuests_BookingId_UserId ON dbo.WaitlistGuests ([BookingId], [UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PurchaseGuests_PurchaseId_BookingId' AND object_id = OBJECT_ID(N'dbo.PurchaseGuests')) CREATE INDEX IX_PurchaseGuests_PurchaseId_BookingId ON dbo.PurchaseGuests ([PurchaseId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PurchaseGuests_BookingId_UserId' AND object_id = OBJECT_ID(N'dbo.PurchaseGuests')) CREATE INDEX IX_PurchaseGuests_BookingId_UserId ON dbo.PurchaseGuests ([BookingId], [UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChecklistTicks_ItemId' AND object_id = OBJECT_ID(N'dbo.ChecklistTicks')) CREATE INDEX IX_ChecklistTicks_ItemId ON dbo.ChecklistTicks ([ItemId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PackingTicks_ItemId' AND object_id = OBJECT_ID(N'dbo.PackingTicks')) CREATE INDEX IX_PackingTicks_ItemId ON dbo.PackingTicks ([ItemId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_NightTicks_ItemId' AND object_id = OBJECT_ID(N'dbo.NightTicks')) CREATE INDEX IX_NightTicks_ItemId ON dbo.NightTicks ([ItemId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_TravelPlans_ArrivalWindowId' AND object_id = OBJECT_ID(N'dbo.TravelPlans')) CREATE INDEX IX_TravelPlans_ArrivalWindowId ON dbo.TravelPlans ([ArrivalWindowId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdvisorRequests_AdvisorId' AND object_id = OBJECT_ID(N'dbo.AdvisorRequests')) CREATE INDEX IX_AdvisorRequests_AdvisorId ON dbo.AdvisorRequests ([AdvisorId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_UpgradeBids_CategoryId' AND object_id = OBJECT_ID(N'dbo.UpgradeBids')) CREATE INDEX IX_UpgradeBids_CategoryId ON dbo.UpgradeBids ([CategoryId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ClubRegistrations_ClubId' AND object_id = OBJECT_ID(N'dbo.ClubRegistrations')) CREATE INDEX IX_ClubRegistrations_ClubId ON dbo.ClubRegistrations ([ClubId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_CheckinBooking_ArrivalWindowId' AND object_id = OBJECT_ID(N'dbo.CheckinBooking')) CREATE INDEX IX_CheckinBooking_ArrivalWindowId ON dbo.CheckinBooking ([ArrivalWindowId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ShowTickets_BookingId_SailingId' AND object_id = OBJECT_ID(N'dbo.ShowTickets')) CREATE INDEX IX_ShowTickets_BookingId_SailingId ON dbo.ShowTickets ([BookingId], [SailingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ShowTickets_SailingId_Day' AND object_id = OBJECT_ID(N'dbo.ShowTickets')) CREATE INDEX IX_ShowTickets_SailingId_Day ON dbo.ShowTickets ([SailingId], [Day]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ShowTicketGuests_ShowTicketId_BookingId' AND object_id = OBJECT_ID(N'dbo.ShowTicketGuests')) CREATE INDEX IX_ShowTicketGuests_ShowTicketId_BookingId ON dbo.ShowTicketGuests ([ShowTicketId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ShowTicketGuests_BookingId_UserId' AND object_id = OBJECT_ID(N'dbo.ShowTicketGuests')) CREATE INDEX IX_ShowTicketGuests_BookingId_UserId ON dbo.ShowTicketGuests ([BookingId], [UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_OrderLines_OrderId_BookingId' AND object_id = OBJECT_ID(N'dbo.OrderLines')) CREATE INDEX IX_OrderLines_OrderId_BookingId ON dbo.OrderLines ([OrderId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_OrderLines_ItemId' AND object_id = OBJECT_ID(N'dbo.OrderLines')) CREATE INDEX IX_OrderLines_ItemId ON dbo.OrderLines ([ItemId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_OrderLines_BookingId_GuestUserId' AND object_id = OBJECT_ID(N'dbo.OrderLines')) CREATE INDEX IX_OrderLines_BookingId_GuestUserId ON dbo.OrderLines ([BookingId], [GuestUserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_KidClubCheckins_ClubId' AND object_id = OBJECT_ID(N'dbo.KidClubCheckins')) CREATE INDEX IX_KidClubCheckins_ClubId ON dbo.KidClubCheckins ([ClubId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_HealthReportGuests_ReportId_BookingId' AND object_id = OBJECT_ID(N'dbo.HealthReportGuests')) CREATE INDEX IX_HealthReportGuests_ReportId_BookingId ON dbo.HealthReportGuests ([ReportId], [BookingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_HealthReportGuests_BookingId_UserId' AND object_id = OBJECT_ID(N'dbo.HealthReportGuests')) CREATE INDEX IX_HealthReportGuests_BookingId_UserId ON dbo.HealthReportGuests ([BookingId], [UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PhotoPurchases_OptionId' AND object_id = OBJECT_ID(N'dbo.PhotoPurchases')) CREATE INDEX IX_PhotoPurchases_OptionId ON dbo.PhotoPurchases ([OptionId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PhotoAlbum_UserId' AND object_id = OBJECT_ID(N'dbo.PhotoAlbum')) CREATE INDEX IX_PhotoAlbum_UserId ON dbo.PhotoAlbum ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PrintOrders_BuyerUserId' AND object_id = OBJECT_ID(N'dbo.PrintOrders')) CREATE INDEX IX_PrintOrders_BuyerUserId ON dbo.PrintOrders ([BuyerUserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ShareLinks_UserId' AND object_id = OBJECT_ID(N'dbo.ShareLinks')) CREATE INDEX IX_ShareLinks_UserId ON dbo.ShareLinks ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ServiceRequests_ItemId' AND object_id = OBJECT_ID(N'dbo.ServiceRequests')) CREATE INDEX IX_ServiceRequests_ItemId ON dbo.ServiceRequests ([ItemId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DrinkLogs_DrinkId' AND object_id = OBJECT_ID(N'dbo.DrinkLogs')) CREATE INDEX IX_DrinkLogs_DrinkId ON dbo.DrinkLogs ([DrinkId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Thanks_UserId' AND object_id = OBJECT_ID(N'dbo.Thanks')) CREATE INDEX IX_Thanks_UserId ON dbo.Thanks ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_CelebrationWishes_UserId' AND object_id = OBJECT_ID(N'dbo.CelebrationWishes')) CREATE INDEX IX_CelebrationWishes_UserId ON dbo.CelebrationWishes ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RebookHolds_SailingId' AND object_id = OBJECT_ID(N'dbo.RebookHolds')) CREATE INDEX IX_RebookHolds_SailingId ON dbo.RebookHolds ([SailingId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RebookHolds_CategoryId' AND object_id = OBJECT_ID(N'dbo.RebookHolds')) CREATE INDEX IX_RebookHolds_CategoryId ON dbo.RebookHolds ([CategoryId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatConnections_GroupId' AND object_id = OBJECT_ID(N'dbo.ChatConnections')) CREATE INDEX IX_ChatConnections_GroupId ON dbo.ChatConnections ([GroupId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatGroupInvites_InviterId' AND object_id = OBJECT_ID(N'dbo.ChatGroupInvites')) CREATE INDEX IX_ChatGroupInvites_InviterId ON dbo.ChatGroupInvites ([InviterId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatPins_MessageId' AND object_id = OBJECT_ID(N'dbo.ChatPins')) CREATE INDEX IX_ChatPins_MessageId ON dbo.ChatPins ([MessageId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatPins_PinnedBy' AND object_id = OBJECT_ID(N'dbo.ChatPins')) CREATE INDEX IX_ChatPins_PinnedBy ON dbo.ChatPins ([PinnedBy]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatResponses_UserId' AND object_id = OBJECT_ID(N'dbo.ChatResponses')) CREATE INDEX IX_ChatResponses_UserId ON dbo.ChatResponses ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatOutcomes_UserId' AND object_id = OBJECT_ID(N'dbo.ChatOutcomes')) CREATE INDEX IX_ChatOutcomes_UserId ON dbo.ChatOutcomes ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatKeeps_UserId' AND object_id = OBJECT_ID(N'dbo.ChatKeeps')) CREATE INDEX IX_ChatKeeps_UserId ON dbo.ChatKeeps ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatRoomModerators_UserId' AND object_id = OBJECT_ID(N'dbo.ChatRoomModerators')) CREATE INDEX IX_ChatRoomModerators_UserId ON dbo.ChatRoomModerators ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatRoomActions_ByUserId' AND object_id = OBJECT_ID(N'dbo.ChatRoomActions')) CREATE INDEX IX_ChatRoomActions_ByUserId ON dbo.ChatRoomActions ([ByUserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatHeldMessages_GroupId' AND object_id = OBJECT_ID(N'dbo.ChatHeldMessages')) CREATE INDEX IX_ChatHeldMessages_GroupId ON dbo.ChatHeldMessages ([GroupId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatHeldMessages_FromUserId' AND object_id = OBJECT_ID(N'dbo.ChatHeldMessages')) CREATE INDEX IX_ChatHeldMessages_FromUserId ON dbo.ChatHeldMessages ([FromUserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatRoomQuestions_FromUserId' AND object_id = OBJECT_ID(N'dbo.ChatRoomQuestions')) CREATE INDEX IX_ChatRoomQuestions_FromUserId ON dbo.ChatRoomQuestions ([FromUserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatStanleyUses_GroupId' AND object_id = OBJECT_ID(N'dbo.ChatStanleyUses')) CREATE INDEX IX_ChatStanleyUses_GroupId ON dbo.ChatStanleyUses ([GroupId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatStanleyReminders_UserId' AND object_id = OBJECT_ID(N'dbo.ChatStanleyReminders')) CREATE INDEX IX_ChatStanleyReminders_UserId ON dbo.ChatStanleyReminders ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatRecapItems_UserId' AND object_id = OBJECT_ID(N'dbo.ChatRecapItems')) CREATE INDEX IX_ChatRecapItems_UserId ON dbo.ChatRecapItems ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatHuddleInvites_GroupId' AND object_id = OBJECT_ID(N'dbo.ChatHuddleInvites')) CREATE INDEX IX_ChatHuddleInvites_GroupId ON dbo.ChatHuddleInvites ([GroupId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatHuddleShortlist_AddedBy' AND object_id = OBJECT_ID(N'dbo.ChatHuddleShortlist')) CREATE INDEX IX_ChatHuddleShortlist_AddedBy ON dbo.ChatHuddleShortlist ([AddedBy]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatHuddleCarry_UserId' AND object_id = OBJECT_ID(N'dbo.ChatHuddleCarry')) CREATE INDEX IX_ChatHuddleCarry_UserId ON dbo.ChatHuddleCarry ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatMeetUpAnswers_UserId' AND object_id = OBJECT_ID(N'dbo.ChatMeetUpAnswers')) CREATE INDEX IX_ChatMeetUpAnswers_UserId ON dbo.ChatMeetUpAnswers ([UserId]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatIntroductions_UserHigh' AND object_id = OBJECT_ID(N'dbo.ChatIntroductions')) CREATE INDEX IX_ChatIntroductions_UserHigh ON dbo.ChatIntroductions ([UserHigh]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatHostFlags_GroupId' AND object_id = OBJECT_ID(N'dbo.ChatHostFlags')) CREATE INDEX IX_ChatHostFlags_GroupId ON dbo.ChatHostFlags ([GroupId]);
 GO
