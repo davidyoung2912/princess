@@ -71,6 +71,7 @@ export interface Person {
   needs?: Need[]; diet?: Diet[]; other?: boolean
   passport?: string | null | 'none'; scenarios?: string[]
   /** A login override (a temporary test account). */ email?: string
+  /** The chat nickname, when it is not the first name. */ nickname?: string
   role: string; test: string
 }
 
@@ -121,6 +122,9 @@ export const PEOPLE: Person[] = [
   P({ slug: 'portsolo2', first: 'Port', last: 'Solo Two', age: 52, stage: 'roatan', tier: 'gold', email: 'port-solo-2', role: 'Solo guest in Roatan, for the Explorers', test: 'Aboard on the third port day with a paid booking, check-in done, a dinner reservation and an excursion: every Explorer page has data. Login port-solo-2 / port-solo-2.' }),
   // Temporary: signs in as "dream" / "dream" (the sign-in page pre-fills it in development).
   P({ slug: 'dream', first: 'Dream', last: 'Tester', age: 34, stage: 'booked', clock: '2026-11-02T15:00:00', email: 'dream', role: 'Dream stage, nothing booked', test: 'First journey stage: no booking yet. Login dream / dream.' }),
+  // Two bare accounts for trying personal chat between two people: nothing booked, nothing set, chat on (every account is findable by chat name by default).
+  P({ slug: 'test1', first: 'Test', last: 'One', age: 40, stage: 'booked', clock: '2026-11-02T15:00:00', email: 'test1', nickname: 'chattydad', role: 'Bare chat tester, chat name chattydad', test: 'No booking and default settings. Find chattymom as chattymom and chat. Login test1 / test1.' }),
+  P({ slug: 'test2', first: 'Test', last: 'Two', age: 40, stage: 'booked', clock: '2026-11-02T15:00:00', email: 'test2', nickname: 'chattymom', role: 'Bare chat tester, chat name chattymom', test: 'No booking and default settings. Find chattydad and chat. Login test2 / test2.' }),
 ]
 
 // ---------------------------------------------------------------- the bookings
@@ -252,7 +256,7 @@ function resetFile(): string {
 function usersFile(): string {
   const body = collect(() => {
     const row = (p: Person, i: number): V[] => [
-      pub(`user:${p.slug}`), p.slug, accountNumber(i), p.slug, p.first, p.child ? null : emailOf(p.slug), p.child ? null : hashPassword(p.slug), 'guest', true, !!p.child,
+      pub(`user:${p.slug}`), p.slug, accountNumber(i), p.slug, p.nickname ?? p.first, p.child ? null : emailOf(p.slug), p.child ? null : hashPassword(p.slug), 'guest', true, !!p.child,
       p.child ? raw(`(SELECT Id FROM dbo.Users WHERE Slug = N'${p.child}')`) : null, p.tier ?? 'none', !!p.sanctuary, p.textSize ?? 'standard',
     ]
     const cols = ['PublicId', 'Slug', 'AccountNumber', 'Username', 'ChatNickname', 'Email', 'PasswordHash', 'Role', 'IsDemo', 'IsSupervised', 'BookerUserId', 'Tier', 'Sanctuary', 'TextSize']

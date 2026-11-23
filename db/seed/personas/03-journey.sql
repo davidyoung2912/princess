@@ -46,6 +46,8 @@ DECLARE
   @u_portsolo1 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo1'),
   @u_portsolo2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo2'),
   @u_dream BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'dream'),
+  @u_test1 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test1'),
+  @u_test2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test2'),
   @b_gerald BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC163342'),
   @b_maria BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC179254'),
   @b_linda BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC195166'),

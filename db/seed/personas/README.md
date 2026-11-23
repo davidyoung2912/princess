@@ -44,6 +44,8 @@ Sailing for every booking: `sun-2027-03-21` (2027-03-21), except port-solo-2, wh
 | Port Solo One | `port-solo-1` | PC556268 (booker) | embarkation | 2027-03-21 18:00 | - | Solo guest boarding on day one of the 7-day sailing, for the Explorers. Boarding day with a paid booking, check-in done, a dinner reservation and an excursion: every Explorer page has data. Login port-solo-1 / port-solo-1. |
 | Port Solo Two | `port-solo-2` | PC572180 (booker) | roatan | 2027-03-25 17:00 | - | Solo guest in Roatan, for the Explorers. Aboard on the third port day with a paid booking, check-in done, a dinner reservation and an excursion: every Explorer page has data. Login port-solo-2 / port-solo-2. |
 | Dream Tester | `dream` | none | booked | 2026-11-02 15:00 | - | Dream stage, nothing booked. First journey stage: no booking yet. Login dream / dream. |
+| Test One | `test1` | none | booked | 2026-11-02 15:00 | - | Bare chat tester, chat name chattydad. No booking and default settings. Find chattymom as chattymom and chat. Login test1 / test1. |
+| Test Two | `test2` | none | booked | 2026-11-02 15:00 | - | Bare chat tester, chat name chattymom. No booking and default settings. Find chattydad and chat. Login test2 / test2. |
 
 ## Not seeded
 

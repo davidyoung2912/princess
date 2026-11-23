@@ -45,7 +45,9 @@ DECLARE
   @u_cora BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'cora'),
   @u_portsolo1 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo1'),
   @u_portsolo2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo2'),
-  @u_dream BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'dream');
+  @u_dream BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'dream'),
+  @u_test1 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test1'),
+  @u_test2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'test2');
 
 -- dbo.Bookings: 24 rows
 INSERT INTO dbo.Bookings ([PublicId], [Number], [Kind], [AgentName], [BookerUserId], [SailingId], [CategoryId], [CabinNumber], [FareId], [Status], [Dining], [Occasion], [TotalCents], [DepositCents], [FinalDueDate], [FinalPaymentDays], [LoyaltyNumber], [DiscountCents], [CreditUsedCents], [ContactEmail], [ContactPhone], [ConfirmedAt], [CancelledAt], [CancelFeeCents], [CancelRefundCents]) VALUES
