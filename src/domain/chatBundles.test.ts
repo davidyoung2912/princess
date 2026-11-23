@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLE_VERSION, bundleLink, bundleSummary, eventRef, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
+import { BUNDLE_TYPES, BUNDLE_VERSION, REF_TYPES, bundleLink, bundleSummary, eventRef, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
 
 const venue = { type: 'venue', v: 1, title: 'Crown Grill', subtitle: 'Steakhouse', path: '/dining-today/crown-grill', place: 'Deck 7' }
 
@@ -82,5 +82,46 @@ describe('sendToMany', () => {
     expect(planRefOf('event:tour~x1:3')).toBe('tour~x1:3')
     expect(planRefOf('venue:x')).toBeNull()
     expect(tourEventId('x1')).toBe('tour~x1')
+  })
+})
+
+describe('B7 types: port, place and dish', () => {
+  it('are in the registry and are refs, and none is plannable', () => {
+    for (const type of ['port', 'place', 'dish']) {
+      expect(isKnownBundle({ type, v: 1 })).toBe(true)
+      expect(REF_TYPES).toContain(type)
+      expect(isPlannable({ type, day: 2 })).toBe(false)
+    }
+  })
+  it('send as bundles', () => {
+    expect(shareInput('port:cozumel', 'card').kind).toBe('bundle')
+    expect(shareInput('dish:crown-grill:filet-mignon', 'card').kind).toBe('bundle')
+  })
+  it('opens a port guide and a restaurant page', () => {
+    expect(bundleLink({ type: 'port', v: 1, path: '/home/ports/cozumel' })).toBe('/home/ports/cozumel')
+    expect(bundleLink({ type: 'dish', v: 1, path: '/dining-today/crown-grill' })).toBe('/dining-today/crown-grill')
+  })
+})
+
+/** The coverage list: every explorer item worth sharing names its bundle type, or says why it has none, so nothing is missed silently. */
+export const BUNDLE_COVERAGE: Readonly<Record<string, string>> = {
+  'venue page': 'venue',
+  'menu': 'menu',
+  'dish': 'dish',
+  'programme or Explorer event': 'event',
+  'excursion': 'excursion',
+  'dinner': 'dinner',
+  'port guide': 'port',
+  'place on the ship': 'place',
+  'day summary and trip itinerary': 'none yet: arrives with the day board follow-up (Add all to my day)',
+  'shortlist': 'none yet: waits for the huddle work',
+}
+
+describe('bundle coverage', () => {
+  it('names a registered type, or a reason, for each explorer item', () => {
+    for (const [item, how] of Object.entries(BUNDLE_COVERAGE)) {
+      expect(item).not.toBe('')
+      expect(how in BUNDLE_TYPES || how.startsWith('none yet: ')).toBe(true)
+    }
   })
 })

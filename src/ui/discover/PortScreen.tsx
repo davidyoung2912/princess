@@ -15,6 +15,7 @@ import { Flag } from '../Flag'
 import { SaveShare } from './parts'
 import { StanleyExplain } from '../ai/StanleyExplain'
 import { TenderOutlook } from './TenderOutlook'
+import { SendToChat } from '../onboard/SendToChat'
 
 /**
  * Port Details: everything the guide holds for one port (the server's port guide): what it is like, how to get ashore, the things to do by how easy they
@@ -44,6 +45,7 @@ export function PortScreen() {
       {guide?.area && <Area guide={guide} />}
       <p><span className={`tag${tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {tender ? t('discover.tender') : t('discover.dock')}</span>{tender && <StanleyExplain term="tender" />}{day && <> <span className="muted">{t('portguide.calls', { date: day.date })}</span></>}</p>
       <SaveShare kind="port" id={id} name={name} favourites={favourites} />
+      {day && <SendToChat shareRef={`port:${id}`} title={name} />}
       {tender && day && <TenderOutlook port={id} date={day.date} />}
 
       {!guide && <FeedWaiting />}

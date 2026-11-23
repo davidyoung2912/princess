@@ -17,6 +17,7 @@ import { ACCESS_FEATURES, type AccessFeature } from '../../domain/eventAccess'
 import { EXPLORER_LEADS, REMINDER_DEFAULT } from '../../domain/notifications'
 import { StatusBadge } from '../StatusBadge'
 import { SendToChat } from '../onboard/SendToChat'
+import { dishSlug } from '../../domain/explorer/shortlist'
 import { TimeOfDayIcon } from '../TimeOfDay'
 import { CalendarClock, CalendarPlus, CalendarX, X } from '../icons'
 import { DishSaveButton } from './DishSave'
@@ -139,7 +140,7 @@ function MealCard({ shipId, venueId, m, over, suits, avoid }: { shipId: string; 
           <div key={c.name}>
             <h4>{headingCase(c.name)}</h4>
             <ul className="plain-bullets">
-              {shown.map((d) => { const asked = avoidedFlags(d.flags, avoid); return <li key={d.name} className={asked.length > 0 ? 'dish--avoid' : undefined}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} /><DishSaveButton shipId={shipId} venueId={venueId} name={d.name} />{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}<AvoidNote flags={asked} /></li> })}
+              {shown.map((d) => { const asked = avoidedFlags(d.flags, avoid); return <li key={d.name} className={asked.length > 0 ? 'dish--avoid' : undefined}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} /><DishSaveButton shipId={shipId} venueId={venueId} name={d.name} /><SendToChat shareRef={`dish:${venueId}:${dishSlug(d.name)}`} title={d.name} />{d.note ? <span className="dish-desc">{d.note}</span> : <br />}{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}<AvoidNote flags={asked} /></li> })}
             </ul>
           </div>
         )

@@ -144,6 +144,31 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         return new ChatCard(ChatCardRules.Venue, venue.Title, venue.Short, Place: venue.DeckLabel, Path: ExplorerCatalogue.VenuePath(venue));
     }
 
+    /// <summary>A port card for a port the guest's own sailing calls at: the port's name and the first call (day, arrival, all aboard), opening the port guide. 400 <c>shareRef</c> for a port not on the itinerary or when there is no current booking.</summary>
+    private async Task<ChatCard> PortCardAsync(UserRecord actor, string portId, CancellationToken ct)
+    {
+        if (await CurrentAsync(actor, ct) is not { } booking || Itinerary.PortOf(portId) is not { } port) throw ApiException.Invalid("shareRef");
+        var timeline = TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure));
+        var call = timeline.Days.FirstOrDefault(d => d.Port == portId && d.Arrive is not null) ?? throw ApiException.Invalid("shareRef");
+        return new ChatCard(ChatCardRules.PortDay, port.Name, call.AllAboard is { } back ? $"All aboard {Clock(back)}" : null, call.Day, Clock(call.Arrive!.Value), Path: ChatCardRules.PathOf(ChatCardRules.PortDay, port.Id));
+    }
+
+    /// <summary>A place on the ship (name, deck and section) to find, not a meeting point: no time and no screen. 400 <c>shareRef</c> for a place the ship profile does not name.</summary>
+    private static ChatCard PlaceBundleCard(string placeId)
+    {
+        var place = ShipReference.Get().Places.FirstOrDefault(p => p.Id == placeId) ?? throw ApiException.Invalid("shareRef");
+        return new ChatCard(ChatCardRules.PlaceType, place.Name, $"Deck {place.Deck}, {place.Section}", Place: place.Name);
+    }
+
+    /// <summary>A dish card: the dish's name and the restaurant it is served at, opening that restaurant's page. No price and no order. 400 <c>shareRef</c> for a dish the guest's ship does not serve or when there is no current booking.</summary>
+    private async Task<ChatCard> DishCardAsync(UserRecord actor, string venueId, string slug, CancellationToken ct)
+    {
+        if (await CurrentAsync(actor, ct) is not { } booking) throw ApiException.Invalid("shareRef");
+        var shipId = AboardPlans.ShipOfSailing(booking.SailingId);
+        if (ExplorerCatalogue.DishOfKey($"dish:{shipId}.{venueId}.{slug}") is not { } found) throw ApiException.Invalid("shareRef");
+        return new ChatCard(ChatCardRules.Menu, found.Name, found.Venue.Title, Place: found.Venue.DeckLabel, Path: ExplorerCatalogue.VenuePath(found.Venue));
+    }
+
     private static readonly Dictionary<string, string> MealWords = new() { ["breakfast"] = "Breakfast", ["brunch"] = "Brunch", ["lunch"] = "Lunch", ["tea"] = "Afternoon tea", ["dinner"] = "Dinner", ["allDay"] = "All-day" };
 
     /// <summary>A menu card for a meal a restaurant on the guest's own ship serves: the restaurant's name and "Dinner menu", opening its venue page. 400 <c>shareRef</c> for a restaurant or meal the ship does not have, or when there is no current booking.</summary>
@@ -196,6 +221,9 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         var type = ChatBundleRules.TypeOfRef(shareRef) ?? throw ApiException.Invalid("shareRef");
         var card = type == ChatBundleRules.Venue && ChatCardRules.ParseVenueRef(shareRef) is { } venueId ? await VenueCardAsync(actor, venueId, ct)
             : type == ChatBundleRules.Menu && ChatCardRules.ParseMenuRef(shareRef) is { } menu ? await MenuCardAsync(actor, menu.VenueId, menu.Meal, ct)
+            : type == ChatBundleRules.Port && ChatBundleRules.IdOf(shareRef, ChatBundleRules.Port) is { } portId ? await PortCardAsync(actor, portId, ct)
+            : type == ChatBundleRules.Place && ChatBundleRules.IdOf(shareRef, ChatBundleRules.Place) is { } placeId ? PlaceBundleCard(placeId)
+            : type == ChatBundleRules.Dish && ChatBundleRules.ParseDishRef(shareRef) is { } dish ? await DishCardAsync(actor, dish.VenueId, dish.Slug, ct)
             : type == ChatBundleRules.Event && ChatBundleRules.PlanRefOf(shareRef) is { } planRef && ChatPlanningRules.ParsePlanRef(planRef) is not null ? await PlanAsync(actor, planRef, null, ct)
             : throw ApiException.Invalid("shareRef");
         if (type == ChatBundleRules.Event) type = ChatBundleRules.TypeOfEvent(ChatPlanningRules.ParsePlanRef(ChatBundleRules.PlanRefOf(shareRef))!.Value.EventId);

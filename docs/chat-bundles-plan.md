@@ -269,6 +269,8 @@ Rules for every phase (CLAUDE.md): English only; verify with `npm run test`, `np
 - A **coverage test** lists every explorer and sub-screen route and states its bundle type or why it has none, so nothing is missed silently.
 - Done when: every explorer item worth sharing has a chat icon, and the coverage test proves it.
 
+> **Built 2026-11-23, port, place and dish only** (front end checked with test, lint, tsc and build; C# written but not compiled or run, so please run `dotnet build` once). **Done:** refs `port:<portId>` (a port the guest's own sailing calls at; first call's day, arrival and all aboard; opens the port guide), `place:<placeId>` (name, deck, section; no time, no screen) and `dish:<venueId>:<slug>` (dish name and restaurant; opens the restaurant page; no price, no order), all built by `BundleAsync`, direct QR codes, none plannable; registry rows, chat icon on the port page and on each dish (menu and children's menu); `BUNDLE_COVERAGE` and its test in `chatBundles.test.ts`. **Not done:** chat icon for a place on the ship (deck-plan screens), Directions and Meet me here actions, `day` and itinerary bundles with Add all to my day, shortlist; the coverage list marks the last two "none yet".
+
 ### B8: games, part 1 (infrastructure, Sudoku family, Binairo)
 
 - `GameShareAdapter` and registry, `GameShare` control in `parts.tsx`, `useIncomingBundle`, banner and failure fallback, route allow-listing, server `game.*` snapshot validation.

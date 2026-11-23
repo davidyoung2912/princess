@@ -119,4 +119,17 @@ public class ChatBundleRulesTests
         Assert.False(ChatPlanningRules.SlotClashes("3@17:30", busy));   // another day
         Assert.False(ChatPlanningRules.SlotClashes("junk", busy));
     }
+
+    [Fact]
+    public void PortPlaceAndDishRefsAreKnownAndStrict()
+    {
+        Assert.Equal("port", ChatBundleRules.TypeOfRef("port:cozumel"));
+        Assert.Equal("cozumel", ChatBundleRules.IdOf("port:cozumel", ChatBundleRules.Port));
+        Assert.Null(ChatBundleRules.IdOf("port:../x", ChatBundleRules.Port));
+        Assert.Null(ChatBundleRules.IdOf("place:", ChatBundleRules.Place));
+        Assert.Equal(("crown-grill", "filet-mignon"), ChatBundleRules.ParseDishRef("dish:crown-grill:filet-mignon"));
+        Assert.Null(ChatBundleRules.ParseDishRef("dish:crown-grill"));
+        Assert.Null(ChatBundleRules.ParseDishRef("dish:a:b:c"));
+        Assert.False(ChatBundleRules.IsPlannable(ChatBundleRules.Port));
+    }
 }

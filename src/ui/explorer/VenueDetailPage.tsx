@@ -24,7 +24,7 @@ import { useVenuePins } from '../../hooks/useVenuePins'
 import { TimeOfDayIcon } from '../TimeOfDay'
 import { PinButton } from './Pins'
 import { SendEventToChat, SendToChat } from '../onboard/SendToChat'
-import { eventKey } from '../../domain/explorer/shortlist'
+import { dishSlug, eventKey } from '../../domain/explorer/shortlist'
 import { SaveButton } from './SaveButton'
 import { REMINDER_DEFAULT } from '../../domain/notifications'
 import { navigatePath } from '../../domain/explorer/navigate'
@@ -135,7 +135,7 @@ function Body({ kind, venue, explorerDay, state, diets, avoid, above, busy, relo
           {(v.kidsMenu?.length ?? 0) > 0 && (
             <>
               <h3>{headingCase(t('exp.family.menu'))}</h3>
-              <ul className="plain-bullets">{v.kidsMenu?.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} /><DishSaveButton shipId={v.shipId} venueId={v.id} name={d.name} />{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}</ul>
+              <ul className="plain-bullets">{v.kidsMenu?.map((d) => <li key={d.name}><strong>{d.name}</strong><DietMarks marks={d.marks} /><DishFlags flags={d.flags} /><DishSaveButton shipId={v.shipId} venueId={v.id} name={d.name} /><SendToChat shareRef={`dish:${v.id}:${dishSlug(d.name)}`} title={d.name} />{d.contains.length > 0 && <small className="muted"> ({t('exp.menu.contains', { list: d.contains.join(', ') })})</small>}</li>)}</ul>
             </>
           )}
         </section>

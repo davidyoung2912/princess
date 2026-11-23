@@ -27,8 +27,26 @@ public static class ChatBundleRules
     /// </summary>
     public const string Event = "event", Excursion = "excursion", Dinner = "dinner";
 
+    /// <summary>
+    /// Phase B7: a port on the guest's own itinerary (<c>port:&lt;portId&gt;</c>), a place on the ship (<c>place:&lt;placeId&gt;</c>) and a dish on a menu of the guest's ship (<c>dish:&lt;venueId&gt;:&lt;slug&gt;</c>).
+    /// None has a day and a time of its own, so none is plannable; a place is a place to find, never a live "meet me here" (that stays the place card).
+    /// </summary>
+    public const string Port = "port", Place = "place", Dish = "dish";
+
     /// <summary>The types a ref can name today (the prefix of the ref). More arrive one phase at a time.</summary>
-    public static readonly string[] Types = [Venue, Menu, Event];
+    public static readonly string[] Types = [Venue, Menu, Event, Port, Place, Dish];
+
+    /// <summary>The id in a <c>port:</c> or <c>place:</c> ref, or null when the ref is not one or the id has anything but letters, digits, dashes and underscores.</summary>
+    public static string? IdOf(string? shareRef, string type) =>
+        shareRef is { } r && r.StartsWith(type + ":", StringComparison.Ordinal) && r[(type.Length + 1)..] is { Length: > 0 and <= 60 } id && id.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_') ? id : null;
+
+    /// <summary>The venue id and dish slug in a <c>dish:&lt;venueId&gt;:&lt;slug&gt;</c> ref, or null.</summary>
+    public static (string VenueId, string Slug)? ParseDishRef(string? shareRef)
+    {
+        if (shareRef is not { } r || !r.StartsWith("dish:", StringComparison.Ordinal)) return null;
+        var parts = r[5..].Split(':');
+        return parts.Length == 2 && parts.All(p => p.Length is > 0 and <= 60 && p.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_')) ? (parts[0], parts[1]) : null;
+    }
 
     /// <summary>The types a bundle can carry that have a day and a time: they can be proposed (Going, Maybe, No) and added to a day.</summary>
     public static readonly string[] Plannable = [Event, Excursion, Dinner];

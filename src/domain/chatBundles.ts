@@ -12,7 +12,7 @@ export interface BundleType {
   /** The word above the card ("Place", "Menu"). */
   label: StringKey
   /** The screen reader's name for the chat icon on this kind of thing. */
-  family: 'venue' | 'menu' | 'event' | 'excursion' | 'dinner'
+  family: 'venue' | 'menu' | 'event' | 'excursion' | 'dinner' | 'port' | 'place' | 'dish'
   /** Phase B2: it has a day and a time, so it can be asked about (Going, Maybe, No) as well as just sent. */
   plannable?: boolean
   /** How a code for it is made: `direct` for public catalogue data (the address holds the ref, no signal needed), `handoff` for anything personal (a short code the server keeps for a short time). */
@@ -27,10 +27,14 @@ export const BUNDLE_TYPES: Readonly<Record<string, BundleType>> = {
   event: { label: 'bundle.type.event', family: 'event', qr: 'direct', plannable: true },
   excursion: { label: 'bundle.type.excursion', family: 'excursion', qr: 'direct', plannable: true },
   dinner: { label: 'bundle.type.dinner', family: 'dinner', qr: 'direct', plannable: true },
+  // Phase B7: nothing here has a day and a time of its own, so none is plannable; a place is one to find, not the live "Meet me here" card.
+  port: { label: 'bundle.type.port', family: 'port', qr: 'direct' },
+  place: { label: 'bundle.type.place', family: 'place', qr: 'direct' },
+  dish: { label: 'bundle.type.dish', family: 'dish', qr: 'direct' },
 }
 
 /** The types a ref can start with. A booked excursion or dinner (`excursion:<id>`, `dining:<id>`) is an older card and is not one, though a bundle may carry the type `excursion` (made from an `event:` ref). */
-export const REF_TYPES: readonly string[] = ['venue', 'menu', 'event']
+export const REF_TYPES: readonly string[] = ['venue', 'menu', 'event', 'port', 'place', 'dish']
 
 /** The ref of a thing with a day and a time (`event:<eventId>:<day>`): the same `eventId:day` a plan uses, so it can also be sent as a plan. */
 export const eventRef = (planRef: string): string => `event:${planRef}`
