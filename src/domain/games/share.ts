@@ -16,11 +16,17 @@ import { BLANK as SL_BLANK, NONE, SLITHER_LEVELS, edgeCount, isSlitherSolved, lo
 import { BLANK as NK_BLANK, NURIKABE_LEVELS, WALL, isValidNurikabe, logicSolveNurikabe, type NurikabePuzzle } from './nurikabe'
 import { HASHI_LEVELS, buildLinks, crossingsOf, solveByLogic, type HashiPuzzle, type Island } from './hashi'
 import { EMPTY, FILLED, NONOGRAM_LEVELS, cluesOf, solveNonogram, type NonogramPuzzle } from './nonogram'
+import { MAX_GUESSES, WORD_LENGTH } from './wordle'
+import { WORDLE_WORDS } from './wordleWords'
+import { WORD_SEARCH_LEVELS, occurrences, type PlacedWord, type WordSearch } from './wordSearch'
+import { ALPHABET, CODEWORD_LEVELS, logicSolveCodeword, slotsOf, type CodewordPuzzle } from './codeword'
+import { CODEWORD_WORDS } from './codewordWords'
+import { MINE_LEVELS, neighboursOf, solvableByLogic, type MinePuzzle } from './minesweeper'
 
 export type ShareMode = 'start' | 'current'
 
 /** The games that can be sent so far (the catalogue ids). */
-export const SHAREABLE_GAMES = ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo', 'futoshiki', 'kenken', 'hitori', 'crossmath', 'kakuro', 'slitherlink', 'nurikabe', 'hashi', 'nonogram'] as const
+export const SHAREABLE_GAMES = ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo', 'futoshiki', 'kenken', 'hitori', 'crossmath', 'kakuro', 'slitherlink', 'nurikabe', 'hashi', 'nonogram', 'cruise-wordle', 'word-search', 'codeword', 'minesweeper'] as const
 export type ShareableGame = (typeof SHAREABLE_GAMES)[number]
 export const isShareableGame = (id: string): id is ShareableGame => (SHAREABLE_GAMES as readonly string[]).includes(id)
 
@@ -46,6 +52,13 @@ export type SharedGame =
   | { game: 'nurikabe'; puzzle: NurikabePuzzle; entries: number[]; notes: number[] }
   | { game: 'hashi'; puzzle: HashiPuzzle; entries: number[]; notes: number[] }
   | { game: 'nonogram'; puzzle: NonogramPuzzle; entries: number[]; notes: number[] }
+  | { game: 'cruise-wordle'; puzzle: WordlePuzzle; entries: number[]; notes: number[]; guesses: string[] }
+  | { game: 'word-search'; puzzle: WordSearch; entries: number[]; notes: number[] }
+  | { game: 'codeword'; puzzle: CodewordPuzzle; entries: number[]; notes: number[] }
+  | { game: 'minesweeper'; puzzle: MinePuzzle; entries: number[]; notes: number[] }
+
+/** A Cruise Wordle challenge: the answer as its place in the word list (so the text never spells it) and the word itself for the receiver's game. There is one level. */
+export interface WordlePuzzle { difficulty: Difficulty; index: number; target: string }
 
 /** A Sudoku-family puzzle (the ones that have rules, regions or cages and pencil notes). */
 export const isSudokuShare = (s: SharedGame): s is Extract<SharedGame, { game: SudokuGame }> => s.game.endsWith('sudoku')
@@ -73,6 +86,7 @@ const join = (m: Record<string, string | undefined>): string => Object.entries(m
 export function encodeGame(s: SharedGame, mode: ShareMode, withNotes = false): string {
   if (s.game === 'futoshiki' || s.game === 'kenken' || s.game === 'hitori') return encodeGrid(s, mode)
   if (isLaterGame(s)) return encodeLater(s, mode)
+  if (isThirdGame(s)) return encodeThird(s, mode)
   const p = s.puzzle
   const clues = p.puzzle
   const entries = clues.map((c, i) => (c !== 0 ? 0 : s.entries[i] ?? 0))
@@ -515,6 +529,171 @@ function decodeNonogram(m: Map<string, string>): SharedGame | null {
   return { game: 'nonogram', puzzle: { difficulty: d, size: n, solution, rows, cols }, entries, notes: [] }
 }
 
+/* ---- Cruise Wordle, Word Search, Codeword and Minesweeper (phase B9, part 3) ---- */
+
+type ThirdShare = Extract<SharedGame, { game: 'cruise-wordle' | 'word-search' | 'codeword' | 'minesweeper' }>
+const isThirdGame = (s: SharedGame): s is ThirdShare => ['cruise-wordle', 'word-search', 'codeword', 'minesweeper'].includes(s.game)
+
+/**
+ * The text for one of these four. Wordle sends the answer's place in the word list and, for the board so far, the guesses; Word Search the letters, the list, the
+ * answer and which words are found; Codeword the layout, the numbers and the given letters; Minesweeper the mines and the start square (never shown as text), and
+ * what is opened or flagged. Wordle and Minesweeper have no solving to do, so a sent challenge simply is that board.
+ */
+function encodeThird(s: ThirdShare, mode: ShareMode): string {
+  const current = mode === 'current'
+  switch (s.game) {
+    case 'cruise-wordle':
+      return join({ d: s.puzzle.difficulty, p: String(s.puzzle.index), ...(current && s.guesses.length > 0 ? { g: s.guesses.join(',') } : {}) })
+    case 'word-search': {
+      const q = s.puzzle
+      return join({
+        d: q.difficulty, p: String(q.size), l: q.letters.join(''), w: q.words.map((w) => w.text).join(','), a: q.answer, c: q.answerCells.join(','),
+        ...(current && s.entries.some((v) => v !== 0) ? { e: q.words.map((_, k) => (s.entries[k] ? '1' : '0')).join('') } : {}),
+      })
+    }
+    case 'codeword': {
+      const q = s.puzzle
+      const given = (u: number) => q.givens.includes(u)
+      const typed = Array.from({ length: 26 }, (_, k) => (!given(k + 1) && q.used.includes(k + 1) && s.entries[k + 1] ? ALPHABET[s.entries[k + 1] - 1].toLowerCase() : '0')).join('')
+      return join({
+        d: q.difficulty, p: String(q.size), w: q.white.map((w) => (w ? '1' : '0')).join(''), c: q.code.map((u) => String(u).padStart(2, '0')).join(''),
+        g: q.givens.map((u) => `${u}${ALPHABET[q.solution[u] - 1]}`).join(','),
+        ...(current && /[a-z]/.test(typed) ? { e: typed } : {}),
+      })
+    }
+    default: {
+      const q = s.puzzle
+      const mines = q.mines.flatMap((m, i) => (m ? [i] : []))
+      return join({ d: q.difficulty, p: dims(q.rows, q.cols), s: String(q.start), i: mines.join(','), ...(current && s.entries.some((v) => v !== 0) ? { e: s.entries.join('') } : {}) })
+    }
+  }
+}
+
+function decodeWordle(m: Map<string, string>): SharedGame | null {
+  const d = m.get('d')
+  const p = m.get('p')
+  if (!isLevel(d) || p === undefined || !/^\d{1,4}$/.test(p)) return null
+  const index = Number(p)
+  if (String(index) !== p || index >= WORDLE_WORDS.length) return null
+  const target = WORDLE_WORDS[index].toUpperCase()
+  const raw = m.get('g')
+  const guesses = raw === undefined ? [] : raw.split(',')
+  if (guesses.length > MAX_GUESSES || !guesses.every((g) => new RegExp(`^[A-Z]{${WORD_LENGTH}}$`).test(g))) return null
+  // A guess that is the answer ends the game, and a lost game has used all six.
+  if (guesses.some((g, i) => g === target && i < guesses.length - 1)) return null
+  return { game: 'cruise-wordle', puzzle: { difficulty: d, index, target }, entries: [], notes: [], guesses }
+}
+
+function decodeWordSearch(m: Map<string, string>): SharedGame | null {
+  const d = m.get('d')
+  const p = m.get('p')
+  const l = m.get('l')
+  const w = m.get('w')
+  const a = m.get('a')
+  if (!isLevel(d) || p === undefined || l === undefined || w === undefined || a === undefined || !/^\d{1,2}$/.test(p)) return null
+  const cfg = WORD_SEARCH_LEVELS[d]
+  const n = Number(p)
+  if (n !== cfg.size || !new RegExp(`^[A-Z]{${n * n}}$`).test(l) || !/^[A-Z]+(,[A-Z]+)*$/.test(w) || a.length !== cfg.answer || !/^[A-Z]+$/.test(a)) return null
+  const letters = [...l]
+  const list = w.split(',')
+  if (list.length > n * n || new Set(list).size !== list.length || list.some((x) => x.length < 3 || x.length > cfg.maxLen) || [...list].sort((x, y) => x.localeCompare(y)).join() !== list.join()) return null
+  const cells = digitList(m.get('c'), n * n - 1, cfg.answer)
+  if (!cells || new Set(cells).size !== cells.length || cells.some((c, k) => c < 0 || (k > 0 && c <= cells[k - 1]) || letters[c] !== a[k])) return null
+  const hidden = new Set(cells)
+  const words: PlacedWord[] = []
+  const covered = new Set<number>()
+  for (const text of list) {
+    const found = occurrences(n, letters, text)
+    // A listed word must not also hide over the answer, or the answer's squares would not be the ones left over.
+    if (found.length === 0 || found.some((c) => c.some((i) => hidden.has(i)))) return null
+    words.push({ text, cells: found[0] })
+    found[0].forEach((i) => covered.add(i))
+  }
+  if (letters.some((_, i) => !hidden.has(i) && !covered.has(i))) return null
+  let entries = list.map(() => 0)
+  const e = m.get('e')
+  if (e !== undefined) {
+    if (e.length !== list.length || !/^[01]+$/.test(e)) return null
+    entries = [...e].map(Number)
+  }
+  return { game: 'word-search', puzzle: { size: n, difficulty: d, letters, words, answer: a, answerCells: cells }, entries, notes: [] }
+}
+
+function decodeCodeword(m: Map<string, string>): SharedGame | null {
+  const d = m.get('d')
+  const p = m.get('p')
+  const w = m.get('w')
+  const c = m.get('c')
+  const g = m.get('g')
+  if (!isLevel(d) || p === undefined || w === undefined || c === undefined || g === undefined || !/^\d{1,2}$/.test(p) || !/^[01]+$/.test(w) || !/^\d+$/.test(c)) return null
+  const n = Number(p)
+  if (n !== CODEWORD_LEVELS[d].size || w.length !== n * n || c.length !== n * n * 2) return null
+  const white = [...w].map((x) => x === '1')
+  const code = Array.from({ length: n * n }, (_, i) => Number(c.slice(i * 2, i * 2 + 2)))
+  if (code.some((u, i) => u > 26 || (u === 0) === white[i])) return null
+  const slots = slotsOf(white, n)
+  const inWord = new Set(slots.flatMap((x) => x.cells))
+  if (slots.length === 0 || white.some((x, i) => x && !inWord.has(i))) return null
+  const used = [...new Set(code.filter((u) => u > 0))].sort((x, y) => x - y)
+  if (!/^\d{1,2}[A-Z](,\d{1,2}[A-Z])*$/.test(g)) return null
+  const known = Array<number>(27).fill(0)
+  const givens: number[] = []
+  for (const item of g.split(',')) {
+    const u = Number(item.slice(0, -1))
+    if (!used.includes(u) || known[u] !== 0) return null
+    known[u] = ALPHABET.indexOf(item.slice(-1)) + 1
+    givens.push(u)
+  }
+  if (new Set(givens.map((u) => known[u])).size !== givens.length) return null
+  const got = logicSolveCodeword(slots, code, known)
+  if (!got || used.some((u) => got[u] === 0 || (known[u] !== 0 && got[u] !== known[u]))) return null
+  const solution = Array.from({ length: 27 }, (_, u) => (used.includes(u) ? got[u] : 0))
+  if (new Set(used.map((u) => solution[u])).size !== used.length) return null
+  const words = new Set(CODEWORD_WORDS)
+  if (slots.some((x) => !words.has(x.cells.map((i) => ALPHABET[solution[code[i]] - 1]).join('')))) return null
+  const entries = Array<number>(27).fill(0)
+  const e = m.get('e')
+  if (e !== undefined) {
+    if (!/^[a-z0]{26}$/.test(e)) return null
+    for (let k = 0; k < 26; k++) {
+      const letter = e[k] === '0' ? 0 : e.charCodeAt(k) - 96
+      if (letter !== 0 && used.includes(k + 1) && known[k + 1] === 0) entries[k + 1] = letter
+    }
+  }
+  return { game: 'codeword', puzzle: { size: n, difficulty: d, white, code, slots, used, solution, givens: givens.sort((x, y) => x - y) }, entries, notes: [] }
+}
+
+function decodeMinesweeper(m: Map<string, string>): SharedGame | null {
+  const d = m.get('d')
+  if (!isLevel(d)) return null
+  const size = readDims(m.get('p'), 16, 16)
+  const level = MINE_LEVELS[d]
+  if (!size || size.rows !== level.rows || size.cols !== level.cols) return null
+  const { rows, cols } = size
+  const total = rows * cols
+  const s = m.get('s')
+  const i = m.get('i')
+  if (s === undefined || i === undefined || !/^\d{1,3}$/.test(s) || !/^\d{1,3}(,\d{1,3})*$/.test(i)) return null
+  const start = Number(s)
+  const at = i.split(',').map(Number)
+  if (start >= total || at.length !== level.mines || new Set(at).size !== at.length || at.some((x) => x >= total)) return null
+  const mines = Array<boolean>(total).fill(false)
+  at.forEach((x) => { mines[x] = true })
+  if (mines[start] || neighboursOf(start, rows, cols).some((x) => mines[x])) return null
+  const values = mines.map((_, k) => neighboursOf(k, rows, cols).filter((nb) => mines[nb]).length)
+  const puzzle = { difficulty: d, rows, cols, mines, values, start }
+  if (!solvableByLogic(puzzle, level.mines)) return null
+  let entries = Array<number>(total).fill(0)
+  const e = m.get('e')
+  if (e !== undefined) {
+    // 0 hidden, 1 opened, 2 flagged; an opened square cannot be a mine.
+    if (e.length !== total || !/^[012]+$/.test(e)) return null
+    entries = [...e].map(Number)
+    if (entries.some((v, k) => v === 1 && mines[k])) return null
+  }
+  return { game: 'minesweeper', puzzle, entries, notes: [] }
+}
+
 /** The puzzle in some text for a game, or null when the text is not a solvable puzzle of that game. Never throws. */
 export function decodeGame(game: string, data: string): SharedGame | null {
   try {
@@ -531,6 +710,10 @@ export function decodeGame(game: string, data: string): SharedGame | null {
     if (game === 'nurikabe') return decodeNurikabe(m)
     if (game === 'hashi') return decodeHashi(m)
     if (game === 'nonogram') return decodeNonogram(m)
+    if (game === 'cruise-wordle') return decodeWordle(m)
+    if (game === 'word-search') return decodeWordSearch(m)
+    if (game === 'codeword') return decodeCodeword(m)
+    if (game === 'minesweeper') return decodeMinesweeper(m)
     return decodeSudoku(game, m)
   } catch {
     return null
@@ -538,4 +721,7 @@ export function decodeGame(game: string, data: string): SharedGame | null {
 }
 
 /** Which of the two a recipient gets: the clues alone, or the board so far. */
-export const startOnly = (s: SharedGame): SharedGame => ({ ...s, entries: s.entries.map(() => 0), notes: s.notes.map(() => 0) })
+export const startOnly = (s: SharedGame): SharedGame => {
+  const clear = { ...s, entries: s.entries.map(() => 0), notes: s.notes.map(() => 0) }
+  return clear.game === 'cruise-wordle' ? { ...clear, guesses: [] } : clear
+}

@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<CodewordTechnique, StringKey> = { word: 'codeword.hint.word', cross: 'codeword.hint.cross', deep: 'codeword.hint.deep' }
@@ -19,10 +19,12 @@ interface ShownHint { text: string; cells: number[]; fill?: { num: number; lette
  * from the words they spell. Every puzzle has one answer that the word list and logic reach. Nothing is stored.
  */
 export function CodewordScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generateCodeword('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('codeword')
+  const sent = incoming && incoming.shared.game === 'codeword' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? generateCodeword('easy'))
   const n = game.size
-  const [entries, setEntries] = useState<number[]>(() => Array(27).fill(0))
+  const [entries, setEntries] = useState<number[]>(() => sent?.entries ?? Array(27).fill(0))
   const [history, setHistory] = useState<number[][]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [hint, setHint] = useState<ShownHint | null>(null)
@@ -111,6 +113,7 @@ export function CodewordScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     setGame(generateCodeword(level))
     setEntries(Array(27).fill(0))
     setHistory([])
@@ -159,6 +162,7 @@ export function CodewordScreen() {
         <LevelBar name="codeword-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: `${t(LEVEL_KEYS[d])} ${CODEWORD_LEVELS[d].size}×${CODEWORD_LEVELS[d].size}` }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} {n}×{n}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -212,6 +216,7 @@ export function CodewordScreen() {
         <div className="sd-tools">
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={erase} disabled={!num || given(num)}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
+          <GameShare shared={{ game: 'codeword', puzzle: game, entries, notes: [] }} title={t('gx.game.codeword.title')} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
         </div>
         <div className="cw-keys" role="group" aria-label={t('codeword.keys')}>

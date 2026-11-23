@@ -44,12 +44,12 @@ public static class ChatBundleRules
     /// <summary>The games that can be sent, with their name and the number of cells (or sizes) a puzzle may have. The id is the catalogue id and the screen is <c>/games-explorer/&lt;id&gt;</c>.</summary>
     public static readonly Dictionary<string, string> Games = new()
     {
-        ["sudoku"] = "Sudoku", ["diagonal-sudoku"] = "Diagonal Sudoku", ["jigsaw-sudoku"] = "Jigsaw Sudoku", ["killer-sudoku"] = "Killer Sudoku", ["binairo"] = "Binairo", ["futoshiki"] = "Futoshiki", ["kenken"] = "KenKen", ["hitori"] = "Hitori", ["crossmath"] = "Crossmath", ["kakuro"] = "Kakuro", ["slitherlink"] = "Slitherlink", ["nurikabe"] = "Nurikabe", ["hashi"] = "Hashi", ["nonogram"] = "Nonogram",
+        ["sudoku"] = "Sudoku", ["diagonal-sudoku"] = "Diagonal Sudoku", ["jigsaw-sudoku"] = "Jigsaw Sudoku", ["killer-sudoku"] = "Killer Sudoku", ["binairo"] = "Binairo", ["futoshiki"] = "Futoshiki", ["kenken"] = "KenKen", ["hitori"] = "Hitori", ["crossmath"] = "Crossmath", ["kakuro"] = "Kakuro", ["slitherlink"] = "Slitherlink", ["nurikabe"] = "Nurikabe", ["hashi"] = "Hashi", ["nonogram"] = "Nonogram", ["cruise-wordle"] = "Cruise Wordle", ["word-search"] = "Word Search", ["codeword"] = "Codeword", ["minesweeper"] = "Minesweeper",
     };
 
     private static readonly string[] Levels = ["easy", "medium", "hard", "expert"];
 
-    /// <summary>The puzzle text: letters, digits, <c>=</c>, <c>;</c> and <c>,</c> only, a level, and the clues at a size the game has (81 cells; 6, 8, 10 or 12 squared for Binairo; 4 to 7 squared for Futoshiki and KenKen; 5, 6, 8 or 10 squared for Hitori; 6, 8, 9 or 10 squared for Kakuro; 5, 7, 8 or 10 squared for Slitherlink; four digits of rows and columns for Crossmath, Nurikabe and Hashi; a size of 5, 8, 10 or 15 for Nonogram).</summary>
+    /// <summary>The puzzle text: letters, digits, <c>=</c>, <c>;</c> and <c>,</c> only, a level, and the clues at a size the game has (81 cells; 6, 8, 10 or 12 squared for Binairo; 4 to 7 squared for Futoshiki and KenKen; 5, 6, 8 or 10 squared for Hitori; 6, 8, 9 or 10 squared for Kakuro; 5, 7, 8 or 10 squared for Slitherlink; four digits of rows and columns for Crossmath, Nurikabe and Hashi; a size of 5, 8, 10 or 15 for Nonogram; a word-list place of up to four digits for Cruise Wordle; a size of 6, 8, 10 or 12 for Word Search, 7, 9, 11 or 13 for Codeword; rows and columns for Minesweeper).</summary>
     public static bool GameDataOk(string game, string? data)
     {
         if (data is not { Length: > 0 and <= GameDataMax } || !data.All(c => char.IsAsciiLetterOrDigit(c) || c is '=' or ';' or ',')) return false;
@@ -69,6 +69,10 @@ public static class ChatBundleRules
             "slitherlink" => clues.Length is 25 or 49 or 64 or 100,
             "crossmath" or "nurikabe" or "hashi" => clues.Length == 4,
             "nonogram" => clues is "5" or "8" or "10" or "15",
+            "cruise-wordle" => clues.Length is >= 1 and <= 4,
+            "word-search" => clues is "6" or "8" or "10" or "12",
+            "codeword" => clues is "7" or "9" or "11" or "13",
+            "minesweeper" => clues is "0808" or "1010" or "1214" or "1616",
             _ => clues.Length == 81,
         };
     }

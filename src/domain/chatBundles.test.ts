@@ -27,8 +27,8 @@ describe('isKnownBundle and bundleLink', () => {
   })
   it('does not know a newer payload or another type, so an older app shows the fallback', () => {
     expect(isKnownBundle({ type: 'venue', v: BUNDLE_VERSION + 1 })).toBe(false)
-    expect(isKnownBundle({ type: 'game.minesweeper', v: 1 })).toBe(false)
-    expect(bundleLink({ type: 'game.minesweeper', v: 1, path: '/dining-today/crown-grill' })).toBeNull()
+    expect(isKnownBundle({ type: 'game.chess', v: 1 })).toBe(false)
+    expect(bundleLink({ type: 'game.chess', v: 1, path: '/dining-today/crown-grill' })).toBeNull()
   })
   it('opens only the screens a shared item may open', () => {
     expect(bundleLink(venue)).toBe('/dining-today/crown-grill')
@@ -131,7 +131,7 @@ describe('bundle coverage', () => {
 describe('game bundles', () => {
   const sent = { type: 'game.sudoku', v: 1, title: 'Sudoku', ref: 'game:sudoku:current', data: 'd=easy;p=0' }
   it('are in the registry for each shareable game and read their puzzle text and way of sending', () => {
-    for (const id of ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo', 'futoshiki', 'kenken', 'hitori', 'crossmath', 'kakuro', 'slitherlink', 'nurikabe', 'hashi', 'nonogram']) expect(`game.${id}` in BUNDLE_TYPES).toBe(true)
+    for (const id of ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo', 'futoshiki', 'kenken', 'hitori', 'crossmath', 'kakuro', 'slitherlink', 'nurikabe', 'hashi', 'nonogram', 'cruise-wordle', 'word-search', 'codeword', 'minesweeper']) expect(`game.${id}` in BUNDLE_TYPES).toBe(true)
     expect(gameOfBundle(sent)).toEqual({ game: 'sudoku', mode: 'current', data: 'd=easy;p=0' })
     expect(gameOfBundle({ ...sent, ref: 'game:binairo:current' })).toBeNull()
     expect(gameOfBundle({ ...sent, ref: 'game:sudoku:later' })).toBeNull()

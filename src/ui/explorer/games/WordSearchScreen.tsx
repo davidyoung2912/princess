@@ -5,7 +5,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Lightbulb } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const DIR_KEYS: StringKey[] = ['ws.dir.0', 'ws.dir.1', 'ws.dir.2', 'ws.dir.3', 'ws.dir.4', 'ws.dir.5', 'ws.dir.6', 'ws.dir.7']
@@ -19,10 +19,12 @@ type Found = { word: number; cells: number[] }
  * Nothing is stored.
  */
 export function WordSearchScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generateWordSearch('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('word-search')
+  const sent = incoming && incoming.shared.game === 'word-search' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? generateWordSearch('easy'))
   const n = game.size
-  const [found, setFound] = useState<Found[]>([])
+  const [found, setFound] = useState<Found[]>(() => (sent ? sent.puzzle.words.flatMap((w, k) => (sent.entries[k] ? [{ word: k, cells: w.cells }] : [])) : []))
   const [anchor, setAnchor] = useState<number | null>(null)
   const [end, setEnd] = useState<number | null>(null)
   const [cursor, setCursor] = useState(0)
@@ -125,6 +127,7 @@ export function WordSearchScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     setGame(generateWordSearch(level))
     setFound([])
     setAnchor(null)
@@ -142,6 +145,7 @@ export function WordSearchScreen() {
         <LevelBar name="ws-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: `${t(LEVEL_KEYS[d])} ${WORD_SEARCH_LEVELS[d].size}×${WORD_SEARCH_LEVELS[d].size}` }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} {n}×{n}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -204,6 +208,7 @@ export function WordSearchScreen() {
         <div className="sd-tools bn-tools">
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
           <button type="button" className="sd-tool" onClick={() => { setAnchor(null); setEnd(null) }} disabled={anchor === null}><span>{t('ws.clear')}</span></button>
+          <GameShare shared={{ game: 'word-search', puzzle: game, entries: game.words.map((_, k) => (foundSet.has(k) ? 1 : 0)), notes: [] }} title={t('gx.game.wordsearch.title')} />
         </div>
         <GameHelp title={t('sudoku.help.title')}>
           <p>{t('ws.help.1')}</p>

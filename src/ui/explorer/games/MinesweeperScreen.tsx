@@ -6,7 +6,7 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Flag, Lightbulb, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<MineRule, Record<'safe' | 'mine', StringKey>> = {
@@ -27,10 +27,16 @@ const fresh = (p: MinePuzzle): State => ({ revealed: revealFrom(p, Array<boolean
  * Opening a mine stops the board until Undo or a new puzzle. Nothing is stored.
  */
 export function MinesweeperScreen() {
-  const [level, setLevel] = useState<Difficulty>('easy')
-  const [game, setGame] = useState(() => generateMinesweeper('easy'))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('minesweeper')
+  const sent = incoming && incoming.shared.game === 'minesweeper' ? incoming.shared : null
+  const [level, setLevel] = useState<Difficulty>(sent?.puzzle.difficulty ?? 'easy')
+  const [game, setGame] = useState(() => sent?.puzzle ?? generateMinesweeper('easy'))
   const { rows, cols } = game
-  const [state, setState] = useState<State>(() => fresh(game))
+  const [state, setState] = useState<State>(() => {
+    const start = fresh(game)
+    if (!sent) return start
+    return { revealed: start.revealed.map((r, i) => r || sent.entries[i] === 1), flags: start.flags.map((_, i) => sent.entries[i] === 2 && !start.revealed[i]), boom: null }
+  })
   const [history, setHistory] = useState<State[]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [tool, setTool] = useState<'open' | 'flag'>('open')
@@ -125,6 +131,7 @@ export function MinesweeperScreen() {
   }
 
   const newPuzzle = () => {
+    leaveChat()
     const next = generateMinesweeper(level)
     setGame(next)
     setState(fresh(next))
@@ -187,6 +194,7 @@ export function MinesweeperScreen() {
         <LevelBar name="minesweeper-level" legend={t('sudoku.level.label')} levels={DIFFICULTIES.map((d) => ({ id: d, label: `${t(LEVEL_KEYS[d])} ${MINE_LEVELS[d].rows}×${MINE_LEVELS[d].cols}` }))} level={level} onLevel={setLevel}>
           <Button variant="secondary" onClick={newPuzzle}>{t('sudoku.new')}</Button>
         </LevelBar>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={newPuzzle} />}
         <p className="sd-meta">
           <span>{t(LEVEL_KEYS[game.difficulty])} {rows}×{cols}</span>
           <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -255,6 +263,7 @@ export function MinesweeperScreen() {
 
         <div className="sd-tools bn-tools">
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
+          <GameShare shared={{ game: 'minesweeper', puzzle: game, entries: game.mines.map((_, i) => (revealed[i] ? 1 : flags[i] ? 2 : 0)), notes: [] }} title={t('gx.game.minesweeper.title')} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={over}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
         </div>
         <div className="bn-pad" role="group" aria-label={t('mine.pad')}>

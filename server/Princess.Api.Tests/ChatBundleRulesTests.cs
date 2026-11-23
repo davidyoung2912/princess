@@ -177,6 +177,13 @@ public class ChatBundleRulesTests
         Assert.False(ChatBundleRules.GameDataOk("nurikabe", Clues(5)));
         Assert.True(ChatBundleRules.GameDataOk("nonogram", "d=easy;p=10;r=1,2;c=1,2"));
         Assert.False(ChatBundleRules.GameDataOk("nonogram", "d=easy;p=7;r=1;c=1"));
+        Assert.True(ChatBundleRules.GameDataOk("cruise-wordle", "d=easy;p=7;g=CRANE,BEACH"));
+        Assert.False(ChatBundleRules.GameDataOk("cruise-wordle", "d=easy;p=12345"));
+        Assert.True(ChatBundleRules.GameDataOk("word-search", "d=easy;p=6;l=ABC"));
+        Assert.False(ChatBundleRules.GameDataOk("word-search", "d=easy;p=7;l=ABC"));
+        Assert.True(ChatBundleRules.GameDataOk("codeword", "d=easy;p=9;w=1"));
+        Assert.True(ChatBundleRules.GameDataOk("minesweeper", "d=easy;p=1214;s=5;i=1,2"));
+        Assert.False(ChatBundleRules.GameDataOk("minesweeper", "d=easy;p=0909;s=5;i=1,2"));
         Assert.False(ChatBundleRules.GameDataOk("sudoku", Clues() + ";x=" + new string('a', ChatBundleRules.GameDataMax)));
         Assert.False(ChatBundleRules.GameDataOk("sudoku", null));
         Assert.False(ChatBundleRules.GameDataOk("sudoku", "d=easy;p=" + new string('0', 80) + "x"));

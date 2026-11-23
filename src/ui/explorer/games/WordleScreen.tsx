@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { WORDLE_WORDS } from '../../../domain/games/wordleWords'
 import { MAX_GUESSES, WORD_LENGTH, backspace, keyStates, newGame, pickTarget, scoreGuess, shareText, submitGuess, typeLetter, type LetterState, type WordleGame } from '../../../domain/games/wordle'
 import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, SolvedCard, useGameClock } from './parts'
+import { GameClock, GameHelp, GameShare, IncomingNote, SolvedCard, useGameClock, useIncomingGame } from './parts'
 
 const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
 const STATE_WORD: Record<LetterState, StringKey> = { correct: 'wordle.state.correct', present: 'wordle.state.present', absent: 'wordle.state.absent' }
@@ -15,13 +16,19 @@ const reducedMotion = () =>
 
 /** Cruise Wordle: guess the hidden five-letter cruise or travel word in six tries. A new word is picked every game; nothing is stored. */
 export function WordleScreen() {
-  const [game, setGame] = useState<WordleGame>(() => newGame(pickTarget()))
-  const [settled, setSettled] = useState(0)
+  const { incoming, fromChat, leaveChat } = useIncomingGame('cruise-wordle')
+  const sent = incoming && incoming.shared.game === 'cruise-wordle' ? incoming.shared : null
+  const [game, setGame] = useState<WordleGame>(() => {
+    if (!sent) return newGame(pickTarget())
+    // The board so far is played again, guess by guess, so the result is worked out here and not taken from the text.
+    return sent.guesses.reduce((g, w) => submitGuess({ ...g, current: w }).game, newGame(sent.puzzle.target))
+  })
+  const [settled, setSettled] = useState(sent ? sent.guesses.length : 0)
   const [message, setMessage] = useState('')
   const [announce, setAnnounce] = useState('')
   const [shake, setShake] = useState(false)
   const gameRef = useRef(game)
-  const settledRef = useRef(0)
+  const settledRef = useRef(sent ? sent.guesses.length : 0)
   const timers = useRef<number[]>([])
 
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)) }
@@ -78,6 +85,7 @@ export function WordleScreen() {
   const { seconds, reset: resetClock } = useGameClock(game.status === 'playing')
 
   const playAgain = () => {
+    leaveChat()
     timers.current.forEach(clearTimeout)
     timers.current = []
     settledRef.current = 0
@@ -107,6 +115,7 @@ export function WordleScreen() {
           <span aria-hidden="true">{t('wordle.count', { n: Math.min(row + 1, MAX_GUESSES), max: MAX_GUESSES })}</span>
           <GameClock seconds={seconds} label={t('wordle.time')} />
         </p>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={playAgain} />}
         <p className="wd-message" role="status">{message}</p>
         <p className="visually-hidden" role="status">{announce}</p>
 
@@ -150,6 +159,9 @@ export function WordleScreen() {
           </SolvedCard>
         )}
 
+        <div className="sd-tools">
+          <GameShare shared={{ game: 'cruise-wordle', puzzle: { difficulty: 'easy', index: WORDLE_WORDS.indexOf(game.target), target: game.target }, entries: [], notes: [], guesses: [...game.guesses] }} title={t('gx.game.wordle.title')} />
+        </div>
         <div className="wd-keys" role="group" aria-label={t('wordle.keyboard')}>
           {ROWS.map((letters, i) => (
             <div key={letters} className="wd-keys__row">

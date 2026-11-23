@@ -69,7 +69,7 @@ export function nextWordHint(g: WordSearch, found: ReadonlySet<number>): { word:
 }
 
 /** Every line of squares in the grid that spells `text` (either way round), as square lists. */
-function occurrences(n: number, letters: readonly string[], text: string): number[][] {
+export function occurrences(n: number, letters: readonly string[], text: string): number[][] {
   const out: number[][] = []
   for (let i = 0; i < n * n; i++) {
     for (const [dr, dc] of DIRS) {

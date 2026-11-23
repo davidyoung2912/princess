@@ -139,7 +139,7 @@ export function GameShare({ shared, title }: { shared: SharedGame; title: string
       )}
       {step === 'send' && (
         <SendDialog onClose={() => setStep('closed')} item={{
-          title, subtitle: `${level}, ${t(mode === 'start' ? 'game.share.start' : 'game.share.current').toLowerCase()}`, takesNote: true,
+          title, subtitle: `${shared.game === 'cruise-wordle' ? '' : `${level}, `}${t(mode === 'start' ? 'game.share.start' : 'game.share.current').toLowerCase()}`, takesNote: true,
           input: (note) => ({ kind: 'bundle', shareRef: `game:${shared.game}:${mode}`, data: data(), ...(note ? { note } : {}) }),
         }} />
       )}

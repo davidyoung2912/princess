@@ -12,6 +12,10 @@ import { generateNurikabe } from './nurikabe'
 import { generateHashi } from './hashi'
 import { generateNonogram } from './nonogram'
 import { generatePuzzle } from './sudoku'
+import { generateWordSearch } from './wordSearch'
+import { generateCodeword } from './codeword'
+import { generateMinesweeper } from './minesweeper'
+import { WORDLE_WORDS } from './wordleWords'
 
 const seeded = (seed: number) => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32 }
 
@@ -47,19 +51,31 @@ const make = (game: (typeof SHAREABLE_GAMES)[number], random: () => number): Sha
   if (game === 'nurikabe') { const puzzle = generateNurikabe('medium', random); return { game, puzzle, entries: every(puzzle.solution.map((w) => (w ? 1 : 2))), notes: [] } }
   if (game === 'hashi') { const puzzle = generateHashi('medium', random); return { game, puzzle, entries: every(puzzle.solution), notes: [] } }
   if (game === 'nonogram') { const puzzle = generateNonogram('medium', random); return { game, puzzle, entries: every(puzzle.solution), notes: [] } }
+  if (game === 'cruise-wordle') return { game, puzzle: { difficulty: 'easy', index: 7, target: WORDLE_WORDS[7].toUpperCase() }, entries: [], notes: [], guesses: ['CRANE', 'BEACH'] }
+  if (game === 'word-search') { const puzzle = generateWordSearch('easy', random); return { game, puzzle, entries: puzzle.words.map((_, k) => k % 2), notes: [] } }
+  if (game === 'codeword') {
+    const puzzle = generateCodeword('easy', random)
+    return { game, puzzle, entries: puzzle.solution.map((l, u) => (u % 2 === 0 && !puzzle.givens.includes(u) ? l : 0)), notes: [] }
+  }
+  if (game === 'minesweeper') {
+    const puzzle = generateMinesweeper('easy', random)
+    return { game, puzzle, entries: puzzle.mines.map((m, i) => (m ? (i % 2 ? 2 : 0) : i % 3 === 0 ? 1 : 0)), notes: [] }
+  }
   const puzzle = game === 'killer-sudoku' ? generateKiller('easy', random) : generatePuzzle('easy', random, game === 'sudoku' ? 'classic' : game === 'diagonal-sudoku' ? 'diagonal' : 'jigsaw')
   puzzle.puzzle.forEach((c, i) => { if (c === 0 && i % 4 === 0) { entries[i] = puzzle.solution[i] } else if (c === 0 && i % 4 === 1) notes[i] = 0b101000101 })
   return { game, puzzle, entries, notes }
 }
 
+const NEWEST = ['cruise-wordle', 'word-search', 'codeword', 'minesweeper']
+
 describe('game share round trip', () => {
-  for (const game of SHAREABLE_GAMES) {
+  for (const game of SHAREABLE_GAMES.filter((g) => !NEWEST.includes(g))) {
     it(`${game}: start, current and notes come back as the same puzzle`, () => {
       const s = make(game, seeded(7))
       const start = decodeGame(game, encodeGame(s, 'start'))
       const clueKey = ['puzzle', 'values', 'start', 'clues', 'rows'].find((k) => k in s.puzzle && Array.isArray((s.puzzle as unknown as Record<string, unknown>)[k]))!
       expect((start?.puzzle as unknown as Record<string, unknown>)[clueKey]).toEqual((s.puzzle as unknown as Record<string, unknown>)[clueKey])
-      expect(start?.puzzle.solution).toEqual(s.puzzle.solution)
+      expect((start?.puzzle as unknown as Record<string, unknown>).solution).toEqual((s.puzzle as unknown as Record<string, unknown>).solution)
       expect(start?.entries.every((v) => v === 0)).toBe(true)
       const current = decodeGame(game, encodeGame(s, 'current'))
       expect(current?.entries).toEqual(s.entries)
@@ -124,6 +140,56 @@ describe('crossmath, kakuro, slitherlink, nurikabe, hashi and nonogram', () => {
     expect(decodeGame('hashi', 'd=easy;p=0707;i=0,6;v=13')).toBeNull()
     expect(decodeGame('kakuro', `d=easy;p=${'0'.repeat(36)};w=${'1'.repeat(36)};s=3`)).toBeNull()
     expect(decodeGame('crossmath', 'd=easy;p=0707;k=' + 'v'.repeat(49) + ';y=;v=1;t=1')).toBeNull()
+  })
+})
+
+describe('cruise wordle, word search, codeword and minesweeper', () => {
+  it('wordle sends the place in the list, never the word, and the guesses only for the board so far', () => {
+    const w = make('cruise-wordle', seeded(1)) as Extract<SharedGame, { game: 'cruise-wordle' }>
+    const start = encodeGame(w, 'start')
+    expect(start).not.toContain(w.puzzle.target)
+    expect(decodeGame('cruise-wordle', start)).toMatchObject({ puzzle: { index: 7, target: w.puzzle.target }, guesses: [] })
+    expect((decodeGame('cruise-wordle', encodeGame(w, 'current')) as typeof w).guesses).toEqual(['CRANE', 'BEACH'])
+    expect(decodeGame('cruise-wordle', 'd=easy;p=99999')).toBeNull()
+    expect(decodeGame('cruise-wordle', 'd=easy;p=7;g=CRANE,TOOLONG')).toBeNull()
+    expect(decodeGame('cruise-wordle', 'd=easy;p=7;g=AAAAA,BBBBB,CCCCC,DDDDD,EEEEE,FFFFF,GGGGG')).toBeNull()
+    expect(decodeGame('cruise-wordle', `d=easy;p=7;g=${w.puzzle.target},CRANE`)).toBeNull()
+    expect(decodeGame('cruise-wordle', 'd=easy;p=07')).toBeNull()
+  })
+  it('word search is rebuilt, and a grid with a stray square or a hidden extra word is refused', () => {
+    const s = make('word-search', seeded(3)) as Extract<SharedGame, { game: 'word-search' }>
+    const data = encodeGame(s, 'start')
+    const back = decodeGame('word-search', data) as typeof s
+    expect(back.puzzle.words.map((x) => x.text)).toEqual(s.puzzle.words.map((x) => x.text))
+    expect(back.puzzle.answer).toBe(s.puzzle.answer)
+    const l = s.puzzle.letters.join('')
+    const stray = l.slice(0, 1) === 'Z' ? 'Q' : 'Z'
+    expect(decodeGame('word-search', data.replace(`l=${l}`, `l=${stray}${l.slice(1)}`))).toBeNull()
+    expect(decodeGame('word-search', data.replace(/w=[A-Z,]+/, (w) => w.split(',').slice(0, -1).join(',')))).toBeNull()
+    expect(decodeGame('word-search', data.replace(/a=[A-Z]+/, 'a=ZZZZZ'))).toBeNull()
+  })
+  it('codeword numbers, givens and the typed letters survive; wrong givens are refused', () => {
+    const s = make('codeword', seeded(5)) as Extract<SharedGame, { game: 'codeword' }>
+    const back = decodeGame('codeword', encodeGame(s, 'current')) as typeof s
+    expect(back.puzzle.code).toEqual(s.puzzle.code)
+    expect(back.puzzle.givens).toEqual(s.puzzle.givens)
+    expect(back.puzzle.solution).toEqual(s.puzzle.solution)
+    expect(back.entries).toEqual(s.entries)
+    const data = encodeGame(s, 'start')
+    expect(decodeGame('codeword', data.replace(/g=[0-9A-Z,]+/, 'g=1A'))).toBeNull()
+    expect(decodeGame('codeword', data.replace(/g=[0-9A-Z,]+/, 'g=99A'))).toBeNull()
+  })
+  it('minesweeper keeps the mines, refuses a mine on the start and an opened mine', () => {
+    const s = make('minesweeper', seeded(9)) as Extract<SharedGame, { game: 'minesweeper' }>
+    const back = decodeGame('minesweeper', encodeGame(s, 'current')) as typeof s
+    expect(back.puzzle.mines).toEqual(s.puzzle.mines)
+    expect(back.puzzle.start).toBe(s.puzzle.start)
+    expect(back.entries).toEqual(s.entries)
+    const data = encodeGame(s, 'start')
+    expect(decodeGame('minesweeper', data.replace(/s=\d+/, `s=${s.puzzle.mines.indexOf(true)}`))).toBeNull()
+    expect(decodeGame('minesweeper', data.replace(/i=[\d,]+/, 'i=0,1,2'))).toBeNull()
+    const mine = s.puzzle.mines.indexOf(true)
+    expect(decodeGame('minesweeper', `${data};e=${'0'.repeat(mine)}1${'0'.repeat(63 - mine)}`)).toBeNull()
   })
 })
 
