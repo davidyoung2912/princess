@@ -263,7 +263,7 @@ export function MinesweeperScreen() {
 
         <div className="sd-tools bn-tools">
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
-          <GameShare shared={{ game: 'minesweeper', puzzle: game, entries: game.mines.map((_, i) => (revealed[i] ? 1 : flags[i] ? 2 : 0)), notes: [] }} title={t('gx.game.minesweeper.title')} />
+          <GameShare shared={{ game: 'minesweeper', puzzle: game, entries: game.mines.map((_, i) => (revealed[i] ? 1 : flags[i] ? 2 : 0)), notes: [] }} title={t('gx.game.minesweeper.title')} done={solved} seconds={seconds} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={over}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
         </div>
         <div className="bn-pad" role="group" aria-label={t('mine.pad')}>

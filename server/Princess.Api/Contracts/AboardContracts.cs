@@ -151,6 +151,9 @@ public sealed record ChatBoardDto(int Day, List<ChatBundleDto?> Items, List<int>
 /// <summary>"I'm in" (or not) for one item of a day board.</summary>
 public sealed record ChatBoardRequest(int Item, bool In);
 
+/// <summary>Phase B10: whether the caller did the thing a bundle names.</summary>
+public sealed record ChatOutcomeRequest(bool Done);
+
 /// <summary>A poll (phase 4): the question and its two to five options.</summary>
 public sealed record ChatPollDto(string Question, List<string> Options, List<ChatBundleDto?>? Bundles = null, List<int>? Gone = null, List<string>? Slots = null, List<int>? Clashes = null);
 

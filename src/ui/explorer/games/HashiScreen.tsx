@@ -282,7 +282,7 @@ export function HashiScreen() {
         <div className="sd-tools bn-tools">
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'hashi', puzzle: game, entries: counts, notes: [] }} title={t('gx.game.hashi.title')} />
+          <GameShare shared={{ game: 'hashi', puzzle: game, entries: counts, notes: [] }} title={t('gx.game.hashi.title')} done={solved} seconds={seconds} />
         </div>
         <GameHelp title={t('sudoku.help.title')}>
           <p>{t('hashi.help.1')}</p>

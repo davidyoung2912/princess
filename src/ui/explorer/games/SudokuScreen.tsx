@@ -253,7 +253,7 @@ function SudokuGame({ variant }: { variant: Variant }) {
           <button type="button" className="sd-tool" onClick={erase} disabled={selected === null}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" aria-pressed={pencil} onClick={() => setPencil((p) => !p)}><Notes aria-hidden="true" focusable="false" /><span>{t(pencil ? 'sudoku.notesOn' : 'sudoku.notesOff')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: GAME_ID[variant], puzzle: game, entries, notes }} title={t(words.board)} />
+          <GameShare shared={{ game: GAME_ID[variant], puzzle: game, entries, notes }} title={t(words.board)} done={solved} seconds={seconds} />
         </div>
         <div className="sd-pad" role="group" aria-label={t('sudoku.pad')}>
           {DIGITS.map((d) => (

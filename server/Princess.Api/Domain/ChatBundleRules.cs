@@ -77,13 +77,23 @@ public static class ChatBundleRules
         };
     }
 
-    /// <summary>The bundle for a game puzzle, or null for a ref that is not <c>game:&lt;id&gt;:&lt;start|current&gt;</c>, an unknown game or puzzle text that fails <see cref="GameDataOk"/>.</summary>
+    /// <summary>The seconds in a result's <c>tm</c> pair (1 to 359999), or null when there is none or it is not a sensible number.</summary>
+    public static int? ResultSeconds(string? data)
+    {
+        var pair = (data ?? "").Split(';').FirstOrDefault(p => p.StartsWith("tm=", StringComparison.Ordinal));
+        return pair is { Length: > 3 and <= 9 } && pair[3..].All(char.IsAsciiDigit) && int.Parse(pair[3..]) is >= 1 and <= 359999 and var n ? n : null;
+    }
+
+    /// <summary>The bundle for a game puzzle, or null for a ref that is not <c>game:&lt;id&gt;:&lt;start|current|result&gt;</c>, an unknown game or puzzle text that fails <see cref="GameDataOk"/>.</summary>
     public static ChatBundle? BuildGame(string? shareRef, string? data, string? note)
     {
         var parts = (shareRef ?? "").Split(':');
-        if (parts.Length != 3 || parts[0] != Game || !Games.TryGetValue(parts[1], out var name) || parts[2] is not ("start" or "current") || !GameDataOk(parts[1], data)) return null;
+        if (parts.Length != 3 || parts[0] != Game || !Games.TryGetValue(parts[1], out var name) || parts[2] is not ("start" or "current" or "result") || !GameDataOk(parts[1], data)) return null;
+        // Phase B10: a result is the starting position and a time (<c>tm</c>, 1 to 359999 seconds); anything else in the text is the same puzzle text as for a start.
+        var seconds = ResultSeconds(data);
+        if (parts[2] == "result" ? seconds is null : seconds is not null) return null;
         var level = data!.Split(';').First(p => p.StartsWith("d=", StringComparison.Ordinal))[2..];
-        var subtitle = $"{char.ToUpperInvariant(level[0])}{level[1..]}, {(parts[2] == "start" ? "starting position" : "board so far")}";
+        var subtitle = $"{char.ToUpperInvariant(level[0])}{level[1..]}, {parts[2] switch { "start" => "starting position", "current" => "board so far", _ => $"solved in {seconds / 60}:{seconds % 60:00}" }}";
         return new ChatBundle($"{Game}.{parts[1]}", Version, name, subtitle, $"/games-explorer/{parts[1]}", Ref: shareRef, Note: ChatCardRules.CleanNote(note), Data: data);
     }
 

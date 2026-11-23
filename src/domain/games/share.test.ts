@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { generateBinairo } from './binairo'
-import { decodeGame, encodeGame, GAME_DATA_MAX, SHAREABLE_GAMES, startOnly, type SharedGame } from './share'
+import { decodeGame, encodeGame, GAME_DATA_MAX, SHAREABLE_GAMES, resultSeconds, startOnly, type SharedGame } from './share'
 import { generateKiller } from './killer'
 import { generateFutoshiki } from './futoshiki'
 import { generateKenKen } from './kenken'
@@ -222,5 +222,15 @@ describe('game share decoder is total', () => {
         expect(() => decodeGame(game, mutated)).not.toThrow()
       }
     }
+  })
+})
+
+describe('results', () => {
+  it('carries a time after the starting position and reads it back', () => {
+    expect(resultSeconds('d=easy;p=0;tm=552')).toBe(552)
+    expect(resultSeconds('d=easy;p=0')).toBeNull()
+    expect(resultSeconds('d=easy;p=0;tm=0')).toBeNull()
+    expect(resultSeconds('d=easy;p=0;tm=1234567')).toBeNull()
+    expect(resultSeconds('d=easy;p=0;xtm=5')).toBeNull()
   })
 })

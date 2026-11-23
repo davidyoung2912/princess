@@ -216,7 +216,7 @@ export function CrossmathScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && clear(selected)} disabled={selected === null || solved || vals[selected] === 0}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'crossmath', puzzle: game, entries: vals.map((v, i) => (game.start[i] === 0 ? v : 0)), notes: [] }} title={t('gx.game.crossmath.title')} />
+          <GameShare shared={{ game: 'crossmath', puzzle: game, entries: vals.map((v, i) => (game.start[i] === 0 ? v : 0)), notes: [] }} title={t('gx.game.crossmath.title')} done={solved} seconds={seconds} />
         </div>
         <div className="cm-tray" role="group" aria-label={t('crossmath.tray')}>
           {distinct.map((v) => (

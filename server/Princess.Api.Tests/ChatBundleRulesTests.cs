@@ -145,6 +145,11 @@ public class ChatBundleRulesTests
         Assert.Equal("/games-explorer/sudoku", b.Path);
         Assert.Equal(Clues(), b.Data);
         Assert.Equal("Hard, board so far", ChatBundleRules.BuildGame("game:binairo:current", Clues(36), null)!.Subtitle);
+        Assert.Equal("Hard, solved in 9:12", ChatBundleRules.BuildGame("game:sudoku:result", Clues() + ";tm=552", null)!.Subtitle);
+        Assert.Null(ChatBundleRules.BuildGame("game:sudoku:result", Clues(), null));                 // a result needs a time
+        Assert.Null(ChatBundleRules.BuildGame("game:sudoku:result", Clues() + ";tm=0", null));
+        Assert.Null(ChatBundleRules.BuildGame("game:sudoku:result", Clues() + ";tm=360000", null));
+        Assert.Null(ChatBundleRules.BuildGame("game:sudoku:start", Clues() + ";tm=552", null));      // a time belongs only to a result
         Assert.Null(ChatBundleRules.TypeOfRef("game:sudoku:start"));   // no poll, board or code can name a game
     }
 

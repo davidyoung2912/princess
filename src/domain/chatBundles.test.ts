@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLE_TYPES, BUNDLE_VERSION, REF_TYPES, bundleLink, bundleSummary, eventRef, gameOfBundle, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
+import { BUNDLE_TYPES, BUNDLE_VERSION, REF_TYPES, bundleLink, bundleSummary, eventRef, forwardInput, gameOfBundle, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
 
 const venue = { type: 'venue', v: 1, title: 'Crown Grill', subtitle: 'Steakhouse', path: '/dining-today/crown-grill', place: 'Deck 7' }
 
@@ -136,6 +136,9 @@ describe('game bundles', () => {
     expect(gameOfBundle({ ...sent, ref: 'game:binairo:current' })).toBeNull()
     expect(gameOfBundle({ ...sent, ref: 'game:sudoku:later' })).toBeNull()
     expect(gameOfBundle({ ...sent, data: undefined })).toBeNull()
+    expect(gameOfBundle({ ...sent, ref: 'game:sudoku:result', data: 'd=easy;p=0;tm=552' })).toEqual({ game: 'sudoku', mode: 'result', data: 'd=easy;p=0;tm=552', seconds: 552 })
+    expect(gameOfBundle({ ...sent, ref: 'game:sudoku:result' })).toBeNull()
+    expect(gameOfBundle({ ...sent, ref: 'game:sudoku:result', data: 'd=easy;p=0;tm=0' })).toBeNull()
     expect(gameOfBundle({ type: 'venue', ref: 'venue:x' })).toBeNull()
   })
   it('keep puzzle text only when it is plain and small', () => {
@@ -147,5 +150,17 @@ describe('game bundles', () => {
   it('open the game screen from the registry path', () => {
     expect(bundleLink({ type: 'game.sudoku', v: 1, path: '/games-explorer/sudoku' })).toBe('/games-explorer/sudoku')
     expect(bundleLink({ type: 'game.sudoku', v: 1, path: '/games-explorer/../admin' })).toBeNull()
+  })
+})
+
+describe('forwardInput', () => {
+  it('sends only the ref, the puzzle text and the note', () => {
+    const b = { type: 'venue', v: BUNDLE_VERSION, ref: 'venue:crown-grill' }
+    expect(forwardInput(b, 'look')).toEqual({ kind: 'bundle', shareRef: 'venue:crown-grill', note: 'look' })
+    expect(forwardInput({ ...b, data: 'a=1' })).toEqual({ kind: 'bundle', shareRef: 'venue:crown-grill', data: 'a=1' })
+  })
+  it('refuses a bundle with no ref or an unknown type', () => {
+    expect(forwardInput({ type: 'venue', v: BUNDLE_VERSION })).toBeNull()
+    expect(forwardInput({ type: 'nope', v: BUNDLE_VERSION, ref: 'x:1' })).toBeNull()
   })
 })

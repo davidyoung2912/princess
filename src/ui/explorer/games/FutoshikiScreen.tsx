@@ -256,7 +256,7 @@ export function FutoshikiScreen() {
           <button type="button" className="sd-tool" onClick={erase} disabled={selected === null}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" aria-pressed={pencil} onClick={() => setPencil((p) => !p)}><Notes aria-hidden="true" focusable="false" /><span>{t(pencil ? 'sudoku.notesOn' : 'sudoku.notesOff')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'futoshiki', puzzle: game, entries: entries, notes: [] }} title={t('gx.game.futoshiki.title')} />
+          <GameShare shared={{ game: 'futoshiki', puzzle: game, entries: entries, notes: [] }} title={t('gx.game.futoshiki.title')} done={solved} seconds={seconds} />
         </div>
         <div className="sd-pad fs-pad" style={boardStyle} role="group" aria-label={t('sudoku.pad')}>
           {digits.map((d) => (

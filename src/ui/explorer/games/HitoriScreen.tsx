@@ -186,7 +186,7 @@ export function HitoriScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && set(selected, BLANK)} disabled={selected === null || solved}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'hitori', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.hitori.title')} />
+          <GameShare shared={{ game: 'hitori', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.hitori.title')} done={solved} seconds={seconds} />
         </div>
         <div className="bn-pad" role="group" aria-label={t('hitori.pad')}>
           {[SHADED, CIRCLED].map((m) => (

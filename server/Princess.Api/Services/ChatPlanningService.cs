@@ -31,6 +31,14 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
             var masks = rows.Where(r => !blocked.Contains(r.UserId) || r.UserId == reader).Select(r => r.Choice);
             return new(ChatBoardRules.Counts(masks, board.Refs.Count), mine?.Choice ?? 0, false, null, false);
         }
+        if (m.Kind == ChatBundleRules.Kind)
+        {
+            // Phase B10: "Done it" on a bundle (a puzzle solved, a thing visited). Reporting is the choice to be named: only people who ticked it appear, first name and last initial; nobody else's lack of an answer is shown.
+            var done = rows.Where(r => r.Choice == ChatPlanningRules.Going && !blocked.Contains(r.UserId)).ToList();
+            var names = done.Where(r => r.UserId != reader && byId.TryGetValue(r.UserId, out var p) && p.Status == ChatConversationRules.Active)
+                .Select(r => ChatConnectionRules.ShortName(byId[r.UserId].FirstName, byId[r.UserId].LastName)).ToList();
+            return new([done.Count], mine?.Choice == ChatPlanningRules.Going ? ChatPlanningRules.Going : null, false, null, false, names);
+        }
         if (m.Kind != ChatCardRules.Plan) return null;
         var going = rows.Where(r => r.Choice == ChatPlanningRules.Going && r.UserId != reader && !blocked.Contains(r.UserId) && byId.TryGetValue(r.UserId, out var p) && p.Status == ChatConversationRules.Active)
             .Select(r => ChatConnectionRules.ShortName(byId[r.UserId].FirstName, byId[r.UserId].LastName)).ToList();
@@ -43,7 +51,7 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
-        if (message.Kind != kind || message.DeletedAt is not null) throw ApiException.Invalid(kind == ChatPlanningRules.Poll ? "notPoll" : kind == ChatBoardRules.Kind ? "notBoard" : "notPlan");
+        if (message.Kind != kind || message.DeletedAt is not null) throw ApiException.Invalid(kind == ChatPlanningRules.Poll ? "notPoll" : kind == ChatBoardRules.Kind ? "notBoard" : kind == ChatBundleRules.Kind ? "notBundle" : "notPlan");
         return (member, message, await clock.NowAsync(actor, ct));
     }
 
@@ -129,6 +137,18 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
         var previous = await store.GetResponseAsync(message.Id, actor.Id, ct);
         await store.SetResponseAsync(message.Id, actor.Id, ChatBoardRules.With(previous?.Choice ?? 0, body.Item, body.In), false, now, ct);
         await TellAsync(actor, member, "board", ct);
+        return await TallyAsync(actor, member, message, now, ct);
+    }
+
+    /// <summary>
+    /// Phase B10: "I did this" on a bundle (a solved puzzle, a place visited), or taking it back. Counted for everyone in the thread, named only for the people who reported. Nothing else changes.
+    /// 403 stanley; 404; 409 closed; 400 notBundle.
+    /// </summary>
+    public async Task<ChatTallyDto> OutcomeAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatOutcomeRequest? body, CancellationToken ct)
+    {
+        var (member, message, now) = await TargetAsync(actor, conversationId, messageId, ChatBundleRules.Kind, ct);
+        await store.SetResponseAsync(message.Id, actor.Id, body?.Done == true ? ChatPlanningRules.Going : 0, false, now, ct);
+        await TellAsync(actor, member, "bundle", ct);
         return await TallyAsync(actor, member, message, now, ct);
     }
 

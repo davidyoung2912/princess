@@ -250,7 +250,7 @@ export function NonogramScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && set(selected, EMPTY)} disabled={selected === null || solved}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'nonogram', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.nonogram.title')} />
+          <GameShare shared={{ game: 'nonogram', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.nonogram.title')} done={solved} seconds={seconds} />
         </div>
         <div className="bn-pad" role="group" aria-label={t('nono.pad')}>
           {[FILLED, CROSSED].map((m) => (

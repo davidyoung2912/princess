@@ -156,7 +156,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var stillBooked = ChatCardRules.SourceIds(cards).Any() ? await share.StillBookedAsync(cards, ct) : new HashSet<Guid>();
         var pinned = page.Count == 0 ? new HashSet<long>() : await store.ListPinnedIdsAsync(member.GroupId, ct);
         // Phase 4: the answers to every poll and plan on the page, in one query (none when the page has none).
-        var answerable = page.Where(m => m.DeletedAt is null && (m.Kind == ChatPlanningRules.Poll || m.Kind == ChatCardRules.Plan || m.Kind == ChatBoardRules.Kind)).Select(m => m.Id).ToList();
+        var answerable = page.Where(m => m.DeletedAt is null && (m.Kind == ChatPlanningRules.Poll || m.Kind == ChatCardRules.Plan || m.Kind == ChatBoardRules.Kind || m.Kind == ChatBundleRules.Kind)).Select(m => m.Id).ToList();
         var answers = answerable.Count == 0 ? new List<ChatResponseRow>() : await store.ListResponsesAsync(answerable, ct);
         var answersOf = answers.ToLookup(r => r.MessageId);
         // Phase B3: a poll option that is a bundle is rebuilt for this reader on every read, so a thing their sailing does not have, or that is gone, shows as no longer available (null).
@@ -433,7 +433,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, PhotoCount: sent.Row.ExtraPhotos > 0 ? sent.Row.ExtraPhotos + 1 : null, ReplyTo: quote,
             Kind: ChatCardRules.IsTyped(kind) || kind is ChatPlanningRules.Poll or ChatBundleRules.Kind or ChatBoardRules.Kind ? kind : null, Board: kind == ChatBoardRules.Kind && ChatBoardRules.Parse(payload) is { } madeBoard ? await BoardDtoAsync(actor, madeBoard, ct) : null, Bundle: kind == ChatBundleRules.Kind && ChatBundleRules.Parse(payload) is { } madeBundle ? BundleDto(madeBundle) : null, Card: ChatCardRules.IsTyped(kind) && ChatCardRules.Parse(payload) is { } made ? CardDto(made, Shipboard.Ms(now)) : null,
             Poll: kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(payload) is { } sentPoll ? new ChatPollDto(sentPoll.Question, sentPoll.Options, sentPoll.Refs is null ? null : [.. sentPoll.Refs.Select(r => r is not null && built is not null && built.TryGetValue(r, out var made1) ? BundleDto(made1) : (ChatBundleDto?)null)], null, sentPoll.Slots) : null,
-            Tally: kind is ChatPlanningRules.Poll or ChatCardRules.Plan or ChatBoardRules.Kind ? ChatPlanningService.TallyOf(sent.Row, [], actor.Id, now, ChatPlanningService.AdminOf(member, actor.Id), new Dictionary<long, ChatPeerRow>(), new HashSet<long>(), member.Kind) : null);
+            Tally: kind is ChatPlanningRules.Poll or ChatCardRules.Plan or ChatBoardRules.Kind or ChatBundleRules.Kind ? ChatPlanningService.TallyOf(sent.Row, [], actor.Id, now, ChatPlanningService.AdminOf(member, actor.Id), new Dictionary<long, ChatPeerRow>(), new HashSet<long>(), member.Kind) : null);
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
         typing.Clear(member.GroupId, actor.Id);   // the message is the end of "is typing"
         await store.UnarchiveOthersAsync(member.GroupId, actor.Id, ct);

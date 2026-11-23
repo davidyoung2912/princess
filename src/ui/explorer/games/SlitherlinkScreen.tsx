@@ -244,7 +244,7 @@ export function SlitherlinkScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && set(selected, BLANK)} disabled={selected === null || solved}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'slitherlink', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.slitherlink.title')} />
+          <GameShare shared={{ game: 'slitherlink', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.slitherlink.title')} done={solved} seconds={seconds} />
         </div>
         <div className="bn-pad" role="group" aria-label={t('slither.pad')}>
           {[LINE, CROSS].map((m) => (

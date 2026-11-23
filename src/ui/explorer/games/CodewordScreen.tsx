@@ -216,7 +216,7 @@ export function CodewordScreen() {
         <div className="sd-tools">
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={erase} disabled={!num || given(num)}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
-          <GameShare shared={{ game: 'codeword', puzzle: game, entries, notes: [] }} title={t('gx.game.codeword.title')} />
+          <GameShare shared={{ game: 'codeword', puzzle: game, entries, notes: [] }} title={t('gx.game.codeword.title')} done={solved} seconds={seconds} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
         </div>
         <div className="cw-keys" role="group" aria-label={t('codeword.keys')}>

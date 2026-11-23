@@ -2,7 +2,7 @@
 import type { ChatBundle } from '../api/chatTypes'
 import type { StringKey } from '../i18n'
 import { openablePath } from './chatCards'
-import { GAME_DATA_CHARS, GAME_DATA_MAX, SHAREABLE_GAMES, type ShareMode } from './games/share'
+import { GAME_DATA_CHARS, GAME_DATA_MAX, SHAREABLE_GAMES, resultSeconds, type ShareMode } from './games/share'
 
 /** The newest payload shape this app understands. A larger number is shown as its title and subtitle only. */
 export const BUNDLE_VERSION = 1
@@ -78,12 +78,16 @@ export function parseBundle(raw: unknown): ChatBundle | null {
 export const isKnownBundle = (b: Pick<ChatBundle, 'type' | 'v'>): boolean => b.type in BUNDLE_TYPES && b.v <= BUNDLE_VERSION
 
 /** The game, the way it was sent and the puzzle text in a game bundle, or null for any other bundle (or a game bundle with no puzzle text). Whether the text is a puzzle is for `decodeGame` to say. */
-export function gameOfBundle(b: Pick<ChatBundle, 'type' | 'ref' | 'data'>): { game: string; mode: ShareMode; data: string } | null {
+export function gameOfBundle(b: Pick<ChatBundle, 'type' | 'ref' | 'data'>): { game: string; mode: ShareMode | 'result'; data: string; seconds?: number } | null {
   if (!b.type.startsWith('game.') || !b.data) return null
   const game = b.type.slice(5)
   const parts = (b.ref ?? '').split(':')
   const mode = parts[2]
-  return parts.length === 3 && parts[0] === 'game' && parts[1] === game && (mode === 'start' || mode === 'current') ? { game, mode, data: b.data } : null
+  if (parts.length !== 3 || parts[0] !== 'game' || parts[1] !== game) return null
+  if (mode === 'start' || mode === 'current') return { game, mode, data: b.data }
+  // Phase B10: a result is the starting position and a time; it opens as "Beat it" on the same puzzle.
+  const seconds = mode === 'result' ? resultSeconds(b.data) : null
+  return seconds ? { game, mode: 'result', data: b.data, seconds } : null
 }
 
 /** Where Open goes, or null: an unknown bundle, or a path that is not one of the screens a shared item may open (the path never decides by itself, the allow-list does). */
@@ -102,6 +106,12 @@ export function shareInput(shareRef: string, kind: 'card' | 'plan', note?: strin
   const type = shareRef.split(':')[0] ?? ''
   if (kind === 'card' && REF_TYPES.includes(type)) return { kind: 'bundle', shareRef, ...(note ? { note } : {}) }
   return kind === 'plan' ? { kind, shareRef, ...(note ? { note } : {}) } : { kind, shareRef }
+}
+
+/** Phase B11: passing a bundle on. Only its `ref` (and a game's puzzle text) goes; the server builds the words again for the new chat, so nothing stale or private travels. Null when it has no ref or is not a type this app knows. */
+export function forwardInput(b: Pick<ChatBundle, 'type' | 'v' | 'ref' | 'data'>, note?: string): { kind: 'bundle'; shareRef: string; note?: string; data?: string } | null {
+  if (!b.ref || !isKnownBundle(b)) return null
+  return { kind: 'bundle', shareRef: b.ref, ...(b.data ? { data: b.data } : {}), ...(note ? { note } : {}) }
 }
 
 /** Conversations that match what was typed, case and accents aside; everything when nothing was typed. */

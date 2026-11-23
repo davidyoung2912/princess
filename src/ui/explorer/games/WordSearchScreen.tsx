@@ -208,7 +208,7 @@ export function WordSearchScreen() {
         <div className="sd-tools bn-tools">
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
           <button type="button" className="sd-tool" onClick={() => { setAnchor(null); setEnd(null) }} disabled={anchor === null}><span>{t('ws.clear')}</span></button>
-          <GameShare shared={{ game: 'word-search', puzzle: game, entries: game.words.map((_, k) => (foundSet.has(k) ? 1 : 0)), notes: [] }} title={t('gx.game.wordsearch.title')} />
+          <GameShare shared={{ game: 'word-search', puzzle: game, entries: game.words.map((_, k) => (foundSet.has(k) ? 1 : 0)), notes: [] }} title={t('gx.game.wordsearch.title')} done={solved} seconds={seconds} />
         </div>
         <GameHelp title={t('sudoku.help.title')}>
           <p>{t('ws.help.1')}</p>

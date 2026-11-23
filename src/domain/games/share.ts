@@ -694,6 +694,19 @@ function decodeMinesweeper(m: Map<string, string>): SharedGame | null {
   return { game: 'minesweeper', puzzle, entries, notes: [] }
 }
 
+/** The longest time a result may carry (99 hours), so a made-up number cannot be long. Mirrors the server. */
+export const RESULT_MAX_SECONDS = 359_999
+
+/** A result: the starting position as text plus the time taken (`tm`, in seconds). The answer is never in it; the receiver plays the same puzzle to beat the time. */
+export const resultData = (s: SharedGame, seconds: number): string => `${encodeGame(s, 'start')};tm=${Math.min(RESULT_MAX_SECONDS, Math.max(1, Math.round(seconds)))}`
+
+/** The seconds in a result's text, or null when there is no sensible time. */
+export function resultSeconds(data: string): number | null {
+  const m = /(?:^|;)tm=(\d{1,6})(?:;|$)/.exec(data)
+  const n = m ? Number(m[1]) : 0
+  return n >= 1 && n <= RESULT_MAX_SECONDS ? n : null
+}
+
 /** The puzzle in some text for a game, or null when the text is not a solvable puzzle of that game. Never throws. */
 export function decodeGame(game: string, data: string): SharedGame | null {
   try {

@@ -1295,7 +1295,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
       {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} held={held} onHold={onHold} />
         : m.kind === 'board' && m.board ? <BoardMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} />
         : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
-        : bundle ? <BundleCard bundle={bundle} />
+        : bundle ? <BundleCard bundle={bundle} outcome={{ conversationId, message: m, canAct: canAct === true }} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
       {photoCountOf(m) > 0 && <MessagePhotos conversationId={conversationId} message={m} name={m.fromName ?? ''} you={t('chat.you')} />}
       {m.reactions && m.reactions.length > 0 && (

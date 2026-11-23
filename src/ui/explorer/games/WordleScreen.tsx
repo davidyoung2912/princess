@@ -160,7 +160,7 @@ export function WordleScreen() {
         )}
 
         <div className="sd-tools">
-          <GameShare shared={{ game: 'cruise-wordle', puzzle: { difficulty: 'easy', index: WORDLE_WORDS.indexOf(game.target), target: game.target }, entries: [], notes: [], guesses: [...game.guesses] }} title={t('gx.game.wordle.title')} />
+          <GameShare shared={{ game: 'cruise-wordle', puzzle: { difficulty: 'easy', index: WORDLE_WORDS.indexOf(game.target), target: game.target }, entries: [], notes: [], guesses: [...game.guesses] }} title={t('gx.game.wordle.title')} done={game.status === 'won'} seconds={seconds} />
         </div>
         <div className="wd-keys" role="group" aria-label={t('wordle.keyboard')}>
           {ROWS.map((letters, i) => (

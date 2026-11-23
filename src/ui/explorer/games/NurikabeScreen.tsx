@@ -189,7 +189,7 @@ export function NurikabeScreen() {
           <button type="button" className="sd-tool" onClick={undo} disabled={history.length === 0}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
           <button type="button" className="sd-tool" onClick={() => selected !== null && set(selected, BLANK)} disabled={selected === null || solved}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'nurikabe', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.nurikabe.title')} />
+          <GameShare shared={{ game: 'nurikabe', puzzle: game, entries: marks, notes: [] }} title={t('gx.game.nurikabe.title')} done={solved} seconds={seconds} />
         </div>
         <div className="bn-pad" role="group" aria-label={t('nurikabe.pad')}>
           {[WALL, DOT].map((m) => (

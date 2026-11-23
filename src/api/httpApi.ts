@@ -273,6 +273,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     decidePoll: (id, messageId, option) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/decide`, { option }),
     closePoll: (id, messageId) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/close`),
     boardIn: (id, messageId, item, on) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/board`, { item, in: on }),
+    bundleOutcome: (id, messageId, done) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/outcome`, { done }),
     rsvp: (id, messageId, choice) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/rsvp`, { choice }),
     react: (id, messageId, emoji) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/react`, { emoji }),
     setReaction: (id, messageId, emoji) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/reaction`, { emoji }),

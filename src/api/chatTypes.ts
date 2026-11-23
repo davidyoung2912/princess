@@ -404,6 +404,8 @@ export interface ChatConversationsApi {
   decidePoll(id: string, messageId: string, option: number): Promise<ChatTally>
   /** Phase B6: says you are in, or not, for one item of a day board. Returns the counts. Nothing is added to a day or booked. Rejects `invalid` (`item`, `notBoard`), `forbidden` (`stanley`), `notFound` or `conflict` (`closed`). */
   boardIn(id: string, messageId: string, item: number, on: boolean): Promise<ChatTally>
+  /** Phase B10: says you did the thing a bundle names (a puzzle solved), or takes it back. Returns the counts: `counts[0]` did it, `going` names the others who said so. Rejects `invalid` (`notBundle`), `forbidden` (`stanley`), `notFound` or `conflict` (`closed`). */
+  bundleOutcome(id: string, messageId: string, done: boolean): Promise<ChatTally>
   /** Answers a plan. Going puts its event on your programme when your sailing runs it that day (a child's answer never does); another answer takes it off if the plan put it there. Rejects `invalid` (`choice`, `notPlan`), `notFound` or `conflict` (`closed`). */
   rsvp(id: string, messageId: string, choice: ChatRsvp): Promise<ChatTally>
   /** Alerts you only for a mention in this conversation. Returns the new state. Rejects `forbidden` (`stanley`) or `notFound`. */

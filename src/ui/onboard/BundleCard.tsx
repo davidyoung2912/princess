@@ -1,11 +1,15 @@
-import { useMemo } from 'react'
-import type { ChatBundle } from '../../api/chatTypes'
-import { BUNDLE_TYPES, bundleLink, bundleSummary, gameOfBundle, isKnownBundle } from '../../domain/chatBundles'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ChatBundle, ChatMessage, ChatTally } from '../../api/chatTypes'
+import { BUNDLE_TYPES, bundleLink, forwardInput, bundleSummary, gameOfBundle, isKnownBundle } from '../../domain/chatBundles'
 import { holdIncoming } from '../../domain/games/incoming'
-import { decodeGame, type ShareMode } from '../../domain/games/share'
+import { decodeGame, startOnly, type ShareMode } from '../../domain/games/share'
 import { clock12 } from '../../domain/planCard'
 import { t } from '../../i18n'
-import { LinkButton } from '../Button'
+import { useAction } from '../../hooks/useAction'
+import { sendWithin } from '../../hooks/useOutbox'
+import { api } from '../../runtime'
+import { Button, LinkButton } from '../Button'
+import { SendDialog } from './SendDialog'
 
 const clock = (time: string): string => clock12(time)
 
@@ -13,7 +17,23 @@ const clock = (time: string): string => clock12(time)
  * A bundle in a thread (docs/chat-bundles-plan.md, 5.1): drawn from the registry for a type this app knows, and from its plain fields (title, subtitle, when, where) for one it does not, with "Update the app to open
  * this". It opens the screen it came from; a path the app does not know says it is no longer available.
  */
-export function BundleCard({ bundle, onOpen }: { bundle: ChatBundle; onOpen?: () => void }) {
+/** Phase B10: "I did it" on a game in a thread, counted for everyone and named only for people who said so. */
+function Outcome({ conversationId, message, canAct }: { conversationId: string; message: ChatMessage; canAct: boolean }) {
+  const [tally, setTally] = useState<ChatTally | undefined>(message.tally)
+  const seen = useRef(message.tally)
+  useEffect(() => { if (message.tally !== seen.current) { seen.current = message.tally; setTally(message.tally) } }, [message.tally])
+  const done = tally?.mine === 1
+  const count = tally?.counts[0] ?? 0
+  const toggle = useAction(async () => { setTally(await sendWithin(api.chatConversations.bundleOutcome(conversationId, message.id, !done))) })
+  return (
+    <div className="button-row">
+      <Button variant={done ? 'primary' : 'secondary'} aria-pressed={done} disabled={!canAct || toggle.busy} onClick={() => void toggle.run()}>{t('bundle.done')}</Button>
+      {count > 0 && <p className="muted" aria-live="polite">{done || !tally?.going?.length ? t('bundle.done.count', { count }) : t('bundle.done.names', { names: tally.going.join(', ') })}</p>}
+    </div>
+  )
+}
+
+export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; onOpen?: () => void; outcome?: { conversationId: string; message: ChatMessage; canAct: boolean } }) {
   const known = isKnownBundle(bundle)
   const type = known ? BUNDLE_TYPES[bundle.type] : undefined
   const link = bundleLink(bundle)
@@ -25,6 +45,9 @@ export function BundleCard({ bundle, onOpen }: { bundle: ChatBundle; onOpen?: ()
     return g && shared ? { ...g, shared } : null
   }, [bundle, known])
   const play = (mode: ShareMode) => { if (game) holdIncoming(game.game, game.shared, mode); onOpen?.() }
+  const beat = () => { if (game) holdIncoming(game.game, startOnly(game.shared), 'start', Date.now(), game.seconds); onOpen?.() }
+  const [forwarding, setForwarding] = useState(false)
+  const forward = known && outcome?.canAct ? forwardInput(bundle) : null
   const when = [bundle.day !== undefined ? t('card.day', { day: bundle.day }) : '', bundle.time ? clock(bundle.time) : ''].filter(Boolean).join(', ')
   return (
     <div className={['chat-card', 'chat-card--bundle', `chat-card--${bundle.type.replace(/\W/g, '-')}`].join(' ')} role="group" aria-label={[label, bundleSummary(bundle, clock)].filter(Boolean).join(': ')}>
@@ -35,14 +58,19 @@ export function BundleCard({ bundle, onOpen }: { bundle: ChatBundle; onOpen?: ()
       {bundle.place && bundle.place !== bundle.title && <p>{bundle.place}</p>}
       {bundle.note && <p>{bundle.note}</p>}
       {!known ? <p className="muted">{t('bundle.update')}</p>
-        : bundle.type.startsWith('game.') ? (game && link ? (
+        : bundle.type.startsWith('game.') ? (game && link ? game.mode === 'result' ? (
+          <div className="button-row"><LinkButton to={link} variant="secondary" onClick={beat} aria-label={`${t('game.open.beat')}: ${bundle.title}`}>{t('game.open.beat')}</LinkButton></div>
+        ) : (
           <div className="button-row">
-            <LinkButton to={link} variant="secondary" onClick={() => play(game.mode)} aria-label={`${t(game.mode === 'start' ? 'game.open.play' : 'game.open.current')}: ${bundle.title}`}>{t(game.mode === 'start' ? 'game.open.play' : 'game.open.current')}</LinkButton>
+            <LinkButton to={link} variant="secondary" onClick={() => play(game.mode as ShareMode)} aria-label={`${t(game.mode === 'start' ? 'game.open.play' : 'game.open.current')}: ${bundle.title}`}>{t(game.mode === 'start' ? 'game.open.play' : 'game.open.current')}</LinkButton>
             {game.mode === 'current' && <LinkButton to={link} variant="secondary" onClick={() => play('start')} aria-label={`${t('game.open.start')}: ${bundle.title}`}>{t('game.open.start')}</LinkButton>}
           </div>
         ) : <p className="muted">{t('game.open.bad')}</p>)
         : link ? <LinkButton to={link} variant="secondary" onClick={onOpen} aria-label={t('card.open.label', { title: bundle.title })}>{t('card.open')}</LinkButton>
         : <p className="muted">{t('card.gone')}</p>}
+      {forward && <div className="button-row"><Button variant="secondary" onClick={() => setForwarding(true)} aria-label={`${t('bundle.forward')}: ${bundle.title}`}>{t('bundle.forward')}</Button></div>}
+      {forwarding && forward && <SendDialog item={{ title: bundle.title, shareRef: forward.shareRef, takesNote: true, input: (note) => forwardInput(bundle, note) ?? forward }} onClose={() => setForwarding(false)} />}
+      {outcome && known && bundle.type.startsWith('game.') && game && <Outcome {...outcome} />}
     </div>
   )
 }
