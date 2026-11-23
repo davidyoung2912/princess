@@ -1,179 +1,266 @@
-# Chat bundles: send anything from the app into a chat
+# Chat bundles: send anything from the app into a chat, and plan together with it
 
-Plan for sending rich, actionable "bundles" from anywhere in the app into any 1:1 or group chat. Written 2026-11-22. Nothing is built yet; one phase per session, and later phases start only when asked.
+Plan for a **generic way to send any "thing" in the app into any 1:1 or group chat**, so recipients can read it, act on it, and, above all, **decide things together about future activities**. Written 2026-11-22, revised the same day (the first version was game-centred; this one is app-wide with group planning at its centre). Nothing is built yet; one phase per session, and later phases start only when asked.
 
-## 1. What the guest gets
+## 1. The idea in one paragraph
 
-- A **chat icon** on every game board, and on every explorer item worth sharing (a venue, menu, dish, show, event, excursion, port, place, the day's plan). Tapping it opens a **send dialog**.
-- In the dialog the guest picks **one or more conversations** (1:1 or group), sees exactly what will be sent, optionally adds a short note, and sends.
-- The recipients see a **bundle card** in the thread: a clear summary they can read on its own, plus **actions that suit the kind of thing sent**.
-- For a game, the card says what it is ("Sudoku, Hard, starting position"), shows a small thumbnail of the board, and has a button that **opens the same game with the same conditions**: the starting puzzle, or the sender's current position.
-- Later: send a **result** ("Solved Killer Sudoku Hard in 12:41, beat it?"), see who in the group has played it, and send a bundle on to another chat.
+Anything worth finding in the app (a restaurant, a menu, a dish, a show, an event on a day, an excursion, a port, a place on the ship, a day's plan, a game puzzle) can be sent to a chat as a **bundle**: a clear card that reads on its own and carries **actions that fit what it is**. Bundles are also the **building blocks of group decisions**: a poll can be made of bundles ("Which dinner on Tuesday?" with three real restaurants as the options, each openable), anyone in the group can **suggest** another, the group votes, the admin **decides**, and the decision **lands on everyone's own day** as a plan with a reminder. Games are one family of bundle ("try this puzzle"), not the model.
 
-Example of "actions that make sense for the type":
+## 2. What the guest gets
 
-| Bundle | Reads as | Actions for the recipient |
+**Send (from anywhere).** A chat icon on every shareable thing opens one **send dialog**: pick one or more conversations, see exactly what will be sent, add a short note, send.
+
+**Read and act (in the thread).** Each bundle shows a summary, a state ("tomorrow 19:00", "cancelled", "on your day already", "clashes with your excursion") and its actions.
+
+**Decide together (the main value).**
+
+1. **Propose**: send one bundle ("how about this?") and ask **Going / Maybe / No** (the existing plan card, extended to any bundle that has a time).
+2. **Compare**: make a **poll whose options are bundles** (venues, shows, excursions, ports, days, times), each option a card with a preview, an **Open** button and a vote button. Anyone in the group may **add an option** (if the admin allows), up to six.
+3. **Pick a time**: a **time-slot poll** ("Tue 19:00 / Tue 20:30 / Wed 19:00") that shows, privately to each voter, which slots **clash with their own day** before they vote.
+4. **See who is in**: counts always, names for Going only (as plans do today), "3 of 5 answered", a nudge to the people who have not (the existing coordinator, counts only).
+5. **Decide**: the admin taps **Decide**; the poll closes, a **decision card** is posted ("Dinner at Sabatini's, Tue 19:00, 4 going") and the winner is offered to each person as **Add to my day** (never automatic).
+6. **Make it happen**: Add to my day, **Set a reminder**, **Book** (opens the normal booking screen for the venue or excursion with the group size in mind; chat never books, pays or cancels), and a **follow-up** ("How was it?") that feeds the existing group recap.
+7. **Build a day together**: a **day board** bundle: the group's plan for one day, a short list of bundles with times that people can tick in or out of, and that anyone can add an item to. This reuses the group plan board the app already has (`src/domain/groupBoard.ts`).
+8. **Before anyone has booked**: the same mechanism inside a **trip huddle**, where a shortlist card (sailing, port, cabin type) is a bundle too, so "Alaska or the Caribbean?" is one poll of two bundles.
+
+Everything else a guest sends (a game puzzle, a place to meet, a menu, a dish) rides the same dialog and the same card, with actions suited to the type (section 5.3).
+
+**Hand it over in person (QR, no chat needed).** Everywhere a guest can send a bundle, the same dialog also offers **Show QR code**. One guest shows the code on their phone; the person next to them taps the **scan icon in the top bar**, points the camera, and **immediately sees what it is with the choice of what to do**: play this puzzle, add this show to my day, join this group, connect with this person. Nothing is sent through chat, nothing happens until the receiver chooses, and the scanner never leaves the app (section 5.6).
+
+## 3. What already exists (so we build on it, not beside it)
+
+| Exists | Where | How bundles use it |
 | --- | --- | --- |
-| Game: starting position | "Sudoku (Hard). 24 clues." plus thumbnail | **Play this puzzle**, Try a new one |
-| Game: current position | "Alex is stuck on Sudoku (Hard). 41 of 81 filled." | **Pick up from here**, **Start from the original clues** |
-| Game: result | "Alex solved Kakuro (Medium) in 9:12, no hints" | **Beat it** (same puzzle), Send my time |
-| Dining venue or menu | name, deck, hours, today's menu | Open, Save, Plan dinner (opens a plan card), Directions |
-| Show or event on a day | title, day, time, place | **Going / Maybe / No** (the existing plan card), Add to my day, Set reminder |
-| Excursion (browsed, not booked) | tour, port, day, meeting time | Open, Save, Ask the group (poll) |
-| Port | port, day, arrival and departure, one tip | Open the port guide, Save |
-| Place on the ship | name, deck, section | **Directions** (deck plan), Meet me here |
-| The day's plan | day, list of items with times | Add all to my day, Open |
+| Typed messages: `Kind` `text`, `card`, `place`, `plan`, `poll`; JSON `Payload`; server-built words; forbidden-key guard | `ChatCardRules`, `ChatCard`, `ChatShareService`, `src/domain/chatCards.ts`, `ChatCards.tsx` | New kind `bundle` rides the same send path, preview, push text, search, reactions, replies, pins, mentions, thread cache, guardian visibility, block and report |
+| `venue` and `menu` cards through a one-conversation `<details>` | `SendToChat.tsx` | Replaced by the shared dialog; legacy cards keep working |
+| **Polls**: question plus 2 to 5 **text** options, changeable vote, 24 h life, counts only | `ChatPlanningRules`, `ChatPlanning.tsx`, `ChatResponses` | Options become **text or bundle**; same tally, vote, close and answer-while-offline rules |
+| **Plans with RSVP**: one programme event, Going/Maybe/No, Going adds to the programme and can undo | `ChatPlanningRules`, `ChatShareService.EventsAsync` | Generalised from "programme event" to any **bundle with a day and time** (excursion, dinner, show, port visit); a Going on a bookable thing never books it |
+| **Coordinator**: remind the people who have not answered, tally card, compromise when the vote splits | `ChatCoordinatorRules`, phase 11 | Reused as is for bundle polls; compromise extended to time slots |
+| **Group recap**, **huddle shortlist** (public cards before booking), **group plan board** (who is doing each tour or dinner, clashes) | `ChatRecapStore`, `ChatHuddleRules`, `groupBoard.ts` | Bundles feed all three (decision cards into the recap, shortlist cards are bundles, the day board is a bundle) |
+| Plan import, Save, programme toggle, clash checks | `SaveButton.tsx`, `planCard`, `excursions.ts`, `dining.ts` | The actions of a received bundle |
+| Games generate puzzles on the device with `Math.random`, nothing stored or sent | `src/domain/games/*`, `src/ui/explorer/games/*`, `parts.tsx` | Need a describe, encode, restore adapter per game (a later phase) |
 
-## 2. What already exists (so we build on it, not beside it)
+Known limits today that this plan removes: a plan can only be about a programme event (an excursion or dinner card cannot be answered Going), polls have text options only, a group can have only one open poll or plan at a time for Stanley's offers, and nothing carries a decision through to the guest's own day.
 
-- **Typed chat messages**: `ChatMessages.Kind` is `text`, `card`, `place`, `plan` or `poll`, with a server-built JSON `Payload` (`ChatCardRules`, `ChatCard`, `ChatShareService`). The `venue` and `menu` cards are already shared from Explorer pages through `src/ui/onboard/SendToChat.tsx` (a `<details>` list, one conversation at a time).
-- **Trust model today ("reference bundle")**: the client sends only a `shareRef`; the server rebuilds the words from its own data and refuses any key that names money or identity (`ChatCardRules.ForbiddenKeys`, `HasForbiddenKey`). This is the right model for anything the server already knows (venues, events, excursions, ports, places).
-- **Client**: `src/ui/onboard/ChatCards.tsx` (`CardMessage`), `src/domain/chatCards.ts` (`cardLink` with an allow-list regex of openable paths, `cardSummary`), `src/domain/chatPlanning.ts` (plan and RSVP), `src/ui/explorer/SaveButton.tsx`, `src/routes/openedByLink.ts`.
-- Everything a typed message already gets for free: reactions, replies, pins, mentions, search, push preview (`ChatCardRules.Preview`), the thread cache for offline reading, guardian visibility for supervised children, block and report. A bundle must ride on these, not re-implement them.
-- **Games** (`src/domain/games/*.ts`, `src/ui/explorer/games/*Screen.tsx`, 17 games): puzzles are generated **on the device with `Math.random`** and are never stored or sent anywhere; leaving the page loses the game (`docs/games-plan.md`). Several generators already take a `random` parameter; the screens do not pass one. There is a shared kit in `src/ui/explorer/games/parts.tsx` (`GameClock`, `LevelBar`, `HintBox`, `SolvedCard`, `GameHelp`).
-- Two gaps this plan must close: (1) a game has no way to be **described, encoded and restored** (so there is nothing to send), and (2) the card allow-list `CARD_PATH` does not include game routes, and a game route has nowhere to receive "load this bundle".
-
-## 3. Decisions
+## 4. Decisions
 
 | Question | Decision | Why |
 | --- | --- | --- |
-| New message kind or new card types | **New kind `bundle`** (fits `Kind NVARCHAR(12)`, no CHECK constraint, so **no schema change**). Existing `card`, `place`, `plan`, `poll` stay exactly as they are. | No regression risk to a chat that works well. Legacy kinds can be re-expressed through the registry later (phase B10) if it is worth it. |
-| Where game state travels | **In the message payload, opened by message id**, not in a URL. The link is `<game route>?bundle=<conversationId>.<messageId>`; the game screen fetches the payload through the membership-checked chat API (or the cached thread offline). | A URL with the state in it can be forwarded outside the chat, bypassing membership, and gets long. Message-id links keep the access rule "only people in the conversation can read it". |
-| Seed or explicit puzzle | **Explicit compact puzzle** (givens, layout, clues) plus a `v` version, not a random seed. | A seed breaks the day a generator is improved; an explicit puzzle never does. The recipient's device recomputes the solution with the game's own solver (puzzles are unique by construction), so the solution is never sent. |
-| Who validates a game payload | The **server validates shape only** (known game id, level, size cap, character allow-list, forbidden keys, note moderation); the **recipient's game decoder validates the puzzle** and fails safely. | The server holds no game logic, and CLAUDE.md keeps framework-free logic in TypeScript modules that node tests cover. The sender is a member of the chat, so the worst a tampered client can do is send a puzzle that will not open; the decoder must be total (never throws, bounded size). |
-| Price and identity | **Never in a bundle**, as today. Offers and prices are out of scope unless the owner says otherwise (open question 1). | Same guard as cards. |
-| Several recipients | The dialog **multi-selects conversations**; one message is created per conversation with its own client id (idempotent), partial failure is reported per conversation. | "Any 1:1 or group chat" is more useful as "these three chats". |
-| Spoilers | Starting position carries no entries; current position carries entries and notes only if the sender ticks **Include my notes**; the **solution is never sent**. Wordle sends the pattern and a word index, never the word in readable text. | Others can enjoy the puzzle. |
-| Offline | Reading a bundle works offline (it is in the cached thread); opening a game from one works offline (game routes are already `offline` in `offlineContract.ts`). Sending is **queued** like other chat sends. | Matches the existing offline contract. |
+| New kind or new card types | **New kind `bundle`** for the card, and a **new poll payload version** whose options may be bundles. `Kind NVARCHAR(12)` fits `bundle`, no CHECK constraint, so no change to the messages table. Legacy `card`, `place`, `plan` and text polls stay exactly as they are. | A chat that works well must not regress. Legacy kinds can be folded into the registry at the end, only if wanted. |
+| Two trust models | **Reference** (the server rebuilds the words from its own data; used for everything the server knows: venues, menus, dishes, events, shows, excursions, ports, places, days) and **Snapshot** (client-supplied bounded data validated by shape; used for games). | Reference is the existing safe model; snapshot is needed only where the server has no data. |
+| What a poll option can be | A text line (as now) **or** a reference bundle. Mixed options are allowed. A bundle option is rebuilt by the server and **re-checked at read time** (cancelled, past, not on your sailing). | Lets "which dinner" be real venues, not typed names. |
+| Who can add options | Poll creator chooses **Admin only** (default in made groups), **Anyone** (default in 1:1 and party chats). Max 6 options, max 2 added by one person. | Keeps a poll from becoming a free-for-all. |
+| Who can decide | The poll's creator or a group admin; in a 1:1 or party chat, either person. After deciding, the poll is closed and cannot be reopened (a new proposal is made instead). | Same admin rule as pins and polls today. |
+| Decision effect | **Never automatic.** A decision card offers each member Add to my day / Remind me / Book. Going on a plan keeps the existing rule (adds to the programme, can be undone, never removes something the guest saved themselves). | A chat must not change someone's day, spend money or book without their own tap. |
+| Booking | **Hand-off only**: Book opens the existing booking screen for that venue or excursion with the day, time and party size filled in as hints. No booking, payment or cancellation from chat. | Matches the "answering never books" rule. |
+| Time-slot polls | Slots are explicit date and time pairs on the sender's sailing. Each voter privately sees clashes with their **own** plan (never anyone else's, never shown to the group). | Useful, and the privacy rule is simple. |
+| Where game state travels | In the payload, opened by **message id** (`?bundle=<conversationId>.<messageId>`), never in a URL. Explicit compact puzzle plus a version, not a seed; the solution is never sent and is recomputed by the game's own solver. | No bypass of chat membership; survives generator changes. |
+| Several recipients | The dialog multi-selects conversations; one message per conversation with its own client id (idempotent), partial failure reported per conversation. | "These three chats" is more useful than one. |
+| Price and identity | **Never in a bundle** (same `ForbiddenKeys` guard). Offers and prices are out of scope unless the owner says otherwise. | Same rule as cards. |
+| Offline | Reading is offline (cached thread). Votes and answers are held and sent later (existing `answerJob`). Sends are queued. Opening a game from a bundle works offline. | Existing offline contract. |
 | Language | English only; strings in `enCore.ts` and `enLate.ts`, every key a literal `t('...')`. | CLAUDE.md. |
+| QR for every bundle | The registry gives **every bundle type a QR form automatically**; a phase is not done until its types show **Show QR code** in the dialog. Two forms: a **direct code** for public reference bundles (the code holds only the type and ref) and a **handoff code** (a short-lived server token) for anything personal, large or private: game snapshots, booked excursions and dinners, group invites, connect codes. | One mental model, no per-feature QR work, and a code never carries more than the server would have sent in chat. |
+| Scanner | One in-app scanner opened from the **top-bar scan icon**, using `BarcodeDetector` where present and a JavaScript decoder fallback (Safari on iPhone, Firefox). It only acts on this app's own addresses; any other code is shown as text and never opened. A scan **never acts by itself**: it opens a receive sheet with the preview and the choices. | Safe on a ship full of strangers; matches the existing `readCode` rule. |
+| Hosting headers | Widen `Permissions-Policy` from `camera=()` to `camera=(self)` in `SecurityHeaders.cs` and `docs/static-host-headers.md` (microphone and geolocation stay off). | The camera is blocked today, so no scanner can work until this changes. |
 
-## 4. Design
+## 5. Design
 
-### 4.1 The bundle message
+### 5.1 The bundle message
 
-`Kind = 'bundle'`. `Payload` is JSON:
+`Kind = 'bundle'`, `Payload` JSON:
 
 ```
-{ "type": "game.sudoku", "v": 1, "mode": "start" | "current" | "result",
-  "title": "Sudoku", "subtitle": "Hard, starting position",
-  "path": "/games-explorer/sudoku",
-  "data": { ... type-specific, bounded ... },
-  "note": "bet you cannot do this one" }
+{ "type": "event", "v": 1, "title": "Trivia: Ship Secrets", "subtitle": "Day 3, 16:00, Explorers Lounge",
+  "path": "/entertainment/...", "day": 3, "time": "16:00", "place": "Explorers Lounge",
+  "when": { "day": 3, "time": "16:00", "minutes": 60 }, "ref": "event:abc:3",
+  "data": { ... type-specific, bounded ... }, "note": "who is in?" }
 ```
 
-- `type` is `<family>.<name>`: `game.*`, `venue`, `menu`, `dish`, `event`, `show`, `excursion`, `port`, `place`, `day`. A **registry** (below) knows each type.
-- `title`, `subtitle`, `path` and `note` are always present or null, so any client, the push preview, search and a screen reader can show a bundle **without** understanding `data`. An unknown `type` (an older app) still shows the title and subtitle and says "Update the app to open this".
-- Two trust models, chosen per type in the registry:
-  - **Reference** (`venue`, `event`, `excursion`, `port`, `place`, `day`): client sends `{ type, ref }`; the server rebuilds `title`, `subtitle`, `data` from its own data. Reuses `ChatShareService`.
-  - **Snapshot** (`game.*`): client sends `{ type, mode, data, note }`; the server checks shape and size and writes the card words itself from a fixed table (title from the game id, subtitle from level and mode), so words in the card are never client-supplied. Only `data` comes from the client, and it is never rendered as text, only decoded by the game.
-- `data` size cap 4 KB (largest grids are 13x13 Codeword and 10x10 Kakuro), character allow-list `[A-Za-z0-9 .,;:|_/+=-]`, no key from `ForbiddenKeys`, max depth 3. The note goes through `ProfanityFilter` and `ChatCardRules.CleanNote` (80 characters, one line, blocked contact info), like a place note.
+- Types are `<family>` or `<family>.<name>`: `venue`, `menu`, `dish`, `event`, `show`, `activity`, `excursion`, `port`, `place`, `day`, `board`, `decision`, `game.<id>`.
+- `title`, `subtitle`, `path`, `day`, `time`, `place`, `note` are always plain fields, so any client, the push preview, search and a screen reader can show a bundle **without** understanding `data`. An unknown `type` (an older app) shows the title and subtitle and says "Update the app to open this".
+- `when` marks a bundle as **plannable** (it can be proposed, put in a time-slot poll, added to a day, reminded, clash-checked). A venue or menu has no `when`; an event, show, excursion or dinner does.
+- Reference bundles: client sends `{ type, ref }`; server rebuilds everything from `ShipReference`, `ExplorerCatalogue`, `ProgramRules`, `ExcursionRules`, `Itinerary`, the sender's timeline. Snapshot bundles (games): server writes the words from a fixed table; only `data` (never rendered as text) comes from the client. `data` cap 4 KB, character allow-list, no forbidden key, depth at most 3. The note goes through `ProfanityFilter` and `CleanNote` (80 characters, no contact info).
 
-### 4.2 Server (C#, behind existing interfaces)
+### 5.2 Planning objects
 
-- `Domain/ChatBundleRules.cs`: pure rules. Type table (id, trust model, allowed modes, path template, preview words, which actions the server may offer), `Validate(type, mode, data)`, `Words(type, mode, ...)`, `Preview(bundle)` (for list lines and push: "Alex sent a Sudoku puzzle"), `ParseRef`/`Ref` helpers like `ChatCardRules.VenueRef`.
-- `Services/ChatBundleService.cs`: builds reference bundles (from `ShipReference`, `ExplorerCatalogue`, `ExcursionRules`, `Itinerary`, the guest's timeline), validates snapshots, and **repeats the checks on read** to add `gone`/`past`/`cancelled`/`notOnYourSailing` state for the recipient (as `IsGone` does for cards).
-- `POST /me/chat/conversations/{id}/messages` accepts `kind: 'bundle'` with the body above (extends `ChatTypedSend`); same membership, block, closed-chat, child-guardian, rate-limit and idempotency checks as other typed sends.
-- `GET /me/chat/conversations/{id}/messages/{mid}/bundle`: the payload for a message the caller may read (the game screen's loader). 404 for anyone else, same as a message.
-- Outcomes (phase B6): table `ChatBundleOutcomes (MessageId, UserId, Status, ResultJson, At)`; `PUT .../bundle/outcome`; group counts only for people who chose to report.
-- Tests written beside the existing `Chat*RulesTests.cs` (`ChatBundleRulesTests.cs`). Per CLAUDE.md they are **not run** here; see open question 3.
+All are messages in the thread; none is a separate screen.
 
-### 4.3 Front end
+| Object | Made of | States | Answers |
+| --- | --- | --- | --- |
+| **Proposal** (generalised plan) | one plannable bundle, optional note | open, decided, withdrawn | Going / Maybe / No (existing `ChatResponses`) |
+| **Bundle poll** | question plus 2 to 6 options, each text or bundle | open, closed (24 h, on demand, or decided), decided | one changeable vote (existing) |
+| **Time poll** | one bundle plus 2 to 6 date-time slots | as above | one vote, or "any of these" later |
+| **Decision card** | the winning bundle (or slot), the counts, who is going | final | Add to my day, Remind me, Book, "Done, how was it?" |
+| **Day board** | a day, up to 8 bundles with times, each with an "I'm in" toggle, anyone may add (admin setting) | open, past | per item in/out; clashes shown per person to that person only |
+
+Server: extend `ChatPlanningRules` (option cleaning with bundle refs, option add limits, who may add, decide rules, slot validation against the sailing's days), add `ChatBundleRules` (type table, validation, previews, plannable `when`), `ChatBundleService` (build, re-check on read), and a small `ChatOptions` table (`MessageId, OptionNo, Kind, Ref, AddedBy`) for options that were added after the poll was sent. A decided poll stores `DecidedOption` and `DecidedBy` on the message. Votes reuse `ChatResponses`.
+
+### 5.3 Actions (what "actionable" means)
+
+An action is `{ id, label, run }` in a registry; the server withholds actions that cannot apply (cancelled, past, wrong sailing). Shared ids: `open`, `save`, `addToDay` (with a clash warning and the existing confirm), `rsvp`, `vote`, `suggest` (add an option), `decide`, `remind`, `book` (hand-off), `directions` (deck plan), `askGroup` (make a poll from this), `forward`, `playSame`, `playFresh`, `beat`, `sendResult`.
+
+| Bundle | Reads as | Actions for the recipient |
+| --- | --- | --- |
+| Dining venue or menu | name, deck, hours, today's menu | Open, Save, **Propose dinner** (opens the composer with this venue), Directions |
+| Show, event or activity on a day | title, day, time, place | **Going/Maybe/No**, Add to my day, Remind me, Save |
+| Excursion | tour, port, day, meeting time | Open, Save, **Ask the group** (poll), Book (hand-off) |
+| Port | port, day, arrival and departure, one tip | Open the port guide, Save, **Plan the day here** (starts a day board) |
+| Place on the ship | name, deck, section | **Directions**, Meet me here |
+| Day plan / day board | the day and its items | **Add all to my day**, I'm in per item, Add an item |
+| Decision | winner, counts | Add to my day, Remind me, Book, How was it? |
+| Game: start | "Sudoku, Hard, 24 clues" plus thumbnail | **Play this puzzle**, Try a new one |
+| Game: current | "Alex is stuck on Sudoku (Hard)" | **Pick up from here**, **Start from the original clues** |
+| Game: result | "Solved Kakuro in 9:12" | **Beat it**, Send my time |
+
+Rules: an action never books, pays or cancels; anything that changes the recipient's own data happens on their screen after the normal confirm; clash and "already on your day" are computed for the recipient only.
+
+### 5.4 Front end
 
 Framework-free (`src/domain`, node-tested):
 
-- `chatBundles.ts`: the **registry** `BUNDLE_TYPES[type] = { family, label, icon, openPath(bundle), actions(bundle, state), thumbnail?(bundle), parse(raw) }`, plus `parseBundle(raw)` (total; returns null for garbage), `bundleLink(bundle, ref)` (builds the `?bundle=` path and checks it against an allow-list generated **from the routes** so a new game route is allowed automatically; replaces hand-editing `CARD_PATH` for bundles), `bundleSummary` for accessibility and previews.
-- `games/share.ts`: `GameShareAdapter<G, S>` per game: `describe(game, state): {title, subtitle, level}`, `encode(game, state, mode): string`, `decode(data): { game: G, state: S } | null`, `thumbnail(game): Thumb`. `decode` rebuilds the solution with the game's own solver and returns null if the puzzle is not uniquely solvable, oversized or malformed. A registry `GAME_SHARE[id]`. Generators that do not take a `random` argument keep their signature; **nothing needs a seed** because the puzzle is explicit.
-- Round-trip and fuzz tests per game: `decode(encode(x))` equals `x`; random garbage never throws; truncated input returns null.
+- `chatBundles.ts`: registry `BUNDLE_TYPES[type] = { family, label, icon, openPath, actions, plannable, thumbnail?, parse }`; `parseBundle` (total, null for garbage); `bundleLink` with an allow-list generated **from the routes** (so a new route is allowed without editing `CARD_PATH`); `bundleSummary`.
+- `chatPlanning.ts` gains option types (text or bundle), `canAddOption`, `canDecide`, slot helpers, `clashesFor(slot, myDay)`, decision text.
+- `games/share.ts` (a later phase): `GameShareAdapter` per game (`describe`, `encode`, `decode` that rebuilds the solution and returns null if unsolvable or malformed, `thumbnail`), with round-trip and fuzz tests.
 
 UI:
 
-- `ui/chat/SendDialog.tsx` (new, modal): focus-trapped, Escape closes, returns focus to the chat icon; conversation list with checkboxes (search box once there are more than 8; "recent" first; Stanley and closed chats excluded as `SendToChat` does today), the bundle **preview** exactly as recipients will see it, mode choice where the type has one (Starting position / Where I am now), note field, Send. Result region `role="status"` listing "Sent to Cabin 9 crew, Sam". Reduced motion honoured. `SendToChat` becomes a thin button that opens it, so the venue, menu and plan buttons keep working and gain multi-select.
-- `ui/chat/ShareButton.tsx`: the chat icon button (lucide `MessageSquarePlus`), accessible name "Send <title> to chat", used everywhere.
-- `ui/onboard/BundleCard.tsx`: renders any bundle from the registry: type label, title, subtitle, thumbnail, note, action buttons, and the state line for the recipient ("Played", "Solved by 3 of 5", "No longer available"). Hooked into the thread renderer next to `CardMessage`.
-- Games: a `GameShare` control in the shared kit (`parts.tsx`), placed in the game header next to the clock, given the screen's adapter and current state. Each screen supplies `describe/encode` (a few lines) rather than its own UI.
-- Opening: each game screen reads `?bundle=` through one hook, `useIncomingBundle(gameId)`. While loading it shows the usual puzzle area with a status; on success it starts from the decoded puzzle and shows a dismissable banner ("From Alex: starting position. Back to chat · Try a different puzzle"); on failure ("This puzzle can't be opened") it starts a normal new game. Marks the address `markOpenedByLink` so refresh and Back are not treated as stale.
-- Strings, routes, screen ids: no new screens are needed (the dialog is not a route), so `nav.test.ts`, `coverage.test.ts` and `screens.test.ts` counts do not change; the new strings follow the literal-key rule.
+- `ui/chat/SendDialog.tsx` (modal; focus-trapped; Escape closes and returns focus; conversation checkboxes with a search once there are more than 8; recent first; Stanley and closed chats excluded; exact preview; a **What do you want to do?** choice: Just send / Ask Going or not / Start a poll with this / Add to a day board; note; result region `role="status"`).
+- `ui/chat/ShareButton.tsx`: the chat icon (`MessageSquarePlus`), name "Send <title> to chat". `SendToChat` becomes a thin wrapper so existing venue, menu and plan buttons gain multi-select.
+- `ui/onboard/BundleCard.tsx`: renders any bundle from the registry, with state line and actions. `ChatPlanning.tsx` renders bundle options as mini cards with Open and Vote, the Suggest and Decide controls, and the decision card.
+- Poll composer: add options by **picking from the explorers** (an in-dialog picker over venues, events, excursions, ports for the sender's sailing) or typing text; time-slot composer limited to days of the sailing.
+- Games: a `GameShare` control in `parts.tsx` and `useIncomingBundle(gameId)` on each screen (banner "From Alex: starting position. Back to chat · Try a different puzzle"; failure falls back to a normal new game).
+- No new screens, so nav, coverage and screen-count tests do not change; new strings follow the literal-key rule.
 
-### 4.4 Actions (what "actionable" means)
+### 5.5 Safety, privacy, accessibility
 
-An action is `{ id, label, run(bundle, ctx) }` in the registry; the server may withhold actions that cannot apply (event cancelled, wrong sailing, already on the recipient's day). Common ids: `open`, `save` (reuses `SaveButton`'s store), `addToDay` (reuses the plan import), `rsvp` (existing plan card), `remind`, `directions` (deck plan), `playSame`, `playFresh`, `beat` (same puzzle, compare time), `sendResult`, `askGroup` (creates a poll, reusing chat planning), `forward`. Rules: an action never books, pays or cancels anything (same rule as plans: answering never books); anything that changes the recipient's own data happens on their screen after a normal confirm.
+- Membership check on every read and write; supervised children follow the guardian rules already in chat; blocked people cannot add options or vote.
+- Reference bundles carry only what is already public to the sailing or the sender's own booking facts; never price, folio, cabin, booking number, or where the sender is. Clashes and "on your day" are private to the viewer.
+- Counts for votes, names only for Going (as today); "who has not answered" is never shown by name to the group.
+- Bundle options and added options are rebuilt by the server and re-checked on read, so a cancelled event shows as "no longer available" and cannot win a decision.
+- The recipient's game decoder is the trust boundary (bounded, total, no HTML, route from the registry not from the payload).
+- Accessibility (WCAG 2.2 AA): dialogs trap focus and close on Escape; options are a labelled radio group with spoken results (`pollResultText` extended); cards are `role="group"` with text summaries; thumbnails `aria-hidden`; targets at least 44 px; state never by colour alone; reduced motion honoured.
 
-### 4.5 Safety, privacy, accessibility
+### 5.6 QR hand-over (scan instead of chat)
 
-- Membership check on every read and write; a bundle in a conversation is readable only by its members and (for a supervised child) the guardian, exactly like a message.
-- Reference bundles carry only what the catalogue or the sender's own booking already makes public to the sailing; **never** price, folio, cabin, booking number, or where the sender is. Game snapshots carry puzzle data only, never the timer or hints used unless the result type says so and the sender chose to send it.
-- Note text moderated like any message; blocked or contact-info notes are refused with the usual error.
-- A recipient's game decoder is the trust boundary: bounded, total, no HTML, no navigation target taken from the payload (the route comes from the registry, not from `path` in the data).
-- Accessibility (WCAG 2.2 AA): dialog traps focus, closes on Escape, labelled; checkbox list with proper names; card is a `role="group"` with a text summary; thumbnails are `aria-hidden` with the summary text carrying the meaning; targets at least 44 px; state is never colour only.
+**What exists:** `QrCode.tsx` draws a code on the device as one SVG (works offline, black on white in every theme); `CodeScanner` and `scanCode.ts` read a code through the camera (Chromium only) and follow only this app's own addresses.
 
-### 4.6 Out of scope for this plan
+**Two kinds of code**
 
-Live shared boards or two people playing one puzzle together (that is the Games "multi-player" mode, a separate plan); sending money, prices or bookings; sending to people outside the app; guests off the ship by SMS bridge (they get the card's words only, with no actions, as other typed messages do today; check in B1).
+| | Direct code | Handoff code |
+| --- | --- | --- |
+| For | public reference bundles: venue, menu, dish, event or show on a day, port, place, a tour from the public catalogue | personal or private things: a booked excursion or dinner, game snapshots, a day board, a group invite, a connect code |
+| Holds | `https://<app>/s?t=<type>&r=<ref>` (about 100 bytes) | `https://<app>/s/<code>`, a short unguessable code |
+| Needs a server call to make | No: works with no signal | Yes: `POST /me/shares` stores the bundle or invite and returns the code |
+| Life | none (it is public catalogue data) | 15 minutes by default; the sender may choose 1 hour or 24 hours; can be stopped at once; the sender sees "scanned by 2" |
+| Why two | Offline on a ship is the normal case, and a public ref reveals nothing | A game board can be 4 KB, far past what a code scans reliably (about 500 bytes in practice), and private things must be revocable |
 
-## 5. Phases
+**Receive sheet (the "immediate receipt and action decision").** A scan opens a bottom sheet, never a page change: what it is (the same bundle card as in chat, with thumbnail), who it is from (first name and last initial, as in people search, for people on the same sailing; otherwise "a guest"), the state for the receiver (on your day already, clashes with your excursion, not on your sailing, expired code), and the **same actions as the chat card** plus Dismiss. For games the actions are Play this puzzle and Start from the original clues. The sheet traps focus, closes on Escape and says what it did (`role="status"`). The receiver's server re-checks everything, exactly as for a chat bundle.
 
-Rules for every phase (CLAUDE.md): English only; verify with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` only (no browser testing, no `dotnet test`); commit only when asked, then stop so the user can `/clear`; do not start the next phase until asked. Server changes get unit tests written but not run (open question 3).
+**What can be handed over**
 
-### B1: the bundle foundation, proved with one reference type (venue and menu)
+| Type | Direct or handoff | Receiver's choices |
+| --- | --- | --- |
+| Venue, menu, dish, event or show, activity, port, place | direct | Open, Save, Add to my day, Directions, Going/Maybe/No (as a one-off answer; see below) |
+| Booked excursion or dinner, day plan | handoff | Open the public entry, Save, Add to my day (never the sender's booking) |
+| Game (start, current, result) | handoff | Play this puzzle, Start from the original clues, Beat it |
+| **Group invite** | handoff, made by an admin | **Join** or Decline; eligibility as for any invitation (same sailing, not blocked, group not full, a supervised child needs their guardian's approval); the code stops working when the group is full or the admin stops it |
+| **Connect code** (one person) | handoff, made by the guest | **Send a connection request** or Decline; a scan is only an introduction, it never skips the other person's acceptance or the guardian rules |
+| Poll, proposal, day board (belong to a chat) | handoff, made by an admin | A member opens it in the chat; a non-member sees the group invite for the chat and, after joining, lands on it; otherwise "Make your own poll from these options" (default, open question 8) |
 
-- Server: `ChatBundleRules`, `ChatBundleService`, extend send and read endpoints for `kind: 'bundle'`, preview words for push and list lines, `ChatBundleRulesTests.cs`. Re-express **venue** and **menu** through the registry (their old `venue`/`menu` card sends keep working untouched).
-- Front end: `chatBundles.ts` registry, `parseBundle`, `bundleLink`, `SendDialog`, `ShareButton`, `BundleCard`, thread hook-up, offline queueing check, SMS-bridge behaviour check, strings. `SendToChat` opens the dialog (multi-select).
-- Tests: registry and parser (including unknown type and garbage), link allow-list, summary, dialog logic helpers (selection, partial failure), server rule tests.
-- Done when: sending a venue or menu to two chats at once works end to end in code and tests, an older client shows the fallback text, and nothing about the existing card kinds changed.
+**Rules**
 
-### B2: game sharing infrastructure, plus the Sudoku family and Binairo
+- A scan **never acts by itself** and never signs anyone in. A signed-out receiver is taken to sign-in, then back to the sheet (the code is kept for 10 minutes in session storage only).
+- The code names a message-less share; it never puts personal data in the address, and the QR text for a handoff is just the code. A group or poll code is generated only by someone allowed to invite or to share that object in chat.
+- Throttled per person (creating and scanning); a wrong or expired code gives one message ("This code has stopped working") and never says whether it ever existed.
+- A direct code is only public catalogue data; if its ref is not found on the receiver's sailing it says "Not available on your sailing".
+- Supervised children: a child can scan and see public entries; anything that creates a connection or joins a group follows the guardian rules already in chat; a child cannot create a group invite.
+- The scanner turns the camera off the moment it closes, when the tab is hidden, and after a result. It asks permission only when opened and keeps the typed-code box for guests who decline the camera.
+- Accessibility (WCAG 2.2 AA): the show-code view has a text version of what the code contains and a Copy link button (so a code can also be handed over without a camera); the scanner has a labelled video, a spoken "Looking for a code" and "Found" status, a large Close button and no time pressure; reduced motion honoured.
 
-- `GameShareAdapter` type and registry, `GameShare` control in `parts.tsx` (chat icon in the header of every game, shown only for games that have an adapter), `useIncomingBundle`, banner, failure fallback, route allow-listing.
-- Adapters and round-trip tests for **Sudoku, Diagonal Sudoku, Jigsaw Sudoku, Killer Sudoku** (one engine, `variant` and `rules`) and **Binairo**. Modes: start and current (entries and notes).
-- Server: `game.*` types and snapshot validation for these ids.
-- Done when: from the Sudoku board a guest sends the starting position to a group, and the card in the thread opens the same puzzle on another device; same for current position.
+### 5.7 Out of scope
 
-### B3: Latin-square and arithmetic games
+Live shared boards or two people playing one puzzle (the Games "multi-player" mode is its own plan); money, prices, splitting costs, booking or paying from chat; sending to people outside the app (the trip huddle's own invite link is separate); the SMS bridge shows only a bundle's words with no actions, as other typed messages do (checked in B1).
 
-Futoshiki, KenKen, Crossmath, Kakuro. Each adapter (givens, signs, cages, sums, tray) with round-trip and fuzz tests; thumbnails for the families added so far. Server id table extended.
+## 6. Phases
 
-### B4: logic and shading games
+Rules for every phase (CLAUDE.md): English only; verify with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` only (no browser testing, no `dotnet test`); commit only when asked, then stop so the user can `/clear`; do not start the next phase until asked. Server code gets unit tests written but not run (open question 2).
 
-Hitori, Slitherlink, Nurikabe, Hashi, Nonogram. Same pattern; check that each `decode` can recover a unique solution (Nonogram and Hashi clues are explicit; Slitherlink and Nurikabe layouts need the solver). Server id table extended.
+### B1: the foundation (send dialog, bundle card, registry), with venue and menu
 
-### B5: word and chance games
+- Server: `ChatBundleRules`, `ChatBundleService`, `kind: 'bundle'` on send and read, preview and push words, stats and search treatment of `bundle`, `ChatBundleRulesTests.cs`. Venue and menu re-expressed through the registry.
+- Front end: `chatBundles.ts`, `parseBundle`, `bundleLink`, `SendDialog`, `ShareButton`, `BundleCard`, thread hook-up, fallback for unknown types, queued send, SMS-bridge check; `SendToChat` opens the dialog.
+- Done when: a venue or menu goes to two chats at once, an older client shows the fallback, and the old card kinds are untouched.
 
-Cruise Wordle (share the **result pattern** without spoiling the word, and "play this word" by word-list index, so the card never shows the word as text), Word Search (grid and word list), Codeword (grid and revealed letters), Minesweeper (the board's revealed state; decide whether the mine layout is sent or re-derived, since it is the puzzle: the payload is never rendered, so sending it is acceptable). After this phase **all 17 games** can be sent.
+### B2: plannable bundles and proposals (events, shows, excursions, dinners)
 
-### B6: challenges and results
+- Bundle types `event`, `show`, `activity`, `excursion`, `dinner` with `when`; chat icon on their explorer rows and detail pages (dining, entertainment, activities, exercise, spa, shopping events, excursions).
+- **Proposal** generalises the plan card to any plannable bundle: Going/Maybe/No, Add to my day with clash warning, Remind me, state line (past, cancelled, on your day, clashes). Going on an excursion or dinner records the answer and **never books**.
+- Done when: an excursion or dinner can be proposed to a group and answered Going, which removes the "plan only for programme events" limit.
 
-- `SolvedCard` gets **Send my result**: a `game.*` bundle with `mode: 'result'` (level, time, hints used if the sender ticks it) that references the original puzzle so **Beat it** opens the same puzzle with a target time shown.
-- `ChatBundleOutcomes` table, `db/` script, outcome endpoint, "Played / Solved by 3 of 5" line on the card for members (names only for people who chose to report; counts otherwise), push text kept to who it is from.
-- Done when: a group can pass one puzzle around and see how many solved it.
+### B3: bundle polls (the options are real things)
 
-### B7: explorer sweep, things that happen (events, shows, activities, excursions)
+- Poll payload v2: options are text or bundle; composer with the explorer picker; bundle options shown as mini cards with Open and Vote; Suggest (add option) with who-can-add and the limits; server re-check on read; `ChatOptions` table and script; held votes and counts unchanged; spoken results extended.
+- Coordinator reuse: remind, tally card, compromise text for bundle options.
+- Done when: "Which dinner on Tuesday?" can be a poll of three real venues, anyone allowed can add a fourth, and everyone can open each.
 
-Add `event`, `show`, `excursion` (browsed, not only booked) and `activity` bundle types and the chat icon on their explorer rows and detail pages (dining, entertainment, activities, exercise, spa, shopping events, excursions). Actions: RSVP (reusing the plan card), Add to my day, Remind me, Save, Ask the group (poll). Server rebuilds from `ExplorerCatalogue`, `ProgramRules`, `ExcursionRules`; `gone`/`past`/`notOnYourSailing` states.
+### B4: decide and make it happen
 
-### B8: explorer sweep, places and days (ports, dishes, deck-plan places, the day)
+- **Decide** (creator or admin): closes the poll and posts the **decision card**; `DecidedOption` and `DecidedBy`; refuses a cancelled or past winner; ties resolved by the decider choosing.
+- Decision actions: Add to my day (reuses the plan import, clash warning, existing confirm), Remind me (uses the existing reminder system), **Book** hand-off to the normal booking screen with day, time and party size as hints, **How was it?** follow-up feeding the group recap.
+- Done when: a group goes from poll to decision to each person's own day and reminder without chat ever booking anything.
 
-`port` (arrival, departure, one tip, link to the port guide), `dish` (from `DishSave`), `place` with **Directions**, `day` (the day summary from `DaySummaryCard` as an itinerary the recipient can **Add all to my day**), the shortlist and trip itinerary. A coverage test lists every explorer route and states, for each, either its bundle type or why it has none, so nothing is missed silently.
+### B5: time-slot polls and clash-aware voting
 
-### B9: share from everywhere and pass it on
+- Time poll payload and composer (slots only on days of the sailing); private per-voter clash markers from their own plan and bookings; compromise suggestion across slots; "any of these" answer if the owner wants it.
+- Done when: a group can pick a time for a chosen activity and each person sees their own clashes before voting.
 
-**Forward** a received bundle to another chat (action on the message menu; the sender becomes the forwarder, the original sender is named on the card, bundle re-validated); chat icon on Home "today" cards, Stanley answers (reusing the idea behind `StanleyGroupShareService`, with an admin's confirm in made groups), and the explorer landing tiles. "Recently sent to" ordering in the dialog.
+### B6: day boards and the pre-booking huddle
 
-### B10: polish, audit and consolidation
+- **Day board** bundle (up to 8 items, I'm in per item, anyone may add by setting, add all to my day), built on `groupBoard.ts`; "Plan the day here" from a port bundle.
+- Huddle: shortlist cards (sailing, port, cabin type) become bundles so a huddle poll can compare them; keeps the huddle's adult-only, no-price-personal rules.
+- Done when: a group can build a port day together, and a huddle can poll between two sailings using the same cards.
 
-Thumbnails for every game family, empty/error/stale states reviewed against every type, accessibility pass (focus order, names, reduced motion, contrast, target size), `docs/` and `README` updates, release checks (`releaseGates.test.ts` style tests for "every game has an adapter" and "every bundle type has a preview, a fallback and at least one action"), and, **only if the owner wants it**, re-expressing the legacy `card`, `place` and `plan` kinds through the registry.
+### B7: places, ports, dishes and the rest of the explorers
 
-## 6. Risks
+- Types `port`, `place` (Directions, Meet me here), `dish` (from `DishSave`), `day` (the day summary as an itinerary with **Add all to my day**), shortlist and trip itinerary.
+- A **coverage test** lists every explorer and sub-screen route and states its bundle type or why it has none, so nothing is missed silently.
+- Done when: every explorer item worth sharing has a chat icon, and the coverage test proves it.
 
-- **Generators that are slow or non-deterministic** are not a problem, because puzzles travel explicitly; but **`decode` needs a solver pass** on the recipient's device. Hard Killer and 13x13 Codeword must decode within a frame budget or show a short "Setting up the puzzle" state (measure in B2 and B4).
-- **Payload size** on 13x13 and 10x10 grids with notes: the 4 KB cap and an encoder that packs digits tightly; tested at the largest level of each game.
-- **Chat stats and search** count messages by kind; confirm `bundle` is included or deliberately excluded in each (B1 checklist), as photos were.
-- **Two ways to send a venue** during B1 to B10 (legacy card and bundle): the legacy send path is removed from the UI in B1 for venue and menu so guests only see one button.
-- **C# changes are not compiled by the npm checks.** See open question 3.
+### B8: games, part 1 (infrastructure, Sudoku family, Binairo)
 
-## 7. Open questions (defaults I will use unless told otherwise)
+- `GameShareAdapter` and registry, `GameShare` control in `parts.tsx`, `useIncomingBundle`, banner and failure fallback, route allow-listing, server `game.*` snapshot validation.
+- Adapters with round-trip and fuzz tests for Sudoku, Diagonal, Jigsaw, Killer and Binairo; modes Start and Current (notes only when ticked).
+- Done when: a Sudoku board sent from the game opens the same puzzle (start or current) on another device.
 
-1. **Prices and offers**: leave out of bundles (default). If you want "offer" bundles, they need a public-price rule and a separate phase.
-2. **Current position and notes**: include entries always for "Where I am now", notes only when ticked (default).
-3. **Verifying server code**: the working rules forbid `dotnet test`. Default: write the C# and its tests, check them by review, and ask you to run `dotnet build` yourself after B1, B2, B6 (or allow `dotnet build` only, which does not run tests).
-4. **Result sharing detail**: time and level always, hints used only when ticked (default).
-5. **Who may see "Solved by"**: counts for everyone in the chat, names only for those who chose to report (default).
+### B9: games, part 2 (the other 12)
+
+Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nonogram; Cruise Wordle (result pattern and word-list index, never the word as text), Word Search, Codeword, Minesweeper (decide whether the layout is sent; the payload is never rendered). Thumbnails per family. Worth splitting into two sessions if it runs long.
+
+### B10: results, challenges and "played" counts
+
+- `SolvedCard` gets Send my result; **Beat it** opens the same puzzle with a target time; `ChatBundleOutcomes` and an outcome endpoint; "Solved by 3 of 5" counts, names only for people who chose to report. The same outcome table gives a decision card its "Done, how was it?" tally.
+
+### B11: pass it on, share from everywhere, polish
+
+- **Forward** a bundle to another chat (original sender named, re-validated); chat icon on Home "today" cards, explorer landing tiles and Stanley answers (admin confirm in made groups, as the existing Stanley share); "recently sent to" ordering.
+- Thumbnails everywhere, empty, error and stale states reviewed for every type, accessibility pass, release gates ("every bundle type has a preview, a fallback and an action", "every game has an adapter"), docs, and, only if the owner wants it, folding the legacy `card`, `place`, `plan` and text-poll kinds into the registry.
+
+## 7. Risks
+
+- **Scope creep in B2 to B6.** Each planning object is built once, in a fixed order, and each phase is usable on its own.
+- **Old clients.** A poll with bundle options must degrade to readable text on an older app (title and subtitle per option); tested in B3.
+- **Decision against changing facts.** A winner can be cancelled or pass before the decision; the server re-checks at decide time and at read time.
+- **Privacy in clashes.** Clash markers are computed on the viewer's device or for the viewer only; a test asserts that no endpoint returns another person's clash.
+- **Payload size and decode cost for games** on the largest grids: the 4 KB cap, tight encoders, and a measured "Setting up the puzzle" state for hard Killer and 13x13 Codeword.
+- **Chat stats and search** count messages by kind; `bundle` and v2 polls are included or excluded deliberately in B1 and B3.
+- **C# changes are not compiled by the npm checks** (open question 2).
+
+## 8. Open questions (defaults I will use unless told otherwise)
+
+1. **Prices and offers**: left out of bundles (default).
+2. **Verifying server code**: `dotnet test` is ruled out. Default: write the C# and its tests, review them, and ask you to run `dotnet build` yourself after B1, B3, B4 and B8 (or allow `dotnet build` alone, which does not run tests).
+3. **Who may add poll options**: admin only in made groups, anyone in 1:1 and party chats (default).
+4. **Who decides**: creator or a group admin; either person in a 1:1 (default).
+5. **Decision effect**: offers Add to my day, never automatic (default).
+6. **"Anyone can add to a day board"**: on in 1:1 and party chats, admin-set in made groups (default).
+7. **Game notes and results**: notes only when ticked; result time and level always, hints used only when ticked; "Solved by" counts for all, names only for those who report (default).
