@@ -1,4 +1,7 @@
 import { useId, useState } from 'react'
+import { useSearchParams } from 'react-router'
+import { useMirrorParams } from '../../hooks/useUrlState'
+import { readText } from '../../routes/urlState'
 import { Link } from 'react-router'
 import { t } from '../../i18n'
 import { filterPorts, groupByCountry } from '../../domain/portGuide'
@@ -9,7 +12,9 @@ import { Flag } from '../Flag'
 /** Every port with a guide (H52), one section per country: search by port, country or area and open a port for its Port Details page, or the country for its page. */
 export function PortsScreen() {
   const ports = usePortList()
-  const [query, setQuery] = useState('')
+  const [params] = useSearchParams()
+  const [query, setQuery] = useState(() => readText(params, 'q'))
+  useMirrorParams({ q: query })
   const id = useId()
   if (!ports) return <div className="page"><FeedWaiting /></div>
   const shown = filterPorts(ports, query)

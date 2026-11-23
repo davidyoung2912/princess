@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
+import { useMirrorParams } from '../../hooks/useUrlState'
+import { readInt } from '../../routes/urlState'
 import { setWatched } from '../../push/browser'
 import { Link } from 'react-router'
 import { NO_WISH, type DayWish, type Mobility } from '../../domain/day'
@@ -29,7 +32,9 @@ export function DayScreen() {
   const sailing = useSailing()
   const me = usePersona()
   const days = itinerary(sailing)
-  const [day, setDay] = useState(3)
+  const [params] = useSearchParams()
+  const [day, setDay] = useState(() => readInt(params, 'day', 3, 1, Math.max(1, days.length)))
+  useMirrorParams({ day: day === 3 ? null : day })
   const [wish, setWish] = useState<DayWish>({ ...NO_WISH, withKids: !!me && partyPeople(me.id).some((p) => p.age < 13) })
   const plan = useFeed(dayPlanFeed, sailing.id, day, wishKey(wish))
   // The events in the day shown are the ones to hear about if the ship moves or cancels them (N3.3).

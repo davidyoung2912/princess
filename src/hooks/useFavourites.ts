@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, loadContext } from '../runtime'
 import { channel } from '../runtime/channel'
 import { usePersona } from './useDemo'
+import { deviceStore, flushFavourites, heldFavourites, holdFavourite, withHeld } from '../data/favouriteQueue'
+import { worthRetrying } from './useOutbox'
+const store = deviceStore
 
 export interface Favourites {
   keys: readonly string[]
@@ -27,15 +30,23 @@ export function useFavourites(): Favourites {
 
   useEffect(() => {
     let current = true
+    const held = () => (owner ? heldFavourites(store(), owner) : [])
     const load = () => {
       api.discover.favourites().then(
-        (keys) => { if (current) setLoaded({ owner, keys, failed: false }) },
-        () => { if (current) setLoaded({ owner, keys: [], failed: true }) },
+        (keys) => { if (current) setLoaded({ owner, keys: withHeld(keys, held()), failed: false }) },
+        () => { if (current) setLoaded({ owner, keys: withHeld([], held()), failed: true }) },
       )
     }
+    // Changes made with no signal go out first when the phone is back, then the list is read again.
+    const flush = () => {
+      if (!owner || held().length === 0) return
+      void flushFavourites(store(), owner, () => api.discover.favourites(), (key) => api.discover.toggleFavourite(key)).then(() => { if (current) load() })
+    }
     load()
+    flush()
+    window.addEventListener('online', flush)
     const unsubscribe = channel.subscribe((m) => { if (m.type === 'records' && m.kind === 'favourites') load() })
-    return () => { current = false; unsubscribe() }
+    return () => { current = false; unsubscribe(); window.removeEventListener('online', flush) }
   }, [owner])
 
   const toggle = useCallback(async (key: string) => {
@@ -43,7 +54,16 @@ export function useFavourites(): Favourites {
       const keys = await api.discover.toggleFavourite(key)
       setLoaded({ owner, keys, failed: false })
       loadContext()   // saving or removing a sailing can change the guest's stage
-    } catch {
+    } catch (e) {
+      // No signal or a slow link: keep the change on this phone, show it as done, and send it when the connection returns.
+      if (owner && worthRetrying(e)) {
+        setLoaded((l) => {
+          const base = l && l.owner === owner ? l.keys : []
+          const on = !base.includes(key)
+          return holdFavourite(store(), owner, key, on, Date.now()) ? { owner, keys: withHeld(base, [{ key, on }]), failed: false } : { owner, keys: base, failed: true }
+        })
+        return
+      }
       setLoaded((l) => ({ owner, keys: l && l.owner === owner ? l.keys : [], failed: true }))
     }
   }, [owner])

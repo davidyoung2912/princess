@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useMirrorParams } from '../../hooks/useUrlState'
 import { useSearchParams } from 'react-router'
 import { readUrlFilter } from '../../domain/explorer/urlFilter'
 import { Link } from 'react-router'
@@ -72,6 +73,7 @@ function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: Exp
   const dining = data.explorer === 'dining'
   const [filter, setFilter] = useState<DiningFilter>({ ...NO_DINING_FILTER, kind: startKind, diet: start.diet, query: start.q })
   const [sort, setSort] = useState<DiningSort>('suggested')
+  useMirrorParams({ q: dining ? filter.query : query, type: dining ? filter.kind : kind, diet: dining ? filter.diet : null })
   const { profile: taste } = useTaste()
   const pinnedIds = data.venues.filter((v) => pins.isPinned(v.venue)).map((v) => v.venue.id)
   const picks = dining ? { events: [], venues: recommendVenues(data, taste, { pinnedVenueIds: pinnedIds }) } : { events: recommendEvents(data, taste, { now: state.nowAt, pinnedVenueIds: pinnedIds }), venues: [] }

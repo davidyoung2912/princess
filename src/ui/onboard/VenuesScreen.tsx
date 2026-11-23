@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
+import { useMirrorParams } from '../../hooks/useUrlState'
+import { readFlag } from '../../routes/urlState'
 import { Link, useParams } from 'react-router'
 import type { DietaryId } from '../../domain/account'
 import { formatTime } from '../../domain/cruise'
@@ -27,8 +30,10 @@ function usePartyDiets(): { diets: DietaryId[]; ready: boolean } {
 
 /** Every place to eat and drink, with hours for today, price and dress code (DIN-01). */
 export function VenuesScreen() {
-  const [openNow, setOpenNow] = useState(false)
-  const [included, setIncluded] = useState(false)
+  const [params] = useSearchParams()
+  const [openNow, setOpenNow] = useState(() => readFlag(params, 'open'))
+  const [included, setIncluded] = useState(() => readFlag(params, 'incl'))
+  useMirrorParams({ open: openNow, incl: included })
   const { day, time } = useShipDay()
   const list = DIRECTORY.filter((v) => (!openNow || openAt(v, day, time)) && (!included || v.price !== 'specialty'))
   return (

@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Suspense, useMemo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties } from 'react'
 import { MyAvatarLink } from './MyAvatarLink'
 import stanley from '../assets/stanley-small.png'
@@ -12,6 +12,7 @@ import { useStatsTracker } from '../hooks/useStatsTracker'
 import { useStanleyLevelSync } from '../hooks/useStanleyLevelSync'
 import { t, th } from '../i18n'
 import { routeForPath } from '../routes/nav'
+import { canReach, rememberScroll, scrollTarget } from '../routes/scrollMemory'
 import { recordVisit } from '../routes/trail'
 import { markOpenedByLink, openedByLink } from '../routes/openedByLink'
 import { useRecentVisit } from '../hooks/useRecentVisit'
@@ -74,6 +75,8 @@ import { APP_WELCOME_KEY, hasWelcomeCopy, shouldShowAppWelcome, shouldShowStanle
  * a left rail from 1024px), and the main area. An address the stage does not use goes Home. On each change of screen it updates the page title, announces the new
  * screen to screen readers, and moves focus to the main area so keyboard users start at the top of the new content.
  */
+const scrollStore = (): Storage | null => { try { return typeof sessionStorage === 'undefined' ? null : sessionStorage } catch { return null } }
+
 export function Shell() {
   const { pathname, search, state, key: visitKey } = useLocation()
   const navigationType = useNavigationType()
@@ -211,6 +214,15 @@ export function Shell() {
     navigate('/welcome', { replace: true, state: { from: pathname + search } })
   }, [welcomeDue, personId, stage, focusSailingId, navigate, pathname, search])
 
+  // Read inside the screen-change effect below, which must run on a new screen only (a filter change in the address bar keeps the guest's place).
+  const visitKeyRef = useRef(visitKey)
+  const navTypeRef = useRef(navigationType)
+  useLayoutEffect(() => {
+    visitKeyRef.current = visitKey
+    navTypeRef.current = navigationType
+    // A filter written into the address replaces the entry under a new key; carry the place across so Back still finds it.
+    if (navigationType === 'REPLACE') rememberScroll(scrollStore(), visitKey, window.scrollY)
+  }, [visitKey, navigationType])
   useEffect(() => {
     const seo = seoFor(route?.path)
     const full = `${title} · ${t('app.name')}`
@@ -219,8 +231,28 @@ export function Shell() {
     if (first.current) { first.current = false; return }
     setAnnouncement(t('shell.announce', { title }))
     main.current?.focus({ preventScroll: true })
-    window.scrollTo(0, 0)
+    // Back returns to the place in a long list; a new visit starts at the top. A list that is still loading gets a few frames to grow tall enough.
+    const target = scrollTarget(scrollStore(), visitKeyRef.current, navTypeRef.current)
+    window.scrollTo(0, target)
+    if (target === 0) return
+    let frames = 0
+    let raf = 0
+    const retry = () => {
+      if (canReach(target, document.documentElement.scrollHeight, window.innerHeight) || frames++ > 40) { window.scrollTo(0, target); return }
+      raf = requestAnimationFrame(retry)
+    }
+    raf = requestAnimationFrame(retry)
+    return () => cancelAnimationFrame(raf)
   }, [pathname, title, route?.path])
+
+  // Note where the guest is on this history entry as they scroll, so Back can return there.
+  useEffect(() => {
+    let pending = 0
+    const save = () => { pending = 0; rememberScroll(scrollStore(), visitKeyRef.current, window.scrollY) }
+    const onScroll = () => { if (!pending) pending = requestAnimationFrame(save) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => { window.removeEventListener('scroll', onScroll); if (pending) cancelAnimationFrame(pending) }
+  }, [])
 
   if (stale) return <Navigate to="/" replace />
   const activeKey = landing || (screen && screen.family !== 'X') ? activeTabKey(pathname, stage, area) : null

@@ -2,7 +2,7 @@
 export interface OutboxItem {
   id: string
   /** What to send: the screen that queued it knows how. */
-  kind: 'chat' | 'service'
+  kind: 'chat' | 'service' | 'favourite'
   payload: Record<string, string>
   queuedAt: number
   attempts: number
@@ -64,7 +64,7 @@ export function nextWake(list: readonly OutboxItem[]): number | null {
 
 export const isItem = (v: unknown): v is OutboxItem => {
   const o = v as OutboxItem
-  return !!o && typeof o.id === 'string' && (o.kind === 'chat' || o.kind === 'service') && !!o.payload && typeof o.payload === 'object' && typeof o.queuedAt === 'number' && typeof o.attempts === 'number' && typeof o.nextAt === 'number'
+  return !!o && typeof o.id === 'string' && (o.kind === 'chat' || o.kind === 'service' || o.kind === 'favourite') && !!o.payload && typeof o.payload === 'object' && typeof o.queuedAt === 'number' && typeof o.attempts === 'number' && typeof o.nextAt === 'number'
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>

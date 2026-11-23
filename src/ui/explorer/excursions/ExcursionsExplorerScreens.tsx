@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useMirrorParams } from '../../../hooks/useUrlState'
+import { readFlag } from '../../../routes/urlState'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { MAX_AGE, readUrlFilter } from '../../../domain/explorer/urlFilter'
 import { tourKey } from '../../../domain/explorer/shortlist'
@@ -206,9 +208,10 @@ export function ExcursionsExplorerScreen() {
 function List({ view, state, reload }: { view: ExcursionsView; state: ExplorerDayState; reload: () => void }) {
   const [params] = useSearchParams()
   const [start] = useState(() => readUrlFilter(params))
-  const [filter, setFilter] = useState<DayFilter>(() => ({ ...NO_DAY_FILTER, age: start.age, interest: (INTERESTS as readonly string[]).includes(start.type ?? '') ? (start.type as Interest) : null }))
+  const [filter, setFilter] = useState<DayFilter>(() => ({ ...NO_DAY_FILTER, age: start.age, maxActivity: readFlag(params, 'easy') ? ACTIVITIES[0] : null, family: readFlag(params, 'family'), accessible: readFlag(params, 'access'), interest: (INTERESTS as readonly string[]).includes(start.type ?? '') ? (start.type as Interest) : null }))
   const [query, setQuery] = useState(start.q)
-  const [suits, setSuits] = useState(false)
+  const [suits, setSuits] = useState(() => readFlag(params, 'suits'))
+  useMirrorParams({ q: query, type: filter.interest, age: filter.age, easy: filter.maxActivity === ACTIVITIES[0], family: filter.family, access: filter.accessible, suits })
   const { state: mem } = useMemory()
   const { stage } = useExplorerStage()
   const [scope, setScope] = useReservationScope()
