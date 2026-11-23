@@ -175,6 +175,9 @@ public sealed class ChatMessageRow
     public List<long> Mentions { get; set; } = [];
     /// <summary>Phase 4: when a poll was closed on demand (it also closes by itself 24 hours after it was sent).</summary>
     public DateTime? ClosedAt { get; set; }
+    /// <summary>Phase B4: the poll option the group decided on, and who decided it. Null until decided.</summary>
+    public int? DecidedOption { get; set; }
+    public long? DecidedBy { get; set; }
     public bool FromStanley => FromUserId == 0;
 }
 
@@ -532,6 +535,8 @@ public interface IChatStore
     Task<List<ChatResponseRow>> ListResponsesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct);
     /// <summary>Closes a poll now. False when it was already closed on demand.</summary>
     Task<bool> ClosePollAsync(long messageId, DateTime at, CancellationToken ct);
+    /// <summary>Phase B4: records the decision on a poll that has none yet (closing it if it is still open). False when it was already decided.</summary>
+    Task<bool> DecidePollAsync(long messageId, int option, long decidedBy, DateTime at, CancellationToken ct);
     /// <summary>Switches "alert me only when I am mentioned" on or off for the member.</summary>
     Task SetMentionsOnlyAsync(long groupId, long userId, bool on, CancellationToken ct);
     /// <summary>

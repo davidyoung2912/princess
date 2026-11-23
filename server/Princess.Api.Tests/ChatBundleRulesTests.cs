@@ -87,4 +87,13 @@ public class ChatBundleRulesTests
         Assert.NotNull(ChatPlanningRules.CleanPoll("Which?", ["", "2", "3", "4", "5", "6"], ["event:b:3", null, null, null, null, null], Title));
         Assert.Null(ChatPlanningRules.CleanPoll("Which?", ["a", "b"])!.Refs);
     }
+
+    [Fact]
+    public void ThePersonWhoAskedAnAdminAndEitherPersonInADirectChatMayDecide()
+    {
+        Assert.True(ChatPlanningRules.MayDecide(ChatConversationRules.Group, true, false));
+        Assert.True(ChatPlanningRules.MayDecide(ChatConversationRules.Group, false, true));
+        Assert.False(ChatPlanningRules.MayDecide(ChatConversationRules.Group, false, false));
+        Assert.True(ChatPlanningRules.MayDecide(ChatConversationRules.Direct, false, false));
+    }
 }

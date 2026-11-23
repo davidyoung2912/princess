@@ -152,10 +152,15 @@ public sealed record ChatPollDto(string Question, List<string> Options, List<Cha
 /// </summary>
 public sealed record ChatTallyDto(List<int> Counts, int? Mine, bool Closed, long? ClosesAt, bool MayClose,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<string>? Going = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool AddedToPlan = false);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool AddedToPlan = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Decided = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MayDecide = false);
 
 /// <summary>A poll option vote: the index of the option, or null to take the vote back.</summary>
 public sealed record ChatVoteRequest(int? Option);
+
+/// <summary>Phase B4: the option a poll is decided on.</summary>
+public sealed record ChatDecideRequest(int? Option);
 
 /// <summary>A plan answer: <c>going</c>, <c>maybe</c> or <c>no</c>.</summary>
 public sealed record ChatRsvpRequest(string? Choice);

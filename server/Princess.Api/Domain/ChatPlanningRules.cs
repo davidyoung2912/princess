@@ -94,6 +94,9 @@ public static class ChatPlanningRules
     /// <summary>Who may close a poll before its time: the person who asked it, and an admin of the group.</summary>
     public static bool MayClose(bool isSender, bool isAdmin) => isSender || isAdmin;
 
+    /// <summary>Phase B4, who may decide a poll: the person who asked it and an admin of a made group, and either person in a direct chat. Deciding closes the poll.</summary>
+    public static bool MayDecide(string conversationKind, bool isSender, bool isAdmin) => conversationKind == ChatConversationRules.Direct || MayClose(isSender, isAdmin);
+
     public static bool ValidOption(int option, int count) => option >= 0 && option < count;
 
     /// <summary>How many chose each of <paramref name="slots"/> answers. A choice outside the slots (an option a later edit removed) is not counted.</summary>

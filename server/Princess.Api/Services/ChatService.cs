@@ -198,7 +198,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
                 Kind: ChatCardRules.IsTyped(m.Kind) || m.Kind is ChatPlanningRules.Poll or ChatBundleRules.Kind ? m.Kind : null, Bundle: m.Kind == ChatBundleRules.Kind && ChatBundleRules.Parse(m.Payload) is { } bundle ? BundleDto(bundle) : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs, stillBooked) : null,
                 Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()],
                 Poll: m.Kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(m.Payload) is { } poll ? new ChatPollDto(poll.Question, poll.Options, pollBundles.TryGetValue(m.Id, out var pb) ? pb.Bundles : null, pollBundles.TryGetValue(m.Id, out var pg) && pg.Gone.Count > 0 ? pg.Gone : null) : null,
-                Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers) : null,
+                Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers, member.Kind) : null,
                 Avatar: name is null ? null : byId.GetValueOrDefault(m.FromUserId)?.Avatar));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
@@ -398,7 +398,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, PhotoCount: sent.Row.ExtraPhotos > 0 ? sent.Row.ExtraPhotos + 1 : null, ReplyTo: quote,
             Kind: ChatCardRules.IsTyped(kind) || kind is ChatPlanningRules.Poll or ChatBundleRules.Kind ? kind : null, Bundle: kind == ChatBundleRules.Kind && ChatBundleRules.Parse(payload) is { } madeBundle ? BundleDto(madeBundle) : null, Card: ChatCardRules.IsTyped(kind) && ChatCardRules.Parse(payload) is { } made ? CardDto(made, Shipboard.Ms(now)) : null,
             Poll: kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(payload) is { } sentPoll ? new ChatPollDto(sentPoll.Question, sentPoll.Options, sentPoll.Refs is null ? null : [.. sentPoll.Refs.Select(r => r is not null && built is not null && built.TryGetValue(r, out var made1) ? BundleDto(made1) : (ChatBundleDto?)null)]) : null,
-            Tally: kind is ChatPlanningRules.Poll or ChatCardRules.Plan ? ChatPlanningService.TallyOf(sent.Row, [], actor.Id, now, ChatPlanningService.AdminOf(member, actor.Id), new Dictionary<long, ChatPeerRow>(), new HashSet<long>()) : null);
+            Tally: kind is ChatPlanningRules.Poll or ChatCardRules.Plan ? ChatPlanningService.TallyOf(sent.Row, [], actor.Id, now, ChatPlanningService.AdminOf(member, actor.Id), new Dictionary<long, ChatPeerRow>(), new HashSet<long>(), member.Kind) : null);
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
         typing.Clear(member.GroupId, actor.Id);   // the message is the end of "is typing"
         await store.UnarchiveOthersAsync(member.GroupId, actor.Id, ct);

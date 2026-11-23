@@ -3,7 +3,7 @@ import type { ChatPlannable, ChatTally } from '../api/chatTypes'
 import {
   OPTION_MAX, QUESTION_MAX, cleanPollRows, adminCandidates, applyRsvp, applyVote, canAddOption, canPost, cleanPollDraft, eventsOnDay, isPlan, isPoll, isPollClosed, leaders, percentOf, planDays, pollResultText, rsvpIndex, rsvpOf,
 } from './chatPlanning'
-import { answerJob, isBookingPlan, readAnswerJob, withHeld } from './chatPlanning'
+import { answerJob, decisionActions, isBookingPlan, readAnswerJob, withHeld } from './chatPlanning'
 import { readReactionJob } from './chatReactions'
 import { canEditKind } from './chatCards'
 
@@ -160,5 +160,16 @@ describe('cleanPollRows (bundle options)', () => {
     expect(cleanPollRows('Which?', [{ text: 'T'.repeat(60), ref: 'event:t:3' }, { text: 'x' }])?.options[0]).toHaveLength(OPTION_MAX)
     expect(canAddOption(5, true)).toBe(true)
     expect(canAddOption(6, true)).toBe(false)
+  })
+})
+
+describe('decisionActions', () => {
+  it('lets a programme event go on your day, never a booked tour or dinner, and offers booking for those', () => {
+    expect(decisionActions({ type: 'event', ref: 'event:trivia-1:3' })).toEqual({ plan: { eventId: 'trivia-1', day: 3 }, book: false })
+    expect(decisionActions({ type: 'excursion', ref: 'event:tour~abc:4' })).toEqual({ plan: null, book: true })
+    expect(decisionActions({ type: 'dinner', ref: 'event:dine~v1~19:00:2' })).toEqual({ plan: null, book: true })
+    expect(decisionActions({ type: 'venue', ref: 'venue:v1' })).toEqual({ plan: null, book: false })
+    expect(decisionActions(null)).toEqual({ plan: null, book: false })
+    expect(decisionActions({ type: 'event', ref: 'event:x:0' }).plan).toBeNull()
   })
 })

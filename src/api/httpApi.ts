@@ -270,6 +270,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     pin: (id, messageId, on) => send(on ? 'put' : 'delete', `/me/chat/conversations/${seg(id)}/pins/${seg(messageId)}`),
     mentionsOnly: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mentions-only`, { on }),
     vote: (id, messageId, option) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/vote`, { option }),
+    decidePoll: (id, messageId, option) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/decide`, { option }),
     closePoll: (id, messageId) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/close`),
     rsvp: (id, messageId, choice) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/rsvp`, { choice }),
     react: (id, messageId, emoji) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/react`, { emoji }),

@@ -307,7 +307,7 @@ export interface ChatPoll {
  * The answers to a poll or plan. `counts` is one number per poll option, or going, maybe and no for a plan; `mine` is your own choice (the option's index, or 0, 1, 2 for a plan). A poll's answers are counted, never named.
  * `closesAt` (ship milliseconds) and `mayClose` are for a poll; `going` names the others going to a plan; `addedToPlan` says your Going put the event on your own programme.
  */
-export interface ChatTally { counts: number[]; mine?: number; closed: boolean; closesAt?: number; mayClose: boolean; going?: string[]; addedToPlan?: boolean }
+export interface ChatTally { counts: number[]; mine?: number; closed: boolean; closesAt?: number; mayClose: boolean; going?: string[]; addedToPlan?: boolean; /** Phase B4: the option the poll was decided on. */ decided?: number; /** Phase B4: you may decide this poll now (who asked it, an admin, or either person in a 1:1). */ mayDecide?: boolean }
 export type ChatRsvp = 'going' | 'maybe' | 'no'
 
 /** What a typed send carries: a `ref` from the shareable list, or a named place and an optional short note. */
@@ -389,6 +389,8 @@ export interface ChatConversationsApi {
   vote(id: string, messageId: string, option: number): Promise<ChatTally>
   /** Closes a poll early (the person who asked it, or an admin). Returns the counts. Rejects `forbidden` (`close`), `invalid` (`notPoll`), `notFound` or `conflict` (`closed`). */
   closePoll(id: string, messageId: string): Promise<ChatTally>
+  /** Phase B4: decides a poll on one option (closing it); once only. Nothing is booked or added to anyone's day. Rejects `invalid` (`option`, `notPoll`), `forbidden` (`decide`), `conflict` (`decided`, `gone`, `closed`). */
+  decidePoll(id: string, messageId: string, option: number): Promise<ChatTally>
   /** Answers a plan. Going puts its event on your programme when your sailing runs it that day (a child's answer never does); another answer takes it off if the plan put it there. Rejects `invalid` (`choice`, `notPlan`), `notFound` or `conflict` (`closed`). */
   rsvp(id: string, messageId: string, choice: ChatRsvp): Promise<ChatTally>
   /** Alerts you only for a mention in this conversation. Returns the new state. Rejects `forbidden` (`stanley`) or `notFound`. */

@@ -1,5 +1,5 @@
 /** Group planning in chat (docs/chat-features-research.md, section 11, phase 4): polls, plans with an answer, and who may post. Framework-free; mirrors `ChatPlanningRules` on the server. */
-import type { ChatCard, ChatMessage, ChatPlannable, ChatPoll, ChatRsvp, ChatTally } from '../api/chatTypes'
+import type { ChatBundle, ChatCard, ChatMessage, ChatPlannable, ChatPoll, ChatRsvp, ChatTally } from '../api/chatTypes'
 
 export const POLL_MIN_OPTIONS = 2
 export const POLL_MAX_OPTIONS = 5
@@ -155,3 +155,18 @@ export function withHeld(tally: ChatTally | undefined, job: Pick<AnswerJob, 'kin
   if (job.kind === 'vote') return tally.mine === Number(job.value) ? tally : applyVote(tally, Number(job.value))
   return rsvpOf(tally.mine) === job.value ? tally : applyRsvp(tally, job.value as ChatRsvp)
 }
+
+/** Phase B4: what a decision on a bundle option lets each member do. Never automatic and never booking: a programme event can go on your day (and carry a reminder); a tour or dinner is booked on its own screen. */
+export interface DecisionActions { plan: { eventId: string; day: number } | null; book: boolean }
+
+export function decisionActions(b: Pick<ChatBundle, 'type' | 'ref'> | null | undefined): DecisionActions {
+  if (!b) return { plan: null, book: false }
+  const at = b.ref?.startsWith('event:') ? b.ref.lastIndexOf(':') : -1
+  const eventId = at > 6 ? b.ref!.slice(6, at) : ''
+  const day = at > 0 ? Number(b.ref!.slice(at + 1)) : NaN
+  const booked = eventId.startsWith('tour~') || eventId.startsWith('dine~')
+  return { plan: eventId !== '' && !booked && Number.isInteger(day) && day > 0 ? { eventId, day } : null, book: b.type === 'excursion' || b.type === 'dinner' }
+}
+
+/** The minutes ahead a decision's Remind me sets. */
+export const DECISION_REMINDER_LEAD = 30

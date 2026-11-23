@@ -708,7 +708,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         var messages = (await c.QueryAsync<ChatMessageRow>(Sql.Cmd($"""
             SELECT TOP (@take) m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, CASE WHEN m.DeletedAt IS NULL THEN m.[Text] ELSE N'' END AS [Text], CAST(CASE WHEN m.Photo IS NULL OR m.DeletedAt IS NOT NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, CASE WHEN m.DeletedAt IS NULL THEN m.ExtraPhotos ELSE 0 END AS ExtraPhotos, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle, m.ReplyToId,
                    m.Lane, m.NoticeKind, m.NoticePath, m.NoticeSubject, m.ExpiresAt, m.SupersededAt, m.EditedAt, m.DeletedAt,
-                   m.Kind, CASE WHEN m.DeletedAt IS NULL THEN m.Payload ELSE NULL END AS Payload, m.ClosedAt
+                   m.Kind, CASE WHEN m.DeletedAt IS NULL THEN m.Payload ELSE NULL END AS Payload, m.ClosedAt, m.DecidedOption, m.DecidedBy
             FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
@@ -990,6 +990,12 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return (await c.QueryAsync<ChatResponseRow>(Sql.Cmd("SELECT MessageId, UserId, Choice, AddedToPlan FROM dbo.ChatResponses WHERE MessageId IN @ids", new { ids = messageIds.ToArray() }, null, ct))).ToList();
     }
 
+    public async Task<bool> DecidePollAsync(long messageId, int option, long decidedBy, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatMessages SET DecidedOption = @option, DecidedBy = @decidedBy, ClosedAt = ISNULL(ClosedAt, @at) WHERE Id = @messageId AND Kind = 'poll' AND DecidedOption IS NULL", new { messageId, option, decidedBy, at }, null, ct)) > 0;
+    }
+
     public async Task<bool> ClosePollAsync(long messageId, DateTime at, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
@@ -1076,7 +1082,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await using var c = await db.OpenAsync(ct);
         return await c.QuerySingleOrDefaultAsync<ChatMessageRow>(Sql.Cmd($"""
             SELECT m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], m.Photo, m.ExtraPhotos, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle,
-                   m.Lane, m.NoticeKey, m.NoticeKind, m.NoticePath, m.NoticeSubject, m.ExpiresAt, m.SupersededAt, m.EditedAt, m.DeletedAt, m.Kind, m.Payload, m.ClosedAt
+                   m.Lane, m.NoticeKey, m.NoticeKind, m.NoticePath, m.NoticeSubject, m.ExpiresAt, m.SupersededAt, m.EditedAt, m.DeletedAt, m.Kind, m.Payload, m.ClosedAt, m.DecidedOption, m.DecidedBy
             FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId

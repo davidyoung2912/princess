@@ -451,7 +451,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
             Reactions = m.DeletedAt is not null ? [] : [.. ReactionsBy.Where(x => x.Key.MessageId == m.Id).Select(x => new ChatReactionRow(m.Id, x.Key.UserId, x.Value))],
             DeliveredBy = [.. MessageDeliveries.Where(x => x.MessageId == m.Id).Select(x => x.UserId)],
             Lane = m.Lane, NoticeKind = m.NoticeKind, NoticePath = m.NoticePath, ExpiresAt = m.ExpiresAt, SupersededAt = m.SupersededAt,
-            Kind = m.Kind, ClosedAt = m.ClosedAt, Payload = m.DeletedAt is null ? m.Payload : null, Mentions = m.DeletedAt is null ? [.. MentionsOf.Where(x => x.MessageId == m.Id).Select(x => x.UserId)] : [],
+            Kind = m.Kind, ClosedAt = m.ClosedAt, DecidedOption = m.DecidedOption, DecidedBy = m.DecidedBy, Payload = m.DeletedAt is null ? m.Payload : null, Mentions = m.DeletedAt is null ? [.. MentionsOf.Where(x => x.MessageId == m.Id).Select(x => x.UserId)] : [],
         }).ToList());
     }
 
@@ -601,6 +601,14 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     public Task<ChatResponseRow?> GetResponseAsync(long messageId, long userId, CancellationToken ct) => Task.FromResult(Responses.GetValueOrDefault((messageId, userId)));
 
     public Task<List<ChatResponseRow>> ListResponsesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct) => Task.FromResult(Responses.Values.Where(r => messageIds.Contains(r.MessageId)).ToList());
+
+    public Task<bool> DecidePollAsync(long messageId, int option, long decidedBy, DateTime at, CancellationToken ct)
+    {
+        var row = Messages.FirstOrDefault(m => m.Row.Id == messageId && m.Row.Kind == "poll")?.Row;
+        if (row is null || row.DecidedOption is not null) return Task.FromResult(false);
+        row.DecidedOption = option; row.DecidedBy = decidedBy; row.ClosedAt ??= at;
+        return Task.FromResult(true);
+    }
 
     public Task<bool> ClosePollAsync(long messageId, DateTime at, CancellationToken ct)
     {

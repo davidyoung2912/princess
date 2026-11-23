@@ -3624,6 +3624,10 @@ GO
 IF COL_LENGTH(N'dbo.ChatMessages', N'ClosedAt') IS NULL
   ALTER TABLE dbo.ChatMessages ADD ClosedAt DATETIME2(0) NULL;
 GO
+-- Chat bundles B4: the option a group decided on (and who decided), set once; deciding also closes the poll.
+IF COL_LENGTH(N'dbo.ChatMessages', N'DecidedOption') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD DecidedOption INT NULL, DecidedBy BIGINT NULL;
+GO
 -- One answer per person per poll or plan. Choice is the option index of a poll, or 0 going, 1 maybe, 2 no for a plan.
 -- AddedToPlan: this answer put the plan's event on the person's programme (so changing the answer takes it off again, and an event they had saved themselves is never removed).
 IF OBJECT_ID(N'dbo.ChatResponses', N'U') IS NULL
