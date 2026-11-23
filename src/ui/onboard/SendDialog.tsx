@@ -1,6 +1,8 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import type { ChatConversation } from '../../api/chatTypes'
 import { BUNDLE_NOTE_MAX, matchConversations, SEARCH_FROM, sendToMany, type SendOutcome } from '../../domain/chatBundles'
+import { loadRecentSent, saveRecentSent } from '../../data/recentSent'
+import { orderByRecent } from '../../domain/chatRecents'
 import { cleanNote } from '../../domain/chatCards'
 import { newClientId } from '../../domain/chatThread'
 import { api } from '../../runtime'
@@ -48,7 +50,8 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
   }, [])
   const sentIds = outcomes.filter((o) => o.ok).map((o) => o.id)
   const open = (rows ?? []).filter((c) => !sentIds.includes(c.id))
-  const shown = matchConversations(open, query)
+  const recent = useMemo(() => loadRecentSent(), [])
+  const shown = matchConversations(orderByRecent(open, recent), query)
   const toggle = (id: string) => { setNeedPick(false); setPicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id])) }
   const run = async () => {
     const targets = open.filter((c) => picked.includes(c.id))
@@ -57,6 +60,8 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
     const clean = item.takesNote ? cleanNote(note) : ''
     const done = await sendToMany(targets, (c) => api.chatConversations.sendTyped(c.id, (how === 'ask' && item.ask ? item.ask(clean) : item.input(clean)), newClientId()))
     setBusy(false)
+    const okIds = done.filter((d) => d.ok).map((d) => d.id)
+    if (okIds.length > 0) saveRecentSent(okIds)
     setOutcomes((cur) => [...cur.filter((o) => !done.some((d) => d.id === o.id)), ...done])
     setPicked(done.filter((d) => !d.ok).map((d) => d.id))
   }
