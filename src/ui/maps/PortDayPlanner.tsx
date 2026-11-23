@@ -2,17 +2,19 @@ import { useId, useMemo, useState } from 'react'
 import { t } from '../../i18n'
 import type { GuideAttraction } from '../../domain/portGuide'
 import { isLatLng, type Pace } from '../../maps/geo'
-import { planPortDay, type Candidate } from '../../maps/portDay'
+import { planPortDay, weatherNotes, type Candidate } from '../../maps/portDay'
+import { useSky } from '../../hooks/useSky'
 import { PlaceMap } from './PlaceMap'
 
 /**
  * "Plan my port day": a walking plan for the call, chosen from the port guide's places and timed against the ship's published arrival and all-aboard times.
  * It is a suggestion made on the phone from the guide's data, not a booking, and the ship's notice on the day has the last word on the time to be back.
  */
-export function PortDayPlanner({ attractions, arrive, allAboard, tender }: { attractions: readonly GuideAttraction[]; arrive: string; allAboard: string; tender: boolean }) {
+export function PortDayPlanner({ attractions, arrive, allAboard, tender, date, port }: { attractions: readonly GuideAttraction[]; arrive: string; allAboard: string; tender: boolean; /** The call's date (YYYY-MM-DD) and port id, for the weather note. */ date: string; port: string }) {
   const uid = useId()
   const [pace, setPace] = useState<Pace>('steady')
   const [meal, setMeal] = useState(false)
+  const sky = useSky(date, port)
   const candidates = useMemo<Candidate[]>(() => attractions.filter((a) => a.map && isLatLng(a.map)).map((a) => ({ id: a.name, name: a.name, at: a.map!, tier: a.tier, why: a.why })), [attractions])
   const plan = useMemo(() => planPortDay({ candidates, arrive, allAboard, tender, pace, mealMinutes: meal ? 60 : 0 }), [candidates, arrive, allAboard, tender, pace, meal])
   if (candidates.length < 2) return null
@@ -47,6 +49,16 @@ export function PortDayPlanner({ attractions, arrive, allAboard, tender }: { att
           </ol>
           <PlaceMap title={t('portday.mapTitle')} pins={plan.stops.map((s) => ({ id: s.id, label: s.name, at: s.at }))} route pace={pace} />
           <p className="muted">{t('portday.spare', { minutes: plan.spare })}</p>
+          {sky && (
+            <div role="group" aria-label={t('portday.weather')}>
+              <h4>{t('portday.weather')}</h4>
+              <ul className="plain-bullets">
+                {weatherNotes(sky, arrive, allAboard).map((n) => (
+                  <li key={n.id}>{n.id === 'rain' ? t('portday.weather.rain', { from: n.from, to: n.to }) : n.id === 'hot' ? t('portday.weather.hot', { temp: n.tempF }) : n.id === 'sun' ? t('portday.weather.sun', { uv: n.uv }) : t('portday.weather.fine', { temp: n.tempF, uv: n.uv })}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       )}
       <p className="muted">{t('portday.caveat')}</p>

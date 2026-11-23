@@ -62,3 +62,19 @@ describe('port day planner', () => {
     expect(easy.stops.length).toBeLessThanOrEqual(steady.stops.length)
   })
 })
+
+import { weatherNotes } from './portDay'
+describe('weather notes', () => {
+  const calm = { uv: 5, tempF: 78, rainFrom: null, rainTo: null }
+  it('says nothing alarming for an ordinary day', () => {
+    expect(weatherNotes(calm, '08:00', '16:30')).toEqual([{ id: 'fine', tempF: 78, uv: 5 }])
+  })
+  it('flags rain only when it overlaps the hours ashore', () => {
+    expect(weatherNotes({ ...calm, rainFrom: '13:00', rainTo: '16:00' }, '08:00', '16:30')[0]).toEqual({ id: 'rain', from: '13:00', to: '16:00' })
+    expect(weatherNotes({ ...calm, rainFrom: '17:00', rainTo: '19:00' }, '08:00', '16:30')[0].id).toBe('fine')
+    expect(weatherNotes({ ...calm, rainFrom: '06:00', rainTo: '08:00' }, '08:00', '16:30')[0].id).toBe('fine')
+  })
+  it('flags heat and strong sun, together with rain when all apply', () => {
+    expect(weatherNotes({ uv: 10, tempF: 95, rainFrom: '10:00', rainTo: '12:00' }, '08:00', '16:30').map((n) => n.id)).toEqual(['rain', 'hot', 'sun'])
+  })
+})

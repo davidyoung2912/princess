@@ -17,7 +17,7 @@ public interface IStanleyPackets
 /// possible and none named, nothing is chosen and Stanley asks. The access to each traveller is worked out here from the booking, the supervised flag and who booked, never from the request. Only data from the active
 /// voyage is loaded, and only for travellers the guest may read at all.
 /// </summary>
-public sealed class StanleyPacketBuilder(ITripStore trips, IAccountStore accounts, IPlanStore plan, IFinishStore finish, StanleyMemoryService memory, IUserClock clock, Microsoft.Extensions.Options.IOptions<StanleyOptions> options) : IStanleyPackets
+public sealed class StanleyPacketBuilder(ITripStore trips, IAccountStore accounts, IPlanStore plan, IFinishStore finish, StanleyMemoryService memory, IUserClock clock, Microsoft.Extensions.Options.IOptions<StanleyOptions> options, IWeatherService? weather = null) : IStanleyPackets
 {
     public async Task<StanleyPacketResult> BuildAsync(UserRecord user, StanleyContext context, CancellationToken ct)
     {
@@ -59,6 +59,6 @@ public sealed class StanleyPacketBuilder(ITripStore trips, IAccountStore account
             var s = CaseService.StatusOf(c, now);
             return new StanleyCaseFact(refs[c.UserId], c.Kind, c.Number, s.Stage, s.Outcome, s.DueAt);
         }).ToList();
-        return new StanleyPacketResult(choice, new StanleyReadData(packet, now, tours, meals, packages, cases));
+        return new StanleyPacketResult(choice, new StanleyReadData(packet, now, tours, meals, packages, cases, weather is null ? null : (date, port) => weather.Sky(date, port)));
     }
 }

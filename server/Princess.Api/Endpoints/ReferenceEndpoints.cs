@@ -79,6 +79,24 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/port-guides/{id}", (string id) => PortGuides.Json(id) is { } json ? Results.Text(json, "application/json") : throw ApiException.NotFound())
             .WithTags("Reference").WithSummary("One port's guide for the Port Details page: area, currency and language, official links, getting ashore, attractions (access tier, logistics, why visit, links, map point), short and long descriptions, traveller tips and general stats (population, size, neighbours, safety, government, economy, famous people, local vibe, timeline). Not found for a port with no guide.");
 
+        api.MapGet("/reference/port-guides/{id}/walking-plan", (string id, string arrive, string allAboard, bool? tender, string? pace, bool? meal, string? date, IWeatherService weather) =>
+            {
+                var places = PortGuides.Places(id) ?? throw ApiException.NotFound();
+                static bool Time(string s) => System.Text.RegularExpressions.Regex.IsMatch(s, @"^([01]\d|2[0-3]):[0-5]\d$");
+                if (!Time(arrive) || !Time(allAboard) || PortDayRules.ToMinutes(allAboard) <= PortDayRules.ToMinutes(arrive)) throw ApiException.Invalid("badTimes");
+                if (pace is not null && pace is not ("steady" or "easy")) throw ApiException.Invalid("pace");
+                var plan = PortDayRules.Plan([.. places.Select(p => new PortDayCandidate(p.Name, p.Tier, p.Why, p.Lat, p.Lng))], arrive, allAboard, tender == true, pace == "easy", meal == true ? 60 : 0);
+                object? sky = null;
+                if (date is not null)
+                {
+                    if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d)) throw ApiException.Invalid("date");
+                    var s = weather.Sky(d, id);
+                    sky = new { s.TempF, s.Uv, s.RainFrom, s.RainTo, s.Source, notes = PortDayRules.WeatherNotes(s, arrive, allAboard) };
+                }
+                return Results.Ok(new { port = id, plan, sky });
+            })
+            .WithTags("Reference").WithSummary("A walking plan for a port day from the port guide's places: `arrive` and `allAboard` are port times (HH:MM) from the ship's schedule, optional `tender`, `pace` (steady or easy), `meal` (an hour for a meal) and `date` (YYYY-MM-DD, adds weather notes from the weather source). Stops are timed between getting ashore and a buffer before all-aboard. A suggestion; the ship's own notice has the last word. Not found for a port with no guide; invalid for bad times.");
+
         api.MapGet("/reference/country-guides", () => Results.Text(CountryGuides.ListJson, "application/json"))
             .WithTags("Reference").WithSummary("Every country or territory profile: `{ version, countries: [{ id, name, region, status, cruiseCalls }] }`, by name. `status` is empty for a sovereign state. `version` changes when any profile does.");
 

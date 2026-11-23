@@ -22,6 +22,31 @@ public static class PortGuides
     /// <summary>One port's full guide as JSON, or null for an id with no guide.</summary>
     public static string? Json(string id) => Data.Value.ById.TryGetValue(id, out var json) ? json : null;
 
+    /// <summary>One attraction in a port guide that has a map point: what the walking planner and Stanley's port-day tool choose from.</summary>
+    public sealed record GuidePlace(string Name, string Tier, string Why, double Lat, double Lng);
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, IReadOnlyList<GuidePlace>> PlaceCache = new(StringComparer.Ordinal);
+
+    /// <summary>The attractions of a port that have a map point, in the order the guide lists them (easiest to reach first); null for a port with no guide.</summary>
+    public static IReadOnlyList<GuidePlace>? Places(string id)
+    {
+        if (Json(id) is not { } json) return null;
+        return PlaceCache.GetOrAdd(id, _ =>
+        {
+            using var doc = JsonDocument.Parse(json);
+            var list = new List<GuidePlace>();
+            if (doc.RootElement.TryGetProperty("attractions", out var items))
+                foreach (var a in items.EnumerateArray())
+                {
+                    if (!a.TryGetProperty("map", out var map) || map.ValueKind != JsonValueKind.Object) continue;
+                    if (!map.TryGetProperty("lat", out var lat) || !map.TryGetProperty("lng", out var lng) || !lat.TryGetDouble(out var la) || !lng.TryGetDouble(out var ln)) continue;
+                    if (Math.Abs(la) > 90 || Math.Abs(ln) > 180) continue;
+                    list.Add(new GuidePlace(a.GetProperty("name").GetString() ?? "", a.GetProperty("tier").GetString() ?? "", a.TryGetProperty("why", out var why) ? why.GetString() ?? "" : "", la, ln));
+                }
+            return list;
+        });
+    }
+
     private static Loaded Load()
     {
         using var stream = typeof(PortGuides).Assembly.GetManifestResourceStream("port-guides.json")

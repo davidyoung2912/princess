@@ -8,7 +8,7 @@ const walkable = [a('Old Town', 'Walk-Off / Independent', 42.4251, 18.7712), a('
 
 describe('PortDayPlanner', () => {
   it('shows a timed plan with the return time and the caveat', () => {
-    const html = renderToString(<PortDayPlanner attractions={walkable} arrive="08:00" allAboard="16:30" tender={false} />)
+    const html = renderToString(<PortDayPlanner attractions={walkable} arrive="08:00" allAboard="16:30" tender={false} date="2027-03-24" port="kotor" />)
     expect(html).toContain('Plan my port day')
     expect(html).toMatch(/\d stops, about \d+ min of walking/)
     expect(html).toContain('Head back to the ship')
@@ -16,11 +16,11 @@ describe('PortDayPlanner', () => {
     expect(html).toContain('travelmode=walking')
   })
   it('explains when there is too little time or too few walking places', () => {
-    expect(renderToString(<PortDayPlanner attractions={walkable} arrive="12:00" allAboard="13:00" tender={false} />)).toContain('not enough time')
+    expect(renderToString(<PortDayPlanner attractions={walkable} arrive="12:00" allAboard="13:00" tender={false} date="2027-03-24" port="kotor" />)).toContain('not enough time')
     const far = [a('Beach', 'Local Transit / Independent', 20.4, -86.9), a('Ruins', 'Local Transit / Independent', 20.5, -86.8)]
-    expect(renderToString(<PortDayPlanner attractions={far} arrive="08:00" allAboard="16:30" tender={false} />)).toContain('too few places')
+    expect(renderToString(<PortDayPlanner attractions={far} arrive="08:00" allAboard="16:30" tender={false} date="2027-03-24" port="kotor" />)).toContain('too few places')
   })
   it('draws nothing for a port with fewer than two places on the map', () => {
-    expect(renderToString(<PortDayPlanner attractions={walkable.slice(0, 1)} arrive="08:00" allAboard="16:30" tender={false} />)).toBe('')
+    expect(renderToString(<PortDayPlanner attractions={walkable.slice(0, 1)} arrive="08:00" allAboard="16:30" tender={false} date="2027-03-24" port="kotor" />)).toBe('')
   })
 })

@@ -109,3 +109,22 @@ export function planPortDay(input: PortDayInput): PortDayPlan {
   const spare = usable - final.total
   return { stops, usable, walking: final.walk + final.back, visiting: chosen.length * visit, meal, spare, returnWalk: final.back, headBackBy: clock(t), allAboard: input.allAboard, reason: null }
 }
+
+export interface SkyFacts { uv: number; tempF: number; rainFrom: string | null; rainTo: string | null }
+export type WeatherNote =
+  | { id: 'rain'; from: string; to: string }
+  | { id: 'hot'; tempF: number }
+  | { id: 'sun'; uv: number }
+  | { id: 'fine'; tempF: number; uv: number }
+
+/**
+ * What the day's sky means for a plan, as short notes (the same rules as the server's `PortDayRules.WeatherNotes`): rain inside the hours ashore, heat of 90 F or more,
+ * UV of 8 or more. It never says a plan is unsafe or that rain will not come; it says what to bring or change.
+ */
+export function weatherNotes(sky: SkyFacts, arrive: string, allAboard: string): WeatherNote[] {
+  const notes: WeatherNote[] = []
+  if (sky.rainFrom && sky.rainTo && toMinutes(sky.rainFrom) < toMinutes(allAboard) && toMinutes(sky.rainTo) > toMinutes(arrive)) notes.push({ id: 'rain', from: sky.rainFrom, to: sky.rainTo })
+  if (sky.tempF >= 90) notes.push({ id: 'hot', tempF: sky.tempF })
+  if (sky.uv >= 8) notes.push({ id: 'sun', uv: sky.uv })
+  return notes.length > 0 ? notes : [{ id: 'fine', tempF: sky.tempF, uv: sky.uv }]
+}
