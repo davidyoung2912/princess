@@ -21,13 +21,18 @@ import { WORDLE_WORDS } from './wordleWords'
 import { WORD_SEARCH_LEVELS, occurrences, type PlacedWord, type WordSearch } from './wordSearch'
 import { ALPHABET, CODEWORD_LEVELS, logicSolveCodeword, slotsOf, type CodewordPuzzle } from './codeword'
 import { CODEWORD_WORDS } from './codewordWords'
+import { SEEDED_GAMES, decodeSeeded, encodeSeeded, isSeededGame, seededPuzzle, type SeededGame, type SeededPuzzle } from './shareDeals'
+import { CHALLENGE_GAMES, decodeChallenge, encodeChallenge, isChallengeGame, type Challenge, type ChallengeGame } from './shareChallenge'
 import { MINE_LEVELS, neighboursOf, solvableByLogic, type MinePuzzle } from './minesweeper'
 
 export type ShareMode = 'start' | 'current'
 
 /** The games that can be sent so far (the catalogue ids). */
-export const SHAREABLE_GAMES = ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo', 'futoshiki', 'kenken', 'hitori', 'crossmath', 'kakuro', 'slitherlink', 'nurikabe', 'hashi', 'nonogram', 'cruise-wordle', 'word-search', 'codeword', 'minesweeper'] as const
+/** The games with a board of clues (the rest are numbered deals, see `shareDeals.ts`). */
+export const PUZZLE_GAMES = ['sudoku', 'diagonal-sudoku', 'jigsaw-sudoku', 'killer-sudoku', 'binairo', 'futoshiki', 'kenken', 'hitori', 'crossmath', 'kakuro', 'slitherlink', 'nurikabe', 'hashi', 'nonogram', 'cruise-wordle', 'word-search', 'codeword', 'minesweeper'] as const
+export const SHAREABLE_GAMES = [...PUZZLE_GAMES, ...SEEDED_GAMES, ...CHALLENGE_GAMES] as const
 export type ShareableGame = (typeof SHAREABLE_GAMES)[number]
+export type PuzzleGame = (typeof PUZZLE_GAMES)[number]
 export const isShareableGame = (id: string): id is ShareableGame => (SHAREABLE_GAMES as readonly string[]).includes(id)
 
 /** The most a payload may hold; mirrors the server. */
@@ -56,9 +61,20 @@ export type SharedGame =
   | { game: 'word-search'; puzzle: WordSearch; entries: number[]; notes: number[] }
   | { game: 'codeword'; puzzle: CodewordPuzzle; entries: number[]; notes: number[] }
   | { game: 'minesweeper'; puzzle: MinePuzzle; entries: number[]; notes: number[] }
+  | { game: SeededGame; puzzle: SeededPuzzle; entries: number[]; notes: number[] }
+  | { game: ChallengeGame; puzzle: Challenge; entries: number[]; notes: number[] }
 
 /** A Cruise Wordle challenge: the answer as its place in the word list (so the text never spells it) and the word itself for the receiver's game. There is one level. */
 export interface WordlePuzzle { difficulty: Difficulty; index: number; target: string }
+
+/** A numbered deal (card games, Lights Out, Slide, Mastermind, Peg): only its start can be sent. */
+export const isSeededShare = (s: SharedGame): s is Extract<SharedGame, { game: SeededGame }> => isSeededGame(s.game)
+
+/** A challenge (a match against the computer): only its settings are sent. */
+export const isChallengeShare = (s: SharedGame): s is Extract<SharedGame, { game: ChallengeGame }> => isChallengeGame(s.game)
+
+/** What a numbered-deal screen hands to `GameShare`. */
+export const seededShare = (game: SeededGame, level: string, seed: number): SharedGame => ({ game, puzzle: seededPuzzle(game, level, seed), entries: [], notes: [] })
 
 /** A Sudoku-family puzzle (the ones that have rules, regions or cages and pencil notes). */
 export const isSudokuShare = (s: SharedGame): s is Extract<SharedGame, { game: SudokuGame }> => s.game.endsWith('sudoku')
@@ -105,6 +121,8 @@ const join = (m: Record<string, string | undefined>): string => Object.entries(m
 
 /** The text for a puzzle. `current` adds the digits the player has placed, and the pencil marks only when `withNotes`; `start` is the clues alone. */
 export function encodeGame(s: SharedGame, mode: ShareMode, withNotes = false): string {
+  if (isSeededShare(s)) return encodeSeeded(s.puzzle)
+  if (isChallengeShare(s)) return encodeChallenge(s.game, s.puzzle)
   if (s.game === 'futoshiki' || s.game === 'kenken' || s.game === 'hitori') return encodeGrid(s, mode, withNotes)
   if (isLaterGame(s)) return encodeLater(s, mode, withNotes)
   if (isThirdGame(s)) return encodeThird(s, mode)
@@ -741,6 +759,8 @@ export function decodeGame(game: string, data: string): SharedGame | null {
     if (!isShareableGame(game)) return null
     const m = pairs(data)
     if (!m) return null
+    if (isChallengeGame(game)) { const puzzle = decodeChallenge(game, m); return puzzle ? { game, puzzle, entries: [], notes: [] } : null }
+    if (isSeededGame(game)) { const puzzle = decodeSeeded(game, m); return puzzle ? { game, puzzle, entries: [], notes: [] } : null }
     if (game === 'binairo') return decodeBinairo(m)
     if (game === 'futoshiki') return decodeFutoshiki(m)
     if (game === 'kenken') return decodeKenKen(m)

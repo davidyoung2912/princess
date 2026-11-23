@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { clock } from '../../../games/domain/sudoku'
 import { beatOutcome, elapsedNow, heldTarget } from '../../../games/domain/incoming'
-import { encodeGame, resultData, type ShareMode, type SharedGame } from '../../../games/domain/share'
+import { encodeGame, isSeededShare, resultData, type ShareMode, type SharedGame } from '../../../games/domain/share'
+import { GAMES } from '../../../games/domain/catalogue'
+import { currentChallenge, encodeChallenge, type ChallengeGame } from '../../../games/domain/shareChallenge'
+import { readPref } from '../../../../shared/settings/gamePrefs'
+import { skillName } from './board/shared'
+import type { Skill } from '../../../games/domain/search'
 import { Button, LinkButton } from '../../../../shared/ui/Button'
 import { Card } from '../../../../shared/ui/Card'
 import { Dialog } from '../../../../shared/ui/Dialog'
@@ -132,7 +137,7 @@ export function GameShare({ shared, title, done = false, seconds = 0 }: { shared
             <fieldset className="send-dialog__how">
               <legend>{t('game.share.what')}</legend>
               <label className="send-dialog__row"><input type="radio" name="game-share-mode" checked={pick === 'start'} onChange={() => setPick('start')} /><span>{t('game.share.start')}</span></label>
-              <label className="send-dialog__row"><input type="radio" name="game-share-mode" checked={pick === 'current'} onChange={() => setPick('current')} /><span>{t('game.share.current')}</span></label>
+              {!isSeededShare(shared) && (<label className="send-dialog__row"><input type="radio" name="game-share-mode" checked={pick === 'current'} onChange={() => setPick('current')} /><span>{t('game.share.current')}</span></label>)}
               {done && <label className="send-dialog__row"><input type="radio" name="game-share-mode" checked={pick === 'result'} onChange={() => setPick('result')} /><span>{t('game.share.result', { time: clock(seconds) })}</span></label>}
             </fieldset>
             {pick === 'current' && hasNotes && <label className="send-dialog__row"><input type="checkbox" checked={notes} onChange={(e) => setNotes(e.target.checked)} /><span>{t('game.share.notes')}</span></label>}
@@ -145,6 +150,27 @@ export function GameShare({ shared, title, done = false, seconds = 0 }: { shared
         <SendDialog onClose={() => setStep('closed')} item={{
           title, subtitle: `${shared.game === 'cruise-wordle' ? '' : `${level}, `}${result ? t('game.share.result', { time: clock(seconds) }).toLowerCase() : t(mode === 'start' ? 'game.share.start' : 'game.share.current').toLowerCase()}`, takesNote: true,
           input: (note) => ({ kind: 'bundle', shareRef: `game:${shared.game}:${result ? 'result' : mode}`, data: data(), ...(note ? { note } : {}) }),
+        }} />
+      )}
+    </>
+  )
+}
+
+/**
+ * "Challenge a friend" on the setup page of a game against the computer (docs/chat-bundles-plan.md, B13): the opponent and choices shown right now go to a chat as settings only. The friend's
+ * Accept sets their own remembered choices and opens the game; who moves first and everything else stays theirs.
+ */
+export function ChallengeShare({ game }: { game: ChallengeGame }) {
+  const [open, setOpen] = useState(false)
+  const challenge = open ? currentChallenge(game, (name, values, fallback) => readPref(game, name, values, fallback)) : null
+  const title = t(GAMES.find((g) => g.id === game)!.titleKey)
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)} aria-label={t('game.challenge.label')}>{t('game.challenge')}</Button>
+      {challenge && (
+        <SendDialog onClose={() => setOpen(false)} item={{
+          title, subtitle: t('game.challenge.vs', { opp: skillName(challenge.skill as Skill) }), takesNote: true,
+          input: (note) => ({ kind: 'bundle', shareRef: `game:${game}:challenge`, data: encodeChallenge(game, challenge), ...(note ? { note } : {}) }),
         }} />
       )}
     </>

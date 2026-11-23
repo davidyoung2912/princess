@@ -3,7 +3,11 @@ import { SIZES, SIZE_IDS, allCodes, chooseGuess, consistent, randomCode, score, 
 import { SKILL_LIST, type Skill } from '../../../games/domain/search'
 import { t, type StringKey } from '../../../../shared/i18n'
 import { Button } from '../../../../shared/ui/Button'
-import { LevelBar } from './parts'
+import { GameShare, IncomingNote, LevelBar } from './parts'
+import { useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
+import { seededRng } from '../../../games/domain/cards'
+import { randomDealNumber } from './cards/dealNumber'
 import { useComputerTurn, usePref } from './board/shared'
 import { VsShell } from './board/VsShell'
 
@@ -16,11 +20,18 @@ const GLYPH = ['●', '▲', '■', '◆', '★', '✚', '♥', '♣']
 /** Mastermind: break the computer's secret code from the black and white clues, or make a code and watch the computer work it out. The clues are always scored honestly. */
 export function MastermindScreen() {
   const [skill, setSkill] = usePref<Skill>('mastermind', 'skill', SKILL_LIST, 'captain')
-  const [size, setSize] = usePref<MindSizeId>('mastermind', 'size', SIZE_IDS, 'classic')
-  const [mode, setMode] = usePref<Mode>('mastermind', 'mode', MODES, 'break')
-  const [started, setStarted] = useState(false)
+  const { incoming, fromChat, leaveChat } = useIncomingGame('mastermind')
+  const sent = incoming && incoming.shared.game === 'mastermind' ? incoming.shared.puzzle : null
+  /** While a code sent from a chat is in play the size is the sender's and the player is breaking; changing either option goes back to the player's own choices. */
+  const [forced, setForced] = useState(sent)
+  const [chosenSize, setSize] = usePref<MindSizeId>('mastermind', 'size', SIZE_IDS, 'classic')
+  const [chosenMode, setMode] = usePref<Mode>('mastermind', 'mode', MODES, 'break')
+  const size = (forced?.level as MindSizeId | undefined) ?? chosenSize
+  const mode: Mode = forced ? 'break' : chosenMode
+  const [seed, setSeed] = useState<number | null>(sent?.seed ?? null)
+  const [started, setStarted] = useState(sent !== null)
   const { colours, length, tries } = SIZES[size]
-  const [secret, setSecret] = useState<Code | null>(null)
+  const [secret, setSecret] = useState<Code | null>(() => (sent ? randomCode(SIZES[sent.level as MindSizeId].colours, SIZES[sent.level as MindSizeId].length, seededRng(sent.seed)) : null))
   const [turns, setTurns] = useState<Turn[]>([])
   const [draft, setDraft] = useState<(number | null)[]>([])
   const [colour, setColour] = useState(0)
@@ -48,7 +59,10 @@ export function MastermindScreen() {
   })
   const reset = () => {
     setTurns([]); setUsed(0); setDraft(Array(length).fill(null)); setColour(0)
-    setSecret(breaking ? randomCode(colours, length) : null)
+    leaveChat()
+    const next = randomDealNumber()
+    setSeed(next)
+    setSecret(breaking ? randomCode(colours, length, seededRng(next)) : null)
   }
   const suggest = () => { const c = consistent(all, turns); if (c.length) { setDraft(c[Math.floor(Math.random() * c.length)]); setUsed((u) => u + 1) } }
   const peg = (v: number | null, key: string | number, onClick?: () => void, label?: string) => (
@@ -61,8 +75,8 @@ export function MastermindScreen() {
     <VsShell
       skillUsed={!breaking} game={`mastermind-${mode}`} name="mastermind" skill={skill} onSkill={setSkill} started={started} onStart={() => { reset(); setStarted(true) }} onNew={() => { reset(); setStarted(false) }} onAgain={reset}
       options={<>
-        <LevelBar name="mastermind-mode" legend={t('mm.mode.label')} levels={MODES.map((m) => ({ id: m, label: t(m === 'break' ? 'mm.mode.break' : 'mm.mode.make') }))} level={mode} onLevel={setMode} />
-        <LevelBar name="mastermind-size" legend={t('mm.size.label')} levels={SIZE_IDS.map((s) => ({ id: s, label: t(NAMES[s], { c: SIZES[s].colours, p: SIZES[s].length }) }))} level={size} onLevel={setSize} />
+        <LevelBar name="mastermind-mode" legend={t('mm.mode.label')} levels={MODES.map((m) => ({ id: m, label: t(m === 'break' ? 'mm.mode.break' : 'mm.mode.make') }))} level={mode} onLevel={(m) => { setForced(null); setMode(m) }} />
+        <LevelBar name="mastermind-size" legend={t('mm.size.label')} levels={SIZE_IDS.map((s) => ({ id: s, label: t(NAMES[s], { c: SIZES[s].colours, p: SIZES[s].length }) }))} level={size} onLevel={(z) => { setForced(null); setSize(z) }} />
       </>}
       status={breaking ? t('mm.status.break', { n: tries - turns.length }) : secret === null ? t('mm.status.set') : t('mm.status.watch', { n: turns.length })} thinking={cpuGuessing}
       result={result}
@@ -71,6 +85,7 @@ export function MastermindScreen() {
       help={<><p>{t('mm.help.1')}</p><p>{t('mm.help.2')}</p></>}
     >
       <div className="bd-mm" role="group" aria-label={t('mm.aria')}>
+        {fromChat && <IncomingNote mode={fromChat} onFresh={reset} />}
         <ol className="bd-mm__rows">
           {turns.map((tn, r) => (
             <li key={r} className="bd-mm__row" aria-label={t('mm.row', { n: r + 1, b: tn.feedback.black, w: tn.feedback.white })}>
@@ -91,6 +106,7 @@ export function MastermindScreen() {
             </div>
           </div>
         )}
+        {breaking && seed !== null && started && <div className="sd-tools bd-tools"><GameShare shared={seededShare('mastermind', size, seed)} title={t('gx.game.mastermind.title')} /></div>}
       </div>
     </VsShell>
   )

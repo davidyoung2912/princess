@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { Lock, Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
-import { COLS, MAX_ROUNDS, MAX_SCORE, allGaps, colOf, fill, finished, hint as findHint, lockedCount, lockedMask, newGame, nextRound, roundOver, rowOf, score, type Gaps } from '../../../games/domain/gaps'
+import { COLS, MAX_ROUNDS, MAX_SCORE, allGaps, colOf, fill, finished, hint as findHint, lockedCount, lockedMask, newGame, nextRound, won as gapsWon, roundOver, rowOf, score, type Gaps } from '../../../games/domain/gaps'
 import { clock } from '../../../games/domain/sudoku'
 import { t } from '../../../../shared/i18n'
 import { Button } from '../../../../shared/ui/Button'
@@ -13,8 +13,9 @@ import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
 import { seededRng } from '../../../games/domain/cards'
 import { useCardGame } from './cards/useCardGame'
 import { usePanZoom } from './cards/usePanZoom'
-import { GameClock, GameHelp, HintBox, SolvedCard } from './parts'
-import { useGameClock } from './gameHooks'
+import { GameClock, GameHelp, HintBox, SolvedCard, GameShare, IncomingNote } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
 
 /** The board's geometry, in card widths, shared by the CSS grid and the view maths. */
 const PAD = 0.2, LABEL = 0.55, GAP = 0.08, HEADER = 0.45
@@ -32,7 +33,9 @@ interface Shown { text: string; gap: number; from: number }
  * Three rounds, then the locked cards add up to your score. The board is bigger than a phone, so it pans and pinch-zooms. Nothing is stored.
  */
 export function GapsScreen() {
-  const [dealNo, setDealNo] = useState(randomDealNumber)
+  const { incoming, fromChat, leaveChat } = useIncomingGame('gaps')
+  const sent = incoming && incoming.shared.game === 'gaps' ? incoming.shared.puzzle : null
+  const [dealNo, setDealNo] = useState(() => sent?.seed ?? randomDealNumber())
   const game = useCardGame<Gaps>(() => newGame(seededRng(dealNo)))
   const g = game.state
   const [picking, setPicking] = useState<number | null>(null)
@@ -59,7 +62,7 @@ export function GapsScreen() {
     clear()
     reveal(from) // the gap moves to where the card was
   }
-  const newDeal = (no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(newGame(seededRng(n))); clear(); resetClock() }
+  const newDeal = (no?: number) => { leaveChat(); const n = no ?? randomDealNumber(); setDealNo(n); game.restart(newGame(seededRng(n))); clear(); resetClock() }
   const shuffle = () => { game.restart(nextRound(g, seededRng(dealNo * 7 + g.round))); clear() }
 
   const tapGap = (i: number) => {
@@ -113,6 +116,7 @@ export function GapsScreen() {
           <Button variant="secondary" onClick={() => newDeal()}>{t('gp.new')}</Button>
         </div>
         <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0 || g.round > 1} onGo={newDeal} />
+        {fromChat && <IncomingNote mode={fromChat} onFresh={() => newDeal()} />}
 
         <CardTable cols={13}>
           <p className="pc-hud">
@@ -185,6 +189,7 @@ export function GapsScreen() {
 
         <div className="cg-tools" style={{ '--tools': 3 } as CSSProperties}>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); clear() }} disabled={!game.canUndo}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
+          <GameShare shared={seededShare('gaps', 'classic', dealNo)} title={t('gx.game.gaps.title')} done={gapsWon(g.board)} seconds={seconds} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={over || between}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
           <button type="button" className="sd-tool" onClick={nextGap} disabled={over || between}><span>{t('gp.nextGap')}</span></button>
         </div>

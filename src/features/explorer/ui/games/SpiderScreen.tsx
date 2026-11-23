@@ -11,8 +11,9 @@ import { useCardGame } from './cards/useCardGame'
 import { DealBar } from './cards/DealBar'
 import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
 import { seededRng } from '../../../games/domain/cards'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
-import { useGameClock } from './gameHooks'
+import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, GameShare, IncomingNote } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
 
 const LEVEL_KEYS: Record<SpiderLevel, StringKey> = { one: 'sp.level.one', two: 'sp.level.two', four: 'sp.level.four' }
 interface Sel { col: number; index: number }
@@ -20,9 +21,11 @@ interface Shown { text: string; from?: Sel; to?: number; deal?: boolean }
 
 /** Spider: build down in any suit, but only a run of one suit moves together; a complete King to Ace run of one suit leaves the table. Nothing is stored. */
 export function SpiderScreen() {
-  const [level, setLevel] = useState<SpiderLevel>('one')
-  const [dealNo, setDealNo] = useState(randomDealNumber)
-  const game = useCardGame<Spider>(() => deal('one', seededRng(dealNo)))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('spider')
+  const sent = incoming && incoming.shared.game === 'spider' ? incoming.shared.puzzle : null
+  const [level, setLevel] = useState<SpiderLevel>((sent?.level as SpiderLevel) ?? 'one')
+  const [dealNo, setDealNo] = useState(() => sent?.seed ?? randomDealNumber())
+  const game = useCardGame<Spider>(() => deal(level, seededRng(dealNo)))
   const g = game.state
   const [sel, setSel] = useState<Sel | null>(null)
   const [hint, setHint] = useState<Shown | null>(null)
@@ -31,7 +34,7 @@ export function SpiderScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won)
 
   const act = (next: Spider) => { game.commit(next); setSel(null); setHint(null); setNote('') }
-  const newDeal = (lv = level, no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); resetClock() }
+  const newDeal = (lv = level, no?: number) => { leaveChat(); const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); resetClock() }
 
   const tryMove = (from: Sel, to: number): boolean => {
     if (!canMove(g, from.col, from.index, to)) return false
@@ -86,6 +89,7 @@ export function SpiderScreen() {
           <Button variant="secondary" onClick={() => newDeal()}>{t('sp.new')}</Button>
         </LevelBar>
         <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n)} />
+        {fromChat && <IncomingNote mode={fromChat} onFresh={() => newDeal()} />}
 
         <CardTable cols={10} fresh={game.moves === 0}>
           <p className="pc-hud">
@@ -132,6 +136,7 @@ export function SpiderScreen() {
 
         <div className="cg-tools" style={{ '--tools': 2 } as React.CSSProperties}>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setSel(null); setHint(null) }} disabled={!game.canUndo}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
+          <GameShare shared={seededShare('spider', level, dealNo)} title={t('gx.game.spider.title')} done={won} seconds={seconds} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={won}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
         </div>
         <GameHelp title={t('sudoku.help.title')}>

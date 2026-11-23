@@ -8,23 +8,31 @@ import { dailySeed, useRoving, usePref, useSoloRecord } from './board/shared'
 import { SoloRecord } from './board/SoloRecord'
 import { seededRng } from '../../../games/domain/cards'
 import { useCardGame } from './cards/useCardGame'
-import { GameHelp, LevelBar, SolvedCard } from './parts'
+import { GameHelp, GameShare, IncomingNote, LevelBar, SolvedCard } from './parts'
+import { useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
+import { randomDealNumber } from './cards/dealNumber'
 
 const NAMES: Record<LightsLevel, StringKey> = { easy: 'lo.level.easy', medium: 'lo.level.medium', hard: 'lo.level.hard' }
 
 /** Lights Out: a tap flips a tile and the four beside it; turn every light off. Every puzzle is made from a real scramble, so it can always be solved, and Hint names a tile on the shortest way. */
 export function LightsScreen() {
-  const [level, setLevel] = usePref<LightsLevel>('lights', 'level', LIGHTS_LEVELS, 'medium')
+  const { incoming, fromChat, leaveChat } = useIncomingGame('lights')
+  const sent = incoming && incoming.shared.game === 'lights' ? incoming.shared.puzzle : null
+  const [seed, setSeed] = useState<number | null>(() => sent?.seed ?? randomDealNumber())
+  const [sentLevel, setSentLevel] = useState<string | null>(sent?.level ?? null)
+  const [chosen, setLevel] = usePref<LightsLevel>('lights', 'level', LIGHTS_LEVELS, 'medium')
+  const level = (sentLevel ?? chosen) as LightsLevel
   const n = SIZE_OF[level]
-  const game = useCardGame(() => generate(level))
+  const game = useCardGame(() => generate(level, seededRng(seed ?? 1)))
   const board = game.state
   const [hint, setHint] = useState<number | null>(null)
   const done = isOff(board)
   const lit = board.filter(Boolean).length
 
   const [daily, setDaily] = useState(false)
-  const fresh = (l: LightsLevel) => { setLevel(l); setDaily(false); game.restart(generate(l)); setHint(null) }
-  const today = () => { setDaily(true); game.restart(generate(level, seededRng(dailySeed(LIGHTS_LEVELS.indexOf(level))))); setHint(null) }
+  const fresh = (l: LightsLevel) => { leaveChat(); setSentLevel(null); const next = randomDealNumber(); setSeed(next); setLevel(l); setDaily(false); game.restart(generate(l, seededRng(next))); setHint(null) }
+  const today = () => { leaveChat(); setDaily(true); game.restart(generate(level, seededRng(dailySeed(LIGHTS_LEVELS.indexOf(level))))); setHint(null) }
   useSoloRecord('lights', daily ? `${level}-daily` : level, done ? 'win' : null, game.moves)
   const tap = (i: number) => { if (done) return; game.commit(press(board, i, n)); setHint(null) }
   const { root, props } = useRoving(n, n * n, tap)
@@ -34,6 +42,7 @@ export function LightsScreen() {
     <div className="page">
       <div className="sd bd">
         <LevelBar name="lights-level" legend={t('lo.level.label')} levels={LIGHTS_LEVELS.map((l) => ({ id: l, label: `${t(NAMES[l])} ${SIZE_OF[l]}×${SIZE_OF[l]}` }))} level={level} onLevel={fresh} />
+        {fromChat && <IncomingNote mode={fromChat} onFresh={() => fresh(chosen)} />}
         {daily && <p className="bd-note">{t('bd.daily.note')}</p>}
         <p className="sd-meta"><span>{t('lo.lit', { n: lit })}</span><span>{t('peg.moves', { n: game.moves })}</span></p>
         <svg ref={root} className="bd-board bd-board--lights" viewBox={`0 0 ${n} ${n}`} role="group" aria-label={t('lo.aria', { n: lit })}>
@@ -45,6 +54,7 @@ export function LightsScreen() {
           ))}
         </svg>
         <div className="sd-tools bd-tools">
+          {!daily && seed !== null && <GameShare shared={seededShare('lights', level, seed)} title={t('gx.game.lights.title')} />}
           <button type="button" className="sd-tool" onClick={today}><span>{t('bd.daily')}</span></button>
           <button type="button" className="sd-tool" onClick={giveHint} disabled={done}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('bd.hint')}</span></button>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setHint(null) }} disabled={!game.canUndo}><Undo aria-hidden="true" focusable="false" /><span>{t('bd.undo')}</span></button>

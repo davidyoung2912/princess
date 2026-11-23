@@ -153,6 +153,39 @@ public class ChatBundleRulesTests
         Assert.Null(ChatBundleRules.TypeOfRef("game:sudoku:start"));   // no poll, board or code can name a game
     }
 
+    [Fact]
+    public void ANumberedDealIsSentAsItsStartOrAResultNeverAsABoardSoFar()
+    {
+        Assert.Equal("Medium, starting position", ChatBundleRules.BuildGame("game:klondike:start", "d=medium;p=4242", null)!.Subtitle);
+        Assert.Equal("Easy, solved in 1:35", ChatBundleRules.BuildGame("game:freecell:result", "d=easy;p=31337;tm=95", null)!.Subtitle);
+        Assert.NotNull(ChatBundleRules.BuildGame("game:peg:start", "d=hard;p=0", null));
+        Assert.Null(ChatBundleRules.BuildGame("game:klondike:current", "d=easy;p=4242", null));      // no board so far
+        Assert.Null(ChatBundleRules.BuildGame("game:klondike:start", "d=hard;p=4242", null));        // Klondike has two levels
+        Assert.Null(ChatBundleRules.BuildGame("game:gaps:start", "d=medium;p=4242", null));          // Gaps has one
+        Assert.Null(ChatBundleRules.BuildGame("game:freecell:start", "d=easy;p=123456", null));      // too many digits
+        Assert.Null(ChatBundleRules.BuildGame("game:spider:start", "d=easy;p=0", null));             // numbers start at 1
+        Assert.Null(ChatBundleRules.BuildGame("game:peg:start", "d=easy;p=3", null));                // Peg has only number 0
+    }
+
+    [Fact]
+    public void AMatchAgainstTheComputerIsSentOnlyAsAChallengeOfSettings()
+    {
+        var b = ChatBundleRules.BuildGame("game:connect4:challenge", "d=hard;p=12", "  bring it  ")!;
+        Assert.Equal("game.connect4", b.Type);
+        Assert.Equal("Connect Four", b.Title);
+        Assert.Equal("Against the Admiral", b.Subtitle);
+        Assert.Equal("/games-explorer/connect4", b.Path);
+        Assert.NotNull(ChatBundleRules.BuildGame("game:backgammon:challenge", "d=easy;p=1", null));
+        Assert.NotNull(ChatBundleRules.BuildGame("game:nim:challenge", "d=medium;p=121", null));
+        Assert.Null(ChatBundleRules.BuildGame("game:connect4:start", "d=easy;p=10", null));          // only a challenge
+        Assert.Null(ChatBundleRules.BuildGame("game:sudoku:challenge", "d=easy;p=10", null));        // and only for these games
+        Assert.Null(ChatBundleRules.BuildGame("game:connect4:challenge", "d=easy;p=13", null));      // a choice the game does not have
+        Assert.Null(ChatBundleRules.BuildGame("game:connect4:challenge", "d=easy;p=2" + "0", null));  // version 1 only
+        Assert.Null(ChatBundleRules.BuildGame("game:connect4:challenge", "d=easy;p=1", null));       // a choice is missing
+        Assert.Null(ChatBundleRules.BuildGame("game:konane:challenge", "d=easy;p=12", null));        // Konane has two sizes
+        Assert.Null(ChatBundleRules.BuildGame("game:connect4:challenge", "d=expert;p=10", null));    // three opponents
+    }
+
     [Theory]
     [InlineData("game:sudoku", "d=easy;p=0")]
     [InlineData("game:sudoku:later", "d=easy")]

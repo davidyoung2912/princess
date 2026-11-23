@@ -13,17 +13,20 @@ import { useCardGame } from './cards/useCardGame'
 import { DealBar } from './cards/DealBar'
 import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
 import { seededRng } from '../../../games/domain/cards'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
-import { useGameClock } from './gameHooks'
+import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, GameShare, IncomingNote } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
 
 const LEVEL_KEYS: Record<KlondikeLevel, StringKey> = { draw1: 'kl.level.draw1', draw3: 'kl.level.draw3' }
 const sameSource = (a: Source | null, b: Source): boolean => !!a && JSON.stringify(a) === JSON.stringify(b)
 
 /** Klondike ("Solitaire"). Tap a card, then where it should go; tap it again to send it to its best place. Nothing is stored. */
 export function KlondikeScreen() {
-  const [level, setLevel] = useState<KlondikeLevel>('draw1')
-  const [dealNo, setDealNo] = useState(randomDealNumber)
-  const game = useCardGame<Klondike>(() => deal('draw1', seededRng(dealNo)))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('klondike')
+  const sent = incoming && incoming.shared.game === 'klondike' ? incoming.shared.puzzle : null
+  const [level, setLevel] = useState<KlondikeLevel>((sent?.level as KlondikeLevel) ?? 'draw1')
+  const [dealNo, setDealNo] = useState(() => sent?.seed ?? randomDealNumber())
+  const game = useCardGame<Klondike>(() => deal(level, seededRng(dealNo)))
   const g = game.state
   const [sel, setSel] = useState<Source | null>(null)
   const [hint, setHint] = useState<{ text: string; h: Hint } | null>(null)
@@ -33,7 +36,7 @@ export function KlondikeScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won)
 
   const act = (next: Klondike) => { game.commit(next); setSel(null); setHint(null); setNote('') }
-  const newDeal = (lv = level, no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); setFinishing(false); resetClock() }
+  const newDeal = (lv = level, no?: number) => { leaveChat(); const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); setFinishing(false); resetClock() }
 
   /* "Finish" moves every remaining card home, one at a time. */
   useEffect(() => {
@@ -110,6 +113,7 @@ export function KlondikeScreen() {
           <Button variant="secondary" onClick={() => newDeal()}>{t('kl.new')}</Button>
         </LevelBar>
         <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n)} />
+        {fromChat && <IncomingNote mode={fromChat} onFresh={() => newDeal()} />}
 
         <CardTable cols={7} fresh={game.moves === 0}>
           <p className="pc-hud">
@@ -174,6 +178,7 @@ export function KlondikeScreen() {
 
         <div className="cg-tools" style={{ '--tools': canAutoFinish(g) ? 3 : 2 } as React.CSSProperties}>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setSel(null); setHint(null) }} disabled={!game.canUndo || finishing}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
+          <GameShare shared={seededShare('klondike', level, dealNo)} title={t('gx.game.klondike.title')} done={won} seconds={seconds} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={won || finishing}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
           {canAutoFinish(g) && <button type="button" className="sd-tool" onClick={() => setFinishing(true)} disabled={finishing}><span>{t('cd.finish')}</span></button>}
         </div>

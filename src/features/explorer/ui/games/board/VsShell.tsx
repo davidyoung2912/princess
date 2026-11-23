@@ -10,7 +10,8 @@ import { HANDICAPS, type Handicap } from '../../../../games/domain/handicap'
 import { SKILL_LIST } from '../../../../games/domain/search'
 import { MoreLinks } from '../../Parts'
 import { LevelBar } from '../parts'
-import { GameHelp, SolvedCard } from '../parts'
+import { ChallengeShare, GameHelp, SolvedCard } from '../parts'
+import { isChallengeGame } from '../../../../games/domain/shareChallenge'
 import { SkillPicker } from './SkillPicker'
 import { OPENINGS, skillName, type Opening } from './shared'
 
@@ -81,6 +82,7 @@ export function VsShell({ skillUsed = true, handicap, quick, variant = '', game,
           {handicap && <div data-tour="vs-handicap"><LevelBar name={`${name}-handicap`} legend={t('bd.handicap.label')} levels={HANDICAPS.map((h) => ({ id: h, label: t(h === 'none' ? 'bd.handicap.none' : h === 'small' ? 'bd.handicap.small' : 'bd.handicap.large') }))} level={handicap.value} onLevel={handicap.onChange} /></div>}
           {skillUsed && <SetupRecord game={game} recKey={recKey} skill={skill} />}
           <Button onClick={onStart}>{t('bd.start')}</Button>
+          {isChallengeGame(game) && <ChallengeShare game={game} />}
           {helpBox}
         </div>
         {links}

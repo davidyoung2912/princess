@@ -45,7 +45,28 @@ public static class ChatBundleRules
     public static readonly Dictionary<string, string> Games = new()
     {
         ["sudoku"] = "Sudoku", ["diagonal-sudoku"] = "Diagonal Sudoku", ["jigsaw-sudoku"] = "Jigsaw Sudoku", ["killer-sudoku"] = "Killer Sudoku", ["binairo"] = "Binairo", ["futoshiki"] = "Futoshiki", ["kenken"] = "KenKen", ["hitori"] = "Hitori", ["crossmath"] = "Crossmath", ["kakuro"] = "Kakuro", ["slitherlink"] = "Slitherlink", ["nurikabe"] = "Nurikabe", ["hashi"] = "Hashi", ["nonogram"] = "Nonogram", ["cruise-wordle"] = "Cruise Wordle", ["word-search"] = "Word Search", ["codeword"] = "Codeword", ["minesweeper"] = "Minesweeper",
+        ["freecell"] = "FreeCell", ["klondike"] = "Klondike", ["spider"] = "Spider", ["pyramid"] = "Pyramid", ["tripeaks"] = "TriPeaks", ["gaps"] = "Gaps", ["peg"] = "Peg Solitaire", ["lights"] = "Lights Out", ["slide"] = "Slide Puzzle", ["mastermind"] = "Mastermind",
+        ["reversi"] = "Reversi", ["gomoku"] = "Gomoku", ["pente"] = "Pente", ["hex"] = "Hex", ["morris"] = "Nine Men's Morris", ["dots"] = "Dots and Boxes", ["hunt"] = "Fox and Geese", ["kalah"] = "Kalah", ["backgammon"] = "Backgammon", ["checkers"] = "Checkers", ["pig"] = "Pig", ["yacht"] = "Yacht", ["shutbox"] = "Shut the Box", ["connect4"] = "Connect Four", ["breakthrough"] = "Breakthrough", ["konane"] = "Konane", ["nim"] = "Nim",
     };
+
+    /// <summary>Phase B12: the games sent as a numbered deal (<c>d=easy|medium|hard;p=number</c>, only the start or a result, never the board so far), with how many levels each has and the most digits its number may have (Peg has one board, number 0).</summary>
+    public static readonly Dictionary<string, (int Levels, int Digits)> Deals = new()
+    {
+        ["freecell"] = (3, 5), ["klondike"] = (2, 6), ["spider"] = (3, 6), ["pyramid"] = (3, 6), ["tripeaks"] = (2, 6), ["gaps"] = (1, 6),
+        ["peg"] = (3, 1), ["lights"] = (3, 6), ["slide"] = (3, 6), ["mastermind"] = (3, 6),
+    };
+
+    /// <summary>
+    /// Phase B13: the games against the computer, sent as a challenge (<c>game:&lt;id&gt;:challenge</c>), settings only: <c>d</c> is the opponent (easy, medium, hard for Cadet, Captain, Admiral) and <c>p</c> is the digit 1
+    /// and then one digit for each choice on the game's setup page, each below the number of values in the list here (the client's list is the same order). Nothing in it is shown as text.
+    /// </summary>
+    public static readonly Dictionary<string, int[]> Challenges = new()
+    {
+        ["reversi"] = [3], ["gomoku"] = [3, 2], ["pente"] = [3, 2], ["hex"] = [3, 3], ["morris"] = [2], ["dots"] = [3], ["hunt"] = [2], ["kalah"] = [3], ["backgammon"] = [],
+        ["checkers"] = [3, 2], ["pig"] = [3], ["yacht"] = [2], ["shutbox"] = [3], ["connect4"] = [3], ["breakthrough"] = [3, 3], ["konane"] = [2], ["nim"] = [3, 2],
+    };
+
+    private static readonly string[] Opponents = ["Cadet", "Captain", "Admiral"];
 
     private static readonly string[] Levels = ["easy", "medium", "hard", "expert"];
 
@@ -60,6 +81,10 @@ public static class ChatBundleRules
             if (at < 1 || !pairs.TryAdd(part[..at], part[(at + 1)..])) return false;
         }
         if (!pairs.TryGetValue("d", out var level) || !Levels.Contains(level) || !pairs.TryGetValue("p", out var clues) || !clues.All(char.IsAsciiDigit)) return false;
+        if (Challenges.TryGetValue(game, out var choices))
+            return Array.IndexOf(Levels, level) is >= 0 and < 3 && clues.Length == choices.Length + 1 && clues[0] == '1' && choices.Select((n, i) => clues[i + 1] - '0' < n).All(ok => ok);
+        if (Deals.TryGetValue(game, out var deal))
+            return Array.IndexOf(Levels, level) < deal.Levels && clues.Length >= 1 && clues.Length <= deal.Digits && (game != "peg" || clues == "0") && (game == "peg" || int.Parse(clues) >= 1);
         return game switch
         {
             "binairo" => clues.Length is 36 or 64 or 100 or 144,
@@ -88,12 +113,14 @@ public static class ChatBundleRules
     public static ChatBundle? BuildGame(string? shareRef, string? data, string? note)
     {
         var parts = (shareRef ?? "").Split(':');
-        if (parts.Length != 3 || parts[0] != Game || !Games.TryGetValue(parts[1], out var name) || parts[2] is not ("start" or "current" or "result") || !GameDataOk(parts[1], data)) return null;
+        if (parts.Length != 3 || parts[0] != Game || !Games.TryGetValue(parts[1], out var name) || parts[2] is not ("start" or "current" or "result" or "challenge") || !GameDataOk(parts[1], data)) return null;
         // Phase B10: a result is the starting position and a time (<c>tm</c>, 1 to 359999 seconds); anything else in the text is the same puzzle text as for a start.
         var seconds = ResultSeconds(data);
+        if (Challenges.ContainsKey(parts[1]) != (parts[2] == "challenge")) return null;   // a match against the computer has only a challenge, and nothing else is one
+        if (parts[2] == "current" && Deals.ContainsKey(parts[1])) return null;           // a deal has no board so far
         if (parts[2] == "result" ? seconds is null : seconds is not null) return null;
         var level = data!.Split(';').First(p => p.StartsWith("d=", StringComparison.Ordinal))[2..];
-        var subtitle = $"{char.ToUpperInvariant(level[0])}{level[1..]}, {parts[2] switch { "start" => "starting position", "current" => "board so far", _ => $"solved in {seconds / 60}:{seconds % 60:00}" }}";
+        var subtitle = parts[2] == "challenge" ? $"Against the {Opponents[Array.IndexOf(Levels, level)]}" : $"{char.ToUpperInvariant(level[0])}{level[1..]}, {parts[2] switch { "start" => "starting position", "current" => "board so far", _ => $"solved in {seconds / 60}:{seconds % 60:00}" }}";
         return new ChatBundle($"{Game}.{parts[1]}", Version, name, subtitle, $"/games-explorer/{parts[1]}", Ref: shareRef, Note: ChatCardRules.CleanNote(note), Data: data);
     }
 

@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatBundle, ChatMessage, ChatTally } from '../../../shared/api/chatTypes'
 import { BUNDLE_TYPES, bundleIcon, bundleLink, forwardInput, bundleSummary, gameOfBundle, isKnownBundle } from '../../chat/domain/chatBundles'
 import { holdIncoming } from '../../games/domain/incoming'
-import { decodeGame, startOnly, type ShareMode } from '../../games/domain/share'
+import { challengePrefs } from '../../games/domain/shareChallenge'
+import { writePref } from '../../../shared/settings/gamePrefs'
+import { decodeGame, isChallengeShare, startOnly, type ShareMode } from '../../games/domain/share'
 import { gameThumbnail, type Thumbnail } from '../../games/domain/thumbnail'
 import { clock12 } from '../../../domain/planCard'
 import { t } from '../../../shared/i18n'
@@ -70,6 +72,8 @@ export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; on
     return g && shared ? { ...g, shared } : null
   }, [bundle, known])
   const thumb = useMemo(() => (game ? gameThumbnail(game.shared) : null), [game])
+  /** Accepting a challenge sets the opponent and choices the game's setup page remembers, then opens the game. */
+  const accept = () => { if (game && isChallengeShare(game.shared)) for (const [name, value] of challengePrefs(game.shared.puzzle)) writePref(game.game, name, value); onOpen?.() }
   const play = (mode: ShareMode) => { if (game) holdIncoming(game.game, game.shared, mode); onOpen?.() }
   const beat = () => { if (game) holdIncoming(game.game, startOnly(game.shared), 'start', Date.now(), game.seconds); onOpen?.() }
   const [forwarding, setForwarding] = useState(false)
@@ -87,7 +91,9 @@ export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; on
       {bundle.note && <p>{bundle.note}</p>}
       {bundle.from && <p className="muted">{t('bundle.from', { name: bundle.from })}</p>}
       {!known ? <p className="muted">{t('bundle.update')}</p>
-        : bundle.type.startsWith('game.') ? (game && link ? game.mode === 'result' ? (
+        : bundle.type.startsWith('game.') ? (game && link ? game.mode === 'challenge' ? (
+          <div className="button-row"><LinkButton to={link} variant="secondary" onClick={accept} aria-label={`${t('game.open.accept')}: ${bundle.title}`}>{t('game.open.accept')}</LinkButton></div>
+        ) : game.mode === 'result' ? (
           <div className="button-row"><LinkButton to={link} variant="secondary" onClick={beat} aria-label={`${t('game.open.beat')}: ${bundle.title}`}>{t('game.open.beat')}</LinkButton></div>
         ) : (
           <div className="button-row">

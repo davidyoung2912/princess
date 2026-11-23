@@ -2,6 +2,7 @@
 import type { ChatBundle } from '../../../shared/api/chatTypes'
 import type { StringKey } from '../../../shared/i18n'
 import { openablePath } from './chatCards'
+import { isChallengeGame } from '../../games/domain/shareChallenge'
 import { GAME_DATA_CHARS, GAME_DATA_MAX, SHAREABLE_GAMES, resultSeconds, type ShareMode } from '../../games/domain/share'
 
 /** The newest payload shape this app understands. A larger number is shown as its title and subtitle only. */
@@ -98,12 +99,13 @@ export function parseBundle(raw: unknown): ChatBundle | null {
 export const isKnownBundle = (b: Pick<ChatBundle, 'type' | 'v'>): boolean => b.type in BUNDLE_TYPES && b.v <= BUNDLE_VERSION
 
 /** The game, the way it was sent and the puzzle text in a game bundle, or null for any other bundle (or a game bundle with no puzzle text). Whether the text is a puzzle is for `decodeGame` to say. */
-export function gameOfBundle(b: Pick<ChatBundle, 'type' | 'ref' | 'data'>): { game: string; mode: ShareMode | 'result'; data: string; seconds?: number } | null {
+export function gameOfBundle(b: Pick<ChatBundle, 'type' | 'ref' | 'data'>): { game: string; mode: ShareMode | 'result' | 'challenge'; data: string; seconds?: number } | null {
   if (!b.type.startsWith('game.') || !b.data) return null
   const game = b.type.slice(5)
   const parts = (b.ref ?? '').split(':')
   const mode = parts[2]
   if (parts.length !== 3 || parts[0] !== 'game' || parts[1] !== game) return null
+  if (isChallengeGame(game)) return mode === 'challenge' ? { game, mode, data: b.data } : null   // a match against the computer has only a challenge
   if (mode === 'start' || mode === 'current') return { game, mode, data: b.data }
   // Phase B10: a result is the starting position and a time; it opens as "Beat it" on the same puzzle.
   const seconds = mode === 'result' ? resultSeconds(b.data) : null

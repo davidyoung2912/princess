@@ -7,7 +7,9 @@ import { MoreLinks } from '../Parts'
 import { usePref, useRoving, useSoloRecord } from './board/shared'
 import { SoloRecord } from './board/SoloRecord'
 import { useCardGame } from './cards/useCardGame'
-import { GameHelp, LevelBar, SolvedCard } from './parts'
+import { GameHelp, GameShare, IncomingNote, LevelBar, SolvedCard } from './parts'
+import { useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
 
 const NAMES: Record<PegBoard, StringKey> = { english: 'peg.board.english', french: 'peg.board.french', triangle: 'peg.board.triangle' }
 
@@ -20,7 +22,10 @@ const pos = (b: PegBoard, i: number): [number, number] => {
 
 /** Peg solitaire on three boards: jump a peg over a neighbour into an empty hole and take the peg jumped. Leave one. Hints come from a real search, so they always lead to a win. */
 export function PegScreen() {
-  const [board, setBoard] = usePref<PegBoard>('peg', 'board', PEG_BOARDS, 'english')
+  const { incoming, fromChat, leaveChat } = useIncomingGame('peg')
+  const [sentBoard, setSentBoard] = useState(() => (incoming && incoming.shared.game === 'peg' ? (incoming.shared.puzzle.level as PegBoard) : null))
+  const [chosen, setBoard] = usePref<PegBoard>('peg', 'board', PEG_BOARDS, 'english')
+  const board = sentBoard ?? chosen
   const game = useCardGame(() => start(board))
   const pegs = game.state
   const [from, setFrom] = useState<number | null>(null)
@@ -35,7 +40,7 @@ export function PegScreen() {
   useSoloRecord('peg', board, won ? 'win' : stuck ? 'loss' : null, game.moves)
   const targets = from === null ? [] : moves.filter((m) => m.from === from)
 
-  const newGame = (b: PegBoard) => { setBoard(b); game.restart(start(b)); setFrom(null); setHint(null); setNote('') }
+  const newGame = (b: PegBoard) => { leaveChat(); setSentBoard(null); setBoard(b); game.restart(start(b)); setFrom(null); setHint(null); setNote('') }
   const pick = (i: number) => {
     if (won || stuck) return
     setHint(null)
@@ -55,6 +60,7 @@ export function PegScreen() {
     <div className="page">
       <div className="sd bd">
         <LevelBar name="peg-board" legend={t('peg.board.label')} levels={PEG_BOARDS.map((b) => ({ id: b, label: t(NAMES[b]) }))} level={board} onLevel={newGame} />
+        {fromChat && <IncomingNote mode={fromChat} onFresh={() => newGame(chosen)} />}
         <p className="sd-meta"><span>{t('peg.left', { n: left })}</span><span>{t('peg.moves', { n: game.moves })}</span></p>
         <svg ref={root} className="bd-board bd-board--peg" viewBox={`0 0 ${width} ${L.rows}`} role="group" aria-label={t('peg.aria', { n: left })}>
           <rect className="bd-wood" x={0.02} y={0.02} width={width - 0.04} height={L.rows - 0.04} rx={0.4} />
@@ -75,6 +81,7 @@ export function PegScreen() {
         </svg>
         <p className="bd-note" role="status">{note || t('peg.tip')}</p>
         <div className="sd-tools bd-tools">
+          <GameShare shared={seededShare('peg', board, 0)} title={t('gx.game.peg.title')} />
           <button type="button" className="sd-tool" onClick={giveHint} disabled={won || stuck}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('bd.hint')}</span></button>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setFrom(null); setHint(null); setNote('') }} disabled={!game.canUndo}><Undo aria-hidden="true" focusable="false" /><span>{t('bd.undo')}</span></button>
         </div>

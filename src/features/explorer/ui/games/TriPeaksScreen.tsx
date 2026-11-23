@@ -11,17 +11,20 @@ import { useCardGame } from './cards/useCardGame'
 import { DealBar } from './cards/DealBar'
 import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
 import { seededRng } from '../../../games/domain/cards'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
-import { useGameClock } from './gameHooks'
+import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, GameShare, IncomingNote } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
 
 const LEVEL_KEYS: Record<TriLevel, StringKey> = { easy: 'tp.level.easy', classic: 'tp.level.classic' }
 const ROW_STEP = 0.62 // how far each row sits below the one above, in card widths
 
 /** TriPeaks: clear three peaks by taking cards one rank above or below the waste card. Nothing is stored. */
 export function TriPeaksScreen() {
-  const [level, setLevel] = useState<TriLevel>('classic')
-  const [dealNo, setDealNo] = useState(randomDealNumber)
-  const game = useCardGame<TriPeaks>(() => deal('classic', seededRng(dealNo)))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('tripeaks')
+  const sent = incoming && incoming.shared.game === 'tripeaks' ? incoming.shared.puzzle : null
+  const [level, setLevel] = useState<TriLevel>((sent?.level as TriLevel) ?? 'classic')
+  const [dealNo, setDealNo] = useState(() => sent?.seed ?? randomDealNumber())
+  const game = useCardGame<TriPeaks>(() => deal(level, seededRng(dealNo)))
   const g = game.state
   const [hint, setHint] = useState<{ text: string; card: number | null } | null>(null)
   const [note, setNote] = useState('')
@@ -30,7 +33,7 @@ export function TriPeaksScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won && !stuck)
 
   const act = (next: TriPeaks) => { game.commit(next); setHint(null); setNote('') }
-  const newDeal = (lv = level, no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setHint(null); setNote(''); resetClock() }
+  const newDeal = (lv = level, no?: number) => { leaveChat(); const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setHint(null); setNote(''); resetClock() }
 
   const tap = (i: number) => {
     if (won || stuck) return
@@ -56,6 +59,7 @@ export function TriPeaksScreen() {
           <Button variant="secondary" onClick={() => newDeal()}>{t('tp.new')}</Button>
         </LevelBar>
         <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n)} />
+        {fromChat && <IncomingNote mode={fromChat} onFresh={() => newDeal()} />}
 
         <CardTable cols={10} fresh={game.moves === 0}>
           <p className="pc-hud">
@@ -107,6 +111,7 @@ export function TriPeaksScreen() {
 
         <div className="cg-tools" style={{ '--tools': 2 } as CSSProperties}>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setHint(null) }} disabled={!game.canUndo}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
+          <GameShare shared={seededShare('tripeaks', level, dealNo)} title={t('gx.game.tripeaks.title')} done={won} seconds={seconds} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={won || stuck}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
         </div>
         <GameHelp title={t('sudoku.help.title')}>

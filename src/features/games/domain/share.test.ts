@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { generateBinairo } from './binairo'
-import { decodeGame, encodeGame, GAME_DATA_MAX, SHAREABLE_GAMES, resultSeconds, startOnly, type SharedGame } from './share'
+import { decodeGame, encodeGame, GAME_DATA_MAX, PUZZLE_GAMES, SHAREABLE_GAMES, resultSeconds, startOnly, type SharedGame } from './share'
 import { generateKiller } from './killer'
 import { generateFutoshiki } from './futoshiki'
 import { generateKenKen } from './kenken'
@@ -19,7 +19,7 @@ import { WORDLE_WORDS } from './wordleWords'
 
 const seeded = (seed: number) => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32 }
 
-const make = (game: (typeof SHAREABLE_GAMES)[number], random: () => number): SharedGame => {
+const make = (game: (typeof PUZZLE_GAMES)[number], random: () => number): SharedGame => {
   const entries = Array<number>(81).fill(0)
   const notes = Array<number>(81).fill(0)
   if (game === 'binairo') {
@@ -71,7 +71,7 @@ const NEWEST = ['cruise-wordle', 'word-search', 'codeword', 'minesweeper']
 const fields = (v: unknown) => v as Record<string, unknown>
 
 describe('game share round trip', () => {
-  for (const game of SHAREABLE_GAMES.filter((g) => !NEWEST.includes(g))) {
+  for (const game of PUZZLE_GAMES.filter((g) => !NEWEST.includes(g))) {
     it(`${game}: start, current and notes come back as the same puzzle`, () => {
       const s = make(game, seeded(7))
       const start = decodeGame(game, encodeGame(s, 'start'))
@@ -216,7 +216,7 @@ describe('game share decoder is total', () => {
   })
   it('mutating a good payload never throws and never gives back a different puzzle for a bad one', () => {
     const random = seeded(11)
-    for (const game of SHAREABLE_GAMES) {
+    for (const game of PUZZLE_GAMES) {
       const data = encodeGame(make(game, seeded(2)), 'current', true)
       for (let n = 0; n < 60; n++) {
         const at = Math.floor(random() * data.length)

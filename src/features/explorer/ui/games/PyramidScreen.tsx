@@ -13,8 +13,9 @@ import { useCardGame } from './cards/useCardGame'
 import { DealBar } from './cards/DealBar'
 import { MAX_DEAL, randomDealNumber } from './cards/dealNumber'
 import { seededRng } from '../../../games/domain/cards'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
-import { useGameClock } from './gameHooks'
+import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard, GameShare, IncomingNote } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
 
 const LEVEL_KEYS: Record<PyramidLevel, StringKey> = { easy: 'py.level.easy', classic: 'py.level.classic', hard: 'py.level.hard' }
 const ROW_STEP = 0.55 // how far each row sits below the one above, in card widths
@@ -22,9 +23,11 @@ const samePick = (a: Pick | null, b: Pick): boolean => !!a && a.kind === b.kind 
 
 /** Pyramid: remove Kings, and pairs of uncovered cards that add up to 13. Nothing is stored. */
 export function PyramidScreen() {
-  const [level, setLevel] = useState<PyramidLevel>('classic')
-  const [dealNo, setDealNo] = useState(randomDealNumber)
-  const game = useCardGame<Pyramid>(() => deal('classic', seededRng(dealNo)))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('pyramid')
+  const sent = incoming && incoming.shared.game === 'pyramid' ? incoming.shared.puzzle : null
+  const [level, setLevel] = useState<PyramidLevel>((sent?.level as PyramidLevel) ?? 'classic')
+  const [dealNo, setDealNo] = useState(() => sent?.seed ?? randomDealNumber())
+  const game = useCardGame<Pyramid>(() => deal(level, seededRng(dealNo)))
   const g = game.state
   const [sel, setSel] = useState<Pick | null>(null)
   const [hint, setHint] = useState<{ text: string; picks: Pick[] } | null>(null)
@@ -34,7 +37,7 @@ export function PyramidScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won)
 
   const act = (next: Pyramid) => { game.commit(next); setSel(null); setHint(null); setNote('') }
-  const newDeal = (lv = level, no?: number) => { const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); resetClock() }
+  const newDeal = (lv = level, no?: number) => { leaveChat(); const n = no ?? randomDealNumber(); setDealNo(n); game.restart(deal(lv, seededRng(n))); setSel(null); setHint(null); setNote(''); resetClock() }
 
   const tap = (p: Pick) => {
     if (won) return
@@ -74,6 +77,7 @@ export function PyramidScreen() {
           <Button variant="secondary" onClick={() => newDeal()}>{t('py.new')}</Button>
         </LevelBar>
         <DealBar number={dealNo} max={MAX_DEAL} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n)} />
+        {fromChat && <IncomingNote mode={fromChat} onFresh={() => newDeal()} />}
 
         <CardTable cols={7} fresh={game.moves === 0}>
           <p className="pc-hud">
@@ -129,6 +133,7 @@ export function PyramidScreen() {
 
         <div className="cg-tools" style={{ '--tools': 2 } as CSSProperties}>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setSel(null); setHint(null) }} disabled={!game.canUndo}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
+          <GameShare shared={seededShare('pyramid', level, dealNo)} title={t('gx.game.pyramid.title')} done={won} seconds={seconds} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={won}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
         </div>
         <GameHelp title={t('sudoku.help.title')}>

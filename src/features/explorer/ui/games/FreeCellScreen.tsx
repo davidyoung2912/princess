@@ -11,8 +11,9 @@ import { CardCredits, CardTable, Single, Stack, type StackCard } from './cards/C
 import { cardName } from './cards/cardArt'
 import { useCardGame } from './cards/useCardGame'
 import { DealBar } from './cards/DealBar'
-import { GameClock, GameHelp, HintBox, LevelBar, SolvedCard } from './parts'
-import { useGameClock } from './gameHooks'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
+import { seededShare } from '../../../games/domain/share'
 
 const LEVEL_KEYS: Record<FreeCellLevel, StringKey> = { classic: 'fc.level.classic', hard: 'fc.level.hard', expert: 'fc.level.expert' }
 const GLYPH = ['♠', '♥', '♦', '♣']
@@ -20,8 +21,10 @@ const same = (a: Src | null, b: Src): boolean => !!a && JSON.stringify(a) === JS
 
 /** FreeCell: every card face up, free cells for parking, numbered deals that can all be won. Tap a card, then where it goes; tap it again for its best place. Nothing is stored. */
 export function FreeCellScreen() {
-  const [level, setLevel] = useState<FreeCellLevel>('classic')
-  const game = useCardGame<FreeCell>(() => deal('classic', randomDeal()))
+  const { incoming, fromChat, leaveChat } = useIncomingGame('freecell')
+  const sent = incoming && incoming.shared.game === 'freecell' ? incoming.shared.puzzle : null
+  const [level, setLevel] = useState<FreeCellLevel>((sent?.level as FreeCellLevel) ?? 'classic')
+  const game = useCardGame<FreeCell>(() => deal(level, sent?.seed ?? randomDeal()))
   const g = game.state
   const [sel, setSel] = useState<Src | null>(null)
   const [hint, setHint] = useState<{ text: string; from: Src; to: Dst } | null>(null)
@@ -31,7 +34,7 @@ export function FreeCellScreen() {
   const { seconds, reset: resetClock } = useGameClock(!won)
 
   const act = (next: FreeCell) => { game.commit(next); setSel(null); setHint(null); setNote('') }
-  const newDeal = (lv = level, number?: number) => { game.restart(deal(lv, number ?? randomDeal())); setSel(null); setHint(null); setNote(''); setFinishing(false); resetClock() }
+  const newDeal = (lv = level, number?: number) => { leaveChat(); game.restart(deal(lv, number ?? randomDeal())); setSel(null); setHint(null); setNote(''); setFinishing(false); resetClock() }
 
   useEffect(() => {
     if (!finishing) return
@@ -93,6 +96,7 @@ export function FreeCellScreen() {
         </LevelBar>
 
         <DealBar number={g.dealNumber} max={DEAL_COUNT} canReplay={game.moves > 0} onGo={(n) => newDeal(level, n === UNSOLVABLE_DEAL ? n + 1 : n)} />
+        {fromChat && <IncomingNote mode={fromChat} onFresh={() => newDeal()} />}
         <CardTable cols={8} fresh={game.moves === 0}>
           <p className="pc-hud">
             <GameClock seconds={seconds} label={t('sudoku.time')} />
@@ -141,6 +145,7 @@ export function FreeCellScreen() {
 
         <div className="cg-tools" style={{ '--tools': canAutoFinish(g) ? 3 : 2 } as React.CSSProperties}>
           <button type="button" className="sd-tool" onClick={() => { game.undo(); setSel(null); setHint(null) }} disabled={!game.canUndo || finishing}><Undo aria-hidden="true" focusable="false" /><span>{t('sudoku.undo')}</span></button>
+          <GameShare shared={seededShare('freecell', level, g.dealNumber)} title={t('gx.game.freecell.title')} done={won} seconds={seconds} />
           <button type="button" className="sd-tool" onClick={showHint} disabled={won || finishing}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
           {canAutoFinish(g) && <button type="button" className="sd-tool" onClick={() => setFinishing(true)} disabled={finishing}><span>{t('cd.finish')}</span></button>}
         </div>
