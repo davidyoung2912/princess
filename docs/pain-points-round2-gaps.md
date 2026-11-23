@@ -73,3 +73,27 @@ Open:
 - Meeting-point cards: the guest cannot choose how long a point is good for; the server sets it. The place is matched to the map by name, so a place the map does not list shows no link.
 - Directions start from a place the guest picks (no live position); that is stated on the map. Device location stays parked by the owner.
 - A one-tap "I'm at the Piazza until 6" status for the whole party (rather than a card in one chat) is not built.
+
+## R7 Provenance and support (G-01 dropped by the owner)
+
+Found on reading the code (the first scorecard was wrong again): the report-a-problem screen already attaches the problem log and a screenshot, there is a status page with a declared-incidents feed, and cases show their owner team and due date.
+
+Built: a service-notice banner at the top of every signed-in screen when an unresolved incident has been declared, with what it affects, a link to the status page and "hide for now" (`ServiceNotice`, `noticesToShow`; refreshed every five minutes while visible); a line on the report screen saying where a note goes and pointing to Open a case and Guest Services.
+
+Open:
+- The banner reads the existing incidents feed; nothing in the prototype declares an incident, so it is untested against a real one beyond the unit test of the rules. It hides while offline (it cannot know).
+- Screenshots are attached as sent; there is no redaction step (blurring a card number or passport), only the instruction in the hint. Needs an editor or at least a warning at attach time.
+- The report list shows reference, kind, time and text, but no status and no "who will answer". Cases do. Feedback and cases are two lists.
+- "Case history" is the stage track; there is no message thread between the guest and the desk.
+- Provenance labels (confirmed, sample, pending) were dropped with G-01.
+
+## R8 Measure and walk
+
+Built: an on-device top-task funnel (`taskFunnel`, shown in Diagnostics) and `docs/pain-points-measures.md`: what is measurable now, what needs people or Princess data, and a baseline method.
+
+Open (all of these need the owner, people, or a device):
+- **The device walk is not done**, and it is the only thing that takes any row to A+: airplane mode across the ten must-work screens, the nine quality measures B1 to B9, the Maria, Daniel, Gerald and Linda walkthroughs, and a screen-reader pass. None of this can run here (project rules). Book it first.
+- Task counts stay on the phone. A fleet measure needs a consent-gated telemetry event and a server table.
+- "No search results" and "opened a result" are not recorded, so search success cannot be measured.
+- The baseline for the existing Princess app does not exist and needs sessions.
+- `dotnet build` of the server has not been run since the `Problems.cs` trace-id change (no .NET here).

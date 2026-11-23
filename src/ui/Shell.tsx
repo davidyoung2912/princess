@@ -6,7 +6,7 @@ import { artUrl } from '../art/urls'
 import { Link, Navigate, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router'
 import { getContext, subscribeContext } from '../account/context'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
-import { track } from '../diagnostics/watch'
+import { noteTaskScreen, track } from '../diagnostics/watch'
 import { usePushSync } from '../hooks/usePushSync'
 import { useStatsTracker } from '../hooks/useStatsTracker'
 import { useStanleyLevelSync } from '../hooks/useStanleyLevelSync'
@@ -64,6 +64,7 @@ import { tipIdFor } from '../settings/tips'
 import { tabText } from './tabText'
 import { TestBar } from './TestBar'
 import { UpdateBanner } from './UpdateBanner'
+import { ServiceNotice } from './ServiceNotice'
 import { getWelcome, markSeen, subscribeWelcome, unmarkSeen, welcomeLoaded } from '../stageWelcome/store'
 import { recordVisit as recordStepVisit } from '../stageProgress/store'
 import { progressKey, stepsAt } from '../routes/stageProgress'
@@ -228,6 +229,7 @@ export function Shell() {
     const full = `${title} · ${t('app.name')}`
     applyPageMeta(document, { title: full, description: t(seo?.description ?? 'seo.private'), indexable: !!seo, url: `${window.location.origin}${pathname}` })
     track('screen', route?.path)
+    noteTaskScreen(pathname)
     if (first.current) { first.current = false; return }
     setAnnouncement(t('shell.announce', { title }))
     main.current?.focus({ preventScroll: true })
@@ -316,6 +318,7 @@ export function Shell() {
       <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
         {invitationsPage ? <PageHeader title={t('invitations.title')} subtext={t('invitations.subtext')} icon={headerIcon} back /> : newGroupPage ? <PageHeader title={t('cgroup.new')} subtext={t('cgroup.newSubtext')} icon={headerIcon} back /> : personalChatPage ? <PageHeader title={t('cpersonal.new')} subtext={t('cpersonal.newSubtext')} icon={headerIcon} back /> : chatPeoplePage ? <PageHeader title={t('chatPeople.title')} subtext={t('chatPeople.subtext')} icon={headerIcon} back /> : appWelcomePage ? <PageHeader title={th('appWelcome.eyebrow')} subtext={t('appWelcome.subtext')} icon={headerIcon} /> : stanleyIntroPage ? <PageHeader title={th('stanleyIntro.eyebrow')} subtext={t('stanleyIntro.subtext')} icon={headerIcon} /> : action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} art={landing ? (landing.key === 'home' ? homeHeaderArt : tabArt(landing.key)) : undefined} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pathname === '/welcome' ? { pose: poseForStage(stage) } : pageArt(route?.path)} back={pathname !== '/welcome'} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
+        {route && !route.public && route.path !== '/me/status' && <ServiceNotice />}
         {route && !route.public && !landing && <GuideCrumb />}
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}

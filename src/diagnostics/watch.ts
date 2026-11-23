@@ -1,4 +1,5 @@
 import { record, type DiagnosticKind } from './log'
+import { noteVisit } from './taskFunnel'
 import { createTelemetry, type EventName, type TelemetryItem } from './telemetry'
 
 /** Device flag for the "Help improve the app" consent (usage counts only; problems are always reported), set from the privacy centre. Off until the guest turns it on. */
@@ -33,6 +34,9 @@ export function setImproveConsent(on: boolean): void {
     else { local()?.removeItem(IMPROVE_KEY); telemetry.clear() }
   } catch { /* blocked storage: stays off */ }
 }
+
+/** Notes a screen opened, on this phone only, for the top-task measures read in Diagnostics (no person, booking or typed text). */
+export const noteTaskScreen = (path: string): void => noteVisit(local(), path, Date.now())
 
 /** Counts a named event, only if the guest agreed. */
 export const track = (name: EventName, screen?: string): void => telemetry.event(name, screen)

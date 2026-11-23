@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { Link } from 'react-router'
 import { readLog } from '../../diagnostics/log'
 import { statusRows, type StatusRow } from '../../domain/services'
 import { api } from '../../runtime'
@@ -103,6 +104,7 @@ export function ReportProblemScreen() {
   return (
     <div className="page">
       <p>{t('bug.intro')}</p>
+      <p className="muted">{t('bug.route')} <Link to="/me/cases">{t('bug.route.case')}</Link> · <Link to="/me/contact">{t('account.err.contact')}</Link></p>
       <form onSubmit={(e: FormEvent) => { e.preventDefault(); void send.run() }}>
         <fieldset className="plain-fieldset">
           <legend>{t('bug.kind')}</legend>

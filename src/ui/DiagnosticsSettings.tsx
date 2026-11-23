@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { clearFunnel, funnelByStage, readFunnel } from '../diagnostics/guideFunnel'
+import { clearVisits, readVisits, taskFunnel } from '../diagnostics/taskFunnel'
 import { clearLog, logToText, readLog } from '../diagnostics/log'
 import { clearAsked, clearTiers, freeShare, modelShare, readAsked, readTiers, repeated, tierMix } from '../diagnostics/stanleyTiers'
 import { clearUnanswered, exportUnanswered, isUnansweredOn, readUnanswered, setUnansweredOn } from '../diagnostics/stanleyUnanswered'
@@ -28,6 +29,8 @@ export function DiagnosticsSettings() {
   const share = freeShare(tiers)
   const paid = modelShare(tiers)
   const [funnel, setFunnel] = useState(() => funnelByStage(readFunnel(store())))
+  const [visits, setVisits] = useState(() => readVisits(store()))
+  const stats = taskFunnel(visits).filter((s) => s.opened > 0)
   const [asked, setAsked] = useState(() => readAsked(store()))
   const again = repeated(asked)
   const [keep, setKeep] = useState(() => isUnansweredOn(store()))
@@ -83,6 +86,14 @@ export function DiagnosticsSettings() {
           <Button variant="secondary" onClick={() => { clearTiers(store()); clearAsked(store()); setTiers(readTiers(store())); setAsked(readAsked(store())) }}>{t('diag.stanley.clear')}</Button>
         </>
       ) : <p>{t('diag.stanley.none')}</p>}
+      <h3>{headingCase(t('diag.tasks.title'))}</h3>
+      <p>{t('diag.tasks.intro')}</p>
+      {stats.length === 0 ? <p>{t('diag.tasks.none')}</p> : (
+        <>
+          <ul>{stats.map((s) => <li key={s.id}>{t('diag.tasks.line', { task: t(`task.${s.id}` as StringKey), opened: s.opened, reached: s.reached, seconds: s.medianSeconds ?? 0 })}</li>)}</ul>
+          <Button variant="secondary" onClick={() => { clearVisits(store()); setVisits([]) }}>{t('diag.tasks.clear')}</Button>
+        </>
+      )}
       <h3>{headingCase(t('diag.guide.title'))}</h3>
       <p>{t('diag.guide.intro')}</p>
       {funnel.length === 0 ? <p>{t('diag.guide.none')}</p> : (
