@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLE_TYPES, BUNDLE_VERSION, bundleGlyph, REF_TYPES, bundleLink, bundleSummary, eventRef, forwardInput, gameOfBundle, stanleyAnswerInput, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
+import { BUNDLE_TYPES, BUNDLE_VERSION, bundleIcon, REF_TYPES, bundleLink, bundleSummary, eventRef, forwardInput, gameOfBundle, stanleyAnswerInput, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
 
 const venue = { type: 'venue', v: 1, title: 'Crown Grill', subtitle: 'Steakhouse', path: '/dining-today/crown-grill', place: 'Deck 7' }
 
@@ -172,10 +172,16 @@ describe('forwardInput', () => {
   })
 })
 
-describe('bundle glyphs (B11)', () => {
-  it('has a glyph for every registered type and none for an unknown one', () => {
-    for (const type of Object.keys(BUNDLE_TYPES)) expect(bundleGlyph(type)).not.toBe('')
-    expect(bundleGlyph('nonsense')).toBe('')
+describe('bundle icons (B11)', () => {
+  it('has an icon for every registered type and none for an unknown one', () => {
+    for (const type of Object.keys(BUNDLE_TYPES)) expect(bundleIcon({ type })).not.toBeNull()
+    expect(bundleIcon({ type: 'nonsense' })).toBeNull()
+    // the screen it opens decides the icon, as it does in the explorer
+    expect(bundleIcon({ type: 'event', path: '/spa-explorer/v1?day=2' })).toBe('spa')
+    expect(bundleIcon({ type: 'event', path: '/entertainment' })).toBe('entertainment')
+    expect(bundleIcon({ type: 'excursion', path: '/excursions-explorer/x' })).toBe('excursions')
+    expect(bundleIcon({ type: 'dinner' })).toBe('dining')
+    expect(bundleIcon({ type: 'event', path: '/spa-explorerx' })).toBe('activities')
   })
 })
 

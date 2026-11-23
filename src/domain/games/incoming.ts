@@ -21,3 +21,15 @@ export function peekIncoming(game: string, now = Date.now()): Incoming | null {
 }
 
 export function clearIncoming(): void { held = null }
+
+/** The seconds on the running game's clock, kept so the finished card can compare it with a time to beat. */
+let elapsed = 0
+export const noteElapsed = (seconds: number): void => { elapsed = seconds }
+export const elapsedNow = (): number => elapsed
+
+/** How an attempt at a result went against the time to beat: won (faster), tied or missed, with the gap in seconds. Null when there was no time to beat or the clock never ran. */
+export function beatOutcome(seconds: number, target: number | undefined): { result: 'won' | 'tied' | 'missed'; gap: number } | null {
+  if (!target || !Number.isFinite(seconds) || seconds <= 0) return null
+  const gap = Math.abs(Math.round(seconds) - target)
+  return { result: seconds < target ? 'won' : Math.round(seconds) === target ? 'tied' : 'missed', gap }
+}

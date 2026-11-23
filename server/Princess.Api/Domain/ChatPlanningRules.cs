@@ -158,6 +158,22 @@ public static class ChatPlanningRules
         return [.. counts];
     }
 
+    // ---- Phase B10: "Done, how was it?" on a decided poll ----
+
+    /// <summary>How it went, said by someone who did the decided thing: 1 loved it, 2 it was fine, 3 not for me.</summary>
+    public const int HowLoved = 1, HowFine = 2, HowNot = 3, Hows = 3;
+
+    /// <summary>The rating named by the app, or null for anything else (null means take mine back).</summary>
+    public static int? ParseHow(int? how) => how is >= HowLoved and <= HowNot ? how : null;
+
+    /// <summary>How many gave each rating; a stored value outside the three is not counted.</summary>
+    public static List<int> HowCounts(IEnumerable<int> ratings)
+    {
+        var counts = new int[Hows];
+        foreach (var r in ratings) if (r >= HowLoved && r <= HowNot) counts[r - 1]++;
+        return [.. counts];
+    }
+
     // ---- Plans ----
 
     public const int Going = 0, Maybe = 1, No = 2, Answers = 3;

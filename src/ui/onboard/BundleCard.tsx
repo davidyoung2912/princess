@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatBundle, ChatMessage, ChatTally } from '../../api/chatTypes'
-import { BUNDLE_TYPES, bundleGlyph, bundleLink, forwardInput, bundleSummary, gameOfBundle, isKnownBundle } from '../../domain/chatBundles'
+import { BUNDLE_TYPES, bundleIcon, bundleLink, forwardInput, bundleSummary, gameOfBundle, isKnownBundle } from '../../domain/chatBundles'
 import { holdIncoming } from '../../domain/games/incoming'
 import { decodeGame, startOnly, type ShareMode } from '../../domain/games/share'
+import { gameThumbnail, type Thumbnail } from '../../domain/games/thumbnail'
 import { clock12 } from '../../domain/planCard'
 import { t } from '../../i18n'
 import { useAction } from '../../hooks/useAction'
 import { sendWithin } from '../../hooks/useOutbox'
 import { api } from '../../runtime'
 import { Button, LinkButton } from '../Button'
+import { ExplorerIcon } from '../explorer/ExplorerIcon'
+import { Anchor, ClipboardList, Compass, Games, MapPin } from '../icons'
 import { SendDialog } from './SendDialog'
 
 const clock = (time: string): string => clock12(time)
@@ -17,6 +20,27 @@ const clock = (time: string): string => clock12(time)
  * A bundle in a thread (docs/chat-bundles-plan.md, 5.1): drawn from the registry for a type this app knows, and from its plain fields (title, subtitle, when, where) for one it does not, with "Update the app to open
  * this". It opens the screen it came from; a path the app does not know says it is no longer available.
  */
+/** Phase B11: the same icon the explorer shows for this kind of thing. Decoration only (the type word beside it says it), so hidden from a screen reader. */
+function BundleGlyph({ bundle }: { bundle: ChatBundle }) {
+  const id = bundleIcon(bundle)
+  const props = { className: 'explorer-icon', 'aria-hidden': true, focusable: false } as const
+  const icon = !id ? null
+    : id === 'excursions' ? <Compass {...props} /> : id === 'games' ? <Games {...props} /> : id === 'port' ? <Anchor {...props} />
+    : id === 'place' ? <MapPin {...props} /> : id === 'menu' ? <ClipboardList {...props} /> : <ExplorerIcon kind={id} />
+  return icon && <span className="chat-card__glyph">{icon}</span>
+}
+
+/** Phase B11: the board's shape and where its clues are, as a small picture. Decoration only (the words say what the game is), so it is hidden from a screen reader. */
+function GameThumb({ thumb }: { thumb: Thumbnail }) {
+  const side = 48
+  const cell = side / Math.max(thumb.rows, thumb.cols)
+  return (
+    <svg className="chat-card__thumb" width={side} height={(side * thumb.rows) / Math.max(thumb.rows, thumb.cols)} viewBox={`0 0 ${thumb.cols * cell} ${thumb.rows * cell}`} aria-hidden="true" focusable="false">
+      {thumb.filled.map((on, i) => <rect key={i} x={(i % thumb.cols) * cell} y={Math.floor(i / thumb.cols) * cell} width={cell} height={cell} className={on ? 'chat-card__thumb-on' : 'chat-card__thumb-off'} />)}
+    </svg>
+  )
+}
+
 /** Phase B10: "I did it" on a game in a thread, counted for everyone and named only for people who said so. */
 function Outcome({ conversationId, message, canAct }: { conversationId: string; message: ChatMessage; canAct: boolean }) {
   const [tally, setTally] = useState<ChatTally | undefined>(message.tally)
@@ -45,6 +69,7 @@ export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; on
     const shared = g ? decodeGame(g.game, g.data) : null
     return g && shared ? { ...g, shared } : null
   }, [bundle, known])
+  const thumb = useMemo(() => (game ? gameThumbnail(game.shared) : null), [game])
   const play = (mode: ShareMode) => { if (game) holdIncoming(game.game, game.shared, mode); onOpen?.() }
   const beat = () => { if (game) holdIncoming(game.game, startOnly(game.shared), 'start', Date.now(), game.seconds); onOpen?.() }
   const [forwarding, setForwarding] = useState(false)
@@ -53,7 +78,8 @@ export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; on
   const when = [bundle.day !== undefined ? t('card.day', { day: bundle.day }) : '', bundle.time ? clock(bundle.time) : ''].filter(Boolean).join(', ')
   return (
     <div className={['chat-card', 'chat-card--bundle', `chat-card--${bundle.type.replace(/\W/g, '-')}`].join(' ')} role="group" aria-label={[label, bundleSummary(bundle, clock)].filter(Boolean).join(': ')}>
-      {label && <p className="chat-card__type">{known && <span className="chat-card__glyph" aria-hidden="true">{bundleGlyph(bundle.type)}</span>}<strong>{label}</strong></p>}
+      {label && <p className="chat-card__type">{known && <BundleGlyph bundle={bundle} />}<strong>{label}</strong></p>}
+      {thumb && <GameThumb thumb={thumb} />}
       <p className="chat-card__title">{bundle.title}</p>
       {bundle.subtitle && <p className="muted">{bundle.subtitle}</p>}
       {when && <p>{when}</p>}

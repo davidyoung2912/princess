@@ -27,7 +27,7 @@ export function FutoshikiScreen() {
   const n = game.size
   const digits = useMemo(() => Array.from({ length: n }, (_, k) => k + 1), [n])
   const [entries, setEntries] = useState<number[]>(() => sent?.entries ?? Array(n * n).fill(0))
-  const [notes, setNotes] = useState<number[]>(() => Array(n * n).fill(0))
+  const [notes, setNotes] = useState<number[]>(() => sent?.notes ?? Array(n * n).fill(0))
   const [history, setHistory] = useState<Snapshot[]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [pencil, setPencil] = useState(false)
@@ -256,7 +256,7 @@ export function FutoshikiScreen() {
           <button type="button" className="sd-tool" onClick={erase} disabled={selected === null}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" aria-pressed={pencil} onClick={() => setPencil((p) => !p)}><Notes aria-hidden="true" focusable="false" /><span>{t(pencil ? 'sudoku.notesOn' : 'sudoku.notesOff')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'futoshiki', puzzle: game, entries: entries, notes: [] }} title={t('gx.game.futoshiki.title')} done={solved} seconds={seconds} />
+          <GameShare shared={{ game: 'futoshiki', puzzle: game, entries: entries, notes }} title={t('gx.game.futoshiki.title')} done={solved} seconds={seconds} />
         </div>
         <div className="sd-pad fs-pad" style={boardStyle} role="group" aria-label={t('sudoku.pad')}>
           {digits.map((d) => (

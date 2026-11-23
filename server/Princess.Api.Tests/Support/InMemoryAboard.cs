@@ -600,6 +600,16 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 
     public Task<ChatResponseRow?> GetResponseAsync(long messageId, long userId, CancellationToken ct) => Task.FromResult(Responses.GetValueOrDefault((messageId, userId)));
 
+    public Dictionary<(long MessageId, long UserId), ChatOutcomeRow> Outcomes { get; } = [];
+
+    public Task SetOutcomeAsync(long messageId, long userId, int rating, DateTime at, CancellationToken ct)
+    {
+        if (rating == 0) Outcomes.Remove((messageId, userId)); else Outcomes[(messageId, userId)] = new ChatOutcomeRow(messageId, userId, rating);
+        return Task.CompletedTask;
+    }
+
+    public Task<List<ChatOutcomeRow>> ListOutcomesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct) => Task.FromResult(Outcomes.Values.Where(o => messageIds.Contains(o.MessageId)).ToList());
+
     public Task<List<ChatResponseRow>> ListResponsesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct) => Task.FromResult(Responses.Values.Where(r => messageIds.Contains(r.MessageId)).ToList());
 
     public Task<bool> DecidePollAsync(long messageId, int option, long decidedBy, DateTime at, CancellationToken ct)

@@ -112,6 +112,16 @@ public static class ChatBundleRules
         return parts.Length == 2 && parts.All(p => p.Length is > 0 and <= 60 && p.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_')) ? (parts[0], parts[1]) : null;
     }
 
+    /// <summary>
+    /// Phase B11: the name a forwarded bundle carries. A forward of a forward keeps the first sender's name; a person's own bundle forwarded by them carries none;
+    /// otherwise the sender's short name (null when they are no longer in the chat).
+    /// </summary>
+    public static string? ForwardName(string? earlierFrom, bool senderIsForwarder, string? senderName) =>
+        earlierFrom is { Length: > 0 } ? earlierFrom : senderIsForwarder ? null : senderName is { Length: > 0 } ? senderName : null;
+
+    /// <summary>The stored choice that means "I did it" on a bundle. Not <see cref="ChatPlanningRules.Going"/> (0): taking it back stores 0, and that must not count.</summary>
+    public const int DoneChoice = 1;
+
     /// <summary>The types a bundle can carry that have a day and a time: they can be proposed (Going, Maybe, No) and added to a day.</summary>
     public static readonly string[] Plannable = [Event, Excursion, Dinner];
 

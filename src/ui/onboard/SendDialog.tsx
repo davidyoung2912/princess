@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { ChatConversation } from '../../api/chatTypes'
 import { BUNDLE_NOTE_MAX, matchConversations, SEARCH_FROM, sendToMany, type SendOutcome } from '../../domain/chatBundles'
 import { loadRecentSent, saveRecentSent } from '../../data/recentSent'
@@ -70,6 +70,8 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
   const bad = outcomes.filter((o) => !o.ok)
   const status = good.length === 0 ? '' : bad.length === 0 ? t('senddlg.sentAll', { names: good.map((o) => o.name).join(', ') }) : t('senddlg.sentSome', { names: good.map((o) => o.name).join(', '), failed: bad.map((o) => o.name).join(', ') })
   const allDone = rows !== null && good.length > 0 && bad.length === 0
+  const doneRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (allDone) doneRef.current?.querySelector('button')?.focus() }, [allDone])
   const hasCode = item.shareRef !== undefined && qrKindOf(item.shareRef) !== null
   if (showCode && item.shareRef) return <Dialog title={t('qrshow.title')} onClose={onClose}><ShowCode shareRef={item.shareRef} title={item.title} onBack={() => setShowCode(false)} /></Dialog>
   return (
@@ -128,7 +130,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
             <Button disabled={busy} onClick={() => void run()}>{picked.length > 1 ? t('senddlg.sendMany', { count: picked.length }) : t('senddlg.send')}</Button>
           </>
         )}
-        {allDone && <Button autoFocus onClick={onClose}>{t('senddlg.done')}</Button>}
+        {allDone && <div ref={doneRef}><Button onClick={onClose}>{t('senddlg.done')}</Button></div>}
         {hasCode && <Button variant="secondary" onClick={() => setShowCode(true)}>{t('share.show')}</Button>}
       </div>
     </Dialog>

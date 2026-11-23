@@ -15,7 +15,7 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
     public static bool AdminOf(ChatMemberRow member, long userId) => (member.Kind is ChatConversationRules.Group or ChatHuddleRules.Kind) && ChatPlanningRules.IsAdmin(member.CreatedByUserId == userId, member.IsAdmin);
 
     /// <summary>The answers to a poll or plan as <paramref name="reader"/> sees them, or null for any other message.</summary>
-    public static ChatTallyDto? TallyOf(ChatMessageRow m, IReadOnlyCollection<ChatResponseRow> rows, long reader, DateTime now, bool isAdmin, IReadOnlyDictionary<long, ChatPeerRow> byId, ISet<long> blocked, string? kind = null)
+    public static ChatTallyDto? TallyOf(ChatMessageRow m, IReadOnlyCollection<ChatResponseRow> rows, long reader, DateTime now, bool isAdmin, IReadOnlyDictionary<long, ChatPeerRow> byId, ISet<long> blocked, string? kind = null, IReadOnlyCollection<ChatOutcomeRow>? outcomes = null)
     {
         var mine = rows.FirstOrDefault(r => r.UserId == reader);
         if (m.Kind == ChatPlanningRules.Poll)
@@ -23,7 +23,9 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
             if (ChatPlanningRules.ParsePoll(m.Payload) is not { } poll) return null;
             var closed = ChatPlanningRules.IsClosed(m.ClosedAt, m.At, now);
             return new(ChatPlanningRules.Tally(rows.Select(r => r.Choice), poll.Options.Count), mine?.Choice, closed, Shipboard.Ms(ChatPlanningRules.ClosesAt(m.At)), !closed && ChatPlanningRules.MayClose(m.FromUserId == reader, isAdmin),
-                Decided: m.DecidedOption, MayDecide: m.DecidedOption is null && ChatPlanningRules.MayDecide(kind ?? ChatConversationRules.Group, m.FromUserId == reader, isAdmin));
+                Decided: m.DecidedOption, MayDecide: m.DecidedOption is null && ChatPlanningRules.MayDecide(kind ?? ChatConversationRules.Group, m.FromUserId == reader, isAdmin),
+                How: m.DecidedOption is null ? null : ChatPlanningRules.HowCounts((outcomes ?? Array.Empty<ChatOutcomeRow>()).Where(o => !blocked.Contains(o.UserId) || o.UserId == reader).Select(o => o.Rating)),
+                MyHow: m.DecidedOption is null ? null : (outcomes ?? Array.Empty<ChatOutcomeRow>()).FirstOrDefault(o => o.UserId == reader)?.Rating);
         }
         if (m.Kind == ChatBoardRules.Kind)
         {
@@ -34,10 +36,10 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
         if (m.Kind == ChatBundleRules.Kind)
         {
             // Phase B10: "Done it" on a bundle (a puzzle solved, a thing visited). Reporting is the choice to be named: only people who ticked it appear, first name and last initial; nobody else's lack of an answer is shown.
-            var done = rows.Where(r => r.Choice == ChatPlanningRules.Going && !blocked.Contains(r.UserId)).ToList();
+            var done = rows.Where(r => r.Choice == ChatBundleRules.DoneChoice && !blocked.Contains(r.UserId)).ToList();
             var names = done.Where(r => r.UserId != reader && byId.TryGetValue(r.UserId, out var p) && p.Status == ChatConversationRules.Active)
                 .Select(r => ChatConnectionRules.ShortName(byId[r.UserId].FirstName, byId[r.UserId].LastName)).ToList();
-            return new([done.Count], mine?.Choice == ChatPlanningRules.Going ? ChatPlanningRules.Going : null, false, null, false, names);
+            return new([done.Count], mine?.Choice == ChatBundleRules.DoneChoice ? ChatBundleRules.DoneChoice : null, false, null, false, names);
         }
         if (m.Kind != ChatCardRules.Plan) return null;
         var going = rows.Where(r => r.Choice == ChatPlanningRules.Going && r.UserId != reader && !blocked.Contains(r.UserId) && byId.TryGetValue(r.UserId, out var p) && p.Status == ChatConversationRules.Active)
@@ -45,13 +47,13 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
         return new(ChatPlanningRules.Tally(rows.Select(r => r.Choice), ChatPlanningRules.Answers), mine?.Choice, false, null, false, going, mine?.AddedToPlan == true);
     }
 
-    private async Task<(ChatMemberRow Member, ChatMessageRow Message, DateTime Now)> TargetAsync(UserRecord actor, Guid conversationId, Guid messageId, string kind, CancellationToken ct)
+    private async Task<(ChatMemberRow Member, ChatMessageRow Message, DateTime Now)> TargetAsync(UserRecord actor, Guid conversationId, Guid messageId, string kind, CancellationToken ct, string? alsoKind = null)
     {
         var member = await store.GetMemberAsync(actor.Id, conversationId, ct) ?? throw ApiException.NotFound();
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
-        if (message.Kind != kind || message.DeletedAt is not null) throw ApiException.Invalid(kind == ChatPlanningRules.Poll ? "notPoll" : kind == ChatBoardRules.Kind ? "notBoard" : kind == ChatBundleRules.Kind ? "notBundle" : "notPlan");
+        if ((message.Kind != kind && message.Kind != alsoKind) || message.DeletedAt is not null) throw ApiException.Invalid(kind == ChatPlanningRules.Poll ? "notPoll" : kind == ChatBoardRules.Kind ? "notBoard" : kind == ChatBundleRules.Kind ? "notBundle" : "notPlan");
         return (member, message, await clock.NowAsync(actor, ct));
     }
 
@@ -60,7 +62,8 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
         var rows = await store.ListResponsesAsync([message.Id], ct);
         var peers = (await store.ListMembersAsync(member.GroupId, ct)).ToDictionary(p => p.UserId);
         var blocked = new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct));
-        return TallyOf(message, rows, actor.Id, now, AdminOf(member, actor.Id), peers, blocked, member.Kind) ?? throw ApiException.Invalid("notPoll");
+        var outcomes = message.Kind == ChatPlanningRules.Poll && message.DecidedOption is not null ? await store.ListOutcomesAsync([message.Id], ct) : null;
+        return TallyOf(message, rows, actor.Id, now, AdminOf(member, actor.Id), peers, blocked, member.Kind, outcomes) ?? throw ApiException.Invalid("notPoll");
     }
 
     /// <summary>A live nudge so the other members' open apps, and the caller's other devices, refetch the counts. Never a phone alert.</summary>
@@ -146,8 +149,17 @@ public sealed class ChatPlanningService(IChatStore store, ChatShareService share
     /// </summary>
     public async Task<ChatTallyDto> OutcomeAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatOutcomeRequest? body, CancellationToken ct)
     {
-        var (member, message, now) = await TargetAsync(actor, conversationId, messageId, ChatBundleRules.Kind, ct);
-        await store.SetResponseAsync(message.Id, actor.Id, body?.Done == true ? ChatPlanningRules.Going : 0, false, now, ct);
+        var (member, message, now) = await TargetAsync(actor, conversationId, messageId, ChatBundleRules.Kind, ct, alsoKind: ChatPlanningRules.Poll);
+        if (message.Kind == ChatPlanningRules.Poll)
+        {
+            // Phase B10: "Done, how was it?" on a poll the group decided; a rating of nothing takes mine back.
+            if (message.DecidedOption is null) throw ApiException.Invalid("notDecided");
+            var how = body?.Done == true ? ChatPlanningRules.ParseHow(body.How) ?? throw ApiException.Invalid("how") : 0;
+            await store.SetOutcomeAsync(message.Id, actor.Id, how, now, ct);
+            await TellAsync(actor, member, "poll", ct);
+            return await TallyAsync(actor, member, message, now, ct);
+        }
+        await store.SetResponseAsync(message.Id, actor.Id, body?.Done == true ? ChatBundleRules.DoneChoice : 0, false, now, ct);
         await TellAsync(actor, member, "bundle", ct);
         return await TallyAsync(actor, member, message, now, ct);
     }

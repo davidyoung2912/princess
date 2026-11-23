@@ -81,7 +81,7 @@ public class ChatBundleRulesTests
         Assert.True(poll.Options[0].Length <= ChatPlanningRules.MaxOption);
         Assert.Equal(["event:a:3", null], poll.Refs);
         Assert.Null(ChatPlanningRules.CleanPoll("Which?", ["", "Pizza"], ["event:zzz:3", null], Title));   // a ref that cannot be built
-        Assert.Single(ChatPlanningRules.CleanPoll("Which?", ["", "", "x"], ["event:a:3", "event:a:3", null], Title)!.Refs!.Where(r => r == "event:a:3"));
+        Assert.Single(ChatPlanningRules.CleanPoll("Which?", ["", "", "x"], ["event:a:3", "event:a:3", null], Title)!.Refs!, r => r == "event:a:3");
         var six = new[] { "1", "2", "3", "4", "5", "6" };
         Assert.Null(ChatPlanningRules.CleanPoll("Which?", six));
         Assert.NotNull(ChatPlanningRules.CleanPoll("Which?", ["", "2", "3", "4", "5", "6"], ["event:b:3", null, null, null, null, null], Title));

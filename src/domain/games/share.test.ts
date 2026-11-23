@@ -234,3 +234,31 @@ describe('results', () => {
     expect(resultSeconds('d=easy;p=0;xtm=5')).toBeNull()
   })
 })
+
+describe('pencil notes for futoshiki, kenken and kakuro', () => {
+  for (const game of ['futoshiki', 'kenken', 'kakuro'] as const) {
+    it(`${game}: marks on blank squares go only when ticked and survive, and none are made for filled or given squares`, () => {
+      const s = make(game, seeded(11)) as Extract<SharedGame, { game: typeof game }>
+      const free = s.entries.flatMap((e, i) => (e === 0 && (game === 'kakuro' ? (s.puzzle as { white: boolean[] }).white[i] && s.puzzle.puzzle[i] === 0 : (s.puzzle as { puzzle: number[] }).puzzle[i] === 0) ? [i] : []))
+      const notes = Array<number>(s.entries.length).fill(0)
+      notes[free[0]] = 0b101
+      notes[free[1]] = 0b100000001
+      const marked = { ...s, notes } as SharedGame
+      expect(encodeGame(marked, 'current')).not.toContain(';n=')           // not ticked
+      expect(encodeGame(marked, 'start', true)).not.toContain(';n=')       // the clues alone
+      const back = decodeGame(game, encodeGame(marked, 'current', true)) as typeof s
+      expect(back.notes[free[0]]).toBe(0b101)
+      expect(back.notes[free[1]]).toBe(0b100000001)
+      expect(back.notes.filter((m) => m !== 0)).toHaveLength(2)
+      const filled = s.entries.findIndex((e) => e !== 0)
+      const bad = { ...s, notes: notes.map((m, i) => (i === filled ? 0b11 : m)) } as SharedGame
+      expect((decodeGame(game, encodeGame(bad, 'current', true)) as typeof s).notes[filled]).toBe(0)
+    })
+    it(`${game}: a notes string of the wrong length or not made of marks is refused`, () => {
+      const s = make(game, seeded(12))
+      const data = encodeGame(s, 'start')
+      expect(decodeGame(game, `${data};n=00`)).toBeNull()
+      expect(decodeGame(game, `${data};n=${'zz'.repeat(25)}`)).toBeNull()
+    })
+  }
+})

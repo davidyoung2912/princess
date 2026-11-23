@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { clock } from '../../../domain/games/sudoku'
 import { startVisibleInterval } from '../../../hooks/visibleInterval'
-import { clearIncoming, heldTarget, peekIncoming } from '../../../domain/games/incoming'
+import { beatOutcome, clearIncoming, elapsedNow, heldTarget, noteElapsed, peekIncoming } from '../../../domain/games/incoming'
 import { encodeGame, resultData, startOnly, type ShareMode, type SharedGame } from '../../../domain/games/share'
 import { Button, LinkButton } from '../../Button'
 import { Card } from '../../Card'
@@ -17,6 +17,7 @@ import { MessageSquarePlus } from 'lucide-react'
 export function useGameClock(running: boolean): { seconds: number; reset: () => void } {
   const [seconds, setSeconds] = useState(0)
   useEffect(() => (running ? startVisibleInterval(() => setSeconds((s) => s + 1), 1000) : undefined), [running])
+  useEffect(() => noteElapsed(seconds), [seconds])
   return { seconds, reset: () => setSeconds(0) }
 }
 
@@ -71,6 +72,14 @@ export function HintBox({ text, dismissLabel, onDismiss, children }: { text: str
   )
 }
 
+/** Phase B10: when the puzzle came from a result in a chat, how this attempt went against the time to beat. Nothing when it did not. */
+function BeatLine() {
+  const target = heldTarget()
+  const outcome = beatOutcome(elapsedNow(), target)
+  if (!outcome || target === undefined) return null
+  return <p role="status">{t(`game.beat.${outcome.result}`, { time: clock(target), gap: clock(outcome.gap) })}</p>
+}
+
 /** The result card shown when a game ends. It takes focus when it appears so a screen reader reads it. */
 export function SolvedCard({ title, children }: { title: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -79,6 +88,7 @@ export function SolvedCard({ title, children }: { title: string; children: React
     <div ref={ref} tabIndex={-1} className="game-result">
       <Card info>
         <h2 className="game-result__title">{title}</h2>
+        <BeatLine />
         {children}
       </Card>
     </div>
@@ -93,7 +103,7 @@ export function useIncomingGame(game: string): { incoming: { shared: SharedGame;
   const [incoming] = useState(() => { const held = peekIncoming(game); return held ? { shared: held.mode === 'start' ? startOnly(held.shared) : held.shared, mode: held.mode } : null })
   const [fromChat, setFromChat] = useState<ShareMode | null>(incoming?.mode ?? null)
   useEffect(() => () => clearIncoming(), [])
-  return { incoming, fromChat, leaveChat: () => setFromChat(null) }
+  return { incoming, fromChat, leaveChat: () => { clearIncoming(); setFromChat(null) } }
 }
 
 /** The line above a puzzle that came from a chat: where it came from, a way back, and a way to a puzzle of the player's own. */

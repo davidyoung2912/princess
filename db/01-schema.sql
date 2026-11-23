@@ -3641,6 +3641,19 @@ CREATE TABLE dbo.ChatResponses (
 );
 END
 GO
+-- Phase B10: "Done, how was it?" on a decided poll. One rating per person per poll: 1 loved it, 2 it was fine, 3 not for me. Counted for the thread, never named.
+IF OBJECT_ID(N'dbo.ChatOutcomes', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatOutcomes (
+  MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL, Rating TINYINT NOT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatOutcomes_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ChatOutcomes PRIMARY KEY (MessageId, UserId),
+  CONSTRAINT CK_ChatOutcomes_Rating CHECK (Rating BETWEEN 1 AND 3),
+  CONSTRAINT FK_ChatOutcomes_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatOutcomes_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO
 -- A second admin (the creator is always one) and announcement-only groups, where only admins post.
 IF COL_LENGTH(N'dbo.ChatGroupMembers', N'IsAdmin') IS NULL
   ALTER TABLE dbo.ChatGroupMembers ADD IsAdmin BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_IsAdmin DEFAULT 0;

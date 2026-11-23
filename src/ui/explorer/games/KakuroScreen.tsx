@@ -28,7 +28,7 @@ export function KakuroScreen() {
   const [game, setGame] = useState(() => sent?.puzzle ?? generateKakuro('easy'))
   const n = game.size
   const [entries, setEntries] = useState<number[]>(() => sent?.entries ?? Array(n * n).fill(0))
-  const [notes, setNotes] = useState<number[]>(() => Array(n * n).fill(0))
+  const [notes, setNotes] = useState<number[]>(() => sent?.notes ?? Array(n * n).fill(0))
   const [history, setHistory] = useState<Snapshot[]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [pencil, setPencil] = useState(false)
@@ -256,7 +256,7 @@ export function KakuroScreen() {
           <button type="button" className="sd-tool" onClick={erase} disabled={selected === null}><Erase aria-hidden="true" focusable="false" /><span>{t('sudoku.erase')}</span></button>
           <button type="button" className="sd-tool" aria-pressed={pencil} onClick={() => setPencil((p) => !p)}><Notes aria-hidden="true" focusable="false" /><span>{t(pencil ? 'sudoku.notesOn' : 'sudoku.notesOff')}</span></button>
           <button type="button" className="sd-tool" onClick={showHint} disabled={solved}><Lightbulb aria-hidden="true" focusable="false" /><span>{t('sudoku.hint')}</span></button>
-          <GameShare shared={{ game: 'kakuro', puzzle: game, entries: entries, notes: [] }} title={t('gx.game.kakuro.title')} done={solved} seconds={seconds} />
+          <GameShare shared={{ game: 'kakuro', puzzle: game, entries: entries, notes }} title={t('gx.game.kakuro.title')} done={solved} seconds={seconds} />
         </div>
         <div className="sd-pad" role="group" aria-label={t('sudoku.pad')}>
           {DIGITS.map((d) => (

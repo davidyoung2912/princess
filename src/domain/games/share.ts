@@ -80,12 +80,33 @@ const pairs = (data: string): Map<string, string> | null => {
   return out
 }
 
+/** Pencil marks for the games with nine digits or fewer: two base-32 characters a cell (a nine-bit mask), nothing for a cell that is given or already filled. Undefined when there are none to send. */
+function noteText(notes: readonly number[], len: number, skip: (i: number) => boolean): string | undefined {
+  const marks = Array.from({ length: len }, (_, i) => (skip(i) ? 0 : (notes[i] ?? 0) & 511))
+  return marks.some((v) => v !== 0) ? marks.map((v) => B32[(v >> 5) & 15] + B32[v & 31]).join('') : undefined
+}
+
+/** The marks `noteText` made, or all zero when there are none; null when they are the wrong length or not marks. */
+function readNoteText(m: Map<string, string>, len: number, skip: (i: number) => boolean): number[] | null {
+  const n = m.get('n')
+  if (n === undefined) return Array(len).fill(0)
+  if (n.length !== len * 2) return null
+  const out: number[] = []
+  for (let i = 0; i < len; i++) {
+    const hi = B32.indexOf(n[i * 2])
+    const lo = B32.indexOf(n[i * 2 + 1])
+    if (hi < 0 || lo < 0 || hi > 15) return null
+    out.push(skip(i) ? 0 : (hi << 5) | lo)
+  }
+  return out
+}
+
 const join = (m: Record<string, string | undefined>): string => Object.entries(m).filter(([, v]) => v !== undefined).map(([k, v]) => `${k}=${v}`).join(';')
 
 /** The text for a puzzle. `current` adds the digits the player has placed, and the pencil marks only when `withNotes`; `start` is the clues alone. */
 export function encodeGame(s: SharedGame, mode: ShareMode, withNotes = false): string {
-  if (s.game === 'futoshiki' || s.game === 'kenken' || s.game === 'hitori') return encodeGrid(s, mode)
-  if (isLaterGame(s)) return encodeLater(s, mode)
+  if (s.game === 'futoshiki' || s.game === 'kenken' || s.game === 'hitori') return encodeGrid(s, mode, withNotes)
+  if (isLaterGame(s)) return encodeLater(s, mode, withNotes)
   if (isThirdGame(s)) return encodeThird(s, mode)
   const p = s.puzzle
   const clues = p.puzzle
@@ -202,12 +223,13 @@ const OP_LETTER: Record<Op, string> = { add: 'a', sub: 's', mul: 'm', div: 'd', 
 const LETTER_OP: Record<string, Op> = { a: 'add', s: 'sub', m: 'mul', d: 'div', g: 'given' }
 
 /** Futoshiki, KenKen and Hitori: the same `d=` level and `p=` digits as the others, plus what each game needs (`s` signs, `g`/`o`/`t` cages, `e` entries or marks). */
-function encodeGrid(s: Extract<SharedGame, { game: 'futoshiki' | 'kenken' | 'hitori' }>, mode: ShareMode): string {
+function encodeGrid(s: Extract<SharedGame, { game: 'futoshiki' | 'kenken' | 'hitori' }>, mode: ShareMode, withNotes: boolean): string {
   const p = s.puzzle
   const clues = s.game === 'hitori' ? s.puzzle.values.map((v) => v % 10) : (p as FutoshikiPuzzle | KenKenPuzzle).puzzle
   const entries = s.game === 'hitori' ? s.entries : clues.map((c, i) => (c !== 0 ? 0 : s.entries[i] ?? 0))
   const extra: Record<string, string | undefined> = {}
   if (mode === 'current' && entries.some((v) => v !== 0)) extra.e = entries.join('')
+  if (mode === 'current' && withNotes && s.game !== 'hitori') extra.n = noteText(s.notes, clues.length, (i) => clues[i] !== 0 || entries[i] !== 0)
   if (s.game === 'futoshiki') return join({ d: p.difficulty, p: clues.join(''), s: s.puzzle.signs.flatMap((g) => [g.lo, g.hi]).join(','), ...extra })
   if (s.game === 'kenken') {
     const cages = s.puzzle.cages
@@ -254,7 +276,9 @@ function decodeFutoshiki(m: Map<string, string>): SharedGame | null {
   if (solution.some((v) => v === 0) || futoshikiConflicts(solution, n, signs).size > 0) return null
   const entries = readGridEntries(m, p.length, n, (i) => clues[i] !== 0)
   if (!entries) return null
-  return { game: 'futoshiki', puzzle: { size: n, difficulty: d, puzzle: clues, solution, signs }, entries, notes: Array(p.length).fill(0) }
+  const notes = readNoteText(m, p.length, (i) => clues[i] !== 0 || entries[i] !== 0)
+  if (!notes) return null
+  return { game: 'futoshiki', puzzle: { size: n, difficulty: d, puzzle: clues, solution, signs }, entries, notes }
 }
 
 function decodeKenKen(m: Map<string, string>): SharedGame | null {
@@ -293,7 +317,9 @@ function decodeKenKen(m: Map<string, string>): SharedGame | null {
   if (clues.some((c, i) => c !== 0 && c !== solution[i])) return null
   const entries = readGridEntries(m, p.length, n, (i) => clues[i] !== 0)
   if (!entries) return null
-  return { game: 'kenken', puzzle: { size: n, difficulty: d, puzzle: clues, solution, cages }, entries, notes: Array(p.length).fill(0) }
+  const notes = readNoteText(m, p.length, (i) => clues[i] !== 0 || entries[i] !== 0)
+  if (!notes) return null
+  return { game: 'kenken', puzzle: { size: n, difficulty: d, puzzle: clues, solution, cages }, entries, notes }
 }
 
 function decodeHitori(m: Map<string, string>): SharedGame | null {
@@ -326,7 +352,7 @@ const dims = (rows: number, cols: number): string => String(rows).padStart(2, '0
 const clueRun = (r: readonly number[]): string => (r.length === 0 ? '0' : r.map((v) => v.toString(16)).join(''))
 
 /** The text for one of the later six: the clues, never the solution; `e` is what the player has put down when sending the board so far. */
-function encodeLater(s: LaterShare, mode: ShareMode): string {
+function encodeLater(s: LaterShare, mode: ShareMode, withNotes: boolean): string {
   const p = s.puzzle
   const extra = (list: readonly number[], sep = ''): Record<string, string | undefined> => (mode === 'current' && list.some((v) => v !== 0) ? { e: list.join(sep) } : {})
   switch (s.game) {
@@ -344,7 +370,7 @@ function encodeLater(s: LaterShare, mode: ShareMode): string {
     case 'kakuro': {
       const q = s.puzzle
       const entries = q.puzzle.map((g, i) => (q.white[i] && g === 0 ? s.entries[i] ?? 0 : 0))
-      return join({ d: q.difficulty, p: q.puzzle.join(''), w: q.white.map((w) => (w ? '1' : '0')).join(''), s: q.runs.map((r) => r.sum).join(','), ...extra(entries) })
+      return join({ d: q.difficulty, p: q.puzzle.join(''), w: q.white.map((w) => (w ? '1' : '0')).join(''), s: q.runs.map((r) => r.sum).join(','), ...extra(entries), ...(mode === 'current' && withNotes ? { n: noteText(s.notes, q.puzzle.length, (i) => !q.white[i] || q.puzzle[i] !== 0 || entries[i] !== 0) } : {}) })
     }
     case 'slitherlink':
       return join({ d: p.difficulty, p: s.puzzle.clues.map((c) => (c === NONE ? 4 : c)).join(''), ...extra(s.entries) })
@@ -443,7 +469,9 @@ function decodeKakuro(m: Map<string, string>): SharedGame | null {
   if (runs.some((r) => r.cells.reduce((a, i) => a + solution[i], 0) !== r.sum || new Set(r.cells.map((i) => solution[i])).size !== r.cells.length)) return null
   const entries = readGridEntries(m, p.length, 9, (i) => !white[i] || puzzle[i] !== 0)
   if (!entries) return null
-  return { game: 'kakuro', puzzle: { size: n, difficulty: d, white, puzzle, solution, runs }, entries, notes: [] }
+  const notes = readNoteText(m, p.length, (i) => !white[i] || puzzle[i] !== 0 || entries[i] !== 0)
+  if (!notes) return null
+  return { game: 'kakuro', puzzle: { size: n, difficulty: d, white, puzzle, solution, runs }, entries, notes }
 }
 
 function decodeSlitherlink(m: Map<string, string>): SharedGame | null {

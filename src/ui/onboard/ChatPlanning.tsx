@@ -96,7 +96,7 @@ export function PollMessage({ conversationId, message, canAct, onChanged, held, 
         <p className="muted">{t('cpoll.compromise', { slot: poll.options[compromiseSlot(tally.counts, poll.clashes)!] ?? '' })}</p>
       )}
       <p role="status" className="visually-hidden">{announce}</p>
-      {tally.decided !== undefined && poll.options[tally.decided] !== undefined && <Decision poll={poll} option={tally.decided} />}
+      {tally.decided !== undefined && poll.options[tally.decided] !== undefined && <Decision poll={poll} option={tally.decided} conversationId={conversationId} messageId={message.id} tally={tally} setTally={setTally} canAct={canAct} />}
       {tally.mayDecide && tally.decided === undefined && (
         <div className="chat-poll__decide">
           <label className="field__label" htmlFor={`${name}-decide`}>{t('cpoll.decide.pick')}</label>
@@ -120,7 +120,7 @@ export function PollMessage({ conversationId, message, canAct, onChanged, held, 
  * Phase B4: what the group decided. Each member chooses for themselves: Add to my day, Remind me (30 minutes ahead; both go through the normal programme), or Open to book a tour or dinner on its own screen.
  * Nothing here ever books, pays or changes anyone's day without their own tap.
  */
-function Decision({ poll, option }: { poll: ChatPoll; option: number }) {
+function Decision({ poll, option, conversationId, messageId, tally, setTally, canAct }: { poll: ChatPoll; option: number; conversationId: string; messageId: string; tally: ChatTally; setTally: (next: ChatTally) => void; canAct: boolean }) {
   const bundle = poll.bundles?.[option] ?? null
   const actions = decisionActions(bundle)
   const [said, setSaid] = useState('')
@@ -138,8 +138,34 @@ function Decision({ poll, option }: { poll: ChatPoll; option: number }) {
           {link && <LinkButton to={link} variant="secondary" aria-label={t('cpoll.decide.open.label', { option: title })}>{actions.book ? t('cpoll.decide.book') : t('card.open')}</LinkButton>}
         </p>
       )}
+      <HowWasIt conversationId={conversationId} messageId={messageId} tally={tally} setTally={setTally} canAct={canAct} />
       <p role="status" className="visually-hidden">{said}</p>
       {(add.error || remind.error) && <p role="alert" className="field__error">{t('cpoll.decide.dayFailed')}</p>}
+    </div>
+  )
+}
+
+/** Phase B10: "Done, how was it?" on what the group decided. Loved it, It was fine or Not for me; counted for everyone, never named; tapping your own answer again takes it back. */
+const HOW_LABELS = ['cpoll.how.loved', 'cpoll.how.fine', 'cpoll.how.not'] as const
+function HowWasIt({ conversationId, messageId, tally, setTally, canAct }: { conversationId: string; messageId: string; tally: ChatTally; setTally: (next: ChatTally) => void; canAct: boolean }) {
+  const rate = useAction(async (how: number) => {
+    const same = tally.myHow === how
+    setTally(await sendWithin(api.chatConversations.bundleOutcome(conversationId, messageId, !same, same ? undefined : how)))
+  })
+  const counts = tally.how ?? []
+  const total = counts.reduce((a, b) => a + b, 0)
+  return (
+    <div role="group" aria-label={t('cpoll.how')}>
+      <p className="muted">{t('cpoll.how')}</p>
+      <p className="button-row">
+        {HOW_LABELS.map((key, i) => (
+          <Button key={key} variant={tally.myHow === i + 1 ? 'primary' : 'secondary'} aria-pressed={tally.myHow === i + 1} disabled={!canAct || rate.busy} onClick={() => void rate.run(i + 1)}>
+            {t(key)}{(counts[i] ?? 0) > 0 ? ` (${counts[i]})` : ''}
+          </Button>
+        ))}
+      </p>
+      <p role="status" className="visually-hidden">{total > 0 ? t('cpoll.how.total', { count: total }) : ''}</p>
+      {rate.error && <p role="alert" className="field__error">{t('bundle.done.failed')}</p>}
     </div>
   )
 }

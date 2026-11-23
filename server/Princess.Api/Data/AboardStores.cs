@@ -331,6 +331,9 @@ public sealed class ChatPinRow
 /// <summary>One person's answer to a poll (<c>Choice</c> is the option index) or a plan (0 going, 1 maybe, 2 no). <c>AddedToPlan</c>: this answer put the plan's event on their programme.</summary>
 public sealed record ChatResponseRow(long MessageId, long UserId, int Choice, bool AddedToPlan);
 
+/// <summary>One person's "how was it?" on a decided poll (1 loved it, 2 fine, 3 not for me).</summary>
+public sealed record ChatOutcomeRow(long MessageId, long UserId, int Rating);
+
 /// <summary>One person's reaction to one message.</summary>
 public sealed record ChatReactionRow(long MessageId, long UserId, string Emoji);
 
@@ -533,6 +536,10 @@ public interface IChatStore
     Task<ChatResponseRow?> GetResponseAsync(long messageId, long userId, CancellationToken ct);
     /// <summary>Everyone's answers to the given polls and plans, in one query.</summary>
     Task<List<ChatResponseRow>> ListResponsesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct);
+    /// <summary>Records the person's "how was it?" on a decided poll, replacing an earlier one; a rating of 0 takes it back.</summary>
+    Task SetOutcomeAsync(long messageId, long userId, int rating, DateTime at, CancellationToken ct);
+    /// <summary>Everyone's ratings for the given decided polls, in one query.</summary>
+    Task<List<ChatOutcomeRow>> ListOutcomesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct);
     /// <summary>Closes a poll now. False when it was already closed on demand.</summary>
     Task<bool> ClosePollAsync(long messageId, DateTime at, CancellationToken ct);
     /// <summary>Phase B4: records the decision on a poll that has none yet (closing it if it is still open). False when it was already decided.</summary>

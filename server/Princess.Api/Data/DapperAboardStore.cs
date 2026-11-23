@@ -990,6 +990,29 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return (await c.QueryAsync<ChatResponseRow>(Sql.Cmd("SELECT MessageId, UserId, Choice, AddedToPlan FROM dbo.ChatResponses WHERE MessageId IN @ids", new { ids = messageIds.ToArray() }, null, ct))).ToList();
     }
 
+    public async Task SetOutcomeAsync(long messageId, long userId, int rating, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        if (rating == 0)
+        {
+            await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatOutcomes WHERE MessageId = @messageId AND UserId = @userId", new { messageId, userId }, null, ct));
+            return;
+        }
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.ChatOutcomes WITH (HOLDLOCK) AS t
+            USING (SELECT @messageId AS MessageId, @userId AS UserId) AS s ON t.MessageId = s.MessageId AND t.UserId = s.UserId
+            WHEN MATCHED THEN UPDATE SET Rating = @rating, [At] = @at
+            WHEN NOT MATCHED THEN INSERT (MessageId, UserId, Rating, [At]) VALUES (@messageId, @userId, @rating, @at);
+            """, new { messageId, userId, rating, at }, null, ct));
+    }
+
+    public async Task<List<ChatOutcomeRow>> ListOutcomesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct)
+    {
+        if (messageIds.Count == 0) return [];
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatOutcomeRow>(Sql.Cmd("SELECT MessageId, UserId, Rating FROM dbo.ChatOutcomes WHERE MessageId IN @ids", new { ids = messageIds.ToArray() }, null, ct))).ToList();
+    }
+
     public async Task<bool> DecidePollAsync(long messageId, int option, long decidedBy, DateTime at, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

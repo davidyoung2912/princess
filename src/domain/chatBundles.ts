@@ -20,14 +20,24 @@ export interface BundleType {
   qr: 'direct' | 'handoff'
 }
 
-/** Phase B11: the small picture on a bundle card, one glyph per family. Decorative only (the card's words say it all), so it is hidden from screen readers. */
-export const FAMILY_GLYPHS: Readonly<Record<BundleType['family'], string>> = {
-  venue: '🍽️', menu: '📋', event: '🎭', excursion: '🧭', dinner: '🕯️', port: '⚓', place: '📍', dish: '🥘', game: '🧩',
+/** Phase B11: which of the app's own icons a bundle card wears, so a card in chat looks like the same thing in the explorer. */
+export type BundleIcon = 'dining' | 'entertainment' | 'shopping' | 'spa' | 'exercise' | 'activities' | 'excursions' | 'games' | 'port' | 'place' | 'menu'
+
+/** The screen a bundle opens decides its icon (a show opens the entertainment explorer, a spa slot the spa explorer); a type with no explorer screen keeps its own. */
+const ICON_BY_PATH: readonly (readonly [string, BundleIcon])[] = [
+  ['/entertainment', 'entertainment'], ['/dining-today', 'dining'], ['/shopping-today', 'shopping'], ['/excursions-explorer', 'excursions'],
+  ['/spa-explorer', 'spa'], ['/exercise-explorer', 'exercise'], ['/activities-explorer', 'activities'], ['/games-explorer', 'games'],
+]
+const ICON_BY_FAMILY: Readonly<Record<BundleType['family'], BundleIcon>> = {
+  venue: 'dining', menu: 'menu', event: 'activities', excursion: 'excursions', dinner: 'dining', port: 'port', place: 'place', dish: 'dining', game: 'games',
 }
 
-export function bundleGlyph(type: string): string {
-  const row = BUNDLE_TYPES[type]
-  return row ? FAMILY_GLYPHS[row.family] : ''
+/** The icon for a bundle, or null for a type this app does not know. */
+export function bundleIcon(b: Pick<ChatBundle, 'type' | 'path'>): BundleIcon | null {
+  const row = BUNDLE_TYPES[b.type]
+  if (!row) return null
+  const path = (b.path ?? '').split('?')[0]
+  return ICON_BY_PATH.find(([prefix]) => path === prefix || path.startsWith(`${prefix}/`))?.[1] ?? ICON_BY_FAMILY[row.family]
 }
 
 /** The registry: every type this app can draw and open. A later phase adds a row here and the card, the dialog and the link rules follow. */

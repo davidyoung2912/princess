@@ -159,6 +159,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var answerable = page.Where(m => m.DeletedAt is null && (m.Kind == ChatPlanningRules.Poll || m.Kind == ChatCardRules.Plan || m.Kind == ChatBoardRules.Kind || m.Kind == ChatBundleRules.Kind)).Select(m => m.Id).ToList();
         var answers = answerable.Count == 0 ? new List<ChatResponseRow>() : await store.ListResponsesAsync(answerable, ct);
         var answersOf = answers.ToLookup(r => r.MessageId);
+        var decidedIds = page.Where(m => m.DeletedAt is null && m.Kind == ChatPlanningRules.Poll && m.DecidedOption is not null).Select(m => m.Id).ToList();
+        var outcomesOf = (decidedIds.Count == 0 ? new List<ChatOutcomeRow>() : await store.ListOutcomesAsync(decidedIds, ct)).ToLookup(o => o.MessageId);
         // Phase B3: a poll option that is a bundle is rebuilt for this reader on every read, so a thing their sailing does not have, or that is gone, shows as no longer available (null).
         var pollBundles = new Dictionary<long, (List<ChatBundleDto?> Bundles, List<int> Gone)>();
         foreach (var m in page.Where(m => m.DeletedAt is null && m.Kind == ChatPlanningRules.Poll))
@@ -222,7 +224,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
                 Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()],
                 Poll: m.Kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(m.Payload) is { } poll ? new ChatPollDto(poll.Question, poll.Options, pollBundles.TryGetValue(m.Id, out var pb) ? pb.Bundles : null, pollBundles.TryGetValue(m.Id, out var pg) && pg.Gone.Count > 0 ? pg.Gone : null, poll.Slots, slotClashes.TryGetValue(m.Id, out var sc) && sc.Count > 0 ? sc : null) : null,
                 Board: boards.GetValueOrDefault(m.Id),
-                Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers, member.Kind) : null,
+                Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers, member.Kind, [.. outcomesOf[m.Id]]) : null,
                 Avatar: name is null ? null : byId.GetValueOrDefault(m.FromUserId)?.Avatar));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
@@ -249,10 +251,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (await store.FindMessageAsync(source.GroupId, actor.Id, messageId, ct) is not { } original || original.DeletedAt is not null || original.IsSystem || original.FromStanley
             || original.Kind != ChatBundleRules.Kind || original.FromUserId == 0) return null;
         if (ChatBundleRules.Parse(original.Payload) is not { } was || was.Ref != bundle.Ref) return null;
-        if (was.From is { Length: > 0 } first) return first;   // a forward of a forward keeps the first sender's name
-        if (original.FromUserId == actor.Id) return null;
+        if (was.From is { Length: > 0 } || original.FromUserId == actor.Id) return ChatBundleRules.ForwardName(was.From, original.FromUserId == actor.Id, null);
         var people = await store.ListMembersAsync(source.GroupId, ct);
-        return people.FirstOrDefault(p => p.UserId == original.FromUserId) is { } from ? ShortName(from) : null;
+        return ChatBundleRules.ForwardName(null, false, people.FirstOrDefault(p => p.UserId == original.FromUserId) is { } from ? ShortName(from) : null);
     }
 
     public async Task<ChatMessageDto> SendAsync(UserRecord actor, Guid conversationId, SendChatRequest? body, CancellationToken ct)
@@ -373,7 +374,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var active = (await store.ListMembersAsync(member.GroupId, ct)).Where(p => p.Status == ChatConversationRules.Active).ToDictionary(p => p.PublicId, p => p.UserId);
             mentions = ChatCardRules.ValidMentions(named, active, actor.Id);
         }
-        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, now, ct, urgency: urgency, quoted: quoted, kind: kind, payload: payload, mentions: mentions);
+        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, now, ct, urgency: urgency, quoted: quoted, kind: kind, payload: payload, mentions: mentions, built: built);
         // Who sent an urgent message and where, never what it said.
         if (urgency == ChatUrgencyRules.Urgent)
             await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "chat.urgent.send", Outcome = AuditOutcome.Success, Target = "conversation:" + conversationId, Detail = actor.Role == "admin" ? "staff" : "guardian" }, ct);
@@ -437,7 +438,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (ChatControlRules.OverSendLimit(await store.CountSentInAsync(member.GroupId, actor.Id, now - ChatControlRules.SendPeriod, ct))) throw ApiException.TooMany("rate");
     }
 
-    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal, ChatMessageRow? quoted = null, string kind = ChatCardRules.Text, string? payload = null, List<long>? mentions = null, IReadOnlyList<string>? morePhotos = null)
+    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal, ChatMessageRow? quoted = null, string kind = ChatCardRules.Text, string? payload = null, List<long>? mentions = null, IReadOnlyList<string>? morePhotos = null, Dictionary<string, ChatBundle>? built = null)
     {
         var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, now, ct, viaSms, urgency, quoted?.Id, kind, payload, mentions, morePhotos);
         ChatQuoteDto? quote = null;
