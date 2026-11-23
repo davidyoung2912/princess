@@ -183,13 +183,38 @@ Live shared boards or two people playing one puzzle (the Games "multi-player" mo
 
 ## 6. Phases
 
+Order: Q0 (scanner), B1, Q1 (QR for bundles), Q2 (QR invites), then B2 onward; each B phase also adds its types to the QR forms (Q1) and is not done until it shows **Show QR code** in the dialog.
+
 Rules for every phase (CLAUDE.md): English only; verify with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` only (no browser testing, no `dotnet test`); commit only when asked, then stop so the user can `/clear`; do not start the next phase until asked. Server code gets unit tests written but not run (open question 2).
+
+### Q0: the in-app QR scanner (before B1)
+
+- Top-bar **scan icon** beside Search (name "Scan a code"); opens a full-screen scanner dialog without leaving the page: focus-trapped, Escape closes, camera off on close, tab hidden or result found; typed-code box kept for guests who decline the camera.
+- **Safari and Firefox fallback**: a small JavaScript QR decoder used when `BarcodeDetector` is missing (the existing `CodeScanner` shows no scan button on an iPhone today). Check the bundle cost and load it only when the scanner opens.
+- **Fix the headers**: `Permissions-Policy` `camera=(self)` in `server/Princess.Api/Services/SecurityHeaders.cs` and `docs/static-host-headers.md`, with the security test updated.
+- `scanCode.ts` extended to know the new `/s` and `/s/<code>` addresses and hand them to a receive-sheet component (a stub that says "Not available yet" until Q1). Existing place and link codes keep working. The `CodeScanner` card reuses the same scanner component.
+- Strings, a shared `useCamera` hook (permission states: asking, denied, unavailable, in use), tests for the reader and the hook's state logic, and the icon in the header.
+- Done when: the top-bar icon opens a scanner that reads a place code on Chrome and on a browser with only the fallback, and the camera light goes off when it closes.
 
 ### B1: the foundation (send dialog, bundle card, registry), with venue and menu
 
 - Server: `ChatBundleRules`, `ChatBundleService`, `kind: 'bundle'` on send and read, preview and push words, stats and search treatment of `bundle`, `ChatBundleRulesTests.cs`. Venue and menu re-expressed through the registry.
 - Front end: `chatBundles.ts`, `parseBundle`, `bundleLink`, `SendDialog`, `ShareButton`, `BundleCard`, thread hook-up, fallback for unknown types, queued send, SMS-bridge check; `SendToChat` opens the dialog.
 - Done when: a venue or menu goes to two chats at once, an older client shows the fallback, and the old card kinds are untouched.
+
+### Q1: show a QR code for any bundle, and the receive sheet
+
+- Server: `ChatShareService`-style **handoff**: `POST /me/shares` (the bundle or invite, a life of 15 minutes, 1 hour or 24 hours), `GET /me/shares/{code}` (the receiver's rebuilt, re-checked preview), `DELETE /me/shares/{code}` (stop), scan counts to the sender, table `Shares` and script, throttles, tests written beside the chat tests (not run; open question 2).
+- Front end: the registry gives each type its QR form (direct or handoff); `SendDialog` gains **Show QR code** next to Send (same preview, same note, same mode choice); show-code view with the text version, **Copy link**, a life picker for handoff codes and **Stop sharing**; the **receive sheet** opened by the scanner, with the bundle card, who it is from, the receiver's state line and the same actions as the chat card; signed-out round trip.
+- Applies to everything built so far (venue, menu); **every later phase adds its types to the QR forms as part of its own done-when**.
+- Done when: one guest shows a venue code, a second guest scans it from the header and chooses Save or Add to my day with no chat involved, and a stopped or expired code gives the single "stopped working" message.
+
+### Q2: group invites and connect codes by QR
+
+- **Group invite code** (admin of a made group, or the creator): scan, see the group's name, who is in it and who invited, then Join or Decline; eligibility, size cap, blocks, same-sailing and guardian approval exactly as for an in-app invitation (reuse `ChatGroupRules` and the invitation flow; no new way into a group); the admin can stop it, and it stops itself when the group is full.
+- **Connect code** (a guest's own, from the chat People page): scan, see the person (first name and last initial), then **Send a connection request**; the other person still accepts; a supervised child's requests follow the guardian rules.
+- Poll, proposal and day-board codes from B3 to B6: members open them in chat; a non-member gets the group-invite sheet and then lands on the object (default of open question 8).
+- Done when: two guests next to each other can connect, or one can join the other's group, by scan alone, with every existing safety rule still enforced and tested.
 
 ### B2: plannable bundles and proposals (events, shows, excursions, dinners)
 
@@ -253,6 +278,9 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 - **Privacy in clashes.** Clash markers are computed on the viewer's device or for the viewer only; a test asserts that no endpoint returns another person's clash.
 - **Payload size and decode cost for games** on the largest grids: the 4 KB cap, tight encoders, and a measured "Setting up the puzzle" state for hard Killer and 13x13 Codeword.
 - **Chat stats and search** count messages by kind; `bundle` and v2 polls are included or excluded deliberately in B1 and B3.
+- **Strangers' codes.** A QR is anonymous to look at; the receive sheet never acts, never opens another origin, names the sender only for people on the same sailing, and codes are short-lived, throttled and stoppable. A fake code pasted over a real one can do no more than a person typing the address could.
+- **Camera on iPhone** needs the JavaScript fallback and the header change together; Q0 checks both (the header change is the likelier thing to be forgotten).
+- **Code size.** Only public refs are direct codes; anything larger goes through a handoff code so a code stays easy to scan.
 - **C# changes are not compiled by the npm checks** (open question 2).
 
 ## 8. Open questions (defaults I will use unless told otherwise)
@@ -264,3 +292,6 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 5. **Decision effect**: offers Add to my day, never automatic (default).
 6. **"Anyone can add to a day board"**: on in 1:1 and party chats, admin-set in made groups (default).
 7. **Game notes and results**: notes only when ticked; result time and level always, hints used only when ticked; "Solved by" counts for all, names only for those who report (default).
+8. **Poll, proposal and board codes for non-members**: show the group invite and land on the object after joining; if the group does not allow invites, offer "Make your own poll from these options" (default).
+9. **Handoff code life**: 15 minutes by default, 1 hour or 24 hours on request; scanned by many until it expires or is stopped (default).
+10. **Name on the receive sheet**: first name and last initial for people on the same sailing, otherwise "a guest" (default).
