@@ -41,6 +41,12 @@ describe('createTracker', () => {
     t.shared()
     expect(t.take()).toEqual({ day: '2027-03-09', counters: { opens: 1, views: 2, 'area.me': 2, 'route.me.stats': 2, seconds: 30, 'hour.21': 30, shares: 1 } })
   })
+  it('counts every question asked of Stanley, which the server\'s rate-limit ledger cannot give', () => {
+    const t = createTracker(at(9))
+    t.asked()
+    t.asked()
+    expect(t.take()).toEqual({ day: '2027-03-09', counters: { asks: 2 } })
+  })
   it('starts again from zero after a take, and reports nothing when nothing happened', () => {
     const t = createTracker(at(8))
     expect(t.take()).toBeNull()

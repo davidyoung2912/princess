@@ -34,6 +34,8 @@ export interface Tracker {
   active(seconds: number): void
   /** The guest shared a stat. */
   shared(): void
+  /** The guest asked Stanley a question (however he answers it). */
+  asked(): void
   /** Everything counted since the last take, or null when nothing was. Counting starts again from zero. */
   take(): StatsBatch | null
   /** Puts a batch back after a failed send, so it goes with the next one. */
@@ -60,6 +62,7 @@ export function createTracker(now: () => Date = () => new Date()): Tracker {
       add(`hour.${String(now().getHours()).padStart(2, '0')}`, n)
     },
     shared: () => add('shares', 1),
+    asked: () => add('asks', 1),
     take() {
       if (Object.keys(counters).length === 0) return null
       const batch = { day, counters }

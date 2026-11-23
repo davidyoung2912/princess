@@ -24,7 +24,7 @@ Status key: [ ] not started, [~] in progress, [x] done.
 | --- | --- | --- | --- |
 | A | 4, 5, 6: venues, events, menus per ship | data audit, guard test, content fills | [x] |
 | B | 7: excursions per port | data audit, candidate catalogue, guard test (wiring open) | [~] |
-| C | 13: stats page integrity | audit, fixes | [ ] |
+| C | 13: stats page integrity | audit, fixes | [x] |
 | D | 1: security | review, fixes | [ ] |
 | E | 2: performance | review, fixes | [ ] |
 | F | 3: code health (outside-reviewer view) | review, fixes, scorecard | [ ] |
@@ -59,3 +59,17 @@ Other findings: `npx tsc -b` reports 42 to 45 errors in `scripts/` imports (node
 1. Code and tests assume every catalogue tour's port is on the itinerary being looked at: `PlanRulesTests` (line 31) calls `ExcursionRules.DayOf(Departure, x)` on every tour (`First` throws for a port not on the timeline); `ExplorerRulesTests` use `Catalogue[0]` and `Catalogue[^1]`; `StanleyClassifierTests` loops the whole list. Production loops that walk the whole list and need a "port is on this timeline" filter checked: `PlanService.cs:183`, `DayPlanRules.cs:55`, `ChatShareService.cs:75`, `StanleyStanding.cs:58`, `Services/StanleyStanding.cs`, `ConciergeRules.cs:136,217`, `StanleyActions.cs:368`, `StanleyResolvers.cs:140`.
 2. `ref.ExcursionDepartures` needs a row per (tour, sailing, day) for each sailing that calls at the tour's port (the seed generator `scripts/reference-seed.ts` reads the empty TypeScript list today), plus `ShipId` on `ref.Excursions`, and the tender flag per port, which is not in the catalogue port data.
 The plan for the wiring phase: (a) embed `port-excursions.json`, (b) `ExcursionRules.Catalogue = fixture tours + file tours`, (c) add `ExcursionRules.OnTimeline(timeline)` and use it at each site above, (d) make the seed generator write departures for every sailing, (e) run only `ExcursionPlanTests`, `PlanRulesTests`, `ExplorerRulesTests` and `StanleyClassifierTests` by name when a compiler is available.
+
+### Phase C: are the stats real? (step 13)
+
+Method: read `StatsRules` (110 real stats, 127 made-up `J(...)` ones), `DapperStatsStore` (107 scalar sub-selects plus the "favourites" batch), `useStatsTracker` and `tracker.ts`; checked every table and column the SQL names against `db/01-schema.sql` (all exist; now kept true by `src/stats/statsSql.test.ts`), checked that each source table has a writer in the server, and read how each source is written.
+
+**Verdict: the non-joke stats are real, with four exceptions found and handled.** Dining, drinks, orders, folio, tours, spa, shows, plan events, chat, reactions, bookings, checklist, packing, laundry, photos and so on are counts and sums over rows the app writes; sign-ins and "changes made" come from the audit trail; screen views, time in the app, hour of day, opens, shares and favourite area come from the client tracker (counted only while the page is visible and the guest touched it in the last minute, sent each minute and on hide, only fixed key shapes accepted). Made-up stats are flagged `joke`, labelled "Made up" in text, and removable with the page switch.
+
+Exceptions:
+1. **"Questions you asked Stanley" (and the "Stanley's Friend: 10 questions" badge) was wrong.** It counted `dbo.ConciergeUses`, which is the model-call rate limiter: rows older than the window are deleted on every call, so the number is capped at the hourly limit, decays to zero, and ignores questions answered on the device. Fixed: the client counts every question asked (`countAsk()` in `useStanleyAsk.ts`, key `asks`, accepted by `StatsRules.KnownCounter`), and the stat reads `UserCounters`.
+2. **"Nights on the water" counted nights of voyages not yet sailed** (every confirmed booking, including future ones), which also fed the "Salty Sailor: 14 nights" badge. Fixed: only sailings that have departed (`s.Departure < @today`) count; the detail line now says so.
+3. **"Wifi data used" was always 0 MB**: `WifiDevices.UsedMb` is never written. The stat now appears only once a source has filled it in (guarded by a test).
+4. **"Earlier voyages on record", "Fares on earlier voyages" and "Your first voyage on record" are real but only for seeded guests**: nothing in the app writes `dbo.PastTrips` (read-only in `TripService`/`DapperFinishStore`), so they are zero for a real guest. Left as is (labelled "on record"); a guest-facing "add an earlier cruise" form would make them live. Listed under Phase G ideas.
+
+Smaller notes: audit-based counts (`logins`, `changes`, `bumps`) can under-count when the bounded audit queue drops its oldest rows under load (Phase 6 of the security and performance plan) and after the 60-day network-data blanking only IP and user agent are lost, not the rows; `questions`, `bangs`, `laughs` and similar chat stats are substring matches on message text (real, but a heuristic); client-tracked stats are per device batches, so a guest who clears browser data loses nothing already sent but loses the unsent minute. Server tests for these rules (`StatsRulesTests.cs`) cannot be run here (no `dotnet`); the new C# line is one `InlineData` for the `asks` key.

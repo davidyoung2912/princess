@@ -49,3 +49,6 @@ export function useStatsTracker(): void {
 
 /** Counts a share of a stat, from outside a component. */
 export const countShare = (): void => tracker.shared()
+
+/** Counts a question asked of Stanley, from outside a component. The server's own ledger of model calls is a sliding rate limit that forgets old rows, so it cannot give a lifetime count. */
+export const countAsk = (): void => tracker.asked()

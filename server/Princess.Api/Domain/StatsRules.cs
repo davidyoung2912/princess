@@ -289,7 +289,7 @@ public static class StatsRules
         var items = new List<StatItem>
         {
             S("voyages.bookings", "Voyages booked", Num(r.Get("bookings"))),
-            S("voyages.nights", "Nights on the water", Num(totalNights), "Booked and past voyages together"),
+            S("voyages.nights", "Nights on the water", Num(totalNights), "Voyages already sailed, with earlier ones on record"),
             S("voyages.longest", "Your longest voyage", $"{Num(r.Get("longest_trip"))} nights"),
             S("voyages.past", "Earlier voyages on record", Num(r.Get("past_trips"))),
             S("voyages.ships", "Different ships", Num(r.Get("ships"))),
@@ -336,12 +336,13 @@ public static class StatsRules
             S("ship.requests", "Service requests", Num(r.Get("requests"))),
             S("ship.laundry", "Laundry orders", Num(r.Get("laundry")), $"{Num(r.Get("laundry_items"))} items"),
             S("ship.wifi", "Devices on the ship's wifi", Num(r.Get("wifi_devices"))),
-            S("ship.data", "Wifi data used", r.Get("wifi_mb") >= 1024 ? $"{(r.Get("wifi_mb") / 1024.0).ToString("N1", En)} GB" : $"{Num(r.Get("wifi_mb"))} MB"),
             S("ship.photos", "Photo packages bought", Num(r.Get("photo_packs"))),
             J("ship.lifts", "Lift buttons pressed twice, to be sure", Num(Roll(seed, "lift", 8, 120))),
             J("ship.decks", "Decks you could find with your eyes shut", Num(Roll(seed, "decks", 2, 6))),
             J("ship.lounger", "Loungers you have eyed up", Num(Roll(seed, "lounger", 4, 40))),
         };
+        // Nothing on the ship reports data used yet (WifiDevices.UsedMb stays 0), so the figure is shown only once a source fills it in: a real-looking "0 MB" would be a made-up stat.
+        if (r.Get("wifi_mb") > 0) items.Insert(4, S("ship.data", "Wifi data used", r.Get("wifi_mb") >= 1024 ? $"{(r.Get("wifi_mb") / 1024.0).ToString("N1", En)} GB" : $"{Num(r.Get("wifi_mb"))} MB"));
         return Sec("ship", "Around the ship", "Requests, laundry, wifi and photos.", "🛟", items);
     }
 
@@ -724,7 +725,7 @@ public static class StatsRules
     public static bool KnownCounter(string key, long value)
     {
         if (value < 0 || value > 100_000) return false;
-        if (key is "opens" or "views" or "seconds" or "shares") return true;
+        if (key is "opens" or "views" or "seconds" or "shares" or "asks") return true;
         if (key.StartsWith("hour.", StringComparison.Ordinal)) return key.Length == 7 && int.TryParse(key.AsSpan(5), NumberStyles.None, CultureInfo.InvariantCulture, out var h) && h < 24;
         if (key.StartsWith("area.", StringComparison.Ordinal)) return key is "area.home" or "area.plan" or "area.ship" or "area.chat" or "area.me" or "area.other";
         return key.StartsWith("route.", StringComparison.Ordinal) && key.Length is > 6 and <= 40 && key.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '.' or '-') && key[6] != '.' && key[^1] != '.';

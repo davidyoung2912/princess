@@ -103,6 +103,7 @@ public class StatsRulesTests
     [InlineData("route.Upper", 1, false)]
     [InlineData("route.has space", 1, false)]
     [InlineData("route.a'; drop table", 1, false)]
+    [InlineData("asks", 3, true)]
     [InlineData("secrets", 1, false)]
     [InlineData("opens", -1, false)]
     [InlineData("opens", 100001, false)]

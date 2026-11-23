@@ -25,6 +25,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { stanleyLevelFor } from '../../settings/settings'
 import { screenForPath } from '../../routes/screens'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
+import { countAsk } from '../../hooks/useStatsTracker'
 import { askStanley, cooldownSeconds, getStanleyStatus, getStanleyThread, loadStanleyStatus, revealSteps, setStanleyThread, stanleyProblem, subscribeStanley, type StanleyMessage, type StanleyTurn } from '../../ai/stanley'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { t, type StringKey } from '../../i18n'
@@ -141,6 +142,7 @@ export function useStanleyAsk() {
     const understood = readQuestion(asked.text, { stage, hasBooking, screenId, portDays: ports, previous })
     // A question that tripped the safety screen is never carried into the next one.
     thread = screen(asked.text) ? EMPTY_THREAD : remember(thread, understood, Date.now(), stage)
+    countAsk()
     const direct = !known && !route && decision.kind === 'server' ? answerFromData(asked.text, understood, stage && ABOARD.includes(stage) ? liveShip(sailing, Date.now()) : null) : null
     if (direct) { source = 'ship'; turn = { kind: 'answer', text: cardText(direct), handoff: null, fallback: null, card: direct } }
     else if (known) { source = 'library'; link = known.link; entryId = known.id; turn = { kind: 'answer', text: answerOf(known), handoff: null, fallback: null } }

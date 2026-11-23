@@ -39,8 +39,8 @@ public sealed class DapperStatsStore(IDbConnectionFactory db) : IStatsStore
           (SELECT COUNT(*) FROM dbo.ChatReactions r JOIN dbo.ChatMessages m ON m.Id = r.MessageId WHERE m.FromUserId = @id AND r.UserId <> @id) AS reacts_got,
           (SELECT COUNT(*) FROM dbo.ChatMentions WHERE UserId = @id) AS mentions,
           (SELECT COUNT(*) FROM dbo.ChatPins p JOIN dbo.ChatMessages m ON m.Id = p.MessageId WHERE m.FromUserId = @id) AS pinned,
-          -- Stanley
-          (SELECT COUNT(*) FROM dbo.ConciergeUses WHERE UserId = @id) AS asks,
+          -- Stanley (asks: the client's own count; dbo.ConciergeUses is a sliding rate-limit ledger that forgets old rows, so it is not a lifetime count)
+          (SELECT ISNULL(SUM([Value]), 0) FROM dbo.UserCounters WHERE UserId = @id AND CounterKey = N'asks') AS asks,
           (SELECT COUNT(*) FROM dbo.StanleyActions WHERE UserId = @id) AS stanley_actions,
           (SELECT COUNT(*) FROM dbo.StanleyReminders WHERE UserId = @id) AS reminders,
           -- dining and drinks
@@ -87,7 +87,7 @@ public sealed class DapperStatsStore(IDbConnectionFactory db) : IStatsStore
           (SELECT COUNT(DISTINCT [Day]) FROM dbo.FolioLines WHERE UserId = @id AND Cents > 0) AS folio_days,
           -- voyages
           (SELECT COUNT(*) FROM dbo.Bookings b WHERE b.Id IN (SELECT Id FROM @bk) AND b.Status = 'confirmed') AS bookings,
-          (SELECT ISNULL(SUM(CAST(s.Nights AS BIGINT)), 0) FROM dbo.Bookings b JOIN ref.Sailings s ON s.Id = b.SailingId WHERE b.Id IN (SELECT Id FROM @bk) AND b.Status = 'confirmed') AS nights,
+          (SELECT ISNULL(SUM(CAST(s.Nights AS BIGINT)), 0) FROM dbo.Bookings b JOIN ref.Sailings s ON s.Id = b.SailingId WHERE b.Id IN (SELECT Id FROM @bk) AND b.Status = 'confirmed' AND s.Departure < @today) AS nights,
           (SELECT ISNULL(MAX(s.Nights), 0) FROM dbo.Bookings b JOIN ref.Sailings s ON s.Id = b.SailingId WHERE b.Id IN (SELECT Id FROM @bk) AND b.Status = 'confirmed') AS longest_trip,
           (SELECT COUNT(DISTINCT s.ShipId) FROM dbo.Bookings b JOIN ref.Sailings s ON s.Id = b.SailingId WHERE b.Id IN (SELECT Id FROM @bk) AND b.Status = 'confirmed') AS ships,
           (SELECT COUNT(DISTINCT d.PortId) FROM dbo.Bookings b JOIN ref.ItineraryDays d ON d.SailingId = b.SailingId WHERE b.Id IN (SELECT Id FROM @bk) AND b.Status = 'confirmed') AS ports,
