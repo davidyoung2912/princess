@@ -74,7 +74,7 @@ export function parseBundle(raw: unknown): ChatBundle | null {
   const title = text(r.title)
   if (!type || !title) return null
   const out: ChatBundle = { type, v: whole(r.v) ?? 1, title }
-  for (const key of ['subtitle', 'path', 'time', 'place', 'ref', 'note'] as const) {
+  for (const key of ['subtitle', 'path', 'time', 'place', 'ref', 'note', 'from'] as const) {
     const value = text(r[key])
     if (value !== undefined) out[key] = value
   }
@@ -119,9 +119,9 @@ export function shareInput(shareRef: string, kind: 'card' | 'plan', note?: strin
 }
 
 /** Phase B11: passing a bundle on. Only its `ref` (and a game's puzzle text) goes; the server builds the words again for the new chat, so nothing stale or private travels. Null when it has no ref or is not a type this app knows. */
-export function forwardInput(b: Pick<ChatBundle, 'type' | 'v' | 'ref' | 'data'>, note?: string): { kind: 'bundle'; shareRef: string; note?: string; data?: string } | null {
+export function forwardInput(b: Pick<ChatBundle, 'type' | 'v' | 'ref' | 'data'>, note?: string, from?: { conversationId: string; messageId: string }): { kind: 'bundle'; shareRef: string; note?: string; data?: string; forwardChat?: string; forwardMessage?: string } | null {
   if (!b.ref || !isKnownBundle(b)) return null
-  return { kind: 'bundle', shareRef: b.ref, ...(b.data ? { data: b.data } : {}), ...(note ? { note } : {}) }
+  return { kind: 'bundle', shareRef: b.ref, ...(b.data ? { data: b.data } : {}), ...(note ? { note } : {}), ...(from ? { forwardChat: from.conversationId, forwardMessage: from.messageId } : {}) }
 }
 
 /** Conversations that match what was typed, case and accents aside; everything when nothing was typed. */

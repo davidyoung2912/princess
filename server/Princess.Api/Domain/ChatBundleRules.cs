@@ -6,7 +6,7 @@ namespace Princess.Api.Domain;
 /// A bundle as it travels in <c>ChatMessages.Payload</c> (docs/chat-bundles-plan.md, section 5.1): something from the app sent into a chat. <c>Title</c>, <c>Subtitle</c>, <c>Path</c>, <c>Day</c>, <c>Time</c> and <c>Place</c>
 /// are plain fields so any client can show a bundle without understanding its type; <c>Ref</c> names what it is. Built by the server from its own data, never from what a client sent.
 /// </summary>
-public sealed record ChatBundle(string Type, int V, string Title, string? Subtitle = null, string? Path = null, int? Day = null, string? Time = null, string? Place = null, string? Ref = null, string? Note = null, string? Data = null);
+public sealed record ChatBundle(string Type, int V, string Title, string? Subtitle = null, string? Path = null, int? Day = null, string? Time = null, string? Place = null, string? Ref = null, string? Note = null, string? Data = null, string? From = null);
 
 /// <summary>
 /// The pure rules of bundle messages, phase B1: the types the server can build (a venue and a menu so far), their refs, the payload and the words a list line and a phone alert show.

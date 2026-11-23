@@ -316,6 +316,8 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 
 > **Built 2026-11-23, part 7 (small): thumbnails** (front end checked with test, lint, tsc and build; no server change). **Done:** each bundle card shows a small glyph for its family beside the type word (`FAMILY_GLYPHS`, `bundleGlyph`, tested for every registered type; `aria-hidden`, since the words carry the meaning). **Not done (B11 part 8):** Stanley answers (server: admin confirm in made groups), naming the original sender of a forward (server); richer per-game thumbnails.
 
+> **Built 2026-11-23, part 8: naming the first sender of a forward** (front end checked with test, lint, tsc and build; C# written but not compiled or run). **Done:** Forward also sends the chat and message it came from (`forwardChat`, `forwardMessage`); `ChatService.ForwardedFromAsync` names the first sender (first name and last initial) only when the caller is in that chat, the message is a live bundle a person sent with the same ref; otherwise the forward goes without a name, never an error. A forward of a forward keeps the first name. The card shows "First sent by Alex B." (`ChatBundle.from`). **Not done:** Stanley answers (server: admin confirm in made groups); no C# test added for the naming branch.
+
 ## 7. Risks
 
 - **Scope creep in B2 to B6.** Each planning object is built once, in a fixed order, and each phase is usable on its own.

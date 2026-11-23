@@ -48,6 +48,7 @@ export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; on
   const play = (mode: ShareMode) => { if (game) holdIncoming(game.game, game.shared, mode); onOpen?.() }
   const beat = () => { if (game) holdIncoming(game.game, startOnly(game.shared), 'start', Date.now(), game.seconds); onOpen?.() }
   const [forwarding, setForwarding] = useState(false)
+  const source = outcome ? { conversationId: outcome.conversationId, messageId: outcome.message.id } : undefined
   const forward = known && outcome?.canAct ? forwardInput(bundle) : null
   const when = [bundle.day !== undefined ? t('card.day', { day: bundle.day }) : '', bundle.time ? clock(bundle.time) : ''].filter(Boolean).join(', ')
   return (
@@ -58,6 +59,7 @@ export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; on
       {when && <p>{when}</p>}
       {bundle.place && bundle.place !== bundle.title && <p>{bundle.place}</p>}
       {bundle.note && <p>{bundle.note}</p>}
+      {bundle.from && <p className="muted">{t('bundle.from', { name: bundle.from })}</p>}
       {!known ? <p className="muted">{t('bundle.update')}</p>
         : bundle.type.startsWith('game.') ? (game && link ? game.mode === 'result' ? (
           <div className="button-row"><LinkButton to={link} variant="secondary" onClick={beat} aria-label={`${t('game.open.beat')}: ${bundle.title}`}>{t('game.open.beat')}</LinkButton></div>
@@ -70,7 +72,7 @@ export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; on
         : link ? <LinkButton to={link} variant="secondary" onClick={onOpen} aria-label={t('card.open.label', { title: bundle.title })}>{t('card.open')}</LinkButton>
         : <p className="muted">{t('card.gone')}</p>}
       {forward && <div className="button-row"><Button variant="secondary" onClick={() => setForwarding(true)} aria-label={`${t('bundle.forward')}: ${bundle.title}`}>{t('bundle.forward')}</Button></div>}
-      {forwarding && forward && <SendDialog item={{ title: bundle.title, shareRef: forward.shareRef, takesNote: true, input: (note) => forwardInput(bundle, note) ?? forward }} onClose={() => setForwarding(false)} />}
+      {forwarding && forward && <SendDialog item={{ title: bundle.title, shareRef: forward.shareRef, takesNote: true, input: (note) => forwardInput(bundle, note, source) ?? forward }} onClose={() => setForwarding(false)} />}
       {outcome && known && bundle.type.startsWith('game.') && game && <Outcome {...outcome} />}
     </div>
   )

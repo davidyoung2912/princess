@@ -143,7 +143,8 @@ public sealed record ChatBundleDto(string Type, int V, string Title,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Place = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Ref = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Data = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Data = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? From = null);
 
 /// <summary>A day board (phase B6): the day and its things as this reader sees them (null where an item is no longer available to them, listed in <c>Gone</c>); <c>Clashes</c> are the items that overlap the reader's own programme, private to them.</summary>
 public sealed record ChatBoardDto(int Day, List<ChatBundleDto?> Items, List<int>? Gone = null, List<int>? Clashes = null);
@@ -235,7 +236,7 @@ public sealed record ChatPhotoDto(string Photo);
 /// Phase 4 adds <c>poll</c> (a <c>Question</c> and two to five <c>Options</c>) and <c>plan</c> (a <c>ShareRef</c> of <c>eventId:day</c> from the plannable list, an optional <c>Note</c>).
 /// <c>Mentions</c> are the public ids of members the message names (at most 10); anyone who is not an active member is left out.
 /// </summary>
-public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null, string? Kind = null, string? ShareRef = null, string? PlaceId = null, string? Note = null, List<Guid>? Mentions = null, string? Question = null, List<string>? Options = null, List<string?>? OptionRefs = null, List<string>? Slots = null, int? Day = null, string? Data = null);
+public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null, string? Kind = null, string? ShareRef = null, string? PlaceId = null, string? Note = null, List<Guid>? Mentions = null, string? Question = null, List<string>? Options = null, List<string?>? OptionRefs = null, List<string>? Slots = null, int? Day = null, string? Data = null, Guid? ForwardChat = null, Guid? ForwardMessage = null);
 
 /// <summary>Alert me only when I am mentioned in this conversation.</summary>
 public sealed record ChatMentionsOnlyRequest(bool On);

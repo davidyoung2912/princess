@@ -12177,6 +12177,7 @@ export const enCore = {
   'senddlg.retry': 'Try again',
   'senddlg.sending.now': 'Sending…',
   'bundle.forward': 'Forward',
+  'bundle.from': 'First sent by {name}',
   'bundle.done.count_one': 'Done by {count} person',
   'bundle.done.count_other': 'Done by {count} people',
   'bundle.done.names': 'Done by {names}',

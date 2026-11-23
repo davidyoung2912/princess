@@ -283,7 +283,7 @@ export type ChatCardType = 'excursion' | 'dining' | 'booking' | 'portDay' | 'pla
 export interface ChatCard { type: ChatCardType; title: string; subtitle?: string; day?: number; time?: string; place?: string; path?: string; expiresAt?: number; expired?: boolean; note?: string; /** What it points at was cancelled after it was sent. */ gone?: boolean }
 
 /** A bundle as the server built it (docs/chat-bundles-plan.md, 5.1): a title and where it applies, never a price, cabin or booking number. `ref` names what it is; `v` is the shape of its payload. */
-export interface ChatBundle { type: string; v: number; title: string; subtitle?: string; path?: string; day?: number; time?: string; place?: string; ref?: string; note?: string; /** Phase B8, a game: the puzzle as plain text. Never drawn as words; only a game's own decoder reads it. */ data?: string }
+export interface ChatBundle { type: string; v: number; title: string; subtitle?: string; path?: string; day?: number; time?: string; place?: string; ref?: string; note?: string; /** Phase B11: who first sent it, when it was passed on (first name and last initial). */ from?: string; /** Phase B8, a game: the puzzle as plain text. Never drawn as words; only a game's own decoder reads it. */ data?: string }
 
 /** One pinned message in the pin bar (up to three). `fromName` is absent for your own. */
 export interface ChatPin { messageId: string; text: string; fromName?: string; at: number; kind?: 'card' | 'place' | 'plan' }
@@ -325,7 +325,7 @@ export type ChatTypedSend =
   | { kind: 'place'; placeId: string; note?: string }
   | { kind: 'plan'; shareRef: string; note?: string }
   | { kind: 'poll'; question: string; options: string[]; optionRefs?: (string | null)[]; slots?: string[] }
-  | { kind: 'bundle'; shareRef: string; note?: string; /** Phase B8: a game's puzzle text. */ data?: string }
+  | { kind: 'bundle'; shareRef: string; note?: string; /** Phase B8: a game's puzzle text. */ data?: string; /** Phase B11: the chat and message being passed on, so the server can name the first sender. */ forwardChat?: string; forwardMessage?: string }
   /** Phase B6: a day board; `optionRefs` are `event:` refs on `day`. */
   | { kind: 'board'; day: number; optionRefs: string[] }
 

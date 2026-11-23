@@ -120,7 +120,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         return new ChatBoardDto(board.Day, items, gone.Count > 0 ? gone : null, clashes.Count > 0 ? clashes : null);
     }
 
-    private static ChatBundleDto BundleDto(ChatBundle b) => new(b.Type, b.V, b.Title, b.Subtitle, b.Path, b.Day, b.Time, b.Place, b.Ref, b.Note, b.Data);
+    private static ChatBundleDto BundleDto(ChatBundle b) => new(b.Type, b.V, b.Title, b.Subtitle, b.Path, b.Day, b.Time, b.Place, b.Ref, b.Note, b.Data, b.From);
 
     private static ChatCardDto CardDto(ChatCard c, long nowMs, IReadOnlySet<Guid>? stillBooked = null) => new(c.Type, c.Title, c.Subtitle, c.Day, c.Time, c.Place, c.Path, c.ExpiresAt, ChatCardRules.IsExpired(c.ExpiresAt, nowMs), c.Note, stillBooked is not null && ChatCardRules.IsGone(c, stillBooked));
 
@@ -241,6 +241,20 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)], mayUrgent, firstUnread, pins is { Count: > 0 } ? pins : null, back is { Count: > 0 } ? back : null);
     }
 
+    /// <summary>The first name and last initial of the person who first sent the bundle being forwarded, or null (never an error) when it was not sent by another person the caller can see in a chat they are in.</summary>
+    private async Task<string?> ForwardedFromAsync(UserRecord actor, SendChatRequest? body, ChatBundle bundle, CancellationToken ct)
+    {
+        if (body?.ForwardChat is not { } chatId || body.ForwardMessage is not { } messageId) return null;
+        if (await store.GetMemberAsync(actor.Id, chatId, ct) is not { } source || RemovedFromChat(source)) return null;
+        if (await store.FindMessageAsync(source.GroupId, actor.Id, messageId, ct) is not { } original || original.DeletedAt is not null || original.IsSystem || original.FromStanley
+            || original.Kind != ChatBundleRules.Kind || original.FromUserId == 0) return null;
+        if (ChatBundleRules.Parse(original.Payload) is not { } was || was.Ref != bundle.Ref) return null;
+        if (was.From is { Length: > 0 } first) return first;   // a forward of a forward keeps the first sender's name
+        if (original.FromUserId == actor.Id) return null;
+        var people = await store.ListMembersAsync(source.GroupId, ct);
+        return people.FirstOrDefault(p => p.UserId == original.FromUserId) is { } from ? ShortName(from) : null;
+    }
+
     public async Task<ChatMessageDto> SendAsync(UserRecord actor, Guid conversationId, SendChatRequest? body, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
@@ -294,6 +308,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         {
             // A bundle is rebuilt here from the ship's own data, like a card; its one free-text part, the note, is held to the rules of a message.
             var bundle = await share.BundleAsync(actor, body?.ShareRef, body?.Note, ct, body?.Data);
+            // A forward names who first sent it: only when the caller is in that chat and the message there is a bundle of the same ref that a person sent, and never the caller themselves.
+            if (await ForwardedFromAsync(actor, body, bundle, ct) is { } original) bundle = bundle with { From = original };
             payload = ChatBundleRules.Serialise(bundle);
             if (ChatCardRules.HasForbiddenKey(payload)) throw ApiException.Invalid("kind");   // a guard: no bundle may carry money or identity
             text = ChatBundleRules.Preview(bundle);

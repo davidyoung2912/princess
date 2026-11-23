@@ -4,6 +4,9 @@ import { BUNDLE_TYPES, BUNDLE_VERSION, bundleGlyph, REF_TYPES, bundleLink, bundl
 const venue = { type: 'venue', v: 1, title: 'Crown Grill', subtitle: 'Steakhouse', path: '/dining-today/crown-grill', place: 'Deck 7' }
 
 describe('parseBundle', () => {
+  it('keeps who first sent a forwarded bundle', () => {
+    expect(parseBundle({ ...venue, from: 'Alex B.' })?.from).toBe('Alex B.')
+  })
   it('keeps the plain fields of a bundle', () => {
     expect(parseBundle({ ...venue, day: 2, time: '19:00', ref: 'venue:crown-grill', note: 'join us?' })).toEqual({ ...venue, day: 2, time: '19:00', ref: 'venue:crown-grill', note: 'join us?' })
   })
@@ -158,6 +161,10 @@ describe('forwardInput', () => {
     const b = { type: 'venue', v: BUNDLE_VERSION, ref: 'venue:crown-grill' }
     expect(forwardInput(b, 'look')).toEqual({ kind: 'bundle', shareRef: 'venue:crown-grill', note: 'look' })
     expect(forwardInput({ ...b, data: 'a=1' })).toEqual({ kind: 'bundle', shareRef: 'venue:crown-grill', data: 'a=1' })
+  })
+  it('says which message it came from, so the server can name the first sender', () => {
+    const b = { type: 'venue', v: BUNDLE_VERSION, ref: 'venue:crown-grill' }
+    expect(forwardInput(b, undefined, { conversationId: 'c1', messageId: 'm1' })).toEqual({ kind: 'bundle', shareRef: 'venue:crown-grill', forwardChat: 'c1', forwardMessage: 'm1' })
   })
   it('refuses a bundle with no ref or an unknown type', () => {
     expect(forwardInput({ type: 'venue', v: BUNDLE_VERSION })).toBeNull()
