@@ -10,6 +10,7 @@ import { replacePortKnowledge } from '../domain/portContent'
 import { applyPricing } from '../domain/pricingServed'
 import { registerEnglishLate } from '../i18n'
 import { enLate } from '../i18n/locales/enLate'
+import { enRest } from '../i18n/locales/enRest'
 import { enAnswers } from '../i18n/locales/enAnswers'
 import { markReferenceAllReady, requireReference } from '../domain/referenceStatus'
 
@@ -27,4 +28,4 @@ export function seedReference(): void {
 
 seedReference()
 // The app loads the Stanley and tip text before the first screen (`main.tsx`); tests have it from the start.
-registerEnglishLate({ ...enLate, ...enAnswers })
+registerEnglishLate({ ...enRest, ...enLate, ...enAnswers })

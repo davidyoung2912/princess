@@ -10,22 +10,33 @@ type Catalog = Partial<Record<Raw, string>>
 type Params = Record<string, string | number>
 
 const catalogs: Record<string, Catalog> = { en: enCore }
-/** English text that arrives after the first script (Stanley and the tips); see `loadEnglishLate`. */
+/** English text that arrives after the first screen is drawn (`enRest`, Stanley and the tips); see `loadEnglishLate`. */
 let late: Catalog = {}
+let lateLoaded = false
 const english = (k: string): string | undefined => (enCore as Catalog)[k as Raw] ?? late[k as Raw]
 
-/** Puts the Stanley and tip text in use. Tests call it with the file's content; the app calls `loadEnglishLate`. */
+/** Puts the later English text in use. Tests call it with the files' content; the app calls `loadEnglishLate`. */
 export function registerEnglishLate(text: Catalog) {
   late = text
+  lateLoaded = true
   listeners.forEach((l) => l())
 }
 
-/** Brings in the Stanley and tip text (a separate download) before the first screen is drawn. */
-export async function loadEnglishLate(): Promise<void> {
-  if (Object.keys(late).length > 0) return
-  const [{ enLate }, { enAnswers }] = await Promise.all([import('./locales/enLate'), import('./locales/enAnswers')])
-  registerEnglishLate({ ...enLate, ...enAnswers })
+let lateLoading: Promise<void> | null = null
+/**
+ * Brings in the rest of the English text (separate downloads) once; the first screen does not wait for it. Calling it again returns the same promise,
+ * and a failed download can be tried again.
+ */
+export function loadEnglishLate(): Promise<void> {
+  if (lateLoaded) return Promise.resolve()
+  return (lateLoading ??= (async () => {
+    const [{ enRest }, { enLate }, { enAnswers }] = await Promise.all([import('./locales/enRest'), import('./locales/enLate'), import('./locales/enAnswers')])
+    registerEnglishLate({ ...enRest, ...enLate, ...enAnswers })
+  })().catch((e) => { lateLoading = null; throw e }))
 }
+
+/** Resolves once every English string is in (a screen waits for this before it is shown, so it never draws a missing key). Never rejects: a failed download leaves keys showing as they are. */
+export const englishReady = (): Promise<void> => loadEnglishLate().catch(() => {})
 
 /** Every English key, the Stanley and tip ones included once they are loaded. */
 export const englishKeys = (): string[] => [...Object.keys(enCore), ...Object.keys(late)]
@@ -77,7 +88,10 @@ export function t(key: StringKey, params: Params = {}): string {
     const form = new Intl.PluralRules(locale).select(Number(params.count))
     text = pick(`${key}_${form}`) ?? pick(`${key}_other`)
   }
-  return fill(text ?? pick(key) ?? key, params)
+  const found = text ?? pick(key)
+  // Text that has not arrived yet draws as nothing (and fills in when it does) rather than as a key; a key the files do not have still shows as itself.
+  if (found === undefined && !lateLoaded) return ''
+  return fill(found ?? key, params)
 }
 
 /** The text for a key as a heading: Title Case in English, unchanged in other languages. */

@@ -19,7 +19,7 @@ applySettings()
 watchDeviceTheme()
 
 // Fonts load with font-display: swap, so the first paint never waits for them.
-void Promise.all([startRuntime().catch(() => {}), applyLanguage().catch(() => {}), loadEnglishLate().catch(() => {})]).then(() => {
+void Promise.all([startRuntime().catch(() => {}), applyLanguage().catch(() => {})]).then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ErrorBoundary>
@@ -27,6 +27,8 @@ void Promise.all([startRuntime().catch(() => {}), applyLanguage().catch(() => {}
       </ErrorBoundary>
     </StrictMode>,
   )
+  // The rest of the English text follows the first paint; screens wait for it (`screen()`).
+  void loadEnglishLate().catch(() => {})
 })
 
 // Download new versions quietly and let the guest choose when to switch (PERF-02).

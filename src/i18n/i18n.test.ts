@@ -133,3 +133,23 @@ describe('Spanish', () => {
     expect(await loadLocale('zz')).toBe(false)
   })
 })
+
+describe('the start-up and later English files', () => {
+  const first = (k: string) => k.split('.')[0].replace(/_(one|other)$/, '')
+  it('keep each first part of a key in one file, so a screen finds its text together', async () => {
+    const { enCore } = await import('./locales/enCore')
+    const { enRest } = await import('./locales/enRest')
+    const core = new Set(Object.keys(enCore).map(first))
+    const split = [...new Set(Object.keys(enRest).map(first))].filter((p) => core.has(p))
+    expect(split).toEqual([])
+    expect(Object.keys(enCore).filter((k) => k in enRest)).toEqual([])
+  })
+  it('draws text that has not arrived as nothing, and one that does not exist as itself', async () => {
+    const { enRest } = await import('./locales/enRest')
+    const key = Object.keys(enRest)[0]
+    const mod = await import('.')
+    // The test setup has put every string in use, so only the unknown key can be checked here.
+    expect(mod.t('no.such.key' as never)).toBe('no.such.key')
+    expect(mod.hasText(key)).toBe(true)
+  })
+})
