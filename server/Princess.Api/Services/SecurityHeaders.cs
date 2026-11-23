@@ -15,7 +15,8 @@ public static class SecurityHeaders
                 h["X-Content-Type-Options"] = "nosniff";
                 h["X-Frame-Options"] = "DENY";
                 h["Referrer-Policy"] = "no-referrer";
-                h["Cross-Origin-Resource-Policy"] = "same-site";
+                // The front end may sit on another site than the API (Vercel and the API host), so the avatar pictures (<img>) and the health ping must be embeddable cross-site; everything else stays same-site.
+                h["Cross-Origin-Resource-Policy"] = IsEmbeddable(http.Request.Path) ? "cross-origin" : "same-site";
                 h["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()";
                 if (hsts && http.Request.IsHttps) h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
                 if (IsData(http.Request.Path))
@@ -28,6 +29,9 @@ public static class SecurityHeaders
             });
             await next();
         });
+
+    private static bool IsEmbeddable(PathString path) =>
+        path.StartsWithSegments("/api/v1/public/avatars") || path.StartsWithSegments("/health");
 
     private static bool IsData(PathString path) =>
         path.StartsWithSegments("/api") || path.StartsWithSegments("/health");
