@@ -799,7 +799,6 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   }, [phase, runGreet])
   // Photos attached to the draft go out together with its words when the guest presses Send.
   const [askTerms, setAskTerms] = useState(false)
-  const acceptTerms = useAction(async () => { await api.chatConnections.acceptPhotoTerms(); setAskTerms(false); void sendDraftPhotos.run() })
   const sendDraftPhotos = useAction(async () => {
     const [first, ...more] = draftPhotos
     if (!first) return
@@ -811,6 +810,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     wasNear.current = true
     void load()
   })
+  const acceptTerms = useAction(async () => { await api.chatConnections.acceptPhotoTerms(); setAskTerms(false); void sendDraftPhotos.run() })
   const cancelDraft = () => { if (typingSentAt.current !== null) { typingSentAt.current = null; api.chatConversations.typingStop(id).catch(() => undefined) }; setText(''); setDraftPhotos([]); setReplyTo(null); setLevel('normal'); setProblem(null) }
   const submit = async (quick?: string) => {
     if (quick === undefined && draftPhotos.length > 0) {

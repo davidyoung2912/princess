@@ -1,4 +1,5 @@
-import { CODE_LENGTH, CodeBoxes } from '../CodeBoxes'
+import { CodeBoxes } from '../CodeBoxes'
+import { CODE_LENGTH } from '../codeDigits'
 import { useEffect, useState } from 'react'
 import { usePushState } from '../../hooks/usePushState'
 import { useAction } from '../../hooks/useAction'

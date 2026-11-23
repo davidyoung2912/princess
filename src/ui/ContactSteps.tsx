@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { isEmail, isPhone } from '../domain/signup'
 import { useAction } from '../hooks/useAction'
@@ -39,22 +39,16 @@ export function VerifyStep({ kind, onDone }: { kind: ContactKind; onDone: () => 
   )
 }
 
-/** The contact checks still to do, in the order they are asked (email, then phone): only what is on the account and not yet confirmed. */
-export async function pendingChecks(): Promise<ContactKind[]> {
-  const [email, phone] = await Promise.all([api.emailCheck.status(), api.phoneCheck.status()])
-  return [...(email.hasEmail && !email.verified ? ['email' as const] : []), ...(phone.hasPhone && !phone.verified ? ['phone' as const] : [])]
-}
-
 /** Settings: enter, change or clear the email address and phone number, and confirm each by code later. Both are optional; neither has to be unique. */
 export function ContactSettings({ onVerify }: { onVerify: (kind: ContactKind) => void }) {
   const [bump, setBump] = useState(0)
   const stored = useMine(() => api.contact.get(), [bump])
   const email = useMine(() => api.emailCheck.status(), [bump])
   const phone = useMine(() => api.phoneCheck.status(), [bump])
-  const [form, setForm] = useState({ email: '', phone: '' })
+  const [edited, setForm] = useState<{ email: string; phone: string } | null>(null)
+  const form = edited ?? stored.data ?? { email: '', phone: '' }
   const [problems, setProblems] = useState<{ email?: boolean; phone?: boolean }>({})
   const [saved, setSaved] = useState(false)
-  useEffect(() => { if (stored.data) setForm(stored.data) }, [stored.data])
   const save = useAction((c: { email: string; phone: string }) => api.contact.save(c))
 
   const submit = async (e: FormEvent) => {

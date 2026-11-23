@@ -6,7 +6,8 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Notes, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const bit = (d: number) => 1 << (d - 1)

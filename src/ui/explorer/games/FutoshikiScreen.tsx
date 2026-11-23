@@ -5,7 +5,8 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Notes, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<Exclude<FutoshikiTechnique, 'sign'>, StringKey> = { naked: 'futoshiki.hint.naked', row: 'futoshiki.hint.row', column: 'futoshiki.hint.column', signRow: 'futoshiki.hint.signRow', signColumn: 'futoshiki.hint.signColumn' }

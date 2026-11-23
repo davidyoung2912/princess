@@ -84,11 +84,14 @@ export function TaskHelp({ task, view, onAsk, compact }: { task: GuideTask; view
   )
 }
 
+/** The time when a calendar file is made, read at the click and never during a render. */
+const clockNow = (): number => Date.now()
+
 /** "Add to calendar" on a task with a date: a calendar file made on the phone for the day it opens or is due. Nothing is sent anywhere, and a task with no date draws nothing. */
 export function TaskCalendar({ task, compact }: { task: GuideTask; compact?: boolean }) {
   const w = taskWords(task)
   if (taskCalendarFile(task, w.title, w.why, 0) === null) return null
-  const make = () => taskCalendarFile(task, w.title, w.why, Date.now()) ?? ''
+  const make = () => taskCalendarFile(task, w.title, w.why, clockNow()) ?? ''
   if (compact) return <GuideIconButton icon={CalendarPlus} label={t('guide.calendar')} describedAs={t('guide.calendar.for', { task: w.title })} onClick={() => downloadText(`${task.id}.ics`, 'text/calendar', make())} />
   return <CalendarButton variant="tertiary" name={`${task.id}.ics`} label={t('guide.calendar.for', { task: w.title })} make={make} />
 }

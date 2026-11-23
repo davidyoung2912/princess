@@ -68,14 +68,16 @@ const make = (game: (typeof SHAREABLE_GAMES)[number], random: () => number): Sha
 
 const NEWEST = ['cruise-wordle', 'word-search', 'codeword', 'minesweeper']
 
+const fields = (v: unknown) => v as Record<string, unknown>
+
 describe('game share round trip', () => {
   for (const game of SHAREABLE_GAMES.filter((g) => !NEWEST.includes(g))) {
     it(`${game}: start, current and notes come back as the same puzzle`, () => {
       const s = make(game, seeded(7))
       const start = decodeGame(game, encodeGame(s, 'start'))
       const clueKey = ['puzzle', 'values', 'start', 'clues', 'rows'].find((k) => k in s.puzzle && Array.isArray((s.puzzle as unknown as Record<string, unknown>)[k]))!
-      expect((start?.puzzle as unknown as Record<string, unknown>)[clueKey]).toEqual((s.puzzle as unknown as Record<string, unknown>)[clueKey])
-      expect((start?.puzzle as unknown as Record<string, unknown>).solution).toEqual((s.puzzle as unknown as Record<string, unknown>).solution)
+      expect(fields(start?.puzzle)[clueKey]).toEqual((s.puzzle as unknown as Record<string, unknown>)[clueKey])
+      expect(fields(start?.puzzle).solution).toEqual((s.puzzle as unknown as Record<string, unknown>).solution)
       expect(start?.entries.every((v) => v === 0)).toBe(true)
       const current = decodeGame(game, encodeGame(s, 'current'))
       expect(current?.entries).toEqual(s.entries)

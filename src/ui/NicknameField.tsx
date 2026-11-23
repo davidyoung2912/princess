@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { MAX_NICKNAME, nicknameFits, tidyNickname } from '../domain/nickname'
 import { useAction } from '../hooks/useAction'
 import { useMine } from '../hooks/useMine'
@@ -11,10 +11,11 @@ import { Field } from './Field'
 /** The optional chat nickname: shown in every chat when set, otherwise the username shows. Saved with its own button so a half-typed name is never sent. */
 export function NicknameField() {
   const stored = useMine(() => api.chatConnections.settings())
-  const [text, setText] = useState('')
+  // What was typed, or null until the guest types: until then the stored nickname shows, so nothing needs copying in an effect.
+  const [typed, setText] = useState<string | null>(null)
+  const text = typed ?? stored.data?.nickname ?? ''
   const [saved, setSaved] = useState(false)
   const [problem, setProblem] = useState(false)
-  useEffect(() => { if (stored.data) setText(stored.data.nickname) }, [stored.data])
   const save = useAction((n: string) => api.chatConnections.saveNickname(n))
   const submit = async (e: FormEvent) => {
     e.preventDefault()

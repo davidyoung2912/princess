@@ -10,7 +10,7 @@ import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
 import { TextArea } from '../Field'
 import { Users } from '../icons'
-import { shareError } from './ChatCards'
+import { shareError } from './chatShareError'
 
 /** The conversations an invitation can go to: the travel party, a person, or a group. Stanley, channels and rooms are not for inviting. */
 const canInvite = (c: ChatConversation): boolean => (c.kind === 'party' || c.kind === 'direct' || c.kind === 'group') && !c.closed

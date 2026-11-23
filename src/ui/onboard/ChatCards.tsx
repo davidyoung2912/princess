@@ -3,7 +3,7 @@ import { requestGreeting } from '../../chat/greet'
 import { getContext, subscribeContext } from '../../account/context'
 import { AtSign } from 'lucide-react'
 import type { ChatCard, ChatConversation, ChatMessage, ChatPin, ChatShareables } from '../../api/chatTypes'
-import { isApiError } from '../../api/errors'
+import { shareError } from './chatShareError'
 import { cardLink, cardSummary, cleanNote, isExpired, matchPeople, mentionParts, MAX_PINS, NOTE_MAX, sortPlaces, sortShareables, type MentionPerson } from '../../domain/chatCards'
 import { newClientId } from '../../domain/chatThread'
 import { PLACES } from '../../domain/deck'
@@ -100,16 +100,6 @@ export function MentionList({ people, query, onPick }: { people: readonly Mentio
       </ul>
     </div>
   )
-}
-
-/** The words for a card that could not be sent: the thing is no longer on the trip, the note was not acceptable, or the chat has closed. */
-export function shareError(e: unknown): StringKey {
-  if (!isApiError(e)) return 'conv.share.failed'
-  if (e.message === 'shareRef' || e.message === 'place') return 'conv.share.stale'
-  if (e.message === 'blocked') return 'conv.blocked'
-  if (e.message === 'contactInfo') return 'conv.contact'
-  if (e.code === 'conflict') return 'conv.closed'
-  return 'conv.share.failed'
 }
 
 /**

@@ -10,7 +10,7 @@ import { t } from '../../i18n'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
 import { qrKindOf } from '../../domain/shareCodes'
-import { shareError } from './ChatCards'
+import { shareError } from './chatShareError'
 import { ShowCode } from './ShowCode'
 
 export interface SendItem {

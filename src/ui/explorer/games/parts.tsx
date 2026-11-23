@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { clock } from '../../../domain/games/sudoku'
-import { startVisibleInterval } from '../../../hooks/visibleInterval'
-import { beatOutcome, clearIncoming, elapsedNow, heldTarget, noteElapsed, peekIncoming } from '../../../domain/games/incoming'
-import { encodeGame, resultData, startOnly, type ShareMode, type SharedGame } from '../../../domain/games/share'
+import { beatOutcome, elapsedNow, heldTarget } from '../../../domain/games/incoming'
+import { encodeGame, resultData, type ShareMode, type SharedGame } from '../../../domain/games/share'
 import { Button, LinkButton } from '../../Button'
 import { Card } from '../../Card'
 import { Dialog } from '../../Dialog'
@@ -12,14 +11,6 @@ import { Ask, Clock, X } from '../../icons'
 import { MessageSquarePlus } from 'lucide-react'
 
 /** The pieces every game shares, so the games look and behave the same: How to Play, clock, level picker, hint box and solved card. */
-
-/** A clock that counts seconds while `running` and the page is showing. `reset` starts it again from 0:00. */
-export function useGameClock(running: boolean): { seconds: number; reset: () => void } {
-  const [seconds, setSeconds] = useState(0)
-  useEffect(() => (running ? startVisibleInterval(() => setSeconds((s) => s + 1), 1000) : undefined), [running])
-  useEffect(() => noteElapsed(seconds), [seconds])
-  return { seconds, reset: () => setSeconds(0) }
-}
 
 /** The 0:07 style timer with its clock icon. */
 export function GameClock({ seconds, label }: { seconds: number; label: string }) {
@@ -93,17 +84,6 @@ export function SolvedCard({ title, children }: { title: string; children: React
       </Card>
     </div>
   )
-}
-
-/**
- * The puzzle a chat card handed to this game (docs/chat-bundles-plan.md, B8), read once when the screen opens and forgotten when it closes. `shared` is already the clues alone when the
- * sender chose the starting position, and `fresh` ends the "from a chat" note when the player moves on to a puzzle of their own.
- */
-export function useIncomingGame(game: string): { incoming: { shared: SharedGame; mode: ShareMode } | null; fromChat: ShareMode | null; leaveChat: () => void } {
-  const [incoming] = useState(() => { const held = peekIncoming(game); return held ? { shared: held.mode === 'start' ? startOnly(held.shared) : held.shared, mode: held.mode } : null })
-  const [fromChat, setFromChat] = useState<ShareMode | null>(incoming?.mode ?? null)
-  useEffect(() => () => clearIncoming(), [])
-  return { incoming, fromChat, leaveChat: () => { clearIncoming(); setFromChat(null) } }
 }
 
 /** The line above a puzzle that came from a chat: where it came from, a way back, and a way to a puzzle of the player's own. */

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { createElement, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import type { DishFlag, ExplorerDay, VenueDay } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
@@ -46,8 +46,7 @@ interface VenueDetailProps {
 
 /** The icon of a venue in the list of other places: decorative, the name beside it says the same. */
 function VenueGlyph({ kind, venueKind, title }: { kind: ExplorerKind; venueKind: string; title: string }) {
-  const Icon = venueIcon(kind, venueKind, title)
-  return <Icon className="exp-split__icon" aria-hidden="true" focusable="false" />
+  return createElement(venueIcon(kind, venueKind, title), { className: 'exp-split__icon', 'aria-hidden': 'true', focusable: 'false' })
 }
 
 /** The diets and the dish heads-ups to call out for the signed-in guest, so the menus can show first what suits them. */

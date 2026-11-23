@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CODE_LENGTH, digitsOnly } from './CodeBoxes'
+import { CODE_LENGTH, digitsOnly } from './codeDigits'
 
 describe('six-digit code entry', () => {
   it('keeps only digits, and at most six', () => {

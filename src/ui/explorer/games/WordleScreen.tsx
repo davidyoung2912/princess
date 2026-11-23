@@ -4,7 +4,8 @@ import { MAX_GUESSES, WORD_LENGTH, backspace, keyStates, newGame, pickTarget, sc
 import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, GameShare, IncomingNote, SolvedCard, useGameClock, useIncomingGame } from './parts'
+import { GameClock, GameHelp, GameShare, IncomingNote, SolvedCard } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
 
 const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
 const STATE_WORD: Record<LetterState, StringKey> = { correct: 'wordle.state.correct', present: 'wordle.state.present', absent: 'wordle.state.absent' }

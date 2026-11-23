@@ -5,7 +5,8 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Lightbulb } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const DIR_KEYS: StringKey[] = ['ws.dir.0', 'ws.dir.1', 'ws.dir.2', 'ws.dir.3', 'ws.dir.4', 'ws.dir.5', 'ws.dir.6', 'ws.dir.7']

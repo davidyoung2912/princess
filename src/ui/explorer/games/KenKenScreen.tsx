@@ -5,7 +5,8 @@ import { t, type StringKey } from '../../../i18n'
 import { Button } from '../../Button'
 import { Erase, Lightbulb, Notes, Undo } from '../../icons'
 import { MoreLinks } from '../Parts'
-import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard, useGameClock, useIncomingGame } from './parts'
+import { GameClock, GameHelp, GameShare, HintBox, IncomingNote, LevelBar, SolvedCard } from './parts'
+import { useGameClock, useIncomingGame } from './gameHooks'
 
 const LEVEL_KEYS: Record<Difficulty, StringKey> = { easy: 'sudoku.level.easy', medium: 'sudoku.level.medium', hard: 'sudoku.level.hard', expert: 'sudoku.level.expert' }
 const HINT_KEYS: Record<KenKenTechnique, StringKey> = { naked: 'kenken.hint.naked', row: 'kenken.hint.row', column: 'kenken.hint.column', cage: 'kenken.hint.cage', cageRow: 'kenken.hint.cageRow', cageColumn: 'kenken.hint.cageColumn' }
