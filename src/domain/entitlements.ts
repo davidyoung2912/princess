@@ -47,6 +47,21 @@ const TIERS: Record<Tier, { wifi: number; perks: PerkId[]; window: Entitlements[
 
 const SANCTUARY = { specialtyMeals: 1, perks: ['suiteLounge', 'priorityEmbarkation', 'priorityDisembarkation'] as PerkId[] }
 
+/** A perk the guest does not have, and what would unlock it: a higher Captain's Circle level, or a suite with the Sanctuary. */
+export interface LockedPerk { perk: PerkId; unlock: { by: 'tier'; tier: Tier } | { by: 'suite' } }
+
+/** Why each perk the guest lacks is out of reach, so a missing benefit always has a reason (research 10.8 and 10.9). `held` is the perk list the guest has now. */
+export function lockedPerks(held: readonly string[], tier: Tier): LockedPerk[] {
+  const order: Tier[] = ['none', 'gold', 'ruby', 'platinum', 'elite']
+  const out: LockedPerk[] = []
+  const seen = new Set<string>(held)
+  for (const level of order.slice(order.indexOf(tier) + 1)) {
+    for (const perk of TIERS[level].perks) if (!seen.has(perk)) { seen.add(perk); out.push({ perk, unlock: { by: 'tier', tier: level } }) }
+  }
+  for (const perk of SANCTUARY.perks) if (!seen.has(perk)) { seen.add(perk); out.push({ perk, unlock: { by: 'suite' } }) }
+  return out
+}
+
 /** What a guest gets. Numbers add up across sources (a package's Wi-Fi plus the tier's); the best dining window and cap win. */
 export function computeEntitlements(src: Source): Entitlements {
   const pkg = PACKAGES[src.package]

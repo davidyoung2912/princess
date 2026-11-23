@@ -11,3 +11,16 @@ Open:
 - Notes (diary, packing, personal reminders) are not queued offline yet; only favourites are. Notes are already kept locally, so nothing is lost, but they do not reach the server until the screen is used online.
 - Scroll restore waits up to about 40 frames for a lazy list to grow; a very slow list may open short of the old place. Needs a device check.
 - "What is fresh" panel: `CapsuleCard` already lists age per kind; it is not linked from Me and does not cover booking, excursions or check-in as separate lines.
+
+## R2 Explain the refusal
+
+Found on reading the code (the first scorecard was too harsh here, corrected in the scorecard): `My Trips` (`/me/trips`) already lists every booking and links one with five distinct failures (`format`, `noMatch`, `alreadyLinked`, `review`, `supervised`); dining already has a booking window with a stated reason and date (`diningWindow`, `actionGate`: open, opensOn, needsBooking, readOnly, closed, finished, "never a disabled button"); and `plan.err.<title>` words each server refusal. `LoyaltyScreen` already has a discrepancy report.
+
+Built: a support reference on errors (server adds its trace id to problem details in `Problems.cs`; `ApiError.reference`; shown by `ActionError` and `PlanError`); loyalty "Not available to you yet" with what unlocks each perk and the days to go (`lockedPerks`); a check-in contradiction banner when the status says finished but steps are open or no finish time exists (`checkinConflict`).
+
+Open:
+- The server change in `Problems.cs` (trace id into problem details) has not been compiled: `dotnet` is not installed here and the project rules rule out running server tests. Check `dotnet build` first thing.
+- Reference ids only appear in `ActionError` and `PlanError`. Other error paths (sign-in, chat send, FindPass, Trips link banners, the error boundary) do not show one yet.
+- Dining refusals at the moment of booking (no table vs not eligible vs payment) still fall back to whatever `plan.err.*` has; a full audit of the server titles against the wording table was not done.
+- Loyalty days-to-go uses the loyalty record's day count; the locked-perk list comes from the front-end entitlements table, which duplicates the server's. Should be served.
+- Check-in: no comparison of a locally saved draft against the server on refresh (the server is the only store, so a draft conflict cannot happen today); no step-specific help links.

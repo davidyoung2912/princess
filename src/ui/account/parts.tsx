@@ -17,7 +17,7 @@ export function Load<T>({ state, children }: { state: Mine<T>; children: (data: 
 export function ActionError({ error, forbidden }: { error: ApiError | null; forbidden?: StringKey }) {
   if (!error) return null
   const key: StringKey = error.code === 'offline' ? 'account.err.offline' : error.code === 'forbidden' ? (forbidden ?? 'account.err.forbidden') : error.retryable ? 'account.err.retry' : 'account.err.generic'
-  return <p role="alert" className="field__error">{t(key)} <Link to="/me/contact">{t('account.err.contact')}</Link></p>
+  return <p role="alert" className="field__error">{t(key)} <Link to="/me/contact">{t('account.err.contact')}</Link>{error.reference && <small className="error-reference"> {t('error.reference', { ref: error.reference })}</small>}</p>
 }
 
 /** A page-top note for supervised (child) accounts, which can read but not change things. */

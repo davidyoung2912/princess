@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import type { CheckinSave, CheckinView } from '../../api/types'
 import { GUEST_STEPS, isStepId, STEP_ORDER, stepDone, type StepId } from '../../domain/checkin'
+import { checkinConflict } from '../../domain/checkinConflict'
 import { formatDate } from '../../domain/cruise'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
@@ -63,6 +64,8 @@ function Overview({ view }: { view: CheckinView }) {
     state: stepDone(s, view.guests, progress.bookingLeft) ? 'done' : progress.next?.step === s ? 'current' : 'todo',
   }))
   const done = status.state === 'done'
+  const stepsLeft = view.guests.reduce((n, g) => n + g.progress.left.length, 0) + progress.bookingLeft.length
+  const conflict = checkinConflict({ state: status.state, stepsLeft, finishedAt: view.finishedAt })
   useDiaryLine(useSailing().id, 'checkedIn', 'checkedIn', t('diary.auto.checkedIn'), done)
   return (
     <>
@@ -72,7 +75,13 @@ function Overview({ view }: { view: CheckinView }) {
           <p>{view.finishedAt ? t('checkin.finishedAt', { when: formatDateTime(view.finishedAt) }) : ''} <Link to="/home/check-in/receipt">{t('checkin.seeReceipt')}</Link></p>
         </Banner>
       )}
-      {done && <StanleyMoment id="checkedIn" subject={String(view.finishedAt ?? 'done')} />}
+      {conflict && (
+        <Banner kind="warning" title={t('checkin.conflict.title')} action={<LinkButton to="/me/contact" variant="secondary">{t('account.err.contact')}</LinkButton>}>
+          <p>{t(conflict === 'finishedButOpen' ? 'checkin.conflict.open' : 'checkin.conflict.noTime', { count: stepsLeft })}</p>
+          <p>{t('checkin.conflict.next')}</p>
+        </Banner>
+      )}
+      {done && !conflict && <StanleyMoment id="checkedIn"subject={String(view.finishedAt ?? 'done')} />}
       <Gate view={view}>
         <TicketProgress lines={steps.map((s) => ({ id: s.id, label: s.label, state: s.state }))} done={progress.done} total={progress.total} />
 

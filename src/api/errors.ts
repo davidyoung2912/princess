@@ -6,11 +6,14 @@ const RETRYABLE: ReadonlySet<ApiErrorCode> = new Set(['offline', 'network', 'tim
 export class ApiError extends Error {
   readonly code: ApiErrorCode
   readonly retryable: boolean
-  constructor(code: ApiErrorCode, message: string = code) {
+  /** The server's reference for this failure (its trace id), shown to the guest as secondary detail for support; absent for failures that never reached the server. */
+  readonly reference?: string
+  constructor(code: ApiErrorCode, message: string = code, reference?: string) {
     super(message)
     this.name = 'ApiError'
     this.code = code
     this.retryable = RETRYABLE.has(code)
+    if (reference) this.reference = reference
   }
 }
 

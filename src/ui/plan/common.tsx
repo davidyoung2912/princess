@@ -12,7 +12,7 @@ export function PlanError({ error }: { error: ApiError | null }) {
   if (!error) return null
   if (error.code === 'conflict' || error.code === 'invalid') {
     const text = t(`plan.err.${error.message}` as StringKey)
-    if (text !== `plan.err.${error.message}`) return <p role="alert" className="field__error">{text}</p>
+    if (text !== `plan.err.${error.message}`) return <p role="alert" className="field__error">{text}{error.reference && <small className="error-reference"> {t('error.reference', { ref: error.reference })}</small>}</p>
   }
   return <ActionError error={error} />
 }

@@ -45,6 +45,13 @@ export interface Http {
   blob(path: string, o?: RequestOptions): Promise<Blob>
 }
 
+/** A trace id made safe to print: letters, digits, colon, dash and underscore only, at most 40 characters, upper case for reading aloud. */
+export function referenceOf(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined
+  const clean = raw.replace(/[^A-Za-z0-9:_-]/g, '').slice(0, 40)
+  return clean ? clean.toUpperCase() : undefined
+}
+
 const STATUS_CODES: Record<number, ApiErrorCode> = { 400: 'invalid', 401: 'forbidden', 403: 'forbidden', 404: 'notFound', 409: 'conflict', 422: 'invalid', 402: 'declined' }
 
 /** The server's problem details name a more specific code (`challenge`, `declined`, `conflict`...). Fall back on the status. */
@@ -53,7 +60,7 @@ export function errorFor(status: number, body: unknown): ApiError {
   const named = typeof o.code === 'string' ? o.code : typeof o.title === 'string' ? o.title : undefined
   const known: readonly ApiErrorCode[] = ['offline', 'network', 'timeout', 'server', 'notFound', 'conflict', 'forbidden', 'invalid', 'challenge', 'declined']
   const code = known.find((k) => k === named) ?? STATUS_CODES[status] ?? (status >= 500 ? 'server' : 'invalid')
-  return new ApiError(code, named ?? code)
+  return new ApiError(code, named ?? code, referenceOf(o.traceId))
 }
 
 /** A fresh id for one attempt: letters, digits and dashes, 8 to 80 characters, as the server requires. */

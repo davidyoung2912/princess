@@ -5,6 +5,7 @@ import { TIER_DAYS } from '../../domain/postcruise'
 import { formatMoney } from '../../domain/money'
 import { formatDate } from '../../domain/cruise'
 import { walletTotals } from '../../domain/wallet'
+import { lockedPerks } from '../../domain/entitlements'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -40,6 +41,7 @@ function Loyalty({ v, reload }: { v: LoyaltyView; reload: () => void }) {
       else { await navigator.clipboard.writeText(text); setNote(t('loy.copied')) }
     } catch { setNote(text) }
   }
+  const locked = lockedPerks(v.perks, s.after)
   const target = s.next ? TIER_DAYS[s.next] : s.daysAfter
   return (
     <>
@@ -68,6 +70,18 @@ function Loyalty({ v, reload }: { v: LoyaltyView; reload: () => void }) {
           </ul>
         )}
         <p className="muted">{t('loy.expiry')}</p>
+        {locked.length > 0 && (
+          <>
+            <h3>{t('loy.locked.title')}</h3>
+            <ul className="plain-bullets">
+              {locked.map((l) => (
+                <li key={l.perk}>
+                  {t(`loy.perk.${l.perk}` as StringKey)}: {l.unlock.by === 'suite' ? t('loy.locked.suite') : t('loy.locked.tier', { tier: t(`me.tier.${l.unlock.tier}` as StringKey), days: Math.max(0, TIER_DAYS[l.unlock.tier] - s.daysAfter) })}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </Card>
 
       <Wallet v={v} />

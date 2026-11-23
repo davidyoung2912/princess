@@ -28,7 +28,10 @@ public static class Problems
     public static Task Write(HttpContext http, ApiErrorCode code, string title, int status)
     {
         http.Response.StatusCode = status;
-        return http.Response.WriteAsJsonAsync(Create(code, title, status), (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json");
+        // A short reference a guest can read to support; it is the request's trace id, which the server log carries too.
+        var problem = Create(code, title, status);
+        problem.Extensions["traceId"] = http.TraceIdentifier;
+        return http.Response.WriteAsJsonAsync(problem, (System.Text.Json.JsonSerializerOptions?)null, "application/problem+json");
     }
 }
 
