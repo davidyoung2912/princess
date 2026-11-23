@@ -1,0 +1,10 @@
+# Changelog
+
+Notable changes, newest first. The project is pre-release; versions are not cut yet.
+
+## Unreleased (November 2026)
+
+- Maps on Port Details: a self-drawn map of the things to do with numbered pins, "Show on map" on each place, Google Maps links, and an optional click-to-load Google embed (set `VITE_GOOGLE_MAPS_EMBED_KEY`).
+- MCP gateway on the server (`Services/Mcp`): client, read-only egress allowlist, sanitiser, guarded calls, health rows. Every provider is off by default. See `docs/mcp-integration-plan.md`.
+- Code health: all lint warnings fixed, coverage reporting with floors in CI, CI workflow, documentation index and archive, contributing guide.
+- Review phases A to J (venues, events, menus, excursion candidates, stats, security, performance, code health, pages, chat, tour steps, Stanley ideas): see `docs/review-and-completeness-plan.md`.

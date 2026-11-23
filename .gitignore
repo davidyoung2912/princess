@@ -38,3 +38,4 @@ obj/
 # Local test run output
 test-results*.txt
 server/TestResults/
+coverage

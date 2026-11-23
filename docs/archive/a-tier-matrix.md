@@ -1,6 +1,6 @@
 # A-tier matrix (N1.1)
 
-Written 2026-11-02 for phase N1 of `docs/next-level-plan.md`. It answers one question for the 20 shortlist items in `docs/customer-journey-priorities.md` §15: **what proves it works?**
+Written 2026-11-02 for phase N1 of `docs/archive/next-level-plan.md`. It answers one question for the 20 shortlist items in `docs/customer-journey-priorities.md` §15: **what proves it works?**
 
 How to read the evidence columns:
 

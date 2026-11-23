@@ -5,8 +5,7 @@ rem Copies the UI to a working folder (no node_modules, build output, git histor
 rem installs packages there and starts the dev server. Edit DEST to change where it runs from.
 rem Needs Node.js 20 or newer on the PATH. The API should already be running (see VITE_API_PROXY in .env.local).
 
-set "SRC=%~dp0"
-if "%SRC:~-1%"=="\" set "SRC=%SRC:~0,-1%"
+for %%I in ("%~dp0..") do set "SRC=%%~fI"
 set "DEST=C:\dev\princess-ui"
 
 if /i "%SRC%"=="%DEST%" (

@@ -1,6 +1,6 @@
 # Best-in-market matrix (BM2)
 
-Written 2026-11-08 for phase BM2 of `docs/best-in-market-plan.md`. Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (292 rows: 187 stage requirements, 25 phone, 22 quality-of-life, 58 cross-stage). Style follows `docs/a-tier-matrix.md`.
+Written 2026-11-08 for phase BM2 of `docs/archive/best-in-market-plan.md`. Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (292 rows: 187 stage requirements, 25 phone, 22 quality-of-life, 58 cross-stage). Style follows `docs/archive/a-tier-matrix.md`.
 
 ## How to read it
 
@@ -40,7 +40,7 @@ Written 2026-11-08 for phase BM2 of `docs/best-in-market-plan.md`. Source: `docs
 
 ## Findings that change the plan
 
-Section 3 of `docs/best-in-market-plan.md` asked six things to be settled. Results:
+Section 3 of `docs/archive/best-in-market-plan.md` asked six things to be settled. Results:
 
 1. **IDN-04 and IDN-05 (relationship types and per-task permissions): a real gap.** Party (`src/domain/party.ts`), helper (`src/domain/account.ts`) and family link (`src/domain/homeLink.ts`) are three separate models. The helper permission set is only `view`, `documents`, `payments`, `profile`. There is no permission for check-in, editing a booking, seeing the folio, messaging or sharing location, and no household or shipmate type. This is BM5, and it is a design job before it is code.
 2. **TRU-07 (operational status centre): partial, and not what it looks like.** `/me/status` (`StatusScreen` in `src/ui/aboard/SupportScreens.tsx`) lists service health from the client's demo scenarios (`systemStatus(demo.scenarios, ...)`), not from a server health or incident feed. The front end must not know data is simulated, so the fix is a served status feed; the screen can then drop the scenario read. Server work, so a phase of its own.
@@ -99,7 +99,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DSC-04 | P0 | Built | F | `src/ui/discover/CabinChooserScreen.tsx`, `src/domain/cabinScore.ts`, `src/domain/cabinScore.test.ts` | None found |
 | DSC-05 | P1 | Partial | F | `src/domain/deckPlan.ts`, `src/ui/onboard/DeckPlan.tsx`, `src/ui/book/RoomStep.tsx` | BM26: cabin map with keyboard buttons and inventory recheck on choose; no server hold step, so the server's cabinTaken at booking is the final check |
 | DSC-06 | P1 | Partial | F | `src/domain/cabinScore.ts`, `src/domain/shipRooms.ts` | BM25: indicators tagged typical or unknown; none confirmed (no source); no guest reports collected |
-| DSC-07 | P1 | Partial | F | `src/ui/discover/CabinPhotos.tsx` | Photos missing (S1-06 in `docs/gap-analysis-plan.md`) |
+| DSC-07 | P1 | Partial | F | `src/ui/discover/CabinPhotos.tsx` | Photos missing (S1-06 in `docs/archive/gap-analysis-plan.md`) |
 | DSC-08 | P0 | Built | F | `src/domain/pricing.ts`, `src/domain/pricingServed.test.ts`, `src/ui/book/FareStep.tsx` | None found |
 | DSC-09 | P1 | Built | F | `src/domain/packages.ts`, `src/domain/spendForecast.ts`, `src/domain/spendForecast.test.ts` | None found |
 | DSC-10 | P2 | Built | F | `src/domain/cabinScore.ts`, `src/domain/shortlist.ts` | Explainability of ship/sailing fit score unchecked |
@@ -111,7 +111,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DSC-16 | P1 | Built | F | `src/ui/discover/SavedScreen.tsx`, `src/domain/shortlist.ts`, `src/domain/shortlist.test.ts` | Server-held, so phone and desktop agree |
 | BOK-01 | P0 | Built | F | `src/ui/book/ResumeScreen.tsx`, `src/domain/booking.ts`, `src/domain/booking.test.ts` | Close mid-payment and resume not run end to end (a-tier-matrix row 2) |
 | BOK-02 | P0 | Built | F | `src/ui/book/GuestsStep.tsx`, `src/domain/signup.ts` | None found |
-| BOK-03 | P1 | Out of reach | F | none | Camera passport scan needs a device (`docs/gap-analysis-plan.md`) |
+| BOK-03 | P1 | Out of reach | F | none | Camera passport scan needs a device (`docs/archive/gap-analysis-plan.md`) |
 | BOK-04 | P0 | Built | F | `src/ui/plan/` hold screen `/plan/hold`, `src/domain/booking.ts` | Server-issued hold id and expiry: server side not read |
 | BOK-05 | P0 | Built | R | `src/ui/book/FareStep.tsx`, `src/domain/fares.ts` | BM54: checkout stores the fare and terms versions accepted; the quote carries both versions and `book` sends them back, so a change since the quote is refused as `termsChanged` and nothing is charged until the guest reviews the new rules (`BookingConflict`). C# not compiled. |
 | BOK-06 | P0 | Built | F | `src/ui/book/ReviewStep.tsx`, `src/domain/pricing.ts` | None found |
@@ -354,7 +354,7 @@ Priority is not given per concept in the document.
 | AST-08 | P2 | Built | F | `src/ui/home/SummaryScreen.tsx` (route `/ship/read-aloud`), `src/ui/home/AskScreen.tsx` | None found |
 | COM-01 | P0 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | None found |
 | COM-02 | P0 | Built | F | `src/domain/delivery.ts`, `src/domain/delivery.test.ts` | Marketing consent vs critical separation visible in `delivery.ts` |
-| COM-03 | P0 | Simulated | F | `src/domain/delivery.ts`, `src/push/push.ts` | Email and SMS delivery simulated (NOT-01 in `docs/gap-analysis-plan.md`) |
+| COM-03 | P0 | Simulated | F | `src/domain/delivery.ts`, `src/push/push.ts` | Email and SMS delivery simulated (NOT-01 in `docs/archive/gap-analysis-plan.md`) |
 | COM-04 | P0 | Partial | R | `server/Princess.Api/Domain/PushRules.cs` (`FallbackDue`), `server/Princess.Api/Services/PushService.cs`, `server/Princess.Api/Services/PingramSender.cs` | BM40: safety alerts have an acknowledged state and fall back to text, then email, after 10 minutes. Pingram sender written, never run against the live service |
 | COM-05 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/calm.ts` | None found |
 | COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39, BM54: as MOB-07; reservation and case alerts themselves do not exist on the server yet |

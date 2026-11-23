@@ -37,7 +37,7 @@ The document's five strategic bets and most of its P0 list match work this proje
 | 1 | No place that shows what is saved on the phone, how old, how big, when it stops being trusted, or whether the browser will keep it | MOB-03, MOB-04, OFF-07, QOL-04, GTS-15 | The document's second-ranked differentiator and a P0. Copies exist per screen; the guest cannot see or test them. **Built in BM1.** |
 | 2 | Night-before readiness test that goes beyond the roaming checklist (pass saved, login valid, battery advice, maps cached) | GTS-15, MOB-02 | BM1 supplies the data; the test is a small follow-on. |
 | 3 | Update never interrupts a critical task | MOB-02 | `UpdateBanner` exists; check that it is held back on pass, muster, pay. |
-| 4 | Ship Wi-Fi boundary and low-data mode | EMB-11, SEA-25, MOB-24 | Largely built: `saveDataRequested` in `src/settings/settings.ts` reads the browser's save-data signal (`docs/gap-analysis-plan.md` still lists NET-04 as open; that list is stale). Check battery-aware refresh only. |
+| 4 | Ship Wi-Fi boundary and low-data mode | EMB-11, SEA-25, MOB-24 | Largely built: `saveDataRequested` in `src/settings/settings.ts` reads the browser's save-data signal (`docs/archive/gap-analysis-plan.md` still lists NET-04 as open; that list is stale). Check battery-aware refresh only. |
 | 5 | Voyage Time Intelligence as one tested service with DST and date-line cases | QOL-21, POR-02 | Clocks exist; the document asks for explicit DST and date-line tests. Check coverage. |
 | 6 | Traceability: no ID-by-ID matrix against this document | Appendix B | Needed so later phases do not re-derive this table. |
 | 7 | Add-to-calendar with correct zone and cancel/update ids | MOB-15 | `src/domain/calendar.ts` exists; verify update and cancel semantics. |
@@ -47,7 +47,7 @@ The document's five strategic bets and most of its P0 list match work this proje
 
 - **IndexedDB migration** (MOB-04). Saved copies are small keyed JSON in `localStorage`, and the real durability risk is eviction, which BM1 now surfaces and mitigates with a persistence request. Revisit only if copies grow past what `localStorage` holds (the capsule card shows the size).
 - **Wallet passes, Web NFC and Bluetooth, room controls, face grouping, AR, crowd prediction** (MOB-16, SEA-21, QOL-06): need providers or hardware this project cannot reach, or are gated by the document itself.
-- **Camera passport scan, OCR** (BOK-03): already listed as open and needing a device in `docs/gap-analysis-plan.md`.
+- **Camera passport scan, OCR** (BOK-03): already listed as open and needing a device in `docs/archive/gap-analysis-plan.md`.
 - **A second front-end data store or a mock mode.** Project rule.
 - **Anything the document labels P3 or "exploratory".**
 
@@ -58,7 +58,7 @@ These are items the document marks P0 where I found no clear match and did not d
 - IDN-04 and IDN-05: the distinct relationship types (household, booking party, cabin party, linked group, helper, shipmate) and per-task permissions. Party, family link and helper exist; whether they share one permission model is unchecked.
 - TRU-07: an operational status centre. `/me/status` exists; its content is unchecked.
 - MNG-03: sync state as current, stale, pending, unavailable or not linked. `SyncChip` and `useSyncStatus` exist; whether "not linked" is distinct from "no cruise" is unchecked.
-- COM-04: acknowledged delivery of critical alerts with a fallback channel. Email and SMS are still simulated (`docs/gap-analysis-plan.md` NOT-01).
+- COM-04: acknowledged delivery of critical alerts with a fallback channel. Email and SMS are still simulated (`docs/archive/gap-analysis-plan.md` NOT-01).
 - A11Y-07, EMB-03, GTS-14: depend on research sessions and safety sign-off, not code.
 
 ## 4. Phases
@@ -78,7 +78,7 @@ Done: `docs/best-in-market-matrix.md`, 292 rows, 15 read and 277 found by name o
 
 Original scope:
 
-Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-stage) as built, partial, mock, planned or not planned, with the file and test that prove it, in the style of `docs/a-tier-matrix.md`. Settle section 3 above. Doc only plus any one-line fixes found. This sets the real size of the remaining work.
+Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-stage) as built, partial, mock, planned or not planned, with the file and test that prove it, in the style of `docs/archive/a-tier-matrix.md`. Settle section 3 above. Doc only plus any one-line fixes found. This sets the real size of the remaining work.
 
 ### BM3. Readiness (built, not committed)
 

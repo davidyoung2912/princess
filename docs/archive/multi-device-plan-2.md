@@ -1,6 +1,6 @@
 # Multi-device plan 2: nothing but a thin client
 
-Status: **Plan written 2026-11-01. Phases 1 to 7 are built; what each "Not done" line left open was finished in `docs/multi-device-plan-3.md` (reconciled 2026-11-02, see the end of this file), except the items marked Open there.** Follows `docs/multi-device-plan.md` (Phases 1 to 5 there) and replaces its "Phase 5 decision: what was left alone".
+Status: **Plan written 2026-11-01. Phases 1 to 7 are built; what each "Not done" line left open was finished in `docs/archive/multi-device-plan-3.md` (reconciled 2026-11-02, see the end of this file), except the items marked Open there.** Follows `docs/multi-device-plan.md` (Phases 1 to 5 there) and replaces its "Phase 5 decision: what was left alone".
 
 ## Goal and rules
 

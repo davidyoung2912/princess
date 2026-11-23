@@ -1,6 +1,6 @@
 # Multi-device plan: account data lives on the server
 
-Status: **Superseded by `docs/multi-device-plan-2.md` and `docs/multi-device-plan-3.md`, which finished or replaced every item that was left open here. Reconciled 2026-11-02: see "Reconciliation" at the end. The "Not done" lists in the phase records below are the state on 2026-11-01 and are kept as history.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
+Status: **Superseded by `docs/archive/multi-device-plan-2.md` and `docs/archive/multi-device-plan-3.md`, which finished or replaced every item that was left open here. Reconciled 2026-11-02: see "Reconciliation" at the end. The "Not done" lists in the phase records below are the state on 2026-11-01 and are kept as history.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
 
 ## Goal and rules
 

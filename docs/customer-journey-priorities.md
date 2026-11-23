@@ -2,7 +2,7 @@
 
 Status: **Draft v0.1 (2026-11-02). A prioritisation lens, not new requirements.** It re-reads `docs/functional-requirements.md` (the base, "FR") and `docs/leading-features-requirements.md` (the companion, "LF") stage by stage and asks one question: *for each of the 11 customer stages, which 15 or so things decide whether the guest thinks this is the best cruise app they have used?*
 
-I did not audit `src` for this pass. "Covered" below means *specified* in FR or LF. Check `docs/leading-features-plan.md` and `docs/gap-analysis-plan.md` for what is actually built before scheduling anything.
+I did not audit `src` for this pass. "Covered" below means *specified* in FR or LF. Check `docs/archive/leading-features-plan.md` and `docs/archive/gap-analysis-plan.md` for what is actually built before scheduling anything.
 
 ---
 

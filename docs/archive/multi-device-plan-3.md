@@ -1,6 +1,6 @@
 # Multi-device plan 3: a client with nothing of its own
 
-Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 to 7 are built. The "Not done" lines inside the records are history: later slices and the closing sections (personas removed, authored data deleted, fares served) finished most of them, and Phase 6's missing fall-back wrapper was built as `ProviderGuard` (next-level plan N8.1). Reconciled 2026-11-02: see the end of this file for what is really open.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
+Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 to 7 are built. The "Not done" lines inside the records are history: later slices and the closing sections (personas removed, authored data deleted, fares served) finished most of them, and Phase 6's missing fall-back wrapper was built as `ProviderGuard` (next-level plan N8.1). Reconciled 2026-11-02: see the end of this file for what is really open.** Follows `docs/multi-device-plan.md` and `docs/archive/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
 
 ## Goal and rules
 

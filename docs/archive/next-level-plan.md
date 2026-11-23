@@ -4,7 +4,7 @@ Status: **Plan written 2026-11-02. N1 to N4 are built and N5 is built except N5.
 
 ## 1. How the audit was done, and how far to trust it
 
-- Read `docs/leading-features-plan.md` (phases H1 to H8 and their "not done" lists), `docs/multi-device-plan-3.md`, `docs/backend-plan.md` and `src/auditGate.test.ts`.
+- Read `docs/archive/leading-features-plan.md` (phases H1 to H8 and their "not done" lists), `docs/archive/multi-device-plan-3.md`, `docs/backend-plan.md` and `src/auditGate.test.ts`.
 - Counted routes, stores, server endpoints and providers; grepped `src` for capabilities the journey doc relies on (push, wallet, maps, audio, locales, referral, and so on).
 - Ran `npm run test`: **123 files, 1547 tests, all passing.** I did not run lint, tsc or build, and I did not open any screen (no browser testing, by rule).
 - **`dotnet` is not installed in this environment**, so no server C# could be compiled or run. Several recent commits say "C# not compiled". Treat the server as unverified until you build it.
@@ -86,7 +86,7 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 
 | Slice | What | Notes |
 | --- | --- | --- |
-| N1.1 A-tier matrix | Turn §2.1 into `docs/a-tier-matrix.md`: for each A-tier row in the journey doc, the file, the test that proves it, and the "clear-to-use test" sentence | Mark anything without a test |
+| N1.1 A-tier matrix | Turn §2.1 into `docs/archive/a-tier-matrix.md`: for each A-tier row in the journey doc, the file, the test that proves it, and the "clear-to-use test" sentence | Mark anything without a test |
 | N1.2 Rendered tests with data | Using the test fixtures in `src/testing`, render the screens behind the top 15 tasks and the emotional scenarios (§23.5 of the base doc) with data loaded, not just the loading state; assert the key text and the single next action | Extend `render.test.tsx`; keep node-friendly |
 | N1.3 Offline day | A test that boots the stores from kept copies with the network off and checks the schedule, pass, deck map, menus and reservations still render with their age shown | Uses existing `useSavedCopy` caches |
 | N1.4 Bundle budget | A test or build script that fails if the main chunk or any route chunk grows beyond a set size | Supports PERF-01 without a browser |
@@ -96,7 +96,7 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 **Done when:** every A-tier row has a test or an explicit "no test" note, the offline test passes, the budget is set, and the server builds.
 
 **N1 record (2026-11-02):**
-- **N1.1 done:** `docs/a-tier-matrix.md`. Logic is well covered; no test shows any screen with data in it.
+- **N1.1 done:** `docs/archive/a-tier-matrix.md`. Logic is well covered; no test shows any screen with data in it.
 - **N1.2 done:** `jsdom`, `@testing-library/react` and `@testing-library/dom` added as dev dependencies. `src/testing/harness.tsx` stubs `fetch` with a table of answers (`src/testing/fixtures.ts`: one signed-in person aboard on day 3) and renders the real app, so the real API client, guards, stores and screens run. `src/ui/dataScreens.test.tsx` has 17 tests covering the screens behind all 15 top tasks (UX-01), each written as the task's clear-to-use sentence. Other test files are unchanged and still run in `node`; only files with `// @vitest-environment jsdom` use the DOM.
 - **N1.3 done:** `src/offlineDay.test.ts` (ten must-work-offline kinds are kept; every screen showing a kept copy shows its age; cache age rules). It found and fixed one defect: the plain-English summary showed a kept bill without its age.
 - **N1.4 done:** `scripts/check-bundle.mjs`, `npm run bundle:check` (run after `npm run build`). First load 331 kB gzip of a 340 kB budget; the English strings are about 122 kB of that.
@@ -354,4 +354,4 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 
 ## 7. Suggested first step
 
-Start with **N1**. When you are ready, say "Start N1 of docs/next-level-plan.md". It makes no visible changes, but it tells us how solid the base is, and the result may change the order of the rest.
+Start with **N1**. When you are ready, say "Start N1 of docs/archive/next-level-plan.md". It makes no visible changes, but it tells us how solid the base is, and the result may change the order of the rest.

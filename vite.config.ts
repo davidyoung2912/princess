@@ -110,5 +110,17 @@ export default defineConfig(({ mode }) => ({
       },
     }),
   ],
-  test: { environment: 'node', include: ['src/**/*.test.{ts,tsx}'], setupFiles: ['src/testing/setup.ts'] },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.{ts,tsx}'],
+    setupFiles: ['src/testing/setup.ts'],
+    // `npm run test:coverage`. Measured 2026-11-23: statements 64.3, branches 57.7, functions 52.9, lines 67.8. The floors sit a little under that so a real drop fails CI; raise them as coverage rises.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/testing/**'],
+      reporter: ['text-summary', 'lcov'],
+      thresholds: { statements: 62, branches: 55, functions: 50, lines: 65 },
+    },
+  },
 }))

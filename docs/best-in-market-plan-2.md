@@ -1,6 +1,6 @@
 # Best-in-market plan 2: proving "Built" and closing the gaps
 
-Status: **Written 2026-11-08 for your review. Nothing in this plan is built yet.** It follows `docs/best-in-market-plan.md` (BM1 to BM15) and uses `docs/best-in-market-matrix.md` as its starting point. Source requirements: `docs/princess_cruises_expanded_best_in_market_requirements.md`.
+Status: **Written 2026-11-08 for your review. Nothing in this plan is built yet.** It follows `docs/archive/best-in-market-plan.md` (BM1 to BM15) and uses `docs/best-in-market-matrix.md` as its starting point. Source requirements: `docs/princess_cruises_expanded_best_in_market_requirements.md`.
 
 ## 1. The question, and the short answer
 
