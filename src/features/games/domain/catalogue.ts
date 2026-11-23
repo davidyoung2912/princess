@@ -39,6 +39,10 @@ export const GAMES: readonly GameEntry[] = [
   { id: 'hashi', path: '/games-explorer/hashi', mode: 'single', titleKey: 'gx.game.hashi.title', bodyKey: 'gx.game.hashi.body', levels: 4, minutes: [3, 25], players: 1 },
   { id: 'nurikabe', path: '/games-explorer/nurikabe', mode: 'single', titleKey: 'gx.game.nurikabe.title', bodyKey: 'gx.game.nurikabe.body', levels: 4, minutes: [3, 25], players: 1 },
   { id: 'battleship', path: '/games-explorer/battleship', mode: 'single', titleKey: 'gx.game.battleship.title', bodyKey: 'gx.game.battleship.body', levels: 3, minutes: [5, 20], players: 1, levelsKey: 'gx.meta.battleship', noShare: true },
+  { id: 'klondike', path: '/games-explorer/klondike', mode: 'single', titleKey: 'gx.game.klondike.title', bodyKey: 'gx.game.klondike.body', levels: 2, minutes: [5, 30], players: 1, levelsKey: 'gx.meta.klondike', noShare: true },
+  { id: 'spider', path: '/games-explorer/spider', mode: 'single', titleKey: 'gx.game.spider.title', bodyKey: 'gx.game.spider.body', levels: 3, minutes: [10, 45], players: 1, levelsKey: 'gx.meta.spider', noShare: true },
+  { id: 'freecell', path: '/games-explorer/freecell', mode: 'single', titleKey: 'gx.game.freecell.title', bodyKey: 'gx.game.freecell.body', levels: 3, minutes: [5, 25], players: 1, levelsKey: 'gx.meta.freecell', noShare: true },
+  { id: 'pyramid', path: '/games-explorer/pyramid', mode: 'single', titleKey: 'gx.game.pyramid.title', bodyKey: 'gx.game.pyramid.body', levels: 3, minutes: [3, 15], players: 1, levelsKey: 'gx.meta.pyramid', noShare: true },
 ]
 
 export const gamesOf = (mode: GameEntry['mode']): GameEntry[] => GAMES.filter((g) => g.mode === mode)

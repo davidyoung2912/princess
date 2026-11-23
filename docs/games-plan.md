@@ -166,3 +166,12 @@ Built with one change: every island has exactly one number, so there are no numb
 ## Battleship (X49)
 
 Official Milton Bradley / Hasbro rules: 10 by 10, Carrier 5, Battleship 4, Cruiser 3, Submarine 3, Destroyer 2, ships straight and never overlapping, alternate single shots, "sunk" is announced, first to sink the fleet wins. Our variations: board size (Small 8x8 with 4 ships, Classic, Large 12x12 with 7) and opponent (Cadet, Captain, Admiral). The engine and AI are in `features/games/domain/battleship.ts`; the AI is handed only `AiView` (its own shots and the ships it has sunk), and a test proves its choice cannot depend on unsunk ship positions. Not shareable to chat (`noShare` in the catalogue). Ideas for later: Salvo rules, a first-turn coin toss, win/loss streak on the device.
+
+## Card games (X50 to X53): Klondike, Spider, FreeCell, Pyramid
+
+Rules and AI-free helpers are framework-free in `features/games/domain/` (`cards.ts`, `klondike.ts`, `spider.ts`, `freecell.ts`, `pyramid.ts`, each with tests); the screens and shared pieces are in `features/explorer/ui/games/` and `.../cards/`.
+
+- **Artwork:** `src/assets/cards/cards.svg`, built by `scripts/build-card-sprite.py` from SVG-cards (LGPL-2.1, David Bellot, Huub de Beer and contributors). All 52 faces come from the one set so the deck is consistent; the build trims the unused parts, replaces the DejaVu numeral font with a stack every phone has, and adds `edge_*` groups (card base and corner index) so overlapped cards in a column are cheap. The licence text and authors are in `public/licenses/`, and `CardCredits` (on each card screen) credits the source, states the licence and says it was modified, as the LGPL asks. Re-run the script if the sprite changes.
+- **Backs:** drawn by CSS (`.pc--back`) with the Princess Voyages roundel (`assets/princess.webp`), so 100+ backs cost nothing; the sprite and roundel are precached, so everything plays offline.
+- **Play:** tap a card, then where it goes; tap it again to send it to its best place; Undo is unlimited; Hint explains the move and can do it; Finish plays out a won Klondike or FreeCell.
+- **Levels:** Klondike Draw 1 or 3; Spider 1, 2 or 4 suits; FreeCell 4, 3 or 2 cells (Microsoft numbered deals, all solvable except 11982, which is skipped; hints come from a best-first solver); Pyramid 3, 2 or 1 pass through the stock. TriPeaks, drag and drop, winnable-only Klondike deals and card sharing to chat are not built.

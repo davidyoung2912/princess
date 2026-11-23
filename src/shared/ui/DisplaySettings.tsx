@@ -82,7 +82,7 @@ export function DisplaySettings() {
       <fieldset>
         <legend>{t('settings.fun')}</legend>
         <p className="field__hint">{t('settings.funHint')}</p>
-        {FUN_LEVELS.map((fun) => (
+        {[...FUN_LEVELS].reverse().map((fun) => (
           <label key={fun} className="choice">
             <input type="radio" name="fun-level" checked={settings.fun === fun} onChange={() => update({ fun })} />
             <span>{t(`settings.fun.${fun}` as StringKey)}<small>{t(`settings.fun.${fun}.hint` as StringKey)}</small></span>

@@ -1,10 +1,10 @@
 import { Link } from 'react-router'
 import { gamesOf } from '../../../games/domain/catalogue'
 import { t, headingCase } from '../../../../shared/i18n'
-import { BinairoGame, FutoshikiGame, CodewordGame, HitoriGame, WordSearchGame, SlitherlinkGame, CrossmathGame, NonogramGame, MinesweeperGame, HashiGame, NurikabeGame, BattleshipGame, KakuroGame, KenKenGame, DiagonalSudokuGame, JigsawSudokuGame, KillerSudokuGame, SudokuGame, WordGame } from '../../../../shared/ui/icons'
+import { BinairoGame, FutoshikiGame, CodewordGame, HitoriGame, WordSearchGame, SlitherlinkGame, CrossmathGame, NonogramGame, MinesweeperGame, HashiGame, NurikabeGame, BattleshipGame, KlondikeGame, SpiderGame, FreeCellGame, PyramidGame, KakuroGame, KenKenGame, DiagonalSudokuGame, JigsawSudokuGame, KillerSudokuGame, SudokuGame, WordGame } from '../../../../shared/ui/icons'
 import { MoreLinks } from '../Parts'
 
-const ICONS: Record<string, typeof WordGame> = { 'cruise-wordle': WordGame, sudoku: SudokuGame, 'diagonal-sudoku': DiagonalSudokuGame, 'jigsaw-sudoku': JigsawSudokuGame, 'killer-sudoku': KillerSudokuGame, binairo: BinairoGame, futoshiki: FutoshikiGame, kenken: KenKenGame, kakuro: KakuroGame, codeword: CodewordGame, hitori: HitoriGame, 'word-search': WordSearchGame, slitherlink: SlitherlinkGame, crossmath: CrossmathGame, nonogram: NonogramGame, minesweeper: MinesweeperGame, hashi: HashiGame, nurikabe: NurikabeGame, battleship: BattleshipGame }
+const ICONS: Record<string, typeof WordGame> = { 'cruise-wordle': WordGame, sudoku: SudokuGame, 'diagonal-sudoku': DiagonalSudokuGame, 'jigsaw-sudoku': JigsawSudokuGame, 'killer-sudoku': KillerSudokuGame, binairo: BinairoGame, futoshiki: FutoshikiGame, kenken: KenKenGame, kakuro: KakuroGame, codeword: CodewordGame, hitori: HitoriGame, 'word-search': WordSearchGame, slitherlink: SlitherlinkGame, crossmath: CrossmathGame, nonogram: NonogramGame, minesweeper: MinesweeperGame, hashi: HashiGame, nurikabe: NurikabeGame, battleship: BattleshipGame, klondike: KlondikeGame, spider: SpiderGame, freecell: FreeCellGame, pyramid: PyramidGame }
 
 /** The Games Explorer: every game has a page of its own, listed here under games for one player and games for a group. */
 export function GamesExplorerScreen() {
