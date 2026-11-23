@@ -12,12 +12,12 @@ describe('final coverage audit (P9)', () => {
   it('catalogues every route: every route is a screen or a tab front page', () => {
     const catalogued = new Set([...SCREEN_LIST.map((s) => s.path), ...TAB_FRONT_PATHS])
     expect(ROUTES.filter((r) => !catalogued.has(r.path)).map((r) => r.path)).toEqual([])
-    expect(SCREEN_LIST).toHaveLength(259)
+    expect(SCREEN_LIST).toHaveLength(274)
   })
 
   it('reaches every screen from a tab in at least one stage, except the four outside by design (and Chat, which is global)', () => {
     const unreachable = SCREEN_LIST.filter((s) => !JOURNEY_STAGES.some((st) => stageUses(s.id, st))).map((s) => s.id)
-    expect(unreachable.sort()).toEqual(['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29', 'X30', 'X31', 'X32', 'X33', 'X34', 'X35', 'X36', 'X37', 'X38', 'X39', 'X40', 'X41', 'X42', 'X43', 'X44', 'X45', 'X46', 'X47', 'X48', 'X49', 'X50', 'X51', 'X52', 'X53'])
+    expect(unreachable.sort()).toEqual(['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29', 'X30', 'X31', 'X32', 'X33', 'X34', 'X35', 'X36', 'X37', 'X38', 'X39', 'X40', 'X41', 'X42', 'X43', 'X44', 'X45', 'X46', 'X47', 'X48', 'X49', 'X50', 'X51', 'X52', 'X53', 'X54', 'X55', 'X56', 'X57', 'X58', 'X59', 'X60', 'X61', 'X62', 'X63', 'X64', 'X65', 'X66', 'X67', 'X68'])
   })
 
   // Relaxed: the app is English only for now (CLAUDE.md).

@@ -175,3 +175,17 @@ Rules and AI-free helpers are framework-free in `features/games/domain/` (`cards
 - **Backs:** drawn by CSS (`.pc--back`) with the Princess Voyages roundel (`assets/princess.webp`), so 100+ backs cost nothing; the sprite and roundel are precached, so everything plays offline.
 - **Play:** tap a card, then where it goes; tap it again to send it to its best place; Undo is unlimited; Hint explains the move and can do it; Finish plays out a won Klondike or FreeCell.
 - **Levels:** Klondike Draw 1 or 3; Spider 1, 2 or 4 suits; FreeCell 4, 3 or 2 cells (Microsoft numbered deals, all solvable except 11982, which is skipped; hints come from a best-first solver); Pyramid 3, 2 or 1 pass through the stock. TriPeaks, drag and drop, winnable-only Klondike deals and card sharing to chat are not built.
+
+## TriPeaks (X54) and Gaps (X55)
+
+Two more card games on the shared card parts. TriPeaks: clear three peaks by taking cards one rank above or below the waste card (Easy lets King and Ace connect). Gaps: four rows of thirteen with the Aces out; fill each gap with the next card of the same suit, a gap in the first column takes a 2, three rounds with the locked cards scoring. The board pans and pinch-zooms on a phone (`usePanZoom`).
+
+## Board games and puzzles (X56 to X68)
+
+Thirteen games in one pass, all drawn in SVG/CSS (no image assets), framework-free rules in `features/games/domain`, with tests.
+
+- **Solo puzzles:** Peg Solitaire (English, French, triangle; Hint is a real search), Lights Out (4, 5 or 6 square; Hint from GF(2) elimination), 15 Puzzle (3, 4 or 5 square; Hint by weighted A*).
+- **Against the computer:** Reversi, Gomoku (15x15), Pente (19x19, captures), Hex (7, 9 or 11), Nine Men's Morris, Dots and Boxes (3, 4 or 5), Fox and Geese and Brandubh (one game, either side), Mancala/Kalah (3, 4 or 6 seeds), Backgammon, Checkers.
+- **One opponent scale everywhere:** Cadet, Captain, Admiral, with shared names and strings (`bd.skill.*`) and one picker (`board/SkillPicker.tsx`). Stronger opponents search deeper and also pause longer before moving (`THINK_MS` in `board/shared.ts`).
+- **Fair play:** every AI works only from the position (all of these are open-information games, and Backgammon's AI is given only its own dice), and tests check that it plays legal moves and beats a random player.
+- **Shared frame:** `board/VsShell.tsx` holds setup, status line, Undo (which also takes back the computer's reply), result card and How to Play.

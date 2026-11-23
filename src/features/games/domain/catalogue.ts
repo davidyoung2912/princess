@@ -43,6 +43,21 @@ export const GAMES: readonly GameEntry[] = [
   { id: 'spider', path: '/games-explorer/spider', mode: 'single', titleKey: 'gx.game.spider.title', bodyKey: 'gx.game.spider.body', levels: 3, minutes: [10, 45], players: 1, levelsKey: 'gx.meta.spider', noShare: true },
   { id: 'freecell', path: '/games-explorer/freecell', mode: 'single', titleKey: 'gx.game.freecell.title', bodyKey: 'gx.game.freecell.body', levels: 3, minutes: [5, 25], players: 1, levelsKey: 'gx.meta.freecell', noShare: true },
   { id: 'pyramid', path: '/games-explorer/pyramid', mode: 'single', titleKey: 'gx.game.pyramid.title', bodyKey: 'gx.game.pyramid.body', levels: 3, minutes: [3, 15], players: 1, levelsKey: 'gx.meta.pyramid', noShare: true },
+  { id: 'tripeaks', path: '/games-explorer/tripeaks', mode: 'single', titleKey: 'gx.game.tripeaks.title', bodyKey: 'gx.game.tripeaks.body', levels: 2, minutes: [3, 15], players: 1, levelsKey: 'gx.meta.tripeaks', noShare: true },
+  { id: 'gaps', path: '/games-explorer/gaps', mode: 'single', titleKey: 'gx.game.gaps.title', bodyKey: 'gx.game.gaps.body', levels: 1, minutes: [5, 20], players: 1, levelsKey: 'gx.meta.gaps', noShare: true },
+  { id: 'peg', path: '/games-explorer/peg', mode: 'single', titleKey: 'gx.game.peg.title', bodyKey: 'gx.game.peg.body', levels: 3, minutes: [5, 25], players: 1, levelsKey: 'gx.meta.peg', noShare: true },
+  { id: 'lights', path: '/games-explorer/lights', mode: 'single', titleKey: 'gx.game.lights.title', bodyKey: 'gx.game.lights.body', levels: 3, minutes: [2, 15], players: 1, levelsKey: 'gx.meta.lights', noShare: true },
+  { id: 'slide', path: '/games-explorer/slide', mode: 'single', titleKey: 'gx.game.slide.title', bodyKey: 'gx.game.slide.body', levels: 3, minutes: [3, 20], players: 1, levelsKey: 'gx.meta.slide', noShare: true },
+  { id: 'reversi', path: '/games-explorer/reversi', mode: 'single', titleKey: 'gx.game.reversi.title', bodyKey: 'gx.game.reversi.body', levels: 3, minutes: [10, 30], players: 1, levelsKey: 'gx.meta.reversi', noShare: true },
+  { id: 'gomoku', path: '/games-explorer/gomoku', mode: 'single', titleKey: 'gx.game.gomoku.title', bodyKey: 'gx.game.gomoku.body', levels: 3, minutes: [5, 25], players: 1, levelsKey: 'gx.meta.gomoku', noShare: true },
+  { id: 'pente', path: '/games-explorer/pente', mode: 'single', titleKey: 'gx.game.pente.title', bodyKey: 'gx.game.pente.body', levels: 3, minutes: [10, 30], players: 1, levelsKey: 'gx.meta.pente', noShare: true },
+  { id: 'hex', path: '/games-explorer/hex', mode: 'single', titleKey: 'gx.game.hex.title', bodyKey: 'gx.game.hex.body', levels: 3, minutes: [5, 25], players: 1, levelsKey: 'gx.meta.hex', noShare: true },
+  { id: 'morris', path: '/games-explorer/morris', mode: 'single', titleKey: 'gx.game.morris.title', bodyKey: 'gx.game.morris.body', levels: 3, minutes: [10, 30], players: 1, levelsKey: 'gx.meta.morris', noShare: true },
+  { id: 'dots', path: '/games-explorer/dots', mode: 'single', titleKey: 'gx.game.dots.title', bodyKey: 'gx.game.dots.body', levels: 3, minutes: [5, 20], players: 1, levelsKey: 'gx.meta.dots', noShare: true },
+  { id: 'hunt', path: '/games-explorer/hunt', mode: 'single', titleKey: 'gx.game.hunt.title', bodyKey: 'gx.game.hunt.body', levels: 3, minutes: [5, 25], players: 1, levelsKey: 'gx.meta.hunt', noShare: true },
+  { id: 'kalah', path: '/games-explorer/kalah', mode: 'single', titleKey: 'gx.game.kalah.title', bodyKey: 'gx.game.kalah.body', levels: 3, minutes: [5, 15], players: 1, levelsKey: 'gx.meta.kalah', noShare: true },
+  { id: 'backgammon', path: '/games-explorer/backgammon', mode: 'single', titleKey: 'gx.game.backgammon.title', bodyKey: 'gx.game.backgammon.body', levels: 3, minutes: [15, 40], players: 1, levelsKey: 'gx.meta.backgammon', noShare: true },
+  { id: 'checkers', path: '/games-explorer/checkers', mode: 'single', titleKey: 'gx.game.checkers.title', bodyKey: 'gx.game.checkers.body', levels: 3, minutes: [10, 30], players: 1, levelsKey: 'gx.meta.checkers', noShare: true },
 ]
 
 export const gamesOf = (mode: GameEntry['mode']): GameEntry[] => GAMES.filter((g) => g.mode === mode)
