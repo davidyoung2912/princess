@@ -20,6 +20,16 @@ export interface BundleType {
   qr: 'direct' | 'handoff'
 }
 
+/** Phase B11: the small picture on a bundle card, one glyph per family. Decorative only (the card's words say it all), so it is hidden from screen readers. */
+export const FAMILY_GLYPHS: Readonly<Record<BundleType['family'], string>> = {
+  venue: '🍽️', menu: '📋', event: '🎭', excursion: '🧭', dinner: '🕯️', port: '⚓', place: '📍', dish: '🥘', game: '🧩',
+}
+
+export function bundleGlyph(type: string): string {
+  const row = BUNDLE_TYPES[type]
+  return row ? FAMILY_GLYPHS[row.family] : ''
+}
+
 /** The registry: every type this app can draw and open. A later phase adds a row here and the card, the dialog and the link rules follow. */
 export const BUNDLE_TYPES: Readonly<Record<string, BundleType>> = {
   venue: { label: 'bundle.type.venue', family: 'venue', qr: 'direct' },

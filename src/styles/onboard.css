@@ -258,6 +258,7 @@ button.chat-quote { cursor: pointer; }
 .chat-card { margin: var(--space-2) 0; padding: var(--space-3); border: var(--border-width) solid var(--border); border-inline-start: 4px solid var(--primary); border-radius: var(--radius-card); background: var(--sky-tint); overflow-wrap: anywhere; }
 .chat-card p { margin: 0 0 var(--space-1); }
 .chat-card__type { font-size: var(--fs-caption); }
+.chat-card__glyph { margin-inline-end: var(--space-1); }
 .chat-card__title { font-weight: 700; }
 .chat-card--spent { border-inline-start-style: dashed; background: var(--bg); }
 

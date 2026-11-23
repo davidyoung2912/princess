@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatBundle, ChatMessage, ChatTally } from '../../api/chatTypes'
-import { BUNDLE_TYPES, bundleLink, forwardInput, bundleSummary, gameOfBundle, isKnownBundle } from '../../domain/chatBundles'
+import { BUNDLE_TYPES, bundleGlyph, bundleLink, forwardInput, bundleSummary, gameOfBundle, isKnownBundle } from '../../domain/chatBundles'
 import { holdIncoming } from '../../domain/games/incoming'
 import { decodeGame, startOnly, type ShareMode } from '../../domain/games/share'
 import { clock12 } from '../../domain/planCard'
@@ -52,7 +52,7 @@ export function BundleCard({ bundle, onOpen, outcome }: { bundle: ChatBundle; on
   const when = [bundle.day !== undefined ? t('card.day', { day: bundle.day }) : '', bundle.time ? clock(bundle.time) : ''].filter(Boolean).join(', ')
   return (
     <div className={['chat-card', 'chat-card--bundle', `chat-card--${bundle.type.replace(/\W/g, '-')}`].join(' ')} role="group" aria-label={[label, bundleSummary(bundle, clock)].filter(Boolean).join(': ')}>
-      {label && <p className="chat-card__type"><strong>{label}</strong></p>}
+      {label && <p className="chat-card__type">{known && <span className="chat-card__glyph" aria-hidden="true">{bundleGlyph(bundle.type)}</span>}<strong>{label}</strong></p>}
       <p className="chat-card__title">{bundle.title}</p>
       {bundle.subtitle && <p className="muted">{bundle.subtitle}</p>}
       {when && <p>{when}</p>}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLE_TYPES, BUNDLE_VERSION, REF_TYPES, bundleLink, bundleSummary, eventRef, forwardInput, gameOfBundle, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
+import { BUNDLE_TYPES, BUNDLE_VERSION, bundleGlyph, REF_TYPES, bundleLink, bundleSummary, eventRef, forwardInput, gameOfBundle, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
 
 const venue = { type: 'venue', v: 1, title: 'Crown Grill', subtitle: 'Steakhouse', path: '/dining-today/crown-grill', place: 'Deck 7' }
 
@@ -162,5 +162,12 @@ describe('forwardInput', () => {
   it('refuses a bundle with no ref or an unknown type', () => {
     expect(forwardInput({ type: 'venue', v: BUNDLE_VERSION })).toBeNull()
     expect(forwardInput({ type: 'nope', v: BUNDLE_VERSION, ref: 'x:1' })).toBeNull()
+  })
+})
+
+describe('bundle glyphs (B11)', () => {
+  it('has a glyph for every registered type and none for an unknown one', () => {
+    for (const type of Object.keys(BUNDLE_TYPES)) expect(bundleGlyph(type)).not.toBe('')
+    expect(bundleGlyph('nonsense')).toBe('')
   })
 })

@@ -314,6 +314,8 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 
 > **Built 2026-11-23, part 6 (small): keyboard and status pass on the send dialog** (front end checked with test, lint, tsc and build; no server change). **Done:** a visible "Sending…" status while a send runs, the chat list is disabled meanwhile, and focus moves to Done once everything has gone. **Not done (B11 part 7):** Stanley answers (server: admin confirm in made groups), naming the original sender of a forward (server), thumbnails.
 
+> **Built 2026-11-23, part 7 (small): thumbnails** (front end checked with test, lint, tsc and build; no server change). **Done:** each bundle card shows a small glyph for its family beside the type word (`FAMILY_GLYPHS`, `bundleGlyph`, tested for every registered type; `aria-hidden`, since the words carry the meaning). **Not done (B11 part 8):** Stanley answers (server: admin confirm in made groups), naming the original sender of a forward (server); richer per-game thumbnails.
+
 ## 7. Risks
 
 - **Scope creep in B2 to B6.** Each planning object is built once, in a fixed order, and each phase is usable on its own.
