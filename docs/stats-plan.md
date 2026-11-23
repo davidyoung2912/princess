@@ -13,7 +13,7 @@ A page under Me (`/me/stats`, screen M46) that shows a guest their own numbers i
 
 ## What is in it
 
-Real sections: Life in the app, Sign-ins and security, Chat, Stanley, Eating and drinking, Shows and events, Ports and excursions, Spa and wellness, Money and spending, Your voyages, Getting ready, Around the ship, Friends and family, Records and badges (31 badges). Made-up sections: Buffet science, Seagull relations, What Stanley privately thinks, Cabin physics, Forecast and fortune, Towel animal intelligence, Pool deck politics, Karaoke career. Every real section also ends with two or three made-up stats.
+Real sections: Life in the app, Sign-ins and security, Chat, Stanley, Eating and drinking, Shows and events, Ports and excursions, Spa and wellness, Money and spending, Your voyages, Getting ready, Around the ship, Friends and family, Records and badges (31 badges). Made-up sections: Buffet science, Seagull relations, What Stanley privately thinks, Cabin physics, Forecast and fortune, Towel animal intelligence, Pool deck politics, Karaoke career, Muster drill performance, Elevator etiquette, Sunset appreciation, Souvenir psychology, Ocean wildlife sightings, Midnight snack index, Dress code diplomacy. Every real section also ends with two or three made-up stats.
 
 ## Adding a stat
 

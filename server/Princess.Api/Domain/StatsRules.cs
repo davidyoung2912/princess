@@ -43,6 +43,13 @@ public static class StatsRules
             Towel(seed),
             PoolDeck(r, seed),
             Karaoke(r, seed),
+            Muster(seed),
+            Lifts(seed),
+            Sunset(seed),
+            Souvenirs(r, seed),
+            Wildlife(seed),
+            Midnight(r, seed),
+            Dress(r, seed),
         };
         var all = sections.SelectMany(s => s.Stats).ToList();
         var real = all.Count(s => !s.Joke);
@@ -92,6 +99,8 @@ public static class StatsRules
         items.Add(S("app.mostViews", "Most screens in one day", Num(r.Days.Count == 0 ? 0 : r.Days.Max(d => d.Views))));
         if (r.Days.Count > 0) { var best = r.Days.OrderByDescending(d => d.Seconds).ThenBy(d => d.Day).First(); items.Add(S("app.bestDay", "Your busiest day in the app", best.Day.ToString("MMMM d, yyyy", En), Dur(best.Seconds))); }
         items.Add(S("app.weekend", "Share of your days that were weekends", r.Days.Count == 0 ? "Not yet" : $"{(r.Days.Count(d => d.Day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday) * 100 / r.Days.Count).ToString(En)}%"));
+        foreach (var area in new[] { "home", "plan", "ship", "chat", "me" }) items.Add(S($"app.in{area}", $"Screens viewed in {AreaName("area." + area)}", Num(r.Counter("area." + area))));
+        items.Add(S("app.persona", "Your time of day", Persona(r), "Worked out from when you use the app"));
         items.Add(S("app.statsViews", "Times you have checked your stats", Num(r.Counter("route.me.stats")), "This page counts, of course"));
         items.Add(J("app.thumb", "Thumb distance travelled", $"{(views * 0.9 / 100 + Roll(seed, "thumb", 1, 9) / 10.0).ToString("N1", En)} metres", "Roughly a very short sprint"));
         items.Add(J("app.battery", "Battery sacrificed to the app", $"{(seconds / 60 * 3 / 10 + Roll(seed, "battery", 2, 14)).ToString(En)}%", "Given cheerfully"));
@@ -143,6 +152,7 @@ public static class StatsRules
         };
         if (r.Date("first_msg_at") is { } firstMsg) items.Add(S("chat.first", "Your first message", firstMsg.ToString("MMMM d, yyyy", En)));
         if (r.Get("chat_days") > 0) items.Add(S("chat.perDay", "Messages on a day you chat", (msgs / (double)r.Get("chat_days")).ToString("N1", En)));
+        items.Add(S("chat.mentionsMade", "Times you mentioned someone", Num(r.Get("mentions_made"))));
         items.Add(S("chat.mornings", "Good mornings said", Num(r.Get("mornings_said"))));
         if (r.Text("emoji") is { Length: > 0 } e) items.Add(S("chat.emoji", "Your favourite reaction", e));
         if (r.Text("room") is { Length: > 0 } room) items.Add(S("chat.room", "Your chattiest chat", room));
@@ -159,7 +169,10 @@ public static class StatsRules
             S("stanley.asks", "Questions you asked Stanley", Num(r.Get("asks"))),
             S("stanley.actions", "Things Stanley did for you", Num(r.Get("stanley_actions"))),
             S("stanley.reminders", "Reminders you set", Num(r.Get("reminders"))),
+            S("stanley.due", "Reminders still to come", Num(r.Get("reminders_due"))),
             J("stanley.patience", "Stanley's patience used up", $"{Roll(seed, "patience", 1, 9)}%", "He says he has plenty left"),
+            J("stanley.joke", "Jokes Stanley has saved for later", Num(Roll(seed, "stanleyjoke", 3, 25))),
+            J("stanley.battery", "Stanley's own battery", Pick(seed, "stanleybat", "Full of beans", "Running on tea", "Always charged, it is magic")),
             J("stanley.hours", "Hours Stanley has spent thinking about you", $"{(r.Get("asks") * 3 / 10 + Roll(seed, "hours", 2, 40)).ToString(En)}", "Not really, he is an app"),
         };
         return Sec("stanley", "Stanley", "Your helper, by the numbers.", "🤖", items);
@@ -176,6 +189,7 @@ public static class StatsRules
             S("dining.orders", "Orders placed", Num(r.Get("orders"))),
             S("dining.room", "Room service and breakfast orders", Num(r.Get("room_orders"))),
             S("dining.items", "Items ordered", Num(r.Get("order_items"))),
+            S("dining.changes", "Dinners you moved or cancelled", Num(r.Get("dinner_changes"))),
             S("dining.tips", "Tipped on orders", Money(r.Get("tip_cents"))),
             S("dining.breakfasts", "Breakfasts ordered to your door", Num(r.Get("breakfasts"))),
             S("dining.drinks", "Drinks logged", Num(r.Get("drinks"))),
@@ -200,6 +214,7 @@ public static class StatsRules
         var items = new List<StatItem>
         {
             S("shows.shows", "Show tickets", Num(r.Get("shows"))),
+            S("shows.changes", "Show tickets moved or cancelled", Num(r.Get("show_changes"))),
             S("shows.plan", "Events on your plan", Num(r.Get("plan_events"))),
             S("shows.hours", "Hours of events planned", $"{(r.Get("event_minutes") / 60.0).ToString("N1", En)}"),
             S("shows.longest", "Longest event on your plan", $"{Num(r.Get("longest_event"))} minutes"),
@@ -222,6 +237,7 @@ public static class StatsRules
             S("ashore.walk", "Walking planned on excursions", $"{(r.Get("tour_walk_tenths") / 10.0).ToString("N1", En)} km"),
             S("ashore.spend", "Spent on excursions", Money(r.Get("tour_cents"))),
             S("ashore.tender", "Excursions that need a tender boat", Num(r.Get("tours_tender"))),
+            S("ashore.cancelled", "Excursions you cancelled", Num(r.Get("tours_cancelled"))),
         };
         if (r.Get("tour_earliest") >= 0) items.Add(S("ashore.earliest", "Your earliest excursion start", TimeOfDay(r.Get("tour_earliest"))));
         if (r.Text("port") is { Length: > 0 } p) items.Add(S("ashore.fav", "Your favourite port", p));
@@ -240,6 +256,7 @@ public static class StatsRules
             S("spa.minutes", "Minutes of pampering", Num(r.Get("spa_minutes"))),
             S("spa.kinds", "Different treatments", Num(r.Get("spa_kinds"))),
             S("spa.spend", "Spent on the spa", Money(r.Get("spa_cents"))),
+            S("spa.cancelled", "Appointments you cancelled", Num(r.Get("spa_cancelled"))),
             J("spa.calm", "Calm achieved", $"{Roll(seed, "calm", 71, 99)}%", "Peaks at the second cucumber slice"),
             J("spa.robe", "Robe-to-person fit", Pick(seed, "robe", "Excellent", "Generous", "Tent-like", "Surprisingly stylish")),
             J("spa.whale", "Whale sounds hummed along to", Num(Roll(seed, "whale", 0, 6))),
@@ -256,6 +273,7 @@ public static class StatsRules
             S("money.biggest", "Your biggest single charge", Money(r.Get("folio_max"))),
             S("money.credits", "Credits and refunds received", Money(r.Get("folio_credit_cents"))),
             S("money.days", "Days you had a charge", Num(r.Get("folio_days"))),
+            S("money.photos", "Spent on photo packages", Money(r.Get("photo_cents")), r.Get("photo_saved") > 0 ? $"Saved {Money(r.Get("photo_saved"))} with packages" : null),
             S("money.avg", "Average per day with a charge", r.Get("folio_days") > 0 ? Money(r.Get("folio_cents") / r.Get("folio_days")) : "Not yet"),
         };
         if (r.Text("spend_category") is { Length: > 0 } c) items.Add(S("money.top", "Where most of it went", c));
@@ -275,6 +293,8 @@ public static class StatsRules
             S("voyages.longest", "Your longest voyage", $"{Num(r.Get("longest_trip"))} nights"),
             S("voyages.past", "Earlier voyages on record", Num(r.Get("past_trips"))),
             S("voyages.ships", "Different ships", Num(r.Get("ships"))),
+            S("voyages.value", "Value of your booked voyages", Money(r.Get("booking_cents"))),
+            S("voyages.pastFare", "Fares on earlier voyages", Money(r.Get("past_fare_cents"))),
             S("voyages.ports", "Ports on your itineraries", Num(r.Get("ports"))),
             S("voyages.countries", "Countries on your itineraries", Num(r.Get("countries"))),
             S("voyages.companions", "People sailing with you", Num(r.Get("companions"))),
@@ -295,6 +315,8 @@ public static class StatsRules
             S("ready.checklist", "Checklist items ticked", Num(r.Get("checklist"))),
             S("ready.packed", "Things you packed", Num(r.Get("packed"))),
             S("ready.favourites", "Favourites saved", Num(r.Get("favourites"))),
+            S("ready.favKinds", "Different kinds of thing you have saved", Num(r.Get("fav_kinds"))),
+            S("ready.changes", "Changes of plan, all told", Num(r.Get("dinner_changes") + r.Get("tours_cancelled") + r.Get("spa_cancelled") + r.Get("show_changes")), "Dinners, excursions, spa and shows"),
             S("ready.celebrations", "Celebrations noted", Num(r.Get("celebrations"))),
             S("ready.feedback", "Times you sent feedback", Num(r.Get("feedback"))),
             S("ready.thanks", "Thank-you notes sent to crew", Num(r.Get("thanks_sent"))),
@@ -486,6 +508,111 @@ public static class StatsRules
         return Sec("towel", "Towel animal intelligence", "A rigorous study with no methodology.", "🐘", items, true);
     }
 
+    private static StatSection Muster(uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("muster.attention", "Attention paid to the safety briefing", $"{Roll(seed, "attn", 62, 100)}%"),
+            J("muster.vest", "Time to put on the life jacket", $"{Roll(seed, "vest", 20, 140)} seconds", "Straps untangled"),
+            J("muster.whistle", "Whistle tested, despite the sign", Num(Roll(seed, "whistle", 0, 2))),
+            J("muster.sheep", "Times you lost the group and followed a stranger", Num(Roll(seed, "sheep", 0, 3))),
+            J("muster.station", "Station found on the first try", Pick(seed, "station", "Yes, confidently", "Eventually", "With a crew member", "Following the crowd")),
+            J("muster.chat", "Chat during the demonstration", Pick(seed, "musterchat", "Whispered", "Mostly nodding", "Excellent eye contact", "Asleep, but standing")),
+            J("muster.grade", "Final grade", Pick(seed, "mustergrade", "Distinction", "Pass, with style", "Gold star", "A very good effort")),
+        };
+        return Sec("muster", "Muster drill performance", "Marks awarded by nobody, for a drill you passed.", "🦺", items, true);
+    }
+
+    private static StatSection Lifts(uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("lift.buttons", "Lift buttons pressed that were already lit", Num(Roll(seed, "liftbtn", 3, 40))),
+            J("lift.small", "Small talk attempts", Num(Roll(seed, "smalltalk", 0, 6)), "Success rate: low"),
+            J("lift.stairs", "Times you chose the stairs out of spite", Num(Roll(seed, "stairs", 0, 8))),
+            J("lift.floor", "Floors you overshot", Num(Roll(seed, "overshoot", 0, 5))),
+            J("lift.stare", "Seconds spent staring at the floor numbers", Num(Roll(seed, "stare", 20, 300))),
+            J("lift.mirror", "Mirror checks per ride", Num(Roll(seed, "mirror", 0, 4))),
+            J("lift.type", "Your lift personality", Pick(seed, "lifttype", "The holder of doors", "The speed-presser", "The silent one", "The friendly announcer")),
+        };
+        return Sec("lift", "Elevator etiquette", "Observations from small rooms that move.", "🛗", items, true);
+    }
+
+    private static StatSection Sunset(uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("sunset.count", "Sunsets watched with a drink in hand", Num(Roll(seed, "sunsets", 1, 9))),
+            J("sunset.photo", "Sunset photos taken that look identical", Num(Roll(seed, "sunphoto", 4, 120))),
+            J("sunset.gasp", "Audible gasps", Num(Roll(seed, "gasp", 0, 12))),
+            J("sunset.colour", "Most dramatic colour", Pick(seed, "suncolour", "Tangerine", "Flamingo pink", "Molten gold", "Moody purple")),
+            J("sunset.clap", "Spontaneous applause on deck", Pick(seed, "sunclap", "Yes, from strangers", "One person, loudly", "Just a polite murmur", "Only the seagulls")),
+            J("sunset.wish", "Wishes made at the horizon", Num(Roll(seed, "sunwish", 1, 5)), "No refunds"),
+            J("sunset.mood", "Post-sunset mood", Pick(seed, "sunmood", "Dreamy", "Hungry", "Philosophical", "Ready for dessert")),
+        };
+        return Sec("sunset", "Sunset appreciation", "Measured with a very romantic ruler.", "🌅", items, true);
+    }
+
+    private static StatSection Souvenirs(StatsRaw r, uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("souvenir.magnets", "Fridge magnets already imagined", Num(Roll(seed, "magnetsplan", 2, 12) + r.Get("tours"))),
+            J("souvenir.hat", "Hats tried on in a shop", Num(Roll(seed, "shophat", 0, 7))),
+            J("souvenir.shell", "Shells tempted to take home", Num(Roll(seed, "shell", 1, 15)), "Please leave them"),
+            J("souvenir.postcards", "Postcards written, stamped and not posted", Num(Roll(seed, "postcards", 0, 6))),
+            J("souvenir.haggle", "Haggling success rate", $"{Roll(seed, "haggle", 3, 60)}%"),
+            J("souvenir.bag", "Bag spaces left for the trip home", Pick(seed, "bagspace", "Plenty", "A dubious amount", "None, wearing three jumpers", "One sock")),
+            J("souvenir.gift", "Gift for everyone at home", Pick(seed, "gift", "Chocolate", "A keyring", "A very large hat", "Nothing, just photos")),
+        };
+        return Sec("souvenir", "Souvenir psychology", "A deep study of things you will definitely not need.", "🧿", items, true);
+    }
+
+    private static StatSection Wildlife(uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("wildlife.dolphins", "Dolphins spotted", Num(Roll(seed, "dolphins", 0, 6)), "Some were waves"),
+            J("wildlife.whales", "Whales claimed", Num(Roll(seed, "whales", 0, 3))),
+            J("wildlife.flying", "Flying fish mistaken for birds", Num(Roll(seed, "flyfish", 0, 5))),
+            J("wildlife.logs", "Floating logs mistaken for whales", Num(Roll(seed, "logs", 0, 4))),
+            J("wildlife.binoc", "Minutes with the binoculars on the wrong end", Num(Roll(seed, "binocs", 0, 4))),
+            J("wildlife.birdname", "Bird you named", Pick(seed, "birdname", "Gary", "Maureen", "Admiral Flap", "Sir Squawks")),
+            J("wildlife.luck", "Wildlife luck", Pick(seed, "wildluck", "Excellent", "Patience required", "Better on day two", "A single heroic pelican")),
+        };
+        return Sec("wildlife", "Ocean wildlife sightings", "Sightings are unverified and possibly floating logs.", "🐬", items, true);
+    }
+
+    private static StatSection Midnight(StatsRaw r, uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("midnight.snacks", "Midnight snacks considered", Num(Roll(seed, "midsnack", 1, 9) + r.Get("room_orders"))),
+            J("midnight.pizza", "Pizza slices that were just one", Num(Roll(seed, "pizza", 1, 5)), "Allegedly"),
+            J("midnight.guilt", "Guilt level at 12:01 am", Pick(seed, "midguilt", "Negligible", "Mild", "Dessert-adjacent", "None whatsoever")),
+            J("midnight.cookie", "Cookies eaten standing up", Num(Roll(seed, "cookie", 0, 7))),
+            J("midnight.quiet", "Quietness of your opening of the wrapper", Pick(seed, "wrapper", "Ninja", "Crinkly", "Announced to the deck", "Perfect")),
+            J("midnight.dream", "Dreams about the dessert menu", Num(Roll(seed, "dessertdream", 0, 6))),
+            J("midnight.verdict", "Overall verdict", Pick(seed, "midverdict", "Worth it", "Absolutely worth it", "No regrets", "Ask again tomorrow")),
+        };
+        return Sec("midnight", "Midnight snack index", "Findings from the late shift of the kitchen.", "🌙", items, true);
+    }
+
+    private static StatSection Dress(StatsRaw r, uint seed)
+    {
+        var items = new List<StatItem>
+        {
+            J("dress.formal", "Formal night readiness", $"{Roll(seed, "formal", 40, 100)}%"),
+            J("dress.shoes", "Shoes packed per day", $"{Roll(seed, "shoes", 1, 4)}.{Roll(seed, "shoes2", 0, 9)}"),
+            J("dress.tie", "Ties tied on the first attempt", Num(Roll(seed, "tie", 0, 3))),
+            J("dress.sparkle", "Sparkle level", Pick(seed, "sparkle", "Subtle", "Disco-adjacent", "Visible from space", "Tasteful")),
+            J("dress.swimsuit", "Swimsuit changes per day", Num(Roll(seed, "swim", 1, 4))),
+            J("dress.scarf", "Scarves worn indoors for style", Num(Roll(seed, "scarf", 0, 5))),
+            J("dress.compliment", "Compliments received", Num(Roll(seed, "compliments", 1, 9) + r.Get("shows"))),
+        };
+        return Sec("dress", "Dress code diplomacy", "Fashion advice nobody asked for.", "👗", items, true);
+    }
+
     private static StatSection PoolDeck(StatsRaw r, uint seed)
     {
         var items = new List<StatItem>
@@ -533,6 +660,14 @@ public static class StatsRules
         if (seconds < 60) return $"{seconds} sec";
         if (seconds < 3600) return $"{seconds / 60} min";
         return $"{seconds / 3600}h {seconds % 3600 / 60}m";
+    }
+
+    /// <summary>A label for when the guest mostly uses the app, from the hour counters.</summary>
+    private static string Persona(StatsRaw r)
+    {
+        var buckets = new (string Name, long Seconds)[] { ("Early bird", Hours(r, 5, 8)), ("Daytime regular", Hours(r, 9, 17)), ("Evening person", Hours(r, 18, 22)), ("Night owl", Hours(r, 23, 23) + Hours(r, 0, 4)) };
+        var best = buckets.OrderByDescending(b => b.Seconds).First();
+        return best.Seconds == 0 ? "Not yet" : best.Name;
     }
 
     private static long Active(StatsRaw r) => r.Days.Count;

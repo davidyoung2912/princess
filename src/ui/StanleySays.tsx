@@ -23,7 +23,7 @@ export function StanleySays() {
         <img className="says__icon" src={artUrl({ kind: 'head', id: 'laughing' }) ?? stanley} alt="" width="192" height="192" />
         <div className="says__body">
           <p className="says__title">{t('stanleySays.title')}</p>
-          <p className="says__text">“{joke}”</p>
+          <p className="says__text">{joke}</p>
         </div>
         <Button variant="secondary" className="says__dismiss" onClick={() => { dismissJoke(); setGone(true) }}>{t('stanleySays.dismiss')}</Button>
       </aside>

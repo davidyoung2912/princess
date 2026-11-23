@@ -115,7 +115,18 @@ public sealed class DapperStatsStore(IDbConnectionFactory db) : IStatsStore
           (SELECT ISNULL(SUM(CAST(Qty AS BIGINT)), 0) FROM dbo.LaundryRequests WHERE BookingId IN (SELECT Id FROM @bk)) AS laundry_items,
           (SELECT COUNT(*) FROM dbo.WifiDevices WHERE BookingId IN (SELECT Id FROM @bk)) AS wifi_devices,
           (SELECT ISNULL(SUM(UsedMb), 0) FROM dbo.WifiDevices WHERE BookingId IN (SELECT Id FROM @bk)) AS wifi_mb,
-          (SELECT COUNT(*) FROM dbo.PhotoPurchases WHERE BookingId IN (SELECT Id FROM @bk)) AS photo_packs
+          (SELECT COUNT(*) FROM dbo.PhotoPurchases WHERE BookingId IN (SELECT Id FROM @bk)) AS photo_packs,
+          (SELECT ISNULL(SUM(PaidCents), 0) FROM dbo.PhotoPurchases WHERE BookingId IN (SELECT Id FROM @bk)) AS photo_cents,
+          (SELECT ISNULL(SUM(SavedCents), 0) FROM dbo.PhotoPurchases WHERE BookingId IN (SELECT Id FROM @bk)) AS photo_saved,
+          (SELECT COUNT(*) FROM dbo.ChatMentions mm JOIN dbo.ChatMessages m ON m.Id = mm.MessageId WHERE m.FromUserId = @id) AS mentions_made,
+          (SELECT COUNT(*) FROM dbo.StanleyReminders WHERE UserId = @id AND DueAt > SYSUTCDATETIME()) AS reminders_due,
+          (SELECT COUNT(*) FROM dbo.DiningReservationGuests g JOIN dbo.DiningReservations r ON r.Id = g.ReservationId WHERE g.UserId = @id AND r.Status IN ('cancelled', 'moved')) AS dinner_changes,
+          (SELECT COUNT(*) FROM dbo.TourBookingGuests g JOIN dbo.TourBookings t ON t.Id = g.TourBookingId WHERE g.UserId = @id AND t.Status = 'cancelled') AS tours_cancelled,
+          (SELECT COUNT(*) FROM dbo.SpaAppointmentGuests g JOIN dbo.SpaAppointments a ON a.Id = g.AppointmentId WHERE g.UserId = @id AND a.Status = 'cancelled') AS spa_cancelled,
+          (SELECT COUNT(*) FROM dbo.ShowTicketGuests g JOIN dbo.ShowTickets s ON s.Id = g.ShowTicketId WHERE g.UserId = @id AND s.Status IN ('cancelled', 'moved')) AS show_changes,
+          (SELECT ISNULL(SUM(b.TotalCents), 0) FROM dbo.Bookings b WHERE b.Id IN (SELECT Id FROM @bk) AND b.Status = 'confirmed') AS booking_cents,
+          (SELECT ISNULL(SUM(FareCents), 0) FROM dbo.PastTrips WHERE UserId = @id AND Cancelled = 0) AS past_fare_cents,
+          (SELECT COUNT(DISTINCT LEFT(ItemKey, CHARINDEX(N':', ItemKey + N':') - 1)) FROM dbo.Favourites WHERE UserId = @id) AS fav_kinds
         """;
 
     // The favourites: one word each, from the most common row. Several statements, one round trip.

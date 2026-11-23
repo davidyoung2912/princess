@@ -466,7 +466,7 @@ main.signin { margin-inline: auto; }
 .says__icon { width: 3rem; height: 3rem; border-radius: 50%; }
 .says__body { min-width: 0; }
 .says__title { margin: 0; font-weight: 700; }
-.says__text { margin: 0; }
+.says__text { margin: 0; font-style: italic; }
 .says__dismiss { white-space: nowrap; }
 @media (max-width: 30rem) { .says { grid-template-columns: auto 1fr; } .says__dismiss { grid-column: 1 / -1; justify-self: start; } }
 

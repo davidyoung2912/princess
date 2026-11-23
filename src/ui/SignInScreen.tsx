@@ -15,7 +15,7 @@ type Mode = 'signin' | 'signup' | 'forgot' | 'magic'
 
 /** The sign-in page: username plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
 // TEMPORARY, development builds only: pre-fill the "port-solo-1" test account (boarding on day one of the 7-day sailing) so testing is one click.
-const DEV_LOGIN = import.meta.env.PROD ? '' : 'port-solo-1'
+const DEV_LOGIN = import.meta.env.PROD ? '' : 'portsolo1'
 
 export function SignInScreen() {
   const [mode, setMode] = useState<Mode>('signin')

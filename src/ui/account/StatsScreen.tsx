@@ -82,7 +82,7 @@ function Report({ report }: { report: StatsReport }) {
             {top.map((s) => <StatTile key={s.id} item={s} onShare={(text, title) => void share(text, title)} />)}
           </dl>
         )}
-        <div className="actions">
+        <div className="actions stats-actions">
           <Button onClick={() => void share(cardText(report, titleOfPath), t('stats.heroTitle', { name: report.name }))}>{t('stats.shareCard')}</Button>
           <Button variant="secondary" onClick={() => void sharePicture()}>{t('stats.sharePicture')}</Button>
           <Button variant="secondary" onClick={() => void share(reportText(report, titleOfPath, showJokes), t('stats.heroTitle', { name: report.name }))}>{t('stats.shareAll')}</Button>

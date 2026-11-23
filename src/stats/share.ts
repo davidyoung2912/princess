@@ -28,13 +28,13 @@ export function highlightItems(report: StatsReport): StatItem[] {
 /** A short card: the headline and the highlights. What most people will actually send. */
 export function cardText(report: StatsReport, resolve: ResolveRoute): string {
   const lines = highlightItems(report).map((s) => `• ${statText(s, resolve)}`)
-  return [`${report.name}'s cruise stats`, report.headline, ...lines].join('\n')
+  return [`${report.name}'s Cruise Statistics`, report.headline, ...lines].join('\n')
 }
 
 /** Every section, as text. Made-up stats can be left out. */
 export function reportText(report: StatsReport, resolve: ResolveRoute, includeJokes = true): string {
   const parts = report.sections.filter((s) => includeJokes || !s.joke).map((s) => sectionText(s, resolve, includeJokes)).filter((s) => s !== '')
-  return [`${report.name}'s cruise stats`, report.headline, ...parts].join('\n\n')
+  return [`${report.name}'s Cruise Statistics`, report.headline, ...parts].join('\n\n')
 }
 
 /** Which sections to show: all of them, or only the ones that are not entirely made up. */

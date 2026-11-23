@@ -268,4 +268,36 @@ public class StatsRulesTests
         Assert.Equal("March 21, 2027", next.Value);
         Assert.Equal("In 12 days", next.Note);
     }
+
+    [Fact]
+    public void TimeOfDayIsNamedFromTheBusiestPartOfTheDay()
+    {
+        Assert.Equal("Not yet", Find(Report(), "app.persona").Value);
+        Assert.Equal("Night owl", Find(Report(Raw(x => { x.Counters["hour.23"] = 100; x.Counters["hour.01"] = 100; x.Counters["hour.10"] = 150; })), "app.persona").Value);
+        Assert.Equal("Early bird", Find(Report(Raw(x => x.Counters["hour.06"] = 50)), "app.persona").Value);
+    }
+
+    [Fact]
+    public void ScreensAreCountedPerTab()
+    {
+        var r = Report(Raw(x => { x.Counters["area.chat"] = 12; x.Counters["area.me"] = 3; }));
+        Assert.Equal("12", Find(r, "app.inchat").Value);
+        Assert.Equal("3", Find(r, "app.inme").Value);
+        Assert.Equal("0", Find(r, "app.inplan").Value);
+    }
+
+    [Fact]
+    public void ChangesOfPlanAreAddedUp()
+    {
+        var r = Report(Raw(x => { x.N["dinner_changes"] = 2; x.N["tours_cancelled"] = 1; x.N["spa_cancelled"] = 1; x.N["show_changes"] = 3; }));
+        Assert.Equal("7", Find(r, "ready.changes").Value);
+    }
+
+    [Fact]
+    public void ThereAreManyMadeUpSectionsAndEachHasSeveralStats()
+    {
+        var jokes = Report().Sections.Where(s => s.Joke).ToList();
+        Assert.True(jokes.Count >= 14);
+        Assert.All(jokes, s => Assert.True(s.Stats.Count >= 7));
+    }
 }

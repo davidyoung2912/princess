@@ -26,7 +26,7 @@ describe('sectionText', () => {
 
 describe('report', () => {
   it('finds the highlights it names and skips an unknown id', () => expect(highlightItems(report).map((s) => s.id)).toEqual(['chat.msgs', 's.1']))
-  it('makes a short card of the headline and highlights', () => expect(cardText(report, resolve)).toBe("Ana's cruise stats\n5 days in the app.\n• Messages sent: 1,234\n• Seagulls who know you: 3 (made up)"))
+  it('makes a short card of the headline and highlights', () => expect(cardText(report, resolve)).toBe("Ana's Cruise Statistics\n5 days in the app.\n• Messages sent: 1,234\n• Seagulls who know you: 3 (made up)"))
   it('shares everything, or only what is real', () => {
     expect(reportText(report, resolve)).toContain('Seagull relations')
     const real_only = reportText(report, resolve, false)

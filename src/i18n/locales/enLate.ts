@@ -6492,7 +6492,7 @@ export const enLate = {
   'screen.M46.title': 'Your Stats',
   'screen.M46.subtext': 'Real numbers about how you use the app, a few made-up ones for fun, and a way to share them.',
   'stats.intro': 'Everything the app can tell you about your cruise life, in sections. The real numbers come from what you have actually done. The ones marked Made up are jokes, so please do not rely on them for anything, least of all your seagull diplomacy.',
-  'stats.heroTitle': '{name}’s cruise stats',
+  'stats.heroTitle': '{name}’s Cruise Statistics',
   'stats.counts': '{real} real stats and {jokes} made-up ones.',
   'stats.madeUp': 'Made up',
   'stats.madeUpSection': 'All made up',
