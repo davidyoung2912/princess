@@ -144,6 +144,8 @@ services.AddScoped<EmailCheckService>();
 services.AddScoped<ReminderEmailService>();
 services.AddScoped<CalendarFeedService>();
 services.AddScoped<IShareStore, DapperShareStore>();
+services.AddScoped<IBundleShareStore, DapperBundleShareStore>();
+services.AddScoped<BundleShareService>();
 services.AddScoped<PartyService>();
 services.AddScoped<ShareLinkService>();
 services.AddScoped<IStateStore, DapperStateStore>();
@@ -300,6 +302,14 @@ services.AddOptions<RateLimiterOptions>().Configure<IOptions<AuthOptions>>((o, a
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
         }));
+    // Guessing hand-over codes is the thing to stop, so reading and making them is limited per signed-in person (60 a minute).
+    o.AddPolicy(ShareEndpoints.Limiter, http =>
+        RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirst(Claims.Subject)?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 60,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
     // Guessing agent booking numbers is the thing to stop, so the window is per signed-in person (their sub), falling back to the address.
     o.AddPolicy(JourneyEndpoints.LinkLimiter, http =>
         RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirst(Claims.Subject)?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
@@ -424,6 +434,7 @@ v1.MapChatConnectionEndpoints();
 v1.MapChatGroupEndpoints();
 v1.MapChatHostEndpoints();
 v1.MapChatRoomEndpoints();
+v1.MapShareEndpoints();
 v1.MapChatSafetyEndpoints();
 v1.MapChatStanleyEndpoints();
 v1.MapFinishEndpoints();

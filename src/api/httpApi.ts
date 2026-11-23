@@ -53,6 +53,7 @@ export interface HttpGroups {
   messages: Api['messages']
   chatConnections: Api['chatConnections']
   chatConversations: Api['chatConversations']
+  shares: Api['shares']
   chatGroups: Api['chatGroups']
   chatRooms: Api['chatRooms']
   chatRoomsStaff: Api['chatRoomsStaff']
@@ -235,6 +236,13 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     avatars: () => get('/me/chat/avatars'),
     avatar: async () => (await get<{ avatar: string | null }>('/me/chat/avatar')).avatar,
     setAvatar: async (avatar) => (await send<{ avatar: string | null }>('put', '/me/chat/avatar', { avatar })).avatar,
+  }
+  const shares: HttpGroups['shares'] = {
+    direct: (type, ref) => get(`/me/shares/direct?t=${seg(type)}&r=${seg(ref)}`),
+    open: (code) => get(`/me/shares/${seg(code)}`),
+    create: (ref, minutes) => send('post', '/me/shares', { ref, minutes }),
+    mine: () => get('/me/shares'),
+    stop: async (id) => { await send('delete', `/me/shares/${seg(id)}`) },
   }
   const chatConversations: HttpGroups['chatConversations'] = {
     list: () => get('/me/chat/conversations'),
@@ -456,6 +464,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     messages,
     chatConnections,
     chatConversations,
+    shares,
     chatGroups,
     chatRooms,
     chatRoomsStaff,
@@ -819,6 +828,7 @@ export function toApi(g: HttpGroups): Api {
     messages: g.messages,
     chatConnections: g.chatConnections,
     chatConversations: g.chatConversations,
+    shares: g.shares,
     chatGroups: g.chatGroups,
     chatRooms: g.chatRooms,
     chatRoomsStaff: g.chatRoomsStaff,

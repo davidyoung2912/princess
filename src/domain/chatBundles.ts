@@ -13,12 +13,14 @@ export interface BundleType {
   label: StringKey
   /** The screen reader's name for the chat icon on this kind of thing. */
   family: 'venue' | 'menu'
+  /** How a code for it is made: `direct` for public catalogue data (the address holds the ref, no signal needed), `handoff` for anything personal (a short code the server keeps for a short time). */
+  qr: 'direct' | 'handoff'
 }
 
 /** The registry: every type this app can draw and open. A later phase adds a row here and the card, the dialog and the link rules follow. */
 export const BUNDLE_TYPES: Readonly<Record<string, BundleType>> = {
-  venue: { label: 'bundle.type.venue', family: 'venue' },
-  menu: { label: 'bundle.type.menu', family: 'menu' },
+  venue: { label: 'bundle.type.venue', family: 'venue', qr: 'direct' },
+  menu: { label: 'bundle.type.menu', family: 'menu', qr: 'direct' },
 }
 
 const MAX_TEXT = 200

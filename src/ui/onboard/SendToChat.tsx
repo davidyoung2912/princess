@@ -8,5 +8,5 @@ import { ShareButton } from './ShareButton'
  */
 export function SendToChat({ shareRef, title, kind = 'card' }: { shareRef: string; title: string; kind?: 'card' | 'plan' }) {
   const takesNote = kind === 'plan' || shareInput(shareRef, kind).kind === 'bundle'
-  return <ShareButton item={{ title, takesNote, input: (note) => shareInput(shareRef, kind, note) }} />
+  return <ShareButton item={{ title, shareRef, takesNote, input: (note) => shareInput(shareRef, kind, note) }} />
 }

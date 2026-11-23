@@ -10,7 +10,7 @@ const clock = (time: string): string => clock12(time)
  * A bundle in a thread (docs/chat-bundles-plan.md, 5.1): drawn from the registry for a type this app knows, and from its plain fields (title, subtitle, when, where) for one it does not, with "Update the app to open
  * this". It opens the screen it came from; a path the app does not know says it is no longer available.
  */
-export function BundleCard({ bundle }: { bundle: ChatBundle }) {
+export function BundleCard({ bundle, onOpen }: { bundle: ChatBundle; onOpen?: () => void }) {
   const known = isKnownBundle(bundle)
   const type = known ? BUNDLE_TYPES[bundle.type] : undefined
   const link = bundleLink(bundle)
@@ -25,7 +25,7 @@ export function BundleCard({ bundle }: { bundle: ChatBundle }) {
       {bundle.place && bundle.place !== bundle.title && <p>{bundle.place}</p>}
       {bundle.note && <p>{bundle.note}</p>}
       {!known ? <p className="muted">{t('bundle.update')}</p>
-        : link ? <LinkButton to={link} variant="secondary" aria-label={t('card.open.label', { title: bundle.title })}>{t('card.open')}</LinkButton>
+        : link ? <LinkButton to={link} variant="secondary" onClick={onOpen} aria-label={t('card.open.label', { title: bundle.title })}>{t('card.open')}</LinkButton>
         : <p className="muted">{t('card.gone')}</p>}
     </div>
   )

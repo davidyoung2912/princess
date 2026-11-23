@@ -2842,6 +2842,22 @@ CREATE TABLE dbo.ShareLinks (
 CREATE INDEX IX_ShareLinks_BookingId_UserId ON dbo.ShareLinks (BookingId, UserId);
 END
 
+IF OBJECT_ID(N'dbo.BundleShares', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.BundleShares (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_BundleShares PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT UX_BundleShares_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  TokenHash CHAR(64) NOT NULL CONSTRAINT UX_BundleShares_TokenHash UNIQUE,
+  Ref NVARCHAR(100) NOT NULL,
+  ExpiresAt DATETIME2(0) NOT NULL, RevokedAt DATETIME2(0) NULL,
+  Scans INT NOT NULL CONSTRAINT DF_BundleShares_Scans DEFAULT 0,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BundleShares_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_BundleShares_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id)
+);
+CREATE INDEX IX_BundleShares_UserId ON dbo.BundleShares (UserId, ExpiresAt);
+END
+
 IF OBJECT_ID(N'dbo.UpdateAcks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.UpdateAcks (

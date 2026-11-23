@@ -24,6 +24,9 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
     public async Task<int> CruiseDayAsync(UserRecord actor, DateTime now, CancellationToken ct) =>
         await CurrentAsync(actor, ct) is { } booking ? FolioRules.CruiseDay(TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure)), now) : 0;
 
+    /// <summary>The sailing of the guest's current booking, or null: used to show a hand-over's sender only to a guest on the same sailing.</summary>
+    public async Task<string?> SailingOfAsync(UserRecord actor, CancellationToken ct) => (await CurrentAsync(actor, ct))?.SailingId;
+
     private static string Clock(TimeOnly t) => t.ToString("HH:mm");
 
     /// <summary>The booking's own things the guest can send, with a ref for each, and the named places a meeting point can be dropped at.</summary>

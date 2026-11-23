@@ -5,14 +5,15 @@ import { readCode, type ScanResult } from '../../domain/scanCode'
 import { readerFor, type ScanPhase } from '../../domain/scanSession'
 import { t } from '../../i18n'
 import { Button } from '../Button'
+import { ReceiveSheet } from './ReceiveSheet'
 
 /** What a scan or a typed code found. A code only finds things: it never acts by itself, and a code from another site is shown as words and never opened. */
 export function ScanResultView({ result, onLeave }: { result: ScanResult | null; onLeave?: () => void }) {
+  if (result?.kind === 'share') return <ReceiveSheet path={result.path} onDone={onLeave ?? (() => undefined)} />
   return (
     <div role="status" aria-live="polite">
       {result?.kind === 'place' && <p>{t('qr.place', { name: result.place.name, deck: result.place.deck })}</p>}
       {result?.kind === 'link' && <p><Link to={result.path} onClick={onLeave}>{t('qr.open')}</Link></p>}
-      {result?.kind === 'share' && <p>{t('scan.share.soon')}</p>}
       {result?.kind === 'text' && <p>{t('qr.text', { text: result.text })}</p>}
       {result?.kind === 'empty' && <p>{t('qr.empty')}</p>}
     </div>
@@ -56,7 +57,7 @@ export function ScannerPanel({ autoStart = false, onLeave }: { autoStart?: boole
         </div>
         <Button type="submit" variant="secondary">{t('qr.read')}</Button>
       </form>
-      <ScanResultView result={result} onLeave={onLeave} />
+      <ScanResultView result={result} onLeave={() => { setResult(null); onLeave?.() }} />
     </div>
   )
 }

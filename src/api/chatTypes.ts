@@ -728,3 +728,22 @@ export interface AvatarChoice {
   label: string
   group: AvatarGroup
 }
+
+/** A hand-over code the caller made (docs/chat-bundles-plan.md, 5.6). `code` and `path` come back only when it is made; a list never repeats the code. */
+export interface ShareCode { id: string; ref: string; expiresAt: number; scans: number; code?: string; path?: string }
+
+/** What a scan shows the receiver: the bundle rebuilt for their own sailing, who it is from (only for a guest on the same sailing) and the key Save uses. */
+export interface SharePreview { bundle: ChatBundle; from?: string; saveKey?: string }
+
+export interface SharesApi {
+  /** A public item's direct code (`type` and `ref`). Rejects `invalid` (`shareRef`) when the guest's sailing does not have it. */
+  direct(type: string, ref: string): Promise<SharePreview>
+  /** A handoff code. Rejects `notFound` for a wrong, stopped or expired code (never says which) and `invalid` when the guest's sailing does not have it. Counts the scan. */
+  open(code: string): Promise<SharePreview>
+  /** Makes a handoff code for a ref, good for 15, 60 or 1440 minutes. Rejects `invalid` (`shareRef`, `minutes`) or `conflict` (`tooMany`). */
+  create(ref: string, minutes: number): Promise<ShareCode>
+  /** The caller's codes that still open, with scan counts. */
+  mine(): Promise<ShareCode[]>
+  /** Stops one of the caller's codes at once. */
+  stop(id: string): Promise<void>
+}

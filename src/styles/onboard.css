@@ -938,3 +938,9 @@ section[aria-labelledby='thread-h'] > .conv__stats { margin-bottom: var(--space-
 .chat-quick__row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .scan-panel { display: flex; flex-direction: column; gap: var(--space-3); }
 .scan-panel .qr-video { max-height: 55dvh; object-fit: cover; background: #000; }
+
+/* Receiving and showing a hand-over code (chat bundles plan, phase Q1) */
+.receive { display: grid; gap: var(--space-3); }
+.receive__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.show-code { max-width: 24rem; }
+.share-code__url { overflow-wrap: anywhere; }

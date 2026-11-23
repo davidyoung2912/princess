@@ -7,7 +7,9 @@ import { api } from '../../runtime'
 import { t } from '../../i18n'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
+import { qrKindOf } from '../../domain/shareCodes'
 import { shareError } from './ChatCards'
+import { ShowCode } from './ShowCode'
 
 export interface SendItem {
   /** Names the thing in the dialog and for a screen reader. */
@@ -15,6 +17,8 @@ export interface SendItem {
   subtitle?: string
   /** How it goes: the `kind` and `shareRef` the server rebuilds the card from. The note is added here when the kind takes one. */
   input: (note: string) => Parameters<typeof api.chatConversations.sendTyped>[1]
+  /** The ref the server rebuilds it from; when it names a type that has a code, the dialog offers Show QR code. */
+  shareRef?: string
   /** Whether the kind carries a note (a bundle or a plan does; an older card does not). */
   takesNote: boolean
 }
@@ -32,6 +36,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
   const [busy, setBusy] = useState(false)
   const [outcomes, setOutcomes] = useState<SendOutcome[]>([])
   const [needPick, setNeedPick] = useState(false)
+  const [showCode, setShowCode] = useState(false)
   const ids = useId()
   useEffect(() => {
     let live = true
@@ -56,6 +61,8 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
   const bad = outcomes.filter((o) => !o.ok)
   const status = good.length === 0 ? '' : bad.length === 0 ? t('senddlg.sentAll', { names: good.map((o) => o.name).join(', ') }) : t('senddlg.sentSome', { names: good.map((o) => o.name).join(', '), failed: bad.map((o) => o.name).join(', ') })
   const allDone = rows !== null && good.length > 0 && bad.length === 0
+  const hasCode = item.shareRef !== undefined && qrKindOf(item.shareRef) !== null
+  if (showCode && item.shareRef) return <Dialog title={t('qrshow.title')} onClose={onClose}><ShowCode shareRef={item.shareRef} title={item.title} onBack={() => setShowCode(false)} /></Dialog>
   return (
     <Dialog title={t('sendchat.title')} onClose={onClose}>
       <div className="send-dialog">
@@ -105,6 +112,7 @@ export function SendDialog({ item, onClose }: { item: SendItem; onClose: () => v
           </>
         )}
         {allDone && <Button onClick={onClose}>{t('senddlg.done')}</Button>}
+        {hasCode && <Button variant="secondary" onClick={() => setShowCode(true)}>{t('share.show')}</Button>}
       </div>
     </Dialog>
   )

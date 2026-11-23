@@ -3,7 +3,7 @@ import type { ExplorerDay, SavedItemView, VenueDay } from './explorerTypes'
 import type { SpaSlot, SpaView } from './spaTypes'
 import type { ExplorerKind } from '../domain/explorer/types'
 import type { AboardApi } from './aboardTypes'
-import type { AvatarChoice, ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi, ChatRoomsApi, ChatRoomsStaffApi } from './chatTypes'
+import type { AvatarChoice, ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi, ChatRoomsApi, ChatRoomsStaffApi, SharesApi } from './chatTypes'
 import type { AheadApi } from './aheadTypes'
 import type { GuideApi } from './guideTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
@@ -804,6 +804,7 @@ export interface Api {
   aboard: AboardApi
   chatConnections: ChatConnectionsApi
   chatConversations: ChatConversationsApi
+  shares: SharesApi
   chatGroups: ChatGroupsApi
   chatRooms: ChatRoomsApi
   chatRoomsStaff: ChatRoomsStaffApi

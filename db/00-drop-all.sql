@@ -71,6 +71,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'PushSubscriptions'),
   (N'dbo', N'PushDeliveries'),
   (N'dbo', N'CalendarFeeds'),
+  (N'dbo', N'BundleShares'),
   (N'dbo', N'ShareLinks'),
   (N'dbo', N'ConsentChoices'),
   (N'dbo', N'AccessLog'),
