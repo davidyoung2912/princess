@@ -14,8 +14,13 @@ const CARD_PATH = /^\/(plan\/(excursions|dining|reservations|ahead)|home\/ports\
 /** Where a card goes, or null when it points nowhere the app knows: the card then says it is no longer available instead of linking. */
 export function cardLink(card: Pick<ChatCard, 'type' | 'path' | 'gone'>): string | null {
   if (card.type === 'place' || card.gone) return null
-  const path = safeNoticePath(card.path)
-  return path && CARD_PATH.test(path) ? path : null
+  return openablePath(card.path)
+}
+
+/** A path from a card or bundle, when it is one of the screens a shared item may open; null for anything else. */
+export function openablePath(path: string | undefined): string | null {
+  const safe = safeNoticePath(path)
+  return safe && CARD_PATH.test(safe) ? safe : null
 }
 
 /** A card or place needs its own drawing; a plain message does not. */

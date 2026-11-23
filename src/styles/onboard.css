@@ -506,6 +506,13 @@ button.chat-quote { cursor: pointer; }
 
 /* "Send to chat" under a button or a card: room above it so the two do not touch. */
 .send-chat { margin-top: var(--space-3); }
+.send-dialog { display: grid; gap: var(--space-3); }
+.send-dialog__label { margin: 0; font-size: var(--text-sm, 0.875rem); }
+.send-dialog__chats { border: 0; margin: 0; padding: 0; }
+.send-dialog__chats legend { font-weight: 600; padding: 0; margin-bottom: var(--space-1); }
+.send-dialog__row { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; }
+.send-dialog__row input { width: 1.5rem; height: 1.5rem; flex: none; }
+.share-btn { min-width: 44px; min-height: 44px; }
 
 /* The date row sits close under the day card: the card's own bottom margin would stack on the page gap. */
 .card:has(+ .exp-date) { margin-bottom: 0; }

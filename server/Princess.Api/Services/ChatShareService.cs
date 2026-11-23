@@ -168,6 +168,19 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         return found.Card ?? throw ApiException.Invalid("shareRef");
     }
 
+    /// <summary>
+    /// A bundle (docs/chat-bundles-plan.md, phase B1) for a ref: a venue or a menu from the guest's own ship, rebuilt here from the ship's data and carrying only a title, subtitle, place and screen. The sender supplies the ref and a short note, never the words.
+    /// 400 <c>shareRef</c> for a ref of no known type, a venue or meal the ship does not have, or when there is no current booking.
+    /// </summary>
+    public async Task<ChatBundle> BundleAsync(UserRecord actor, string? shareRef, string? note, CancellationToken ct)
+    {
+        var type = ChatBundleRules.TypeOfRef(shareRef) ?? throw ApiException.Invalid("shareRef");
+        var card = type == ChatBundleRules.Venue && ChatCardRules.ParseVenueRef(shareRef) is { } venueId ? await VenueCardAsync(actor, venueId, ct)
+            : type == ChatBundleRules.Menu && ChatCardRules.ParseMenuRef(shareRef) is { } menu ? await MenuCardAsync(actor, menu.VenueId, menu.Meal, ct)
+            : throw ApiException.Invalid("shareRef");
+        return ChatBundleRules.FromCard(type, shareRef!, card, note);
+    }
+
     /// <summary>Which of the cards' sources are still booked, in one query; a card whose source was cancelled after it was sent reads "No longer available".</summary>
     public Task<HashSet<Guid>> StillBookedAsync(IEnumerable<ChatCard?> cards, CancellationToken ct) => plan.ListStillBookedAsync([.. ChatCardRules.SourceIds(cards)], ct);
 

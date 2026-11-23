@@ -126,11 +126,22 @@ public sealed record ChatMessageDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MentionsYou = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Guid>? Mentions = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatPollDto? Poll = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatBundleDto? Bundle = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatTallyDto? Tally = null,
     /// <summary>How many photos the message has, only when there are two or more (the first is <c>hasPhoto</c>; phase 9b).</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? PhotoCount = null,
     /// <summary>The id of the sender's chosen avatar (phase 9c), only on someone else's message and only when they chose one; the name beside it always says who.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null);
+
+/// <summary>A bundle (chat bundles plan, phase B1): something from the app sent into a chat. Plain fields only, so a reader that does not know <c>Type</c> can still show it; <c>Ref</c> names what it is.</summary>
+public sealed record ChatBundleDto(string Type, int V, string Title,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Path = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Day = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Time = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Place = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Ref = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null);
 
 /// <summary>A poll (phase 4): the question and its two to five options.</summary>
 public sealed record ChatPollDto(string Question, List<string> Options);
@@ -204,6 +215,7 @@ public sealed record ChatPhotoDto(string Photo);
 /// <summary>A message to send into one conversation. <c>ClientId</c> is made by the app so a retry never doubles the message. <c>Urgency</c> is normal (default), important or urgent; urgent is for staff and guardians only. <c>ReplyTo</c> is the message being answered.</summary>
 /// <summary>
 /// A message. <c>Kind</c> (phase 3) is <c>text</c> (the default), <c>card</c> (<c>ShareRef</c> from the shareable list) or <c>place</c> (<c>PlaceId</c> of a named place, an optional <c>Note</c>); a card or place carries no text from the sender.
+/// Chat bundles phase B1 adds <c>bundle</c> (a <c>ShareRef</c> of a venue or menu, an optional <c>Note</c>).
 /// Phase 4 adds <c>poll</c> (a <c>Question</c> and two to five <c>Options</c>) and <c>plan</c> (a <c>ShareRef</c> of <c>eventId:day</c> from the plannable list, an optional <c>Note</c>).
 /// <c>Mentions</c> are the public ids of members the message names (at most 10); anyone who is not an active member is left out.
 /// </summary>

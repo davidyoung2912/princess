@@ -17,6 +17,7 @@ import {
 } from '../../domain/chatThread'
 import { chipLabel, myReaction, nextReaction, REACTIONS, readReactionJob, reactionJob, setMyReaction, withReactions, type ReactionJob } from '../../domain/chatReactions'
 import { readDraft, saveDraft } from '../../domain/chatDrafts'
+import { parseBundle } from '../../domain/chatBundles'
 import { insertMention, isTyped, mentionedIds, mentionQuery, pinOffer, type MentionPerson } from '../../domain/chatCards'
 import { announceTyping, canEdit, changeProblem, isMuted, isSameConversation, MUTE_LENGTHS, muteFor, shouldSendTyping, splitArchived, TYPING_EXPIRE_MS, typingNames, windowLeft, type ChangeProblem, type MuteLength } from '../../domain/chatControl'
 import { REPORT_REASONS, type ChatReportReason } from '../../domain/services'
@@ -61,6 +62,7 @@ import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, PhotoTermsDialog,
 import { useShipTime } from './shipTime'
 import { DeleteChat, GroupMembers, GroupPage, LeaveChat, NewGroupPage } from './ChatGroups'
 import { LeavePersonalChat, NewPersonalChatPage } from './ChatPersonal'
+import { BundleCard } from './BundleCard'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { GetPersonButton, RecapCard } from './ChatRelay'
@@ -1272,6 +1274,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
   // A typed card or place is drawn from the server's own fields; an older plan card travels as text with a marker.
   const typed = isTyped(m) && m.card ? m.card : null
   const card = !typed && m.text ? parsePlanCard(m.text) : null
+  const bundle = m.kind === 'bundle' ? parseBundle(m.bundle) : null
   const pinning = pinOffer(m, canPin, pinned)
   const mlevel = urgencyOf(m)
   const [picking, setPicking] = useState(false)
@@ -1290,6 +1293,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
       <p className="chat-msg__meta">{own ? <MyChatAvatar small /> : <GreetFace name={m.fromName ?? ''}><ChatAvatar avatar={m.avatar} name={m.fromName ?? ''} small /></GreetFace>}<strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
       {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} held={held} onHold={onHold} />
         : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
+        : bundle ? <BundleCard bundle={bundle} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
       {photoCountOf(m) > 0 && <MessagePhotos conversationId={conversationId} message={m} name={m.fromName ?? ''} you={t('chat.you')} />}
       {m.reactions && m.reactions.length > 0 && (

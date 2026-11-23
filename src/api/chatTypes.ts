@@ -260,8 +260,10 @@ export interface ChatMessage {
   /** The sender deleted it for everyone: `text` is empty and there is no photo, quote or chips (phase 2). */
   deleted?: boolean
   /** Phase 3: `card` (something shared from the app) or `place` (a meeting point). Absent for text and photos. `text` then holds the words the list and alerts use; the screen draws `card`. */
-  kind?: 'card' | 'place' | 'plan' | 'poll'
+  kind?: 'card' | 'place' | 'plan' | 'poll' | 'bundle'
   card?: ChatCard
+  /** Chat bundles, B1: something from the app (a venue or a menu so far). Plain fields, so a reader that does not know `type` can still show it. */
+  bundle?: ChatBundle
   /** Phase 4, a poll: the question and its options (the words come from the person who asked). */
   poll?: ChatPoll
   /** Phase 4, a poll or a plan: the answers as you see them. */
@@ -277,6 +279,9 @@ export interface ChatMessage {
 /** A card or place as the server built it: a title and where it applies, never a price, cabin or booking number. `expired` is set on a place whose time has passed; `path` is the screen it opens. */
 export type ChatCardType = 'excursion' | 'dining' | 'booking' | 'portDay' | 'place' | 'plan' | 'venue' | 'menu'
 export interface ChatCard { type: ChatCardType; title: string; subtitle?: string; day?: number; time?: string; place?: string; path?: string; expiresAt?: number; expired?: boolean; note?: string; /** What it points at was cancelled after it was sent. */ gone?: boolean }
+
+/** A bundle as the server built it (docs/chat-bundles-plan.md, 5.1): a title and where it applies, never a price, cabin or booking number. `ref` names what it is; `v` is the shape of its payload. */
+export interface ChatBundle { type: string; v: number; title: string; subtitle?: string; path?: string; day?: number; time?: string; place?: string; ref?: string; note?: string }
 
 /** One pinned message in the pin bar (up to three). `fromName` is absent for your own. */
 export interface ChatPin { messageId: string; text: string; fromName?: string; at: number; kind?: 'card' | 'place' | 'plan' }
@@ -304,6 +309,7 @@ export type ChatTypedSend =
   | { kind: 'place'; placeId: string; note?: string }
   | { kind: 'plan'; shareRef: string; note?: string }
   | { kind: 'poll'; question: string; options: string[] }
+  | { kind: 'bundle'; shareRef: string; note?: string }
 
 /** One of the six reactions in use on a message. `names` are the others (first name and last initial) for a screen reader; yours is counted and marked by `mine`, not named. */
 export interface ChatReaction { emoji: string; count: number; mine: boolean; names: string[] }
