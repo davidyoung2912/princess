@@ -49,6 +49,39 @@ Measured with a script over `ship-explorer.json` on the sample week (embark, sea
 
 Other findings: `dotnet` is not installed in this environment, so the one-line C# change (`DayKinds.cs`) could not be built here. (An earlier draft of this note said `npx tsc -b` already failed before this work; that was wrong. The new events script was missing from the exclude list in `tsconfig.node.json`, which caused 45 errors and broke `npm run build`; fixed in the Phase E commit, and `tsc -b` is clean at the start and the end of the review.)
 
+**Phase F, second pass (2026-11-23, after the MCP work).** Worked down the "Open, in priority order" list above.
+
+Done:
+- (3) All 14 lint warnings fixed, none suppressed: `PillIcon` and `VenueGlyph` use `createElement`; `NicknameField` and `ContactSettings` derive their form state instead of copying props in an effect; `GuideStanley` reads the clock at the click; the `sendDraftPhotos` use-before-initialised callback in the chat thread was reordered; helpers and hooks that lived in component files moved to `codeDigits.ts`, `contactChecks.ts`, `chatShareError.ts` and `games/gameHooks.ts`. `npm run lint` now prints no warnings.
+- (4) `ChatConversations.tsx` split: 1,675 lines became 761 in the main file plus `ChatConversationList.tsx` (295), `ChatMessages.tsx` (456), `ChatThreadMenus.tsx` (239), `chatConversationShared.ts` and `chatConversationHelpers.ts`. The first-load budget is unchanged (822 kB); the largest screen chunk is 45.4 kB because the pieces still load together, so the "under 40 kB" aim needs the pieces to load lazily by tab (not done).
+- (5) Eleven finished plans moved to `docs/archive/` (none is read by code or tests; links updated) and `docs/README.md` indexes the rest by area and says which to read first.
+- (6) Coverage reporting: `npm run test:coverage` (`@vitest/coverage-v8`), measured statements 64.3, branches 57.7, functions 52.9, lines 67.8, with CI floors set a little under (62, 55, 50, 65) and CI now runs it. Added a guard test that runs every response guard in `src/api/guards.ts` against bad input (49 tests).
+- Delivery hygiene: `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `.github/dependabot.yml`, a pull-request template, `.editorconfig`, `.nvmrc` and `engines`, and the Windows launcher moved from the repo root to `scripts/run_ui.bat`.
+- (8) Schema versioning: a written policy in `db/README.md` (numbered idempotent scripts, a `dbo.SchemaVersion` record, a runner when the first real deployment holds data). No runner or table was added, because that needs a database run.
+
+Not done, and why:
+- (1) Running the 31 historical API tests: needs `dotnet test`, which the working rules forbid here. `dotnet build` of the whole solution is clean.
+- (2) `PortsReference.cs` to JSON: a 5,588-line C# data file; moving it safely needs the API tests to prove nothing changed, so it waits for (1).
+- (7) A LICENSE and a real `security.txt` contact are the owner's decisions. `SECURITY.md` and `CONTRIBUTING.md` say so.
+- Phase E items (split the English catalogue, trim the `runtime` chunk, stage-based precache): each changes what loads first and cannot be proved without a browser, which the working rules forbid, so none was attempted. The safe route for the catalogue is in the Phase E reduction plan above.
+
+**Regraded after this pass** (same scale; where a grade did not move, the reason is why it cannot yet):
+
+| Area | Before | Now | What would take it to A |
+| --- | --- | --- | --- |
+| Architecture and separation | A- | A- | Move `PortsReference.cs` data to content JSON; split `DapperAboardStore.cs` |
+| Type safety and static checks | A | A | (at A) |
+| Tests | B+ | A- | Run the API tests in CI after fixing the 31 failures; raise the coverage floors over time |
+| Security | B+ | B+ | Refresh token out of web storage; shared (not per-process) rate-limit state |
+| Accessibility | B+ | B+ | A screen-reader pass by a person; no browser testing is allowed here |
+| Delivery and repo hygiene | C | B+ | Owner picks a LICENSE and a real security contact |
+| Maintainability hotspots | C | B | `PortsReference.cs` to JSON; `types.ts` (1,377) and `enCore.ts` (13,400 lines) split by area |
+| Performance discipline | C+ | C+ | The Phase E reduction plan, needing a browser to prove |
+| Documentation | B | A- | Keep the index current as plans finish |
+| Data and content integrity | B | B | Work the `content-verification.md` list (needs real sources) |
+
+Overall: **B+ to A-**. An A across the board is not reachable without the owner (licence, contact), a database or `dotnet test` run, and browser checks of first-load changes; the table says which.
+
 ### Phase B: excursions (step 7)
 
 **Finding (the most important one so far).** The bookable catalogue (`ExcursionRules.Catalogue` in C#, mirrored by `ref.Excursions`; the front end's own list `AUTHORED_EXCURSIONS` is empty and is replaced by what the server serves) holds **12 tours at 3 ports** (Cozumel, Belize City, Roatan). The three ships' 2027 sailings (68 sailings: Sun 40, Sky 17, Sapphire 11) call at 99 distinct ports: Sun 24 ports apart from Fort Lauderdale, Sky 48, Sapphire 34. So a guest on any itinerary except the western Caribbean one has no bookable tour at all, although the port guides (all 99 ports, 4 to 5 attractions each) describe guided and full-day options with travel time, effort, weather and a "can I do it in four hours" call.

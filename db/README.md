@@ -137,3 +137,14 @@ Run from the repository root, after the schema and the reference seeds. `00-rese
 - **Ids.** Rows an API route addresses have fixed `PublicId`s derived from a key, so test ids are stable between runs.
 - **Reset limit.** The reset clears what the seeds create. If you have used the app since and created rows that name a seeded person as actor in tables the seeds do not touch, drop and reseed instead (`reset-db.ps1`).
 - **Not seeded:** chat, orders, kids club, health, room, photos, laundry, Wi-Fi, budgets, games, TV, parties, medallions, bag tags, upgrade bids, club registrations, waitlists, queues and show tickets. They start empty.
+
+## Schema changes and versioning policy
+
+There is no migration runner yet, by choice while the schema is still being shaped. Until one is added, the rules are:
+
+1. `01-schema.sql` stays idempotent and describes the whole current schema, so a new database is one script.
+2. A change that must reach an existing database is a new numbered script `db/migrations/NNNN-short-name.sql`, idempotent (`IF NOT EXISTS` guards), that never drops data without a comment saying so, and is also folded into `01-schema.sql` in the same commit.
+3. Each migration records itself: `INSERT INTO dbo.SchemaVersion (Id, Name, AppliedAt) ...` guarded by `IF NOT EXISTS`, once `dbo.SchemaVersion` exists (the first migration creates it). `GET /health/db` can then report the highest applied id.
+4. `npm run db:check` must stay green; it compares the schema script with the API's records.
+
+When the first real deployment holds guest data, adopt a runner (for example DbUp) with these same files as its scripts.
