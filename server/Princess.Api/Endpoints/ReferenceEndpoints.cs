@@ -23,12 +23,12 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/catalogue", () => Results.Ok(ReferenceRules.Catalogue()))
             .WithTags("Reference").WithSummary("The authored catalogue the server holds: shore excursions, dining venues and ports (with whether guests tender ashore). The same data the concierge and booking use.");
 
-        api.MapGet("/reference/sailings", async (string? ship, string? region, string? from, string? to, int? nightsMin, int? nightsMax, string? port, ITripStore trips, ICatalogueStore catalogue, CancellationToken ct) =>
+        api.MapGet("/reference/sailings", async (string? ship, string? region, string? from, string? to, int? nightsMin, int? nightsMax, string? port, ITripStore trips, ICruiseDiscovery discovery, CancellationToken ct) =>
             {
                 var filter = new SailingFilter(ship, region, from, to, nightsMin, nightsMax, port);
                 if (!filter.Valid()) throw ApiException.Invalid("badCatalogueQuery");
                 var legacy = ReferenceRules.Sailings(await trips.ListSailingsAsync(ct));
-                var entries = ShipCatalogueRules.Sailings(await catalogue.GetAsync(ct), filter);
+                var entries = await discovery.SearchAsync(filter, ct);
                 return Results.Ok(legacy with { Version = ShipCatalogueRules.SailingsVersion(legacy.Version, entries), Entries = entries });
             })
             .WithTags("Reference").WithSummary("The sailings, the ports and the eight-day itinerary the Sun Princess runs, and the zones the ship's clocks follow (`version` changes when any of it does), plus `entries`: every catalogue sailing with its ship, nights, title, region, start and end port, legs, holiday flag, whether booking is open, its data status (`served`, `sample` or `verified`) and the cheapest per-person fare before taxes. Optional filters: `ship`, `region`, `from` and `to` (`yyyy-MM-dd`), `nightsMin`, `nightsMax`, and `port` (any stop on the route).");
@@ -97,6 +97,16 @@ public static class ReferenceEndpoints
                 return Results.Ok(new { port = id, plan, sky });
             })
             .WithTags("Reference").WithSummary("A walking plan for a port day from the port guide's places: `arrive` and `allAboard` are port times (HH:MM) from the ship's schedule, optional `tender`, `pace` (steady or easy), `meal` (an hour for a meal) and `date` (YYYY-MM-DD, adds weather notes from the weather source). Stops are timed between getting ashore and a buffer before all-aboard. A suggestion; the ship's own notice has the last word. Not found for a port with no guide; invalid for bad times.");
+
+        api.MapGet("/reference/flight-search", (string from, string to, string date, IFlightSearch flights) =>
+            {
+                var f = from?.ToUpperInvariant();
+                var t = to?.ToUpperInvariant();
+                if (!LocalFlightSearch.IsAirport(f) || !LocalFlightSearch.IsAirport(t) || f == t) throw ApiException.Invalid("badAirports");
+                if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d)) throw ApiException.Invalid("date");
+                return Results.Ok(new { from = f, to = t, date, links = flights.Links(f!, t!, d) });
+            })
+            .WithTags("Reference").WithSummary("Where to search for flights: official search pages with the two airports (`from`, `to`, three-letter codes) and the `date` (YYYY-MM-DD) filled in. Only airports and a date are used; no fares are fetched and nothing about the guest is sent. Invalid for bad airports or date.");
 
         api.MapGet("/reference/country-guides", () => Results.Text(CountryGuides.ListJson, "application/json"))
             .WithTags("Reference").WithSummary("Every country or territory profile: `{ version, countries: [{ id, name, region, status, cruiseCalls }] }`, by name. `status` is empty for a sovereign state. `version` changes when any profile does.");

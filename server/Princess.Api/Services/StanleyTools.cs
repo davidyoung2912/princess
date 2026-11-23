@@ -36,7 +36,7 @@ public interface IStanleyTools
 /// It builds the facts the tools may use (the guest's own booking and the catalogue), runs the model's tool loop through a <see cref="ModelMeter"/> so the call caps apply,
 /// and holds the scripted answers used when no model can be called. It does not screen, limit or log; the gateway does.
 /// </summary>
-public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts, IUserClock clock, ILogger<StanleyToolService> log) : IStanleyTools
+public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts, IUserClock clock, ILogger<StanleyToolService> log, Mcp.IPortKnowledge? knowledge = null) : IStanleyTools
 {
     /// <summary>Public ship, port and excursion answers by content version, tool, input and sailing. Guest-specific tools are never cached.</summary>
     private static readonly ConcurrentDictionary<string, ToolOutcome> Cache = new();
@@ -123,7 +123,10 @@ public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts,
                 }
                 else if (read is not null && StanleyReadTools.Names.Contains(name))
                 {
-                    r = StanleyReadTools.Run(name, input, read);
+                    var needed = knowledge is null ? [] : StanleyReadTools.PortsNeeded(name, input, read);
+                    var fetched = new Dictionary<string, IReadOnlyList<PortDayCandidate>?>();
+                    foreach (var port in needed) fetched[port] = await knowledge!.PlacesAsync(port, ct);
+                    r = StanleyReadTools.Run(name, input, fetched.Count == 0 ? read : read with { Places = p => fetched.GetValueOrDefault(p) });
                     meter.CountTool(r.IsError);
                     log.LogInformation("Stanley tool {Tool} {Outcome} for {Guest}", name, r.IsError ? "refused" : "ok", read.Packet.GuestRef);
                 }

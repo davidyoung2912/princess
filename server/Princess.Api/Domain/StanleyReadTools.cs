@@ -18,7 +18,7 @@ public sealed record StanleyCaseFact(string Owner, string Kind, string Number, s
 /// Everything the read tools may touch for one request: the packet, the guest's own "now", and the booking's plan and cases, by traveller reference. The loader only fills it from the active
 /// voyage, and each tool still asks the packet which travellers it may read before it answers.
 /// </summary>
-public sealed record StanleyReadData(StanleyPacket Packet, DateTime Now, IReadOnlyList<StanleyTourFact> Tours, IReadOnlyList<StanleyMealFact> Meals, IReadOnlyList<StanleyPackageFact> Packages, IReadOnlyList<StanleyCaseFact> Cases, Func<DateOnly, string, SkyDto?>? Sky = null);
+public sealed record StanleyReadData(StanleyPacket Packet, DateTime Now, IReadOnlyList<StanleyTourFact> Tours, IReadOnlyList<StanleyMealFact> Meals, IReadOnlyList<StanleyPackageFact> Packages, IReadOnlyList<StanleyCaseFact> Cases, Func<DateOnly, string, SkyDto?>? Sky = null, Func<string, IReadOnlyList<PortDayCandidate>?>? Places = null);
 
 /// <summary>
 /// Stanley's typed read tools (docs/stanley-gap-analysis-and-plan.md, phase 4): the schemas the model sees and the code that answers them. Every tool is read-only, takes no id from the model that is
@@ -85,6 +85,19 @@ public static class StanleyReadTools
             "get_port_weather" => PortWeather(input, d, voyage),
             _ => Fail($"Unknown tool {name}."),
         };
+    }
+
+    /// <summary>A port's places for the planner: what the port-knowledge source supplied for this turn (see <see cref="PortsNeeded"/>), else the embedded guide.</summary>
+    private static IReadOnlyList<PortDayCandidate>? PlacesFor(StanleyReadData d, string port) =>
+        d.Places?.Invoke(port) ?? (PortGuides.Places(port) is { Count: > 0 } p ? [.. p.Select(x => new PortDayCandidate(x.Name, x.Tier, x.Why, x.Lat, x.Lng))] : null);
+
+    /// <summary>The ports whose places a port tool will read, so the caller can fetch them (asynchronously, from the port-knowledge source) before the synchronous tool runs.</summary>
+    public static IReadOnlyList<string> PortsNeeded(string name, JsonObject input, StanleyReadData d)
+    {
+        if (name is not ("plan_port_day" or "get_port_weather") || d.Packet.Voyage is not { } voyage) return [];
+        var port = Text(input, "port");
+        var day = Whole(input, "day");
+        return [.. TimelineOf(voyage).Days.Where(x => x.Arrive is not null && x.AllAboard is not null && (port is null || x.Port == port) && (day is null || x.Day == day)).Select(x => x.Port).Distinct().Take(3)];
     }
 
     private static Timeline TimelineOf(StanleyVoyage v) => TimelineBook.For(v.SailingId, v.Departure);
@@ -241,7 +254,7 @@ public static class StanleyReadTools
         if (sky is null) return Fail("No weather is available.");
         var arrive = Hhmm(call.Arrive);
         var aboard = Hhmm(call.AllAboard);
-        var indoor = PortGuides.Places(call.Port) is { } ps ? PortDayRules.IndoorIdeas(ps.Select(p => new PortDayCandidate(p.Name, p.Tier, p.Why, p.Lat, p.Lng))) : [];
+        var indoor = PlacesFor(d, call.Port) is { } ps ? PortDayRules.IndoorIdeas(ps) : [];
         return Ok(new
         {
             day = call.Day, date = call.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), port = Itinerary.PortOf(call.Port)?.Name ?? call.Port, ashore_from = arrive, all_aboard = aboard,
@@ -258,12 +271,12 @@ public static class StanleyReadTools
         if (pace is not null && pace is not ("steady" or "easy")) return Fail("pace is steady or easy.");
         var call = TimelineOf(voyage).Days.FirstOrDefault(x => x.Arrive is not null && x.AllAboard is not null && (port is null || x.Port == port) && (day is null || x.Day == day));
         if (call is null) return Fail("No port day matches.");
-        var places = PortGuides.Places(call.Port);
+        var places = PlacesFor(d, call.Port);
         if (places is null || places.Count == 0) return Fail("There is no guide with places for this port.");
         var tender = Itinerary.PortOf(call.Port)?.Tender ?? false;
         var arrive = Hhmm(call.Arrive);
         var aboard = Hhmm(call.AllAboard);
-        var plan = PortDayRules.Plan([.. places.Select(p => new PortDayCandidate(p.Name, p.Tier, p.Why, p.Lat, p.Lng))], arrive, aboard, tender, pace == "easy", Flag(input, "meal") == true ? 60 : 0);
+        var plan = PortDayRules.Plan(places, arrive, aboard, tender, pace == "easy", Flag(input, "meal") == true ? 60 : 0);
         var sky = d.Sky?.Invoke(call.Date, call.Port);
         object? weather = sky is null ? null : new { temp_f = sky.TempF, uv = sky.Uv, rain_from = sky.RainFrom, rain_to = sky.RainTo, source = sky.Source, notes = PortDayRules.WeatherNotes(sky, arrive, aboard) };
         return Ok(new

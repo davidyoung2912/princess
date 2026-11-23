@@ -4,6 +4,8 @@ import type { GuideAttraction } from '../../domain/portGuide'
 import { isLatLng, type Pace } from '../../maps/geo'
 import { planPortDay, weatherNotes, indoorIdeas, type Candidate } from '../../maps/portDay'
 import { useSky } from '../../hooks/useSky'
+import { useServedFeed } from '../../hooks/useServedFeeds'
+import { walkingPlanFeed } from '../../feeds/walkingPlan'
 import { PlaceMap } from './PlaceMap'
 
 /**
@@ -16,7 +18,10 @@ export function PortDayPlanner({ attractions, arrive, allAboard, tender, date, p
   const [meal, setMeal] = useState(false)
   const sky = useSky(date, port)
   const candidates = useMemo<Candidate[]>(() => attractions.filter((a) => a.map && isLatLng(a.map)).map((a) => ({ id: a.name, name: a.name, at: a.map!, tier: a.tier, why: a.why })), [attractions])
-  const plan = useMemo(() => planPortDay({ candidates, arrive, allAboard, tender, pace, mealMinutes: meal ? 60 : 0 }), [candidates, arrive, allAboard, tender, pace, meal])
+  const local = useMemo(() => planPortDay({ candidates, arrive, allAboard, tender, pace, mealMinutes: meal ? 60 : 0 }), [candidates, arrive, allAboard, tender, pace, meal])
+  // The server plans the day from the same guide; the page's own plan stands in while that loads, offline, or if the answer is unusable.
+  const served = useServedFeed(candidates.length >= 2, walkingPlanFeed, [port, arrive, allAboard, tender, pace, meal])
+  const plan = served ?? local
   if (candidates.length < 2) return null
 
   return (

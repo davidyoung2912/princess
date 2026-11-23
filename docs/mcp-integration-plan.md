@@ -167,3 +167,8 @@ Excursion discovery (GetExperience, Peek) once an endpoint is verified reachable
 | GoVisit MCP | Place ideas | No: demonstration only | Off |
 | Open-Meteo MCP | Marine and weather | No: non-commercial | Off |
 | Open-Meteo REST (`Providers:Weather=openmeteo`) | Forecast | Free tier non-commercial; a paid key is needed for commercial use | Off |
+- **Follow-up pass (items 1 to 4).**
+  - Stanley's port tools (`plan_port_day`, `get_port_weather`) now read a port's places through `IPortKnowledge` (the tool loop fetches them asynchronously, then the synchronous tool runs on them), so `Providers:PortKnowledge=mcp` reaches Stanley with the same fallback to the embedded guide. Venue search stays local: it is per-ship data we own.
+  - MCP server hardening: rate limit 60 calls a minute per person, JSON-RPC batches (up to 10), protocol version negotiation (2025-03-26 or 2024-11-05), an `Mcp-Session-Id` issued on `initialize` (the server is stateless, so it is only an identifier), and HTTP-level tests in `McpEndpointTests.cs` (compiled, not run).
+  - Phase 8 local seams: `ICruiseDiscovery` (the `/reference/sailings` endpoint now reads through it) and `IFlightSearch` (`GET /reference/flight-search`, links only). Only `local` is registered; any other setting stops start-up with a clear message.
+  - The port screen now asks the server for the plan (`walkingPlanFeed`, strict normaliser, 2 tests) and uses its own plan while that loads, offline or if the answer is unusable. Not tried in a browser.

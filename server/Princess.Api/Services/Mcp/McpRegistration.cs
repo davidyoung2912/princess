@@ -16,6 +16,12 @@ public static class McpRegistration
         });
         services.AddSingleton(McpEgressPolicy.Default());
         services.AddSingleton<IMcpGateway, McpGateway>();
+        // Providers:CruiseDiscovery and Providers:FlightSearch are local only for now: a verified provider would be another case here.
+        foreach (var name in new[] { "CruiseDiscovery", "FlightSearch" })
+            if ((config[$"Providers:{name}"] ?? "local").Trim().ToLowerInvariant() != "local")
+                throw new InvalidOperationException($"Providers:{name} is '{config[$"Providers:{name}"]}', which is not registered. Choose one of: local.");
+        services.AddScoped<ICruiseDiscovery, LocalCruiseDiscovery>();
+        services.AddSingleton<IFlightSearch, LocalFlightSearch>();
         // Providers:PortKnowledge is local (the embedded guides) or mcp (a tool call through the gateway, by default to this app's own public MCP server, Mcp:PortKnowledgeProvider).
         services.AddSingleton<LocalPortKnowledge>();
         var knowledge = (config["Providers:PortKnowledge"] ?? "local").Trim().ToLowerInvariant();

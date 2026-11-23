@@ -28,6 +28,21 @@ public static class PrincessMcpServer
     ]
     """;
 
+    /// <summary>Protocol versions this server speaks, newest first. A client that asks for one of them gets it; otherwise it gets the newest.</summary>
+    public static readonly string[] SupportedVersions = [McpWire.ProtocolVersion, "2024-11-05"];
+
+    public const int MaxBatch = 10;
+
+    /// <summary>A message or a JSON-RPC batch (an array, up to <see cref="MaxBatch"/>): the answer, or null when there is nothing to send back (only notifications).</summary>
+    public static JsonNode? HandleAny(JsonNode? message)
+    {
+        if (message is not JsonArray batch) return Handle(message);
+        if (batch.Count == 0 || batch.Count > MaxBatch) return Error(null, -32600, "Invalid request.");
+        var answers = new JsonArray();
+        foreach (var item in batch) if (Handle(item) is { } a) answers.Add(a);
+        return answers.Count == 0 ? null : answers;
+    }
+
     /// <summary>One JSON-RPC message in, the answer out (null for a notification, which gets none).</summary>
     public static JsonNode? Handle(JsonNode? message)
     {
@@ -40,7 +55,7 @@ public static class PrincessMcpServer
             case "initialize":
                 return Result(id, new JsonObject
                 {
-                    ["protocolVersion"] = McpWire.ProtocolVersion,
+                    ["protocolVersion"] = m["params"]?["protocolVersion"] is JsonValue pv && pv.TryGetValue<string>(out var asked) && SupportedVersions.Contains(asked) ? asked : SupportedVersions[0],
                     ["capabilities"] = new JsonObject { ["tools"] = new JsonObject() },
                     ["serverInfo"] = new JsonObject { ["name"] = ServerName, ["version"] = "1.0" },
                     ["instructions"] = "Public cruise-port knowledge from Princess Voyages. Read-only. Times are port times; the ship's own notice has the last word.",

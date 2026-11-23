@@ -121,3 +121,22 @@ public class PrincessMcpServerTests
     [Fact]
     public void TheWeatherToolIsDeclared() => Assert.Contains("get_port_weather", Princess.Api.Domain.StanleyReadTools.Names);
 }
+
+public class FlightSearchTests
+{
+    [Fact]
+    public void BuildsLinksFromAirportsAndADateOnly()
+    {
+        var links = new Princess.Api.Services.Mcp.LocalFlightSearch().Links("LAX", "MIA", new DateOnly(2027, 3, 20));
+        Assert.All(links, l => Assert.StartsWith("https://", l.Url));
+        Assert.Contains(links, l => l.Url.Contains("2027-03-20"));
+    }
+
+    [Theory]
+    [InlineData("LAX", true)]
+    [InlineData("lax", true)]
+    [InlineData("LA", false)]
+    [InlineData("L4X", false)]
+    [InlineData(null, false)]
+    public void ChecksAirportCodes(string? code, bool ok) => Assert.Equal(ok, Princess.Api.Services.Mcp.LocalFlightSearch.IsAirport(code));
+}

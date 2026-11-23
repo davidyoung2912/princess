@@ -46,6 +46,7 @@ public class SwaggerCoverageTests : IDisposable
         { "get", "/api/v1/reference/port-guides/{id}" },
         { "get", "/api/v1/reference/port-guides/{id}/walking-plan" },
         { "get", "/api/v1/help/connected-services" },
+        { "get", "/api/v1/reference/flight-search" },
         { "post", "/api/v1/mcp" },
         { "get", "/api/v1/mcp" },
         { "get", "/api/v1/reference/country-guides" },

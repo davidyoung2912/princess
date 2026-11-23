@@ -305,6 +305,14 @@ services.AddOptions<RateLimiterOptions>().Configure<IOptions<AuthOptions>>((o, a
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
         }));
+    // The public MCP server answers assistants, so it is limited per signed-in person (60 calls a minute).
+    o.AddPolicy(McpServerEndpoints.Limiter, http =>
+        RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirst(Claims.Subject)?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 60,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
     // Guessing hand-over codes is the thing to stop, so reading and making them is limited per signed-in person (60 a minute).
     o.AddPolicy(ShareEndpoints.Limiter, http =>
         RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirst(Claims.Subject)?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
