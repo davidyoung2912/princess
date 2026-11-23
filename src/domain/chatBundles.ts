@@ -124,6 +124,20 @@ export function forwardInput(b: Pick<ChatBundle, 'type' | 'v' | 'ref' | 'data'>,
   return { kind: 'bundle', shareRef: b.ref, ...(b.data ? { data: b.data } : {}), ...(note ? { note } : {}), ...(from ? { forwardChat: from.conversationId, forwardMessage: from.messageId } : {}) }
 }
 
+/** The longest message the server accepts. */
+const MAX_MESSAGE = 2000
+
+/**
+ * Phase B11: a Stanley answer passed on as plain words, under a label so it is plain who said it (and it can never start with "@Stanley", which would ask him again).
+ * Null when there is nothing to send or it is too long for a message.
+ */
+export function stanleyAnswerInput(answer: string, label: string, note?: string): { kind: 'text'; text: string } | null {
+  const body = answer.trim()
+  const extra = note?.trim()
+  const text = `${label} ${body}${extra ? `\n\n${extra}` : ''}`
+  return body === '' || text.length > MAX_MESSAGE ? null : { kind: 'text', text }
+}
+
 /** Conversations that match what was typed, case and accents aside; everything when nothing was typed. */
 export function matchConversations<T extends { name: string }>(rows: readonly T[], query: string): T[] {
   const plain = (s: string): string => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()

@@ -318,6 +318,9 @@ Futoshiki, KenKen, Crossmath, Kakuro; Hitori, Slitherlink, Nurikabe, Hashi, Nono
 
 > **Built 2026-11-23, part 8: naming the first sender of a forward** (front end checked with test, lint, tsc and build; C# written but not compiled or run). **Done:** Forward also sends the chat and message it came from (`forwardChat`, `forwardMessage`); `ChatService.ForwardedFromAsync` names the first sender (first name and last initial) only when the caller is in that chat, the message is a live bundle a person sent with the same ref; otherwise the forward goes without a name, never an error. A forward of a forward keeps the first name. The card shows "First sent by Alex B." (`ChatBundle.from`). **Not done:** Stanley answers (server: admin confirm in made groups); no C# test added for the naming branch.
 
+> **Built 2026-11-23, part 9: Stanley answers** (front end checked with test, lint, tsc and build; no server change). **Done:** a send-to-chat icon on a free-text Stanley answer in his own chat; it goes as a plain text message from the guest under "Stanley said:" (`stanleyAnswerInput`, tested; never starts with `@Stanley`, so it cannot ask him again), with an optional note, through the existing send dialog. **Deviation (chosen by the owner):** plain text instead of a server-built bundle, so there is no special admin confirm in made groups; the group's ordinary posting rules apply. **Not done:** folding the legacy `card`, `place`, `plan` and text-poll kinds into the registry (only if the owner wants it).
+
+
 ## 7. Risks
 
 - **Scope creep in B2 to B6.** Each planning object is built once, in a fixed order, and each phase is usable on its own.

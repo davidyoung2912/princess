@@ -321,6 +321,8 @@ export type ChatRsvp = 'going' | 'maybe' | 'no'
 
 /** What a typed send carries: a `ref` from the shareable list, or a named place and an optional short note. */
 export type ChatTypedSend =
+  /** Phase B11: plain words (a Stanley answer passed on); the server treats it as any typed message. */
+  | { kind: 'text'; text: string }
   | { kind: 'card'; shareRef: string }
   | { kind: 'place'; placeId: string; note?: string }
   | { kind: 'plan'; shareRef: string; note?: string }

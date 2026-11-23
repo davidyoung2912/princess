@@ -12130,6 +12130,8 @@ export const enCore = {
   'conv.share': 'Share from the app',
   'sendchat.title': 'Send to chat',
   'sendchat.none': 'You have no open chats to send this to.',
+  'stanley.answer.said': 'Stanley said:',
+  'stanley.answer.title': "Stanley's answer",
   'sendchat.label': 'Send {title} to chat',
   'senddlg.sending': 'You are sending',
   'senddlg.to': 'Send to',

@@ -17,7 +17,9 @@ import {
 } from '../../domain/chatThread'
 import { chipLabel, myReaction, nextReaction, REACTIONS, readReactionJob, reactionJob, setMyReaction, withReactions, type ReactionJob } from '../../domain/chatReactions'
 import { readDraft, saveDraft } from '../../domain/chatDrafts'
-import { parseBundle } from '../../domain/chatBundles'
+import { parseBundle, stanleyAnswerInput } from '../../domain/chatBundles'
+import { ShareButton } from './ShareButton'
+import type { SendItem } from './SendDialog'
 import { insertMention, isTyped, mentionedIds, mentionQuery, pinOffer, type MentionPerson } from '../../domain/chatCards'
 import { announceTyping, canEdit, changeProblem, isMuted, isSameConversation, MUTE_LENGTHS, muteFor, shouldSendTyping, splitArchived, TYPING_EXPIRE_MS, typingNames, windowLeft, type ChangeProblem, type MuteLength } from '../../domain/chatControl'
 import { REPORT_REASONS, type ChatReportReason } from '../../domain/services'
@@ -1254,6 +1256,7 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
           <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.comment')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
           <MessageWords text={m.text} mentionsYou={m.mentionsYou} />
           {ask && <GroupStanleyPills question={ask} />}
+          {kind === 'stanley' && m.text.trim() !== '' && <ShareButton item={stanleyAnswerItem(m.text)} />}
           {onDelete && kind === 'stanley' && <DeleteStanleyMessage onDelete={() => onDelete(m.id)} />}
         </li>
       )
@@ -1268,6 +1271,12 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
 })
 
 const noop = (): void => {}
+
+/** A Stanley answer as something the send dialog can pass on: plain words under "Stanley said:", with an optional note. */
+function stanleyAnswerItem(answer: string): SendItem {
+  const label = t('stanley.answer.said')
+  return { title: t('stanley.answer.title'), takesNote: true, input: (note) => stanleyAnswerInput(answer, label, note) ?? { kind: 'text', text: `${label} ${answer.slice(0, 1500)}` } }
+}
 
 /** A person's message: the quote of what it answers, the text or photo, the chips, and the React and Reply buttons (a long press with a finger opens the reactions too). */
 function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete, canPin = false, pinned = 0, onPin, held, onHold, onUse }: MessageRowProps) {

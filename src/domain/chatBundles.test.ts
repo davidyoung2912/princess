@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUNDLE_TYPES, BUNDLE_VERSION, bundleGlyph, REF_TYPES, bundleLink, bundleSummary, eventRef, forwardInput, gameOfBundle, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
+import { BUNDLE_TYPES, BUNDLE_VERSION, bundleGlyph, REF_TYPES, bundleLink, bundleSummary, eventRef, forwardInput, gameOfBundle, stanleyAnswerInput, isKnownBundle, isPlannable, matchConversations, parseBundle, planRefOf, sendToMany, shareInput, tourEventId } from './chatBundles'
 
 const venue = { type: 'venue', v: 1, title: 'Crown Grill', subtitle: 'Steakhouse', path: '/dining-today/crown-grill', place: 'Deck 7' }
 
@@ -176,5 +176,17 @@ describe('bundle glyphs (B11)', () => {
   it('has a glyph for every registered type and none for an unknown one', () => {
     for (const type of Object.keys(BUNDLE_TYPES)) expect(bundleGlyph(type)).not.toBe('')
     expect(bundleGlyph('nonsense')).toBe('')
+  })
+})
+
+describe('stanleyAnswerInput', () => {
+  it('labels the words and never starts with an ask', () => {
+    expect(stanleyAnswerInput('  Try the Crown Grill. ', 'Stanley said:')).toEqual({ kind: 'text', text: 'Stanley said: Try the Crown Grill.' })
+    expect(stanleyAnswerInput('@Stanley hi', 'Stanley said:')?.text.startsWith('@')).toBe(false)
+  })
+  it('adds a note and refuses empty or too long', () => {
+    expect(stanleyAnswerInput('Yes', 'Stanley said:', ' for us ')?.text).toBe('Stanley said: Yes\n\nfor us')
+    expect(stanleyAnswerInput('   ', 'Stanley said:')).toBeNull()
+    expect(stanleyAnswerInput('x'.repeat(2000), 'Stanley said:')).toBeNull()
   })
 })
