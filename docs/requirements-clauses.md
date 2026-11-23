@@ -46,7 +46,7 @@ Totals: 292 requirements, 502 clauses, 240 probes (191 found, 49 absent).
 | OFF-03 | P0 | Built | verify with crew fallback | `src/domain/offlineCapsule.ts` |
 | OFF-04 | P0 | Built | conflict resolution on reconnect | `src/data/outbox.ts` |
 | A11Y-05 | P0 | Built | non-app route documented | `src/ui/aboard/SupportScreens.tsx` |
-| SEC-02 | P0 | Built | no raw card numbers stored | `src/auditGate.test.ts` |
+| SEC-02 | P0 | Built | no raw card numbers stored | `src/gates/auditGate.test.ts` |
 | SEC-04 | P0 | Built | correction of data | `src/ui/account/PrivacyScreen.tsx` |
 | SEC-05 | P0 | Built | location opt-in scoped, time-limited | `src/domain/arrivalPing.ts` |
 | SEC-06 | P0 | Built | guardian controls | `src/ui/plan/FamilyLinkScreen.tsx` |

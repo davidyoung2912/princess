@@ -2,6 +2,7 @@ import { LIBRARY, pageQaEntries } from './stanleyLibrary'
 import { metaOf, type Risk } from './stanleyLibrary/governance'
 import type { ChangeCard } from './stanleyChanges'
 import { freeShare, readAsked, readTiers, repeated, type AskedCounts, type TierCounts } from '../diagnostics/stanleyTiers'
+import { deviceStore } from '../data/deviceStorage'
 
 /**
  * Quality gates and operations (docs/stanley-gap-analysis-and-plan.md, phase 14). Everything here reads counts and dates, never a guest's words. Framework-free, so it is tested in node.
@@ -151,6 +152,6 @@ export function expiresInMs(card: Pick<ChangeCard, 'critical' | 'tip'>, shownAt:
 /** The signals from this device's own counts. Safe where there is no storage. */
 export function readDeviceSignals(): DeviceSignals {
   let store: Storage | null = null
-  try { store = typeof window === 'undefined' ? null : window.localStorage } catch { store = null }
+  try { store = deviceStore() } catch { store = null }
   return deviceSignals(readTiers(store), readAsked(store))
 }

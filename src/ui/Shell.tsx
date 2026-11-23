@@ -69,6 +69,7 @@ import { getWelcome, markSeen, subscribeWelcome, unmarkSeen, welcomeLoaded } fro
 import { recordVisit as recordStepVisit } from '../stageProgress/store'
 import { progressKey, stepsAt } from '../routes/stageProgress'
 import { APP_WELCOME_KEY, hasWelcomeCopy, shouldShowAppWelcome, shouldShowStanleyIntro, shouldShowWelcome, STANLEY_INTRO_KEY, welcomeKey } from '../routes/stageWelcome'
+import { sessionStore } from '../data/deviceStorage'
 
 
 /**
@@ -76,7 +77,7 @@ import { APP_WELCOME_KEY, hasWelcomeCopy, shouldShowAppWelcome, shouldShowStanle
  * a left rail from 1024px), and the main area. An address the stage does not use goes Home. On each change of screen it updates the page title, announces the new
  * screen to screen readers, and moves focus to the main area so keyboard users start at the top of the new content.
  */
-const scrollStore = (): Storage | null => { try { return typeof sessionStorage === 'undefined' ? null : sessionStorage } catch { return null } }
+const scrollStore = (): Storage | null => { return sessionStore() }
 
 export function Shell() {
   const { pathname, search, state, key: visitKey } = useLocation()

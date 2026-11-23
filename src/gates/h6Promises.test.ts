@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { en } from './i18n/locales/en'
-import { EMPTY_MEMORY } from './memory/store'
+import { en } from '../i18n/locales/en'
+import { EMPTY_MEMORY } from '../memory/store'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
 const SCREENS = ['src/ui/discover/CabinChooserScreen.tsx', 'src/ui/discover/DecideScreen.tsx', 'src/ui/account/WrappedScreen.tsx', 'src/ui/account/MemoryScreen.tsx']

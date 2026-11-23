@@ -2,6 +2,7 @@ import { APP_PREFIX } from '../data/lifecycle'
 import { sync } from '../sync'
 import { EMPTY_EMBARK, normalizeEmbark, type EmbarkState } from '../domain/embark'
 import { EMPTY_JOURNEY_STATE, normalizeJourney, type JourneyState } from '../domain/journey'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Everything Phase H4 keeps on this device for one person: the door-to-ship plan, packing ticks, the bag log, and the embarkation plan. */
 export interface TripState { journey: JourneyState; embark: EmbarkState }
@@ -34,11 +35,7 @@ export function saveTrip(personaId: string | null, state: TripState, storage: Pi
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, TripState>()

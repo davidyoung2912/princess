@@ -1,4 +1,5 @@
 import { enqueue, hasRoom, loadOutbox, notifyOutbox, saveOutbox, sent, type OutboxItem } from './outbox'
+import { deviceStore } from './deviceStorage'
 
 /**
  * Saving or un-saving something with no signal (R1, research 4 P.7): a low-risk change is held on the phone and sent when the connection returns.
@@ -7,8 +8,7 @@ import { enqueue, hasRoom, loadOutbox, notifyOutbox, saveOutbox, sent, type Outb
  */
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
-/** This phone's storage, or null where there is none (private mode, a test). */
-export const deviceStore = (): Store | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+export { deviceStore }
 
 const ownerKey = (owner: string): string => `${owner}:favourite`
 

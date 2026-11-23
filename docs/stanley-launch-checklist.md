@@ -9,7 +9,7 @@ Run this before each gate (G1 to G4 in `stanley-actions-and-proactive-plan.md` s
 | No "AI" word, no web link, no placeholder or stray spacing, no guarantee wording in reminders, across every Stanley and reminder string (D1, AC-X-01, AC-X-02, decision 19) | `src/ai/stanleyHardening.test.ts` |
 | No secret, debugger or console output in a Stanley source file | `src/ai/stanleyHardening.test.ts` |
 | Markup faults on every Stanley screen (names, alt text, keyboard reach, dialogs, live regions, reduced motion) | `src/ai/stanleyAccessibility.test.ts` |
-| Release gates: no unconfirmed mutating action, no cross-party leak, no unsupported critical claim | `src/releaseGates.test.ts` |
+| Release gates: no unconfirmed mutating action, no cross-party leak, no unsupported critical claim | `src/gates/releaseGates.test.ts` |
 | Classifier invariants, scheduler, switches, permissions (server; **targeted runs by the owner, never a full `dotnet test`**) | `StanleyClassifierTests`, `StanleySchedulerTests`, `StanleySwitchTests`, `StanleyPermissionTests` |
 
 ## 2. Manual accessibility pass (target: zero blockers; AC-R13-01; measure "Manual accessibility pass")

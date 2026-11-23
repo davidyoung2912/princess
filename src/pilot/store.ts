@@ -11,6 +11,7 @@ import { normalizeAlerts, type FareAlert } from '../domain/fareAlert'
 import { normalizeShares, type PassportShare } from '../domain/passport'
 import { normalizeDeadlineLog, type DeadlineEvent } from '../domain/deadlineLog'
 import { normalizeSignals, type ArrivalSignal } from '../domain/arrivalSignal'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Everything Phase H5 keeps on this device for one person: plan changes and their log, slot watches, week preferences, and the inclusion settings. */
 export interface PilotState {
@@ -105,11 +106,7 @@ export function savePilot(personaId: string | null, state: PilotState, storage: 
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, PilotState>()

@@ -163,7 +163,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | PRE-18 | P0 | Partial | R | `src/ui/book/Policy.tsx`, `src/domain/policy.ts` | BM42: refund timing now labelled an estimate. Still open: no provider-confirmed state |
 | GTS-01 | P0 | Built | R | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/ui/checkin/steps.tsx` | BM54: each receipt line is draft, submitted (saved with us) or confirmed (saved and the check-in finished), from the server (`ReceiptItemDto.State`) with a client fallback; "confirmed" means accepted into the finished check-in, not verified by the terminal. C# not compiled. |
 | GTS-02 | P0 | Built | F | `src/ui/checkin/` receipt route `/home/check-in/receipt`, `src/domain/checkin.ts` | None found |
-| GTS-03 | P0 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/hooks/useSavedCopy.ts`, `src/offlineDay.test.ts` | Printable pass and dead-phone card unchecked |
+| GTS-03 | P0 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/hooks/useSavedCopy.ts`, `src/gates/offlineDay.test.ts` | Printable pass and dead-phone card unchecked |
 | GTS-04 | P0 | Built | F | `src/ui/boarding/EmbarkPlanScreen.tsx`, `src/domain/embark.ts`, `src/domain/embark.test.ts` | None found |
 | GTS-05 | P0 | Built | F | `src/ui/boarding/EmbarkScreen.tsx`, `src/domain/boarding.ts` | None found |
 | GTS-06 | P1 | Built | F | `src/domain/journey.ts`, `src/domain/journey.test.ts`, `src/ui/plan/JourneyScreen.tsx` | Location only on request: unchecked |
@@ -191,10 +191,10 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | EMB-12 | P1 | Built | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/shipVenues.ts`, `src/domain/shipVenues.test.ts` | None found |
 | EMB-13 | P2 | Partial | F | `src/ui/onboard/SkyScreen.tsx` | BM28: open-deck viewpoints with step-free filter on the sky screen; no pier-side or sight-line data, so none called best |
 | EMB-14 | P1 | Built | F | `src/domain/family.ts`, `src/ui/extras/FamilyScreen.tsx` | None found |
-| EMB-15 | P0 | Built | F | `src/ui/onboard/SafetyScreens.tsx`, `src/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts` | None found |
+| EMB-15 | P0 | Built | F | `src/ui/onboard/SafetyScreens.tsx`, `src/gates/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts` | None found |
 | SEA-01 | P0 | Built | F | `src/ui/onboard/OnboardHome.tsx`, `src/domain/tileLive.ts`, `src/domain/tileLive.test.ts` | "Labelled, not inferred" unchecked |
 | SEA-02 | P0 | Built | F | `src/ui/plan/WeekPlanner.tsx`, `src/ui/onboard/Planner.tsx`, `src/domain/plan.ts` | None found |
-| SEA-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx`, `src/offlineDay.test.ts` | BM1 |
+| SEA-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx`, `src/gates/offlineDay.test.ts` | BM1 |
 | SEA-04 | P1 | Partial | F | `src/domain/answerCards.ts`, `src/ui/aboard/InfoScreens.tsx`, search route `/ship/search` | BM50: the answer cards (Wi-Fi, dinner, late) carry a source, a scope (whole ship or today) and an "as of" time, and the results end with the ship-information source line; still only three topics have direct answers |
 | SEA-05 | P1 | Partial | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/menus.ts` | BM50: open, closed or temporarily unavailable with a ship-time stamp (`venueState`, `unavailableSince`); the server does not send `unavailableSince` yet, so nothing shows as unavailable until it does |
 | SEA-06 | P0 | Built | F | `src/ui/onboard/DeckMapScreen.tsx`, `src/domain/deckGraph.ts`, `src/domain/deckGraph.test.ts`, `src/ui/deckPlan.test.tsx` | None found |
@@ -341,7 +341,7 @@ Priority is not given per concept in the document.
 | TRU-03 | P0 | Partial | R | `src/domain/trustLedger.ts`, `src/ui/StatusBadge.tsx` | BM54: one vocabulary of nine states (`src/domain/lifecycle.ts`, `LifecycleBadge`, move rules and old-word mapping) used on the check-in receipt. Other screens still use the older six badge kinds; moving them over is open |
 | TRU-04 | P0 | Built | F | `src/data/outbox.ts`, `docs/audit-trail.md` | C# idempotency tests not run |
 | TRU-05 | P0 | Built | F | `src/ui/book/changes.ts`, `src/domain/prebook.test.ts`, `src/ui/failedReschedule.test.tsx` | Failed dinner move on screen: original stays, plain message (table taken, or a retry note); the rule itself lives in the server, not read |
-| TRU-06 | P0 | Built | F | `src/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, `src/offlineDay.test.ts` | Source label per item unchecked |
+| TRU-06 | P0 | Built | F | `src/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, `src/gates/offlineDay.test.ts` | Source label per item unchecked |
 | TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | BM36: served health for seven service areas (`/help/status`); BM54: an incident feed (`GET /help/incidents`, `Status:Incidents` in configuration) with start time, message and end, shown on the Status screen; the runbook says how to declare one. Still no paging of staff (PERF-07). C# not compiled |
 | TRU-08 | P1 | Built | F | `src/ui/book/ChoiceError.tsx`, `src/ui/book/problems.ts`, `src/ui/plan/refused.ts` | Plain-language refusals on key flows |
 | AST-01 | P1 | Built | F | `src/ai/stanley.ts`, `src/ai/stanleyRoute.ts`, `src/ai/stanleyRoute.test.ts` | None found |
@@ -358,23 +358,23 @@ Priority is not given per concept in the document.
 | COM-04 | P0 | Partial | R | `server/Princess.Api/Domain/PushRules.cs` (`FallbackDue`), `server/Princess.Api/Services/PushService.cs`, `server/Princess.Api/Services/PingramSender.cs` | BM40: safety alerts have an acknowledged state and fall back to text, then email, after 10 minutes. Pingram sender written, never run against the live service |
 | COM-05 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/calm.ts` | None found |
 | COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39, BM54: as MOB-07; reservation and case alerts themselves do not exist on the server yet |
-| OFF-01 | P0 | Built | F | `src/data/outbox.ts`, `src/offlineDay.test.ts` | Offline contract table with a route-coverage test (BM19) |
-| OFF-02 | P0 | Built | F | `src/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts`, `src/domain/offlineCapsule.ts` | None found |
-| OFF-03 | P0 | Built | F | `src/domain/offlineCache.ts`, `src/domain/offlineCapsule.ts`, `src/offlineDay.test.ts` | "Verify with crew" shown on the capsule card |
+| OFF-01 | P0 | Built | F | `src/data/outbox.ts`, `src/gates/offlineDay.test.ts` | Offline contract table with a route-coverage test (BM19) |
+| OFF-02 | P0 | Built | F | `src/gates/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts`, `src/domain/offlineCapsule.ts` | None found |
+| OFF-03 | P0 | Built | F | `src/domain/offlineCache.ts`, `src/domain/offlineCapsule.ts`, `src/gates/offlineDay.test.ts` | "Verify with crew" shown on the capsule card |
 | OFF-04 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useOutbox.ts` | Conflict resolution unchecked |
 | OFF-05 | P0 | Built | F | `src/api/bounded.ts`, `src/data/outbox.ts` | None found |
 | OFF-06 | P1 | Built | F | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts`, `src/ui/DeferredImage.tsx`, `src/ui/dataLightImages.test.tsx` | Photos wait for a tap in data-light mode; no autoplay (tested) |
 | OFF-07 | P1 | Built | R | `src/domain/offlineCapsule.ts`, `src/data/capsule.ts` | BM19: export and restore of waiting items, unreadable-list handling; eviction surfaced since BM1 |
 | A11Y-01 | P0 | Built | F | `src/ui/a11y.test.tsx`, `src/ui/Dialog.tsx` | Audit is jsdom only |
 | A11Y-02 | P0 | Partial | F | `src/design/textSize.ts`, `src/design/textSize.test.ts` | Screen-reader and 320 px reflow by hand only |
-| A11Y-03 | P0 | Built | F | `src/ui/a11y.test.tsx`, `src/darkPatterns.test.ts` | None found |
+| A11Y-03 | P0 | Built | F | `src/ui/a11y.test.tsx`, `src/gates/darkPatterns.test.ts` | None found |
 | A11Y-04 | P0 | Built | F | `src/ui/DisplaySettings.tsx`, `src/domain/calm.ts`, `src/domain/calm.test.ts` | Captions and transcripts: no media found to caption |
 | A11Y-05 | P0 | Built | F | `src/ui/aboard/SupportScreens.tsx`, `src/ui/account/PrintScreen.tsx` | Documented non-app route unchecked |
 | A11Y-06 | P0 | Built | F | `src/ui/AccessAreaNote.tsx`, `src/domain/accessReference.ts` | None found |
 | A11Y-07 | P1 | Out of reach | F | none | Needs research sessions with real people |
 | A11Y-08 | P1 | Not built | F | `src/i18n` | English only by project rule; Spanish files are untouched |
-| SEC-01 | P0 | Built | F | `src/security.test.ts`, `docs/security-performance-plan.md`, `docs/audit-trail.md` | Encryption at rest is a deployment matter |
-| SEC-02 | P0 | Built | F | `src/auditGate.test.ts`, `src/security.test.ts` | Source scan guards storage |
+| SEC-01 | P0 | Built | F | `src/gates/security.test.ts`, `docs/security-performance-plan.md`, `docs/audit-trail.md` | Encryption at rest is a deployment matter |
+| SEC-02 | P0 | Built | F | `src/gates/auditGate.test.ts`, `src/gates/security.test.ts` | Source scan guards storage |
 | SEC-03 | P0 | Built | F | `src/domain/dataRules.ts`, `src/domain/privacy.ts` | Purpose limitation in code unchecked |
 | SEC-04 | P0 | Built | R | `src/ui/account/PrivacyScreen.tsx`, `src/ui/DataSettings.tsx`, `src/sync/consent.ts` | None found |
 | SEC-05 | P0 | Built | F | `src/domain/arrivalPing.ts`, `src/domain/homeLink.ts`, `src/sync/consent.ts` | None found |

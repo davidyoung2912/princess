@@ -4,6 +4,7 @@ import { DEFAULT_CHARGE_CHECK, isChargeCheck, type ChargeCheck } from '../domain
 import { DEFAULT_NUDGES, isNudgeBudget, type NudgeBudget } from '../domain/nudges'
 import { isLanguage } from '../i18n/languages'
 import { DEFAULT_TEXT_SIZE, isTextSize, type TextSize } from '../design/textSize'
+import { deviceStore } from '../data/deviceStorage'
 
 /** How the guest chose the colour theme; "auto" follows the device. */
 export type ThemeChoice = 'light' | 'dark' | 'night' | 'auto'
@@ -170,11 +171,7 @@ export function saveSettings(settings: Settings, storage: WriteStore | null = sa
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 /** The attributes set on `<html>` for a set of settings; "auto" resolves against the device's colour preference. */

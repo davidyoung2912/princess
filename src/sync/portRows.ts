@@ -4,6 +4,7 @@ import { diffState, layer, legacyRows, rowId, stateOfRows, type PortRow } from '
 import { applyRemotePort, getPort, normalizePort, onPortChanged, type PortState } from '../port/store'
 import { bookerOfPerson } from '../account/context'
 import type { SyncStatus } from './sync'
+import { deviceStore } from '../data/deviceStorage'
 
 /**
  * Keeps the port day's rows the same on every device of a booking (multi-device plan 2, Phase 6). Each change a person makes becomes row changes
@@ -41,11 +42,7 @@ const BATCH = 100
 export const bookerOf = bookerOfPerson
 
 function deviceStorage(): Pick<Storage, 'getItem' | 'setItem'> | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 export function createPortRowSync(opts: PortRowSyncOptions) {

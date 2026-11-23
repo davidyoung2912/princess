@@ -1,18 +1,18 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { ApiError } from './api/errors'
-import { bounded, withRetries } from './api/bounded'
-import { createHttp } from './api/http'
-import { MAX_ATTEMPTS, MAX_QUEUED, due, enqueue, failed, gaveUp, isRetryable, loadOutbox, saveOutbox, sent, type OutboxItem } from './data/outbox'
-import { cacheGet, cachePut, maxAgeFor } from './domain/offlineCache'
-import { OFFLINE_CONTRACT, offlineModeOf } from './domain/offlineContract'
-import { ageLabel, chipKind } from './domain/syncAge'
-import { NOTHING_SHARED, SHARING_FACETS, normalizeSharing } from './domain/partyShare'
-import { RETENTION, kindsToDelete } from './domain/privacy'
-import { DRILL_ALTERNATIVES } from './domain/safety'
-import { ROUTES } from './routes/routes'
-import { en } from './i18n/locales/en'
+import { ApiError } from '../api/errors'
+import { bounded, withRetries } from '../api/bounded'
+import { createHttp } from '../api/http'
+import { MAX_ATTEMPTS, MAX_QUEUED, due, enqueue, failed, gaveUp, isRetryable, loadOutbox, saveOutbox, sent, type OutboxItem } from '../data/outbox'
+import { cacheGet, cachePut, maxAgeFor } from '../domain/offlineCache'
+import { OFFLINE_CONTRACT, offlineModeOf } from '../domain/offlineContract'
+import { ageLabel, chipKind } from '../domain/syncAge'
+import { NOTHING_SHARED, SHARING_FACETS, normalizeSharing } from '../domain/partyShare'
+import { RETENTION, kindsToDelete } from '../domain/privacy'
+import { DRILL_ALTERNATIVES } from '../domain/safety'
+import { ROUTES } from '../routes/routes'
+import { en } from '../i18n/locales/en'
 
 /**
  * The 10 P0 release gates of docs/princess_cruises_expanded_best_in_market_requirements.md section 9.1, as node tests (BM21, layer L4 of
@@ -427,8 +427,8 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
 
   describe('no unsupported critical claim', () => {
     it('a deadline, tender, payment, access, entry or safety answer is a high-risk entry with a person to ask and a live review date', async () => {
-      const { LIBRARY } = await import('./ai/stanleyLibrary')
-      const { HIGH_RISK_IDS, isLive, metaOf } = await import('./ai/stanleyLibrary/governance')
+      const { LIBRARY } = await import('../ai/stanleyLibrary')
+      const { HIGH_RISK_IDS, isLive, metaOf } = await import('../ai/stanleyLibrary/governance')
       const high = LIBRARY.filter((e) => HIGH_RISK_IDS.has(e.id))
       expect(high.length).toBe(HIGH_RISK_IDS.size)
       for (const e of high) {
@@ -439,7 +439,7 @@ describe('Stanley gates (phase 14): the AI release gates', () => {
     })
 
     it('a forecast never ranks as an alert, even when the card asks to', async () => {
-      const { normalizeCard } = await import('./ai/stanleyChanges')
+      const { normalizeCard } = await import('../ai/stanleyChanges')
       const opt = { id: 'a', label: 'Look', detail: '', route: '/plan' }
       const base = { id: 'x', fingerprint: 'f', kind: 'tender', source: 'Tender outlook', sourceAt: 1, sourceAtText: '10:00', day: 2, title: 'T', what: 'w', why: 'y', recommended: opt, others: [], affects: [], ifNothing: 'n', where: ['home'], noticedAt: 1 }
       expect(normalizeCard({ ...base, status: 'forecast', consequence: 'conflict', critical: true })?.critical).toBe(false)

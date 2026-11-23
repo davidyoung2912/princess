@@ -1,6 +1,7 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { sync } from '../sync'
 import { EMPTY_OFFER_STATE, normalizeOfferState, type OfferState } from '../domain/offers'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Offer choices stay on this device, one record per signed-in person (their dismissals and the marketing messages sent). */
 export const offerKeyFor = (personaId: string | null): string => `${APP_PREFIX}offers:${personaId ?? ''}`
@@ -27,11 +28,7 @@ export function saveOfferState(personaId: string | null, state: OfferState, stor
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, OfferState>()

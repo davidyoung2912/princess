@@ -2,9 +2,10 @@ import { demoNow } from '../demo/store'
 import { CACHE_PREFIX, cachePut } from '../domain/offlineCache'
 import { parseResult, type PackResult } from './cruisePack'
 import { buildCapsule, DEFAULT_PREFS, isKept, parsePrefs, readCapsuleEntries, type Capsule, type CapsulePrefs, type StorageReport } from '../domain/offlineCapsule'
+import { deviceStore } from './deviceStorage'
 
 const local = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 /** What this phone has kept for use offline, read now on the demo clock the copies were stamped with. */

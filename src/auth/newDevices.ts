@@ -1,4 +1,5 @@
 import type { DeviceSession } from './provider'
+import { deviceStore } from '../data/deviceStorage'
 
 /**
  * A sign-in the guest has not seen (SEC-07, IDN-01). The server lists the devices signed in; this device remembers which it has already shown the guest.
@@ -8,7 +9,7 @@ import type { DeviceSession } from './provider'
 const KEY = 'princess:seen-devices'
 const MAX = 40
 const local = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 /** The ids already shown, or null when this device has never looked (so there is no baseline yet). */

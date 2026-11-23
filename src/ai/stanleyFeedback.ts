@@ -1,3 +1,4 @@
+import { deviceStore } from '../data/deviceStorage'
 /**
  * "Was that helpful?" answers, kept on this device only (nothing is sent). One small list of answer id and yes/no, newest 100, so a later
  * review of the authored library can see which answers missed. Never holds typed text.
@@ -35,5 +36,5 @@ export function recordFeedback(store: Store | null, id: string, helpful: boolean
 
 /** Records an answer in this browser's storage; a blocked store is ignored. */
 export function rateAnswer(id: string, helpful: boolean): void {
-  try { recordFeedback(typeof window === 'undefined' ? null : window.localStorage, id, helpful) } catch { /* storage blocked */ }
+  try { recordFeedback(deviceStore(), id, helpful) } catch { /* storage blocked */ }
 }

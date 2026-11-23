@@ -17,8 +17,9 @@ import { stanleyLevelFor } from '../../settings/settings'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { StanleyActionCard } from './StanleyActionCard'
+import { sessionStore } from '../../data/deviceStorage'
 
-const session = (): Pick<Storage, 'getItem' | 'setItem'> | null => { try { return typeof window === 'undefined' ? null : window.sessionStorage } catch { return null } }
+const session = (): Pick<Storage, 'getItem' | 'setItem'> | null => { return sessionStore() }
 const saved = (): string[] => [...getWatched()]
 
 /** The change, made ready for the guest to look at and confirm. It is only prepared here: the card that comes back has its own Confirm, and nothing is done before it is pressed. */

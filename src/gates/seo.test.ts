@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { en } from './i18n/locales/en'
-import { ROUTES } from './routes/routes'
-import { MAX_DESCRIPTION, MAX_TITLE, PUBLIC_PAGES, applyPageMeta, seoFor } from './seo'
+import { en } from '../i18n/locales/en'
+import { ROUTES } from '../routes/routes'
+import { MAX_DESCRIPTION, MAX_TITLE, PUBLIC_PAGES, applyPageMeta, seoFor } from '../seo'
 
 describe('search and sharing tags (CNT-05)', () => {
   it('only lists real screens, each with a description of a good length', () => {

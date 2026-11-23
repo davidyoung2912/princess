@@ -1,4 +1,5 @@
 import { STANLEY_JOKES } from '../data/stanleyJokes'
+import { deviceStore } from '../data/deviceStorage'
 
 const KEY = 'princess.jokeDismissed'
 
@@ -9,7 +10,7 @@ export const pickJoke = (jokes: readonly string[] = STANLEY_JOKES, random: () =>
 /** This device's calendar day, "YYYY-MM-DD". */
 export const todayLocal = (now: Date = new Date()): string => now.toLocaleDateString('sv-SE')
 
-const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+const store = (): Storage | null => { return deviceStore() }
 
 /** Whether the guest dismissed the joke today. A dismissal on an earlier day no longer counts, so the joke is back the next day. */
 export function jokeDismissed(day: string = todayLocal(), s: Storage | null = store()): boolean {

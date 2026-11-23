@@ -1,6 +1,7 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { sync } from '../sync'
 import type { ChatMessage, Citation, Source } from './types'
+import { deviceStore } from '../data/deviceStorage'
 
 /**
  * The conversation: kept on this device for the signed-in guest and clearable (SUP-03). One thread per person. When the guest has agreed to keep
@@ -35,7 +36,7 @@ export const normalizeThread = (raw: unknown): ThreadState => {
 export const threadKeyFor = (personaId: string | null): string => `${APP_PREFIX}concierge:${personaId ?? ''}`
 
 const safeStorage = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 export function loadThread(personaId: string | null, storage: Pick<Storage, 'getItem'> | null = safeStorage()): ThreadState {

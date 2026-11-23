@@ -1,6 +1,7 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { sync } from '../sync'
 import { normalizeDone, type PhoneStepId } from '../domain/phoneSetup'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Which phone-setup steps a person ticked, kept on this device (XT-01, S3-07). */
 export const phoneKeyFor = (personaId: string | null): string => `${APP_PREFIX}phone:${personaId ?? ''}`
@@ -24,11 +25,7 @@ export function savePhone(personaId: string | null, done: readonly PhoneStepId[]
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, PhoneStepId[]>()

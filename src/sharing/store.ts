@@ -1,6 +1,7 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { sync } from '../sync'
 import { NOTHING_SHARED, normalizeSharing, type Sharing } from '../domain/partyShare'
+import { deviceStore } from '../data/deviceStorage'
 
 /**
  * What this person shares with the rest of their party (XG-02): four switches, all off until they say so. Kept on the device and saved to the account
@@ -9,7 +10,7 @@ import { NOTHING_SHARED, normalizeSharing, type Sharing } from '../domain/partyS
 export const sharingKeyFor = (personId: string | null): string => `${APP_PREFIX}sharing:${personId ?? ''}`
 
 function safeStorage(): Storage | null {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 export function loadSharing(personId: string | null, storage: Pick<Storage, 'getItem'> | null = safeStorage()): Sharing {

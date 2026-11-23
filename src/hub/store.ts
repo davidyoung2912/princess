@@ -3,6 +3,7 @@ import { sync } from '../sync'
 import { normalizeDebriefs, type Debrief } from '../domain/disruptionHub'
 import { EMPTY_DELAY, normalizeDelay, type DelayState } from '../domain/delay'
 import { EMPTY_HOME, normalizeHome, type HomeState } from '../domain/homeLink'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Everything Phase H2 keeps on this device for one person: the family-at-home page, a delay and disruption follow-ups. A call-back request is the server's ticket (`GET /me/staff-requests`), not kept here. */
 export interface HubState { home: HomeState; delay: DelayState; debriefs: Debrief[] }
@@ -35,11 +36,7 @@ export function saveHub(personaId: string | null, state: HubState, storage: Pick
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, HubState>()

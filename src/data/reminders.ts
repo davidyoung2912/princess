@@ -1,7 +1,8 @@
+import { deviceStore } from './deviceStorage'
 const KEY = 'princess:reminders-dismissed'
 const MAX = 50
 const local = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 export function readDismissed(): string[] {

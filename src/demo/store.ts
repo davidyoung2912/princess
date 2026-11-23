@@ -6,9 +6,10 @@ import { zonedToEpoch } from '../domain/timezones'
 import { channel } from '../runtime/channel'
 import { demoFromAnswer, fetchDemo, onDemoAnswer, publishDemo, publishJump, publishReset, sameAnswer, type DemoAnswer } from './publish'
 import { defaultDemoState, loadDemoState, saveDemoState, type DemoState } from './state'
+import { deviceStore } from '../data/deviceStorage'
 
 const local = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 let current: DemoState = loadDemoState(Date.now(), local())

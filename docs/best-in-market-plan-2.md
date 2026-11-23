@@ -19,7 +19,7 @@ Each layer catches something the layer above it cannot. All run under the projec
 | Layer | What it is | Catches | Cost |
 | --- | --- | --- | --- |
 | **L1 Clause register** | `docs/requirements-clauses.md`, generated from the requirements document by a script kept in `scripts/`. One row per acceptance clause (about 500), with a verdict (`proved`, `gap`, `not code`, `server only`), the proof (a test name or `file:line`), and the date checked. | Rows judged Built because the screen exists while one clause is missing. | Medium. The script is small; the reading is the work. |
-| **L2 ID-tagged tests with a ratchet** | A convention: a test names the clauses it proves (`it('DEB-02#1 ...')` or a `// proves: DEB-02#1` comment). `src/traceability.test.ts` reads the register and fails if a clause marked `proved` has no tag, or a tag points at no clause. The allow-list of untagged clauses may only shrink. | "Built" with no test; claims that drift as code changes. | Low once L1 exists. |
+| **L2 ID-tagged tests with a ratchet** | A convention: a test names the clauses it proves (`it('DEB-02#1 ...')` or a `// proves: DEB-02#1` comment). `src/gates/traceability.test.ts` reads the register and fails if a clause marked `proved` has no tag, or a tag points at no clause. The allow-list of untagged clauses may only shrink. | "Built" with no test; claims that drift as code changes. | Low once L1 exists. |
 | **L3 Wording guards** | Tests that read `src/i18n/locales/en.ts` for required statements (for example "crew instructions override this app"). Some acceptance clauses are sentences the guest must be able to read. | Missing or edited safety and trust wording, which no behaviour test sees. | Low. |
 | **L4 Release-gate scenarios** | The document's 10 P0 release gates (section 9.1) written as node tests that drive the domain modules and the `httpApi` client with the test double: double tap does not duplicate a charge, stale value shows age and next step, every critical error has a human route, and so on. | Cross-feature failures that no single row shows. | Medium. |
 | **L5 Server and human lists** | A short checklist of C# tests written but never run (BM7 to BM15), and a device/screen-reader checklist for what only a person can check (320 px reflow, brightness, wake lock, install prompts). | The parts this environment cannot prove. | You run them; I only write the list. |
@@ -100,7 +100,7 @@ One phase at a time, each committed on its own, per `CLAUDE.md`. Order puts proo
 | Phase | Work | Output |
 | --- | --- | --- |
 | **BM16** | L1 for the 101 P0 Built rows plus the 12 hidden-gap candidates in section 3: script, register, verdict per clause. Includes the matrix corrections. | `scripts/` generator, `docs/requirements-clauses.md`, updated matrix. |
-| **BM17** | L2 and L3: tag convention, `src/traceability.test.ts` with a shrinking allow-list, and wording guards for the safety and trust sentences. | Failing-then-passing tests for the P0 gaps found. |
+| **BM17** | L2 and L3: tag convention, `src/gates/traceability.test.ts` with a shrinking allow-list, and wording guards for the safety and trust sentences. | Failing-then-passing tests for the P0 gaps found. |
 | **BM18** | Close the confirmed P0 gaps from section 3 that need only the front end: MOB-14 zone-change notice, EMB-02 crew-override line, DEB-02 preference vs assigned, POR-04 label, REM-01 search, plus any "needs a read" item that proves absent. | Small fixes with tests. |
 | **BM19** | Group A P0 items: MNG-03, MOB-05 and OFF-01 together, then MOB-03, MOB-04, MOB-23. | Offline contract table and its gate. |
 | **BM20** | L1 for the remaining 116 Built rows (P1 and P2 and QOL), same method. | Register complete. |
@@ -118,8 +118,8 @@ Folio states (DEB-04, SEA-14), boarded-source semantics (EMB-01), accepted fare 
 
 ## 5b. BM17 result (built, not committed)
 
-- **Convention**: a test names what it proves with a `proves: ID#n` comment. `src/traceability.test.ts` checks every tag points at a real requirement and clause, that every P0 requirement the matrix calls Built is tagged or on `docs/requirements-untagged.txt` (89 today, down from 101 P0 Built rows as BM17 tags two), that the list only shrinks, and that every requirement judged a GAP has a pinning test.
-- **Wording guards**: `src/wordingGuards.test.ts` reads `en.ts` and the source. Two guards pass today (DEB-08 "not legal advice", OFF-03 saved-copy wording). Nine confirmed gaps are written as `it.fails` (EMB-02, MOB-14, DEB-02, DEB-05, PRE-18, EMB-01, DEB-04, BOK-05, MNG-05): they pass while the gap exists and fail when it is closed, which is the cue to turn them into `it`. BM18 does exactly that.
+- **Convention**: a test names what it proves with a `proves: ID#n` comment. `src/gates/traceability.test.ts` checks every tag points at a real requirement and clause, that every P0 requirement the matrix calls Built is tagged or on `docs/requirements-untagged.txt` (89 today, down from 101 P0 Built rows as BM17 tags two), that the list only shrinks, and that every requirement judged a GAP has a pinning test.
+- **Wording guards**: `src/gates/wordingGuards.test.ts` reads `en.ts` and the source. Two guards pass today (DEB-08 "not legal advice", OFF-03 saved-copy wording). Nine confirmed gaps are written as `it.fails` (EMB-02, MOB-14, DEB-02, DEB-05, PRE-18, EMB-01, DEB-04, BOK-05, MNG-05): they pass while the gap exists and fail when it is closed, which is the cue to turn them into `it`. BM18 does exactly that.
 - **Limit**: the 89 untagged rows are still only "found by search"; tagging them is the work of BM18, BM19 and BM20 as each is read.
 
 ## 6. Decisions I need from you
@@ -154,7 +154,7 @@ Still unread after BM20: the other absent probes (the ones that found a hit). Ev
 
 ## 5f. BM21 result (built, not committed)
 
-`src/releaseGates.test.ts`: the 10 P0 release gates (document section 9.1) as 56 node tests, 50 passing and 6 `it.fails` that each name a gap. They drive the outbox, `createHttp`, the offline cache, the offline contract, sync labels, sharing and retention rules, and read the source where the behaviour lives in a React screen. No requirement tags (`proves:`) were added: these are scenarios, not clause readings.
+`src/gates/releaseGates.test.ts`: the 10 P0 release gates (document section 9.1) as 56 node tests, 50 passing and 6 `it.fails` that each name a gap. They drive the outbox, `createHttp`, the offline cache, the offline contract, sync labels, sharing and retention rules, and read the source where the behaviour lives in a React screen. No requirement tags (`proves:`) were added: these are scenarios, not clause readings.
 
 Gaps found (each becomes a BM22-on fix; turn its `it.fails` into `it` when closed):
 1. **Gate 1:** `enqueue` keeps the newest 20 and silently drops the oldest; a guest who queues 21 requests offline loses the first unseen.
@@ -325,14 +325,14 @@ Theme: push-preview redaction (MNG-05). BM41 was not defined in the plan; I took
 Theme: two wording gaps on money screens (PRE-18, DEB-05). BM42 was not defined in the plan; I took the two `it.fails` wording guards that need only the front end.
 - **PRE-18:** `hub.portSkipped.comp.arrives` now says refunds "usually reach your card in about 5 working days" and that this is an estimate until the card company confirms it.
 - **DEB-05:** the report form shows `case.noReversal` above the send button: sending a case does not mean a charge is reversed, and the outcome is told in the app.
-- **Tests:** both guards in `src/wordingGuards.test.ts` changed from `it.fails` to `it`. `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` pass.
+- **Tests:** both guards in `src/gates/wordingGuards.test.ts` changed from `it.fails` to `it`. `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` pass.
 - **Limits:** both rows stay Partial. There is no provider-confirmed refund state, and a case shows no owner or response expectation at submission. English only. No browser check. Remaining `it.fails` wording gaps: EMB-01, DEB-04, BOK-05 (all need server or domain work).
 
 ## 5ac. BM43 result (built, not committed)
 
 Theme: the runbook incident section. BM43 was not defined in the plan; I took the one `it.fails` release gate that needs only docs.
 - **Runbook:** new "Incidents" section in `docs/runbook.md`: owner, detect, contain (set the provider to `sim`), who staff are told, how guests are told (Status screen, push alerts and the COM-04 fallback, Disruption Hub), and after.
-- **Test:** the gate in `src/releaseGates.test.ts` changed from `it.fails` to `it`. `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` pass.
+- **Test:** the gate in `src/gates/releaseGates.test.ts` changed from `it.fails` to `it`. `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` pass.
 - **Limits:** no incident owner is named and there is no paging or alert hook (PERF-07), so the section says so rather than inventing a process. The operator must fill in the owner and sign it off in the scorecard. No requirement row moves. Remaining `it.fails`: EMB-01, DEB-04, BOK-05 (server or domain work).
 
 ## 5ab. BM44 result (built, not committed)

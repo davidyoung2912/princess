@@ -1,4 +1,5 @@
 import type { CustomReminder } from '../ai/stanleyAction'
+import { deviceStore } from './deviceStorage'
 
 /**
  * Reminders the guest asked Stanley for ("remind me at 4:15 to be back"), kept on this device only. They show in the app's reminder strip when they are due and the app is open or opens,
@@ -7,7 +8,7 @@ import type { CustomReminder } from '../ai/stanleyAction'
 const KEY = 'princess:custom-reminders'
 const MAX = 20
 const local = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 export function readCustom(): CustomReminder[] {

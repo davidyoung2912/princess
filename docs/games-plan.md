@@ -16,7 +16,7 @@ lost when the page is left (thin-client rule). Do not start the next phase until
 3. Screen in `src/ui/explorer/games/<Game>Screen.tsx`, styles appended to `src/styles/games.css` (class prefix per game, no CSS framework, themes via existing tokens, colour is never the only cue).
 4. Register: `GAMES` in `src/domain/games/catalogue.ts` (+ icon in `GamesExplorerScreen.tsx` `ICONS`), route in `src/routes/routes.ts`, screen in `src/routes/screens.ts` and `src/screens.ts`, `src/domain/offlineContract.ts` (`offline`), icon in `src/ui/icons.ts` and `src/ui/screenIcons.ts`, allow-lists and counts in `src/routes/nav.test.ts`, `coverage.test.ts` (SCREEN_LIST length and unreachable list) and `screens.test.ts` (length and unreachable list, twice).
 5. Strings in `src/i18n/locales/enCore.ts` (`screen.X##.*`, `route.*`, `gx.game.*`, game keys) and `enLate.ts` (three `tip.X##` and four `stanley.q/a/r.pg.X##.n` with answers of 70+ characters; every key must be used as a literal `t('...')`, so no built-up key names).
-6. Timers only through `startVisibleInterval`; a bare `setTimeout` needs the file adding to the allow-list in `src/perf.test.ts` and must be cleared on unmount.
+6. Timers only through `startVisibleInterval`; a bare `setTimeout` needs the file adding to the allow-list in `src/gates/perf.test.ts` and must be cleared on unmount.
 
 ## Phases
 

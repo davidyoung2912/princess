@@ -1,5 +1,6 @@
 import { cacheGet, cachePut, CACHE_PREFIX } from '../domain/offlineCache'
 import { portById } from '../domain/sailings'
+import { deviceStore } from '../data/deviceStorage'
 
 /**
  * One feed the server answers. The client holds no simulation of its own: `now()` is the server's answer if it has come, else the last answer kept
@@ -18,7 +19,7 @@ export interface Feed<A extends unknown[], V> {
 }
 
 const store = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 /**

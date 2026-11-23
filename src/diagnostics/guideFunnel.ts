@@ -1,6 +1,7 @@
 import type { GuideView } from '../api/guideTypes'
 import { JOURNEY_STAGES, type JourneyStage } from '../routes/hubs'
 import { openTasks } from '../guide/view'
+import { deviceStore } from '../data/deviceStorage'
 
 /**
  * Which guide tasks this guest saw, finished and put aside, kept on this device only (G7). It holds task ids with three yes-or-no marks and nothing else: no words typed, no
@@ -72,7 +73,7 @@ export function funnelByStage(f: Funnel): { stage: JourneyStage; seen: number; d
   }).filter((r) => r.seen > 0 || r.done > 0 || r.skipped > 0)
 }
 
-const device = (): Storage | null => { try { return typeof window === 'undefined' ? null : window.localStorage } catch { return null } }
+const device = (): Storage | null => { return deviceStore() }
 
 /** The same marks, kept in this device's storage (a blocked store is ignored). */
 export const noteGuideHere = (view: GuideView): void => noteGuide(device(), view)

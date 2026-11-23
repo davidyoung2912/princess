@@ -1,5 +1,6 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { normalizeRates, SAMPLE_TABLE, type RateTable } from '../domain/rates'
+import { deviceStore } from '../data/deviceStorage'
 
 /** The last rate table fetched, kept on this device (ACC-07). It is not personal, so one record serves everyone. */
 export const RATES_KEY = `${APP_PREFIX}rates`
@@ -23,11 +24,7 @@ export function saveRates(table: RateTable, storage: Pick<Storage, 'setItem'> | 
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 let current: RateTable | null = null

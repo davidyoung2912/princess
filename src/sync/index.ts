@@ -1,6 +1,7 @@
 import { hasUnsent, subscribeOutbox } from '../data/outbox'
 import { portRows, subscribePortRowStatus } from './portRows'
 import { createSync, type Remote, type SyncStatus } from './sync'
+import { deviceStore } from '../data/deviceStorage'
 
 let remote: Remote | null = null
 const listeners = new Set<() => void>()
@@ -16,7 +17,7 @@ export const subscribeSyncStatus = (listener: () => void): (() => void) => {
   const stopOutbox = subscribeOutbox(listener)
   return () => { listeners.delete(listener); stop(); stopOutbox() }
 }
-const outboxStore = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+const outboxStore = (): Storage | null => { return deviceStore() }
 /**
  * Everything on this device that has not reached the account: the documents, the port day's rows and the outbox of unsent messages and requests. These
  * three are the only stores of unsent changes; everything else on the device is a copy of what the server holds. An error means something is waiting for the connection.

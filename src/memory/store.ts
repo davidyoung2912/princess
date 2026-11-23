@@ -17,6 +17,7 @@ import { EMPTY_MEDICAL, normalizeMedical, type MedicalCard } from '../domain/med
 import { FIT_QUESTIONS, type FitKey } from '../domain/dream'
 import { CONTACT_NAME_MAX, CONTACT_NOTE_MAX, CONTACTS_MAX, isTopic, NOTE_MAX, REFLECTION_MAX, REFLECTIONS_MAX, type Contact, type Journal, type Reflection } from '../domain/memoryBook'
 import { MAX_PLAN_DAY } from '../domain/nightsRules'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Everything Phase H6 keeps on this device for one person: the journal, "what I would change", wrapped and anniversary choices, contacts met on board, and what they have decided so far about a trip. */
 /** What the guest remembers using, and what the package cost them (cents). */
@@ -133,11 +134,7 @@ export function saveMemory(personaId: string | null, state: MemoryState, storage
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, MemoryState>()

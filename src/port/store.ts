@@ -2,6 +2,7 @@ import { APP_PREFIX } from '../data/lifecycle'
 import { EMPTY_SPLIT, normalizeSplit, type SplitState } from '../domain/ledgerSplit'
 import { EMPTY_PORT_PARTY, normalizePortParty, type PortPartyState } from '../domain/portParty'
 import { EMPTY_BOARD, normalizeBoard, type BoardState } from '../domain/board'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Everything Phase H3 keeps on this device for one booking: the port-day party state and the split ledger. Kept under the booker, so everyone on the booking sees the same record here, and (with the real API) saved as rows by `sync/portRows.ts`. */
 export interface PortState { party: PortPartyState; split: SplitState; /** The group poll and dream board (N4.2). */ board: BoardState }
@@ -34,11 +35,7 @@ export function savePort(bookerId: string | null, state: PortState, storage: Pic
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, PortState>()

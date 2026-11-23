@@ -5,13 +5,14 @@ import { cacheGet, cachePut } from '../domain/offlineCache'
 import { isEmergencyCard } from '../domain/safety'
 import { api } from '../runtime'
 import { shouldKeep } from './capsule'
+import { deviceStore } from './deviceStorage'
 
 /**
  * Away From Ship: the copy of what a guest wants with no signal, made the moment they leave the ship. Each piece is kept under the same key the screen that
  * shows it already reads (so those screens work offline too), and one small record says what was kept, when and for which port day.
  */
 const storage = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 export interface PackPerson { id: string; booker: string }

@@ -1,6 +1,7 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { sync } from '../sync'
 import { EMPTY_EXTRAS, normalizeExtras, type ShopExtras } from '../domain/shopExtras'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Delivery and gift choices stay on this device, one record per signed-in person. */
 export const shopKeyFor = (personaId: string | null): string => `${APP_PREFIX}shop:${personaId ?? ''}`
@@ -27,11 +28,7 @@ export function saveExtras(personaId: string | null, state: ShopExtras, storage:
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, ShopExtras>()

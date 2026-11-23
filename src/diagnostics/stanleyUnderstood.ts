@@ -1,3 +1,4 @@
+import { deviceStore } from '../data/deviceStorage'
 /**
  * How Stanley's understanding of a question went, counted on this device only (docs/stanley-answers-plan.md, section 10): how often he was sure, unsure or lost, which topics came up and which pills were tapped.
  * Only counts under a closed set of keys (`outcome:<x>`, `topic:<id>`, `pill:<destination>`), never the words typed. Nothing is sent anywhere.
@@ -34,5 +35,5 @@ export const clearUnderstood = (store: Store | null): void => { try { store?.rem
 
 /** Counts one understood question (its outcome and topic), and any pill tapped. Safe where there is no storage. */
 export function countUnderstood(keys: readonly string[]): void {
-  try { recordUnderstood(typeof window === 'undefined' ? null : window.localStorage, keys) } catch { /* storage blocked */ }
+  try { recordUnderstood(deviceStore(), keys) } catch { /* storage blocked */ }
 }

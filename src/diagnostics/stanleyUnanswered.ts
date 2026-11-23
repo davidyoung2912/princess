@@ -1,3 +1,4 @@
+import { deviceStore } from '../data/deviceStorage'
 /**
  * Opt-in memory of the questions Stanley could not place (docs/stanley-answers-plan.md, sections 10 and 11, phase 7).
  * Off until the guest turns it on in Diagnostics settings. While on, the words of a missed or ambiguous question are kept on this device only,
@@ -60,7 +61,7 @@ export function recordUnanswered(store: Store | null, text: string, kind: Unansw
 
 /** Safe where there is no storage. */
 export function keepUnanswered(text: string, kind: UnansweredKind): void {
-  try { recordUnanswered(typeof localStorage === 'undefined' ? null : localStorage, text, kind) } catch { /* storage blocked */ }
+  try { recordUnanswered(deviceStore(), text, kind) } catch { /* storage blocked */ }
 }
 
 /** The export: one JSON object per line is easy to diff, but a plain list is what a guest can read before sending, so it is a small JSON document. */

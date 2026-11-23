@@ -1,4 +1,5 @@
 import type { StanleySource } from '../ai/stanleyRoute'
+import { deviceStore } from '../data/deviceStorage'
 
 /**
  * Which source answered each of Stanley's replies, counted on this device only (SG7). It shows what share of questions cost money (`model`, `trip`, `before`)
@@ -93,7 +94,7 @@ export function repeated(counts: AskedCounts, limit = 5): { id: string; count: n
 /** Counts one reply on this device, and the written answer behind it when there was one. Safe where there is no storage. */
 export function countTier(tier: Tier, asked?: string): void {
   try {
-    const store = typeof window === 'undefined' ? null : window.localStorage
+    const store = deviceStore()
     recordTier(store, tier)
     if (asked) recordAsked(store, asked)
   } catch { /* storage blocked */ }

@@ -31,7 +31,7 @@ describe('security guards', () => {
   })
 
   it('keeps the concierge key off the device: no front-end file reads it or calls the model host', () => {
-    const others = all.filter((s) => s.file !== join('src', 'security.test.ts'))
+    const others = all.filter((s) => s.file !== join('src', 'gates', 'security.test.ts'))
     expect(others.filter((s) => s.text.includes('ANTHROPIC_API_KEY')).map((s) => s.file)).toEqual([])
     expect(others.filter((s) => s.text.includes('api.anthropic.com')).map((s) => s.file)).toEqual([])
   })

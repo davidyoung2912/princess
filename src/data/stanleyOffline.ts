@@ -1,11 +1,12 @@
 import { readCache, readQueue, type QueuedConfirm, type ReminderCache } from '../ai/stanleyOffline'
+import { deviceStore } from './deviceStorage'
 
 /** What Stanley keeps on this phone for no-signal use (phase P3c): a copy of the next day of reminders, ids already shown, and confirms waiting to send. Cleared with the trip data; nothing here is the source of truth. */
 const CACHE = 'princess:stanley-reminder-copy'
 const SHOWN = 'princess:stanley-offline-shown'
 const QUEUE = 'princess:stanley-confirm-queue'
 const local = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 const read = (k: string): unknown => { try { return JSON.parse(local()?.getItem(k) ?? 'null') } catch { return null } }
 const write = (k: string, v: unknown): void => { try { local()?.setItem(k, JSON.stringify(v)) } catch { /* lasts for this visit only */ } }

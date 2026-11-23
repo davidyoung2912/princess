@@ -1,6 +1,7 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { sync } from '../sync'
 import { EMPTY_PARTY, normalizePartyState, type PartyState } from '../domain/party'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Party invitations and shared notes stay on this device, one record per booking (kept under the booker, so everyone on the booking sees the same notes here). */
 export const partyKeyFor = (bookerId: string | null): string => `${APP_PREFIX}party:${bookerId ?? ''}`
@@ -27,11 +28,7 @@ export function saveParty(bookerId: string | null, state: PartyState, storage: W
 }
 
 function safeStorage(): Storage | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
+  return deviceStore()
 }
 
 const cache = new Map<string, PartyState>()

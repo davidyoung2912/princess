@@ -18,13 +18,8 @@ warmServer()
 applySettings()
 watchDeviceTheme()
 
-// Wait briefly for the text fonts so headings do not visibly resize when they arrive.
-const fontsReady = Promise.race([
-  Promise.all([document.fonts.load('400 1em Figtree'), document.fonts.load('700 1em Figtree')]),
-  new Promise((done) => setTimeout(done, 1500)),
-]).catch(() => {})
-
-void Promise.all([fontsReady, startRuntime().catch(() => {}), applyLanguage().catch(() => {}), loadEnglishLate().catch(() => {})]).then(() => {
+// Fonts load with font-display: swap, so the first paint never waits for them.
+void Promise.all([startRuntime().catch(() => {}), applyLanguage().catch(() => {}), loadEnglishLate().catch(() => {})]).then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ErrorBoundary>

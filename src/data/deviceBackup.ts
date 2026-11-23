@@ -1,9 +1,10 @@
 import { saveOutbox, loadOutbox, notifyOutbox } from './outbox'
 import { backupCount, buildBackup, mergeBackup, OUTBOX_PREFIX, parseBackup, scanOutboxes, type Backup, type ScanResult } from '../domain/deviceBackup'
 import { demoNow } from '../demo/store'
+import { deviceStore } from './deviceStorage'
 
 const local = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 export const scanDevice = (): ScanResult => scanOutboxes(local())

@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { cacheGet, cachePut, maxAgeFor } from './domain/offlineCache'
+import { cacheGet, cachePut, maxAgeFor } from '../domain/offlineCache'
 
 /**
  * N1.3, the offline day. Rendering with no network needs a browser, which the project rules out, so this checks the two things that make an offline day

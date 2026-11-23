@@ -12,9 +12,10 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Field } from '../Field'
 import { PassBody } from './PassScreen'
+import { deviceStore } from '../../data/deviceStorage'
 
 const local = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 /** Find a pass with just the booking number and a last name, no sign-in (CHK-14). The last pass found is kept on the phone, so it still opens with no signal. */

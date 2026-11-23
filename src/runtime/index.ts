@@ -63,6 +63,7 @@ import { createHttpPortRows } from '../sync/httpPortRows'
 import { portRows, setPortRowsRemote } from '../sync/portRows'
 import { setGangwayRemote } from '../sync/gangway'
 import { channel } from './channel'
+import { deviceStore } from '../data/deviceStorage'
 
 const safe = (get: () => Storage): Storage | null => {
   try { return typeof window === 'undefined' ? null : get() } catch { return null }
@@ -440,7 +441,7 @@ export const partyShare = {
 /** Fetches the access reference data (excursion difficulty, accessible room types) once a person is signed in; failures leave the authored copies in use. */
 function loadReference(): void {
   if (!auth.current()) { setServedAccess(null); return }
-  const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+  const store = (): Storage | null => { return deviceStore() }
   const kept = cacheGet(store(), 'access', 'v1', normalizeAccessReference, Date.now())
   if (kept) setServedAccess(kept.value)
   void http.get<unknown>('/reference/access')
@@ -477,7 +478,7 @@ const TABLES: Table[] = [
   table('pricing', '/reference/pricing', normalizePricing, applyPricing, true),
   table('content', '/reference/content', normalizeContent, applyContent),
 ]
-const tableStore = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+const tableStore = (): Storage | null => { return deviceStore() }
 /** The version of each table in use, so a refetch applies only a change. */
 const inUse = new Map<string, string>()
 

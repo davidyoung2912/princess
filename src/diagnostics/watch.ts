@@ -1,6 +1,7 @@
 import { record, type DiagnosticKind } from './log'
 import { noteVisit } from './taskFunnel'
 import { createTelemetry, type EventName, type TelemetryItem } from './telemetry'
+import { deviceStore } from '../data/deviceStorage'
 
 /** Device flag for the "Help improve the app" consent (usage counts only; problems are always reported), set from the privacy centre. Off until the guest turns it on. */
 export const IMPROVE_KEY = 'princess:improve'
@@ -9,7 +10,7 @@ export const IMPROVE_KEY = 'princess:improve'
 export const SLOW_LOAD_MS = 4000
 
 const local = (): Storage | null => {
-  try { return typeof window === 'undefined' ? null : window.localStorage } catch { return null }
+  return deviceStore()
 }
 
 const improveOn = (): boolean => {

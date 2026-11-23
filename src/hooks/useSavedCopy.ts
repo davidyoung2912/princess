@@ -3,9 +3,10 @@ import { shouldKeep } from '../data/capsule'
 import { demoNow } from '../demo/store'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { useAsync } from './useAsync'
+import { deviceStore } from '../data/deviceStorage'
 
 const storage = (): Storage | null => {
-  try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null }
+  return deviceStore()
 }
 
 /** How long a load may take before a kept copy is shown in its place (a slow or silent link must not leave a boarding pass behind a spinner). */

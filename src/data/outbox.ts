@@ -1,3 +1,4 @@
+import { deviceStore } from './deviceStorage'
 /** Actions that could not be sent (no signal, a slow link) wait here and are retried with growing gaps (PERF-04, NET-03). */
 export interface OutboxItem {
   id: string
@@ -124,5 +125,5 @@ export const sleep = (ms: number): Promise<void> => new Promise((resolve) => set
 
 /** Waiting actions on this device, read from the browser's storage; 0 where there is none. */
 export const readUnsent = (): number => {
-  try { return countUnsent(typeof localStorage === 'undefined' ? null : localStorage) } catch { return 0 }
+  try { return countUnsent(deviceStore()) } catch { return 0 }
 }
