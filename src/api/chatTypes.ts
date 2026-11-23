@@ -302,6 +302,10 @@ export interface ChatPoll {
   bundles?: (ChatBundle | null)[]
   /** Phase B3: the options that were a thing from the app but are not available to you now (cancelled, past, or not on your sailing). */
   gone?: number[]
+  /** Phase B5: a time poll's slots (`day@HH:mm`), one per option; the options' words are built by the server. */
+  slots?: string[]
+  /** Phase B5: the indexes of the slots that clash with your own programme. Yours alone, never shown to anyone else. */
+  clashes?: number[]
 }
 /**
  * The answers to a poll or plan. `counts` is one number per poll option, or going, maybe and no for a plan; `mine` is your own choice (the option's index, or 0, 1, 2 for a plan). A poll's answers are counted, never named.
@@ -315,7 +319,7 @@ export type ChatTypedSend =
   | { kind: 'card'; shareRef: string }
   | { kind: 'place'; placeId: string; note?: string }
   | { kind: 'plan'; shareRef: string; note?: string }
-  | { kind: 'poll'; question: string; options: string[]; optionRefs?: (string | null)[] }
+  | { kind: 'poll'; question: string; options: string[]; optionRefs?: (string | null)[]; slots?: string[] }
   | { kind: 'bundle'; shareRef: string; note?: string }
 
 /** One of the six reactions in use on a message. `names` are the others (first name and last initial) for a screen reader; yours is counted and marked by `mine`, not named. */

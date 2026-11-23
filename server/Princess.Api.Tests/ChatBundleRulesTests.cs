@@ -96,4 +96,27 @@ public class ChatBundleRulesTests
         Assert.False(ChatPlanningRules.MayDecide(ChatConversationRules.Group, false, false));
         Assert.True(ChatPlanningRules.MayDecide(ChatConversationRules.Direct, false, false));
     }
+
+    [Fact]
+    public void ATimePollTakesSlotsOnDaysOfTheSailingAndBuildsItsOwnWords()
+    {
+        var poll = ChatPlanningRules.CleanSlotPoll("When for wine?", ["2@17:00", "3@19:30", "2@17:00"], 7);
+        Assert.NotNull(poll);
+        Assert.Equal(["2@17:00", "3@19:30"], poll!.Slots);
+        Assert.Equal(["Day 2, 17:00", "Day 3, 19:30"], poll.Options);
+        Assert.Null(ChatPlanningRules.CleanSlotPoll("When?", ["2@17:00", "9@10:00"], 7));   // off the sailing
+        Assert.Null(ChatPlanningRules.CleanSlotPoll("When?", ["2@17:00", "2@25:00"], 7));   // not a time
+        Assert.Null(ChatPlanningRules.CleanSlotPoll("When?", ["2@17:00"], 7));              // one slot is not a choice
+        Assert.Null(ChatPlanningRules.CleanSlotPoll("", ["2@17:00", "3@17:00"], 7));
+    }
+
+    [Fact]
+    public void ASlotClashesOnlyWithSomethingOfTheVotersOnTheSameDay()
+    {
+        (int, string, int)[] busy = [(2, "17:30", 45)];
+        Assert.True(ChatPlanningRules.SlotClashes("2@17:00", busy));    // 17:00 to 18:00 overlaps 17:30 to 18:15
+        Assert.False(ChatPlanningRules.SlotClashes("2@18:15", busy));   // starts as it ends
+        Assert.False(ChatPlanningRules.SlotClashes("3@17:30", busy));   // another day
+        Assert.False(ChatPlanningRules.SlotClashes("junk", busy));
+    }
 }

@@ -170,3 +170,36 @@ export function decisionActions(b: Pick<ChatBundle, 'type' | 'ref'> | null | und
 
 /** The minutes ahead a decision's Remind me sets. */
 export const DECISION_REMINDER_LEAD = 30
+
+// ---- Phase B5: time-slot polls ----
+
+export interface Slot { day: number; time: string }
+export const slotRef = (s: Slot): string => `${s.day}@${s.time}`
+
+/** A slot as `day@HH:mm`, or null for anything else. */
+export function parseSlot(text: string): Slot | null {
+  const m = /^(\d{1,3})@([01]\d|2[0-3]):([0-5]\d)$/.exec(text)
+  return m && Number(m[1]) >= 1 ? { day: Number(m[1]), time: `${m[2]}:${m[3]}` } : null
+}
+
+/** The time poll the form describes: a question and two to six different slots on days 1 to `days`, or null so the Ask button stays off. */
+export function cleanSlotDraft(question: string, slots: readonly Slot[], days: number): { question: string; slots: string[] } | null {
+  const q = line(question)
+  if (q.length === 0 || q.length > QUESTION_MAX) return null
+  const kept: string[] = []
+  for (const s of slots) {
+    if (!Number.isInteger(s.day) || s.day < 1 || s.day > days || parseSlot(slotRef(s)) === null) return null
+    if (!kept.includes(slotRef(s))) kept.push(slotRef(s))
+  }
+  return kept.length < POLL_MIN_OPTIONS || kept.length > POLL_MAX_WITH_BUNDLES ? null : { question: q, slots: kept }
+}
+
+/**
+ * A way out of a split vote: among the slots with the most votes, the first one that does not clash with your own programme (the first leader when all do, none when nobody voted).
+ * It is a hint only; the person who decides still chooses.
+ */
+export function compromiseSlot(counts: readonly number[], clashes: readonly number[] | undefined): number | null {
+  const top = leaders(counts)
+  if (top.length === 0) return null
+  return top.find((i) => !clashes?.includes(i)) ?? top[0]!
+}

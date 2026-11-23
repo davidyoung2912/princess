@@ -6,7 +6,7 @@ namespace Princess.Api.Domain;
 /// A poll as it travels in <c>ChatMessages.Payload</c>: the question and two to five options (six when one is a bundle). Phase B3: <c>Refs</c> (when present) has one entry per option, a bundle ref (see <see cref="ChatBundleRules"/>) for an option that is a real thing from the app and
 /// null for a typed one; the option's text is then the bundle's title, so an older app reads the poll as plain text.
 /// </summary>
-public sealed record ChatPoll(string Question, List<string> Options, List<string?>? Refs = null);
+public sealed record ChatPoll(string Question, List<string> Options, List<string?>? Refs = null, List<string>? Slots = null);
 
 /// <summary>
 /// The pure rules of group planning (docs/chat-features-research.md, section 11, phase 4): polls (two to five options, a vote that can be changed, closing on demand or after 24 hours), plans with an RSVP that
@@ -72,6 +72,57 @@ public static class ChatPlanningRules
         var hasRefs = keptRefs.Any(x => x is not null);
         if (kept.Count < MinOptions || kept.Count > (hasRefs ? MaxWithBundles : MaxOptions)) return null;
         return new ChatPoll(q, kept, hasRefs ? keptRefs : null);
+    }
+
+    // ---- Phase B5: time-slot polls ----
+
+    /// <summary>How long a slot is taken to last when looking for a clash with the voter's own programme.</summary>
+    public const int SlotMinutes = 60;
+
+    public static string SlotRef(int day, string time) => $"{day}@{time}";
+
+    /// <summary>A slot as <c>day@HH:mm</c>, or null for anything else.</summary>
+    public static (int Day, string Time)? ParseSlot(string? text)
+    {
+        var at = text?.IndexOf('@') ?? -1;
+        if (at < 1 || !int.TryParse(text![..at], out var day) || day < 1) return null;
+        var time = text[(at + 1)..];
+        return TimeOnly.TryParseExact(time, "HH:mm", out _) ? (day, time) : null;
+    }
+
+    /// <summary>The words of a slot option, written here so the sender supplies no text for it.</summary>
+    public static string SlotText(int day, string time) => $"Day {day}, {time}";
+
+    /// <summary>
+    /// A time poll: a question and two to six different slots, each on a day of the sailing (1 to <paramref name="days"/>). The options' words are built from the slots. Null when the question is bad, a slot is malformed or off the sailing, or too few or many remain.
+    /// </summary>
+    public static ChatPoll? CleanSlotPoll(string? question, IEnumerable<string?>? slots, int days)
+    {
+        var q = CleanLine(question, MaxQuestion);
+        if (q is null) return null;
+        var kept = new List<string>();
+        foreach (var raw in slots ?? [])
+        {
+            if (ParseSlot(raw) is not { } slot || slot.Day > days) return null;
+            var r = SlotRef(slot.Day, slot.Time);
+            if (!kept.Contains(r)) kept.Add(r);
+        }
+        if (kept.Count < MinOptions || kept.Count > MaxWithBundles) return null;
+        return new ChatPoll(q, [.. kept.Select(r => { var s = ParseSlot(r)!.Value; return SlotText(s.Day, s.Time); })], null, kept);
+    }
+
+    /// <summary>Whether a slot overlaps something of the voter's own on that day. <paramref name="busy"/> is (day, start "HH:mm", minutes). Private to the voter and never sent to anyone else.</summary>
+    public static bool SlotClashes(string slot, IEnumerable<(int Day, string Start, int Minutes)> busy)
+    {
+        if (ParseSlot(slot) is not { } s) return false;
+        var a = TimeOnly.ParseExact(s.Time, "HH:mm").ToTimeSpan().TotalMinutes;
+        foreach (var b in busy)
+        {
+            if (b.Day != s.Day || !TimeOnly.TryParseExact(b.Start, "HH:mm", out var t)) continue;
+            var bs = t.ToTimeSpan().TotalMinutes;
+            if (a < bs + b.Minutes && bs < a + SlotMinutes) return true;
+        }
+        return false;
     }
 
     public static string Serialise(ChatPoll poll) => JsonSerializer.Serialize(poll, Json);

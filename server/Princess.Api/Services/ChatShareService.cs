@@ -9,7 +9,7 @@ namespace Princess.Api.Services;
 /// is rebuilt from that data when it is sent: the client names a <c>ref</c> from the list and never supplies the words, so a card cannot say more than the server knows to be true and carries no price, folio line, cabin or booking number.
 /// A place card names a place from the ship profile.
 /// </summary>
-public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClock clock)
+public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClock clock, IOnboardStore? onboard = null)
 {
     private const string BookingRef = "booking";
 
@@ -26,6 +26,22 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
 
     /// <summary>The sailing of the guest's current booking, or null: used to show a hand-over's sender only to a guest on the same sailing.</summary>
     public async Task<string?> SailingOfAsync(UserRecord actor, CancellationToken ct) => (await CurrentAsync(actor, ct))?.SailingId;
+
+    /// <summary>Phase B5: the number of days of the guest's current sailing (0 without one), for a time poll's slots.</summary>
+    public async Task<int> SailingDaysAsync(UserRecord actor, CancellationToken ct) =>
+        await CurrentAsync(actor, ct) is { } booking ? TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure)).Days.Count : 0;
+
+    /// <summary>Phase B5: the indexes of the slots that overlap something on the guest's own programme. Computed for the reader only; the poll never stores or shows anyone's clashes to others.</summary>
+    public async Task<List<int>> SlotClashesAsync(UserRecord actor, IReadOnlyList<string> slots, CancellationToken ct)
+    {
+        var result = new List<int>();
+        if (onboard is null || await CurrentAsync(actor, ct) is not { } booking) return result;
+        var busy = new List<(int, string, int)>();
+        foreach (var row in await onboard.ListPlanAsync(actor.Id, booking.SailingId, ct))
+            if (ProgramRules.ById(row.EventId, AboardPlans.ShipOfSailing(booking.SailingId)) is { } ev) busy.Add((row.Day, ev.Start, ev.Minutes));
+        for (var i = 0; i < slots.Count; i++) if (ChatPlanningRules.SlotClashes(slots[i], busy)) result.Add(i);
+        return result;
+    }
 
     private static string Clock(TimeOnly t) => t.ToString("HH:mm");
 

@@ -3,7 +3,7 @@ import type { ChatConversation, ChatMessage, ChatPoll, ChatPlannable, ChatRsvp, 
 import { isApiError } from '../../api/errors'
 import { newClientId } from '../../domain/chatThread'
 import {
-  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, DECISION_REMINDER_LEAD, answerJob, decisionActions, applyRsvp, applyVote, canAddOption, cleanPollRows, POLL_MAX_WITH_BUNDLES, type PollRow, eventsOnDay, isBookingPlan, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MIN_OPTIONS, rsvpOf, totalVotes, withHeld,
+  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, DECISION_REMINDER_LEAD, answerJob, decisionActions, applyRsvp, applyVote, canAddOption, cleanPollRows, cleanSlotDraft, compromiseSlot, slotRef, type Slot, POLL_MAX_WITH_BUNDLES, type PollRow, eventsOnDay, isBookingPlan, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MIN_OPTIONS, rsvpOf, totalVotes, withHeld,
 } from '../../domain/chatPlanning'
 import { bundleLink, eventRef } from '../../domain/chatBundles'
 import { cardLink, cleanNote, NOTE_MAX } from '../../domain/chatCards'
@@ -78,6 +78,7 @@ export function PollMessage({ conversationId, message, canAct, onChanged, held, 
               <label>
                 <input type="radio" name={name} checked={tally.mine === i} onChange={() => void vote.run(i)} />
                 <span className="chat-poll__text">{option}</span>
+                {poll.clashes?.includes(i) && <span className="chat-poll__clash"> ({t('cpoll.clash')})</span>}
                 <span className="muted chat-poll__count">{votes(count)} · {share}%</span>
               </label>
               <OptionThing poll={poll} index={i} />
@@ -90,6 +91,9 @@ export function PollMessage({ conversationId, message, canAct, onChanged, held, 
         {closed ? t('cpoll.closed') : tally.closesAt !== undefined ? t('cpoll.closesAt', { time: shipTime(tally.closesAt) }) : t('cpoll.open')}
         {closed && <> · {winners.length === 0 ? t('cpoll.noVotes') : t('cpoll.winner', { options: winners.map((i) => poll.options[i]).join(', ') })}</>}
       </p>
+      {poll.slots && !closed && compromiseSlot(tally.counts, poll.clashes) !== null && tally.counts.filter((c) => c === Math.max(...tally.counts)).length > 1 && (
+        <p className="muted">{t('cpoll.compromise', { slot: poll.options[compromiseSlot(tally.counts, poll.clashes)!] ?? '' })}</p>
+      )}
       <p role="status" className="visually-hidden">{announce}</p>
       {tally.decided !== undefined && poll.options[tally.decided] !== undefined && <Decision poll={poll} option={tally.decided} />}
       {tally.mayDecide && tally.decided === undefined && (
@@ -296,6 +300,62 @@ function PollForm({ conversationId, events, onSent }: { conversationId: string; 
   )
 }
 
+/** Phase B5: the form for a time poll: what it is for, then two to six times on days of the trip. `days` is how many days the trip has (from the programme events the server listed). */
+function SlotPollForm({ conversationId, days, onSent }: { conversationId: string; days: number; onSent: (sent: ChatMessage) => void }) {
+  const [question, setQuestion] = useState('')
+  const [slots, setSlots] = useState<Slot[]>([])
+  const [day, setDay] = useState(1)
+  const [time, setTime] = useState('19:00')
+  const [announce, setAnnounce] = useState('')
+  const draft = cleanSlotDraft(question, slots, days)
+  const label = (s: Slot): string => `${t('card.day', { day: s.day })}, ${clock12(s.time)}`
+  const ask = useAction(async () => {
+    if (!draft) return
+    const sent = await api.chatConversations.sendTyped(conversationId, { kind: 'poll', question: draft.question, options: [], slots: draft.slots }, newClientId())
+    setQuestion('')
+    setSlots([])
+    setAnnounce(t('cpoll.slots.sent'))
+    onSent(sent)
+  })
+  const add = () => {
+    const slot = { day, time }
+    if (!/^\d\d:\d\d$/.test(time) || slots.some((s) => slotRef(s) === slotRef(slot)) || slots.length >= POLL_MAX_WITH_BUNDLES) return
+    setSlots((cur) => [...cur, slot])
+    setAnnounce(t('cpoll.slots.picked', { slot: label(slot) }))
+  }
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); void ask.run() }}>
+      <h3>{headingCase(t('cpoll.slots.heading'))}</h3>
+      <p className="muted">{t('cpoll.slots.hint')}</p>
+      <p role="status" className="visually-hidden">{announce}</p>
+      <div className="field">
+        <label htmlFor="slots-question">{t('cpoll.slots.question')}</label>
+        <input id="slots-question" type="text" value={question} maxLength={QUESTION_MAX} autoComplete="off" onChange={(e) => setQuestion(e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor="slots-day">{t('cpoll.slots.day')}</label>
+        <select id="slots-day" value={day} onChange={(e) => setDay(Number(e.target.value))}>
+          {Array.from({ length: days }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{t('card.day', { day: d })}</option>)}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="slots-time">{t('cpoll.slots.time')}</label>
+        <input id="slots-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+      </div>
+      <Button type="button" variant="tertiary" onClick={add}>{t('cpoll.slots.add')}</Button>
+      {slots.length > 0 && (
+        <ul>
+          {slots.map((s) => (
+            <li key={slotRef(s)}>{label(s)} <button type="button" className="chat-act" aria-label={t('cpoll.slots.remove', { slot: label(s) })} onClick={() => setSlots((cur) => cur.filter((x) => slotRef(x) !== slotRef(s)))}>{t('cgroup.remove')}</button></li>
+          ))}
+        </ul>
+      )}
+      <Button type="submit" disabled={ask.busy || !draft}>{t('cpoll.slots.ask')}</Button>
+      {ask.error && <p role="alert" className="field__error">{t(planningError(ask.error))}</p>}
+    </form>
+  )
+}
+
 /** The form for a plan: a day of the trip, an event that runs that day on your own sailing, and a short note. */
 function PlanForm({ conversationId, events, onSent }: { conversationId: string; events: readonly ChatPlannable[]; onSent: (sent: ChatMessage) => void }) {
   const days = planDays(events)
@@ -361,6 +421,7 @@ export function PlanTools({ conversation, onSent }: { conversation: ChatConversa
       <PollForm conversationId={conversation.id} events={events ?? []} onSent={onSent} />
       {open && !events && !failed && <p role="status" className="muted">{t('conv.share.loading')}</p>}
       {failed && <p role="alert" className="field__error">{t('conv.share.failed')}</p>}
+      {events && events.length > 0 && <SlotPollForm conversationId={conversation.id} days={Math.max(...planDays(events))} onSent={onSent} />}
       {events && <PlanForm conversationId={conversation.id} events={events} onSent={onSent} />}
     </details>
   )

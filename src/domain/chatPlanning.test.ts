@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatPlannable, ChatTally } from '../api/chatTypes'
 import {
-  OPTION_MAX, QUESTION_MAX, cleanPollRows, adminCandidates, applyRsvp, applyVote, canAddOption, canPost, cleanPollDraft, eventsOnDay, isPlan, isPoll, isPollClosed, leaders, percentOf, planDays, pollResultText, rsvpIndex, rsvpOf,
+  OPTION_MAX, QUESTION_MAX, cleanPollRows, adminCandidates, applyRsvp, applyVote, canAddOption, canPost, cleanPollDraft, cleanSlotDraft, compromiseSlot, parseSlot, eventsOnDay, isPlan, isPoll, isPollClosed, leaders, percentOf, planDays, pollResultText, rsvpIndex, rsvpOf,
 } from './chatPlanning'
 import { answerJob, decisionActions, isBookingPlan, readAnswerJob, withHeld } from './chatPlanning'
 import { readReactionJob } from './chatReactions'
@@ -171,5 +171,24 @@ describe('decisionActions', () => {
     expect(decisionActions({ type: 'venue', ref: 'venue:v1' })).toEqual({ plan: null, book: false })
     expect(decisionActions(null)).toEqual({ plan: null, book: false })
     expect(decisionActions({ type: 'event', ref: 'event:x:0' }).plan).toBeNull()
+  })
+})
+
+describe('time-slot polls', () => {
+  it('cleans slots to days of the trip, once each, two to six', () => {
+    expect(cleanSlotDraft(' When  for wine? ', [{ day: 2, time: '17:00' }, { day: 3, time: '19:30' }, { day: 2, time: '17:00' }], 7)).toEqual({ question: 'When for wine?', slots: ['2@17:00', '3@19:30'] })
+    expect(cleanSlotDraft('When?', [{ day: 2, time: '17:00' }, { day: 9, time: '10:00' }], 7)).toBeNull()
+    expect(cleanSlotDraft('When?', [{ day: 2, time: '17:00' }], 7)).toBeNull()
+    expect(cleanSlotDraft('When?', [{ day: 2, time: '25:00' }, { day: 3, time: '10:00' }], 7)).toBeNull()
+  })
+  it('reads a slot and refuses junk', () => {
+    expect(parseSlot('3@09:05')).toEqual({ day: 3, time: '09:05' })
+    expect(parseSlot('3@9:05')).toBeNull()
+    expect(parseSlot('0@09:05')).toBeNull()
+  })
+  it('suggests the first leading slot that does not clash with you', () => {
+    expect(compromiseSlot([2, 2, 1], [0])).toBe(1)
+    expect(compromiseSlot([2, 2, 1], [0, 1])).toBe(0)
+    expect(compromiseSlot([0, 0], undefined)).toBeNull()
   })
 })
