@@ -48,7 +48,7 @@ export function PrivacyScreen() {
       <p>{t('priv.intro')}</p>
       {!view.data ? (view.status === 'error' ? <LoadError retry={view.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : (
         <>
-          <Card labelledBy="priv-keep-h">
+          <Card labelledBy="priv-keep-h" tour="priv-keep">
             <h2 id="priv-keep-h" className="card__title">{th('priv.keep')}</h2>
             <p className="muted">{t('priv.cruiseEnds', { date: formatDate(view.data.cruiseEnds) })}</p>
             <ul className="plain-bullets">
@@ -82,7 +82,7 @@ export function PrivacyScreen() {
             {keepPending && <p role="status">{t('priv.keep.pending')}</p>}
           </Card>
 
-          <section aria-labelledby="priv-consent-h">
+          <section aria-labelledby="priv-consent-h" data-tour="priv-consent">
             <h2 id="priv-consent-h">{th('priv.consents')}</h2>
             <ActionError error={set.error} forbidden="priv.err.forbidden" />
             {view.data.people.map((p) => <Person key={p.id} p={p} busy={set.busy} onChange={(c, on) => void set.run(p.id, c, on)} region={settings.region} />)}

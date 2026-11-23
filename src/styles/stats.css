@@ -15,3 +15,11 @@
 /* The share buttons stack, each just wide enough for its icon and words, with room before the made-up switch below them. */
 .stats-actions { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); margin-block: var(--space-3) var(--space-5); }
 .stats-actions .btn { width: auto; }
+/* A stat tile lifts a little under the pointer, with a shadow, because it has a share button of its own. Pointer devices only; no movement for reduced motion. */
+.stat { transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .stat:is(:hover, :focus-within) { transform: translateY(-3px); box-shadow: var(--elev-2); border-color: var(--primary); z-index: 1; }
+}
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .stat:is(:hover, :focus-within) { box-shadow: var(--elev-2); border-color: var(--primary); }
+}

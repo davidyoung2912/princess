@@ -67,7 +67,7 @@ function ShortGuide({ port }: { port: string }) {
   const p = portById(port)
   const level = guideLevelOf(port)
   return (
-    <Card labelledBy="g-short">
+    <Card labelledBy="g-short" tour="guide-short">
       <h2 id="g-short" className="card__title">{th('guide.short.title', { port: p?.name ?? port })}</h2>
       {g && <p>{g.blurb}</p>}
       <dl className="plain-dl">{portFacts(port).map((f) => <div key={f.label}><dt>{t(`guide.fact.${f.label}` as StringKey)}</dt><dd>{f.label === 'landing' ? t(`guide.fact.landing.${f.value}` as StringKey) : f.value}</dd></div>)}</dl>
@@ -81,7 +81,7 @@ function FullGuide({ port, k, crowd }: { port: string; k: NonNullable<ReturnType
     <>
       <TippingCard port={port} />
 
-      <Card labelledBy="g-price">
+      <Card labelledBy="g-price" tour="guide-price">
         <h2 id="g-price" className="card__title">{th('guide.price')}</h2>
         <div className="table-wrap"><table className="bill-table">
           <caption className="visually-hidden">{t('guide.price')}</caption>
@@ -96,7 +96,7 @@ function FullGuide({ port, k, crowd }: { port: string; k: NonNullable<ReturnType
         <p className="muted">{t('guide.scams.calm')}</p>
       </Card>
 
-      <Card labelledBy="g-safe">
+      <Card labelledBy="g-safe" tour="guide-safe">
         <h2 id="g-safe" className="card__title">{th('guide.safety')}</h2>
         {crowd?.stayAboardNote && <Banner kind="info" title={t('crowd.stayAboard')}><p>{t('crowd.stayAboardBody')}</p></Banner>}
         <ul className="plain-bullets">{k.advisories.map((x) => <li key={x}>{x}</li>)}</ul>

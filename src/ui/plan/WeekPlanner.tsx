@@ -32,7 +32,7 @@ export function WeekPlanner() {
   const set = (change: Partial<typeof prefs>) => update((s) => ({ ...s, prefs: { ...s.prefs, ...change } }))
 
   return (
-    <Card labelledBy="wk-h">
+    <Card labelledBy="wk-h" tour="plan-week">
       <h2 id="wk-h" className="card__title">{th('week.title')}</h2>
       <p>{t('week.intro')}</p>
       <fieldset>

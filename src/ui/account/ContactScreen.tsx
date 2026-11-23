@@ -65,7 +65,7 @@ export function ContactScreen() {
         })}
       </ul>
 
-      <section aria-labelledby="cb-h">
+      <section aria-labelledby="cb-h" data-tour="contact-callback">
         <h2 id="cb-h">{th('contact.callback')}</h2>
         <form onSubmit={(e) => void askCallback(e)} noValidate>
           <Field label={t('contact.phoneField')} help={t('helptip.callbackPhone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={phoneProblem ? t('contact.phoneProblem') : undefined} />
@@ -74,7 +74,7 @@ export function ContactScreen() {
         </form>
       </section>
 
-      <section aria-labelledby="em-h">
+      <section aria-labelledby="em-h" data-tour="contact-email">
         <h2 id="em-h">{th('contact.email')}</h2>
         <form onSubmit={(e) => void sendEmail(e)} noValidate>
           <TextArea label={t('contact.messageField')} hint={t('contact.messageHint', { address: SUPPORT_EMAIL })} value={message} maxLength={1000} onChange={(e) => setMessage(e.target.value)} />
@@ -85,7 +85,7 @@ export function ContactScreen() {
       </section>
       <SuccessLine>{sent ? t(`contact.sent.${sent}` as StringKey) : null}</SuccessLine>
 
-      <section aria-labelledby="tk-h">
+      <section aria-labelledby="tk-h" data-tour="contact-tickets">
         <h2 id="tk-h">{th('contact.tickets')}</h2>
         <Load state={tickets}>
           {(list) => list.length === 0 ? <Card info><p>{t('contact.noTickets')}</p></Card> : (

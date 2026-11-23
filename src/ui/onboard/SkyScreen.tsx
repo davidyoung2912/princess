@@ -35,7 +35,7 @@ export function SkyScreen() {
       </div>
       {!n && <FeedWaiting />}
       {n && <>
-      <Card labelledBy="sky-times">
+      <Card labelledBy="sky-times" tour="sky-times">
         <h2 id="sky-times" className="card__title">{n.sunset}</h2>
         <dl className="facts">
           <div><dt>{t('sky.sunrise')}</dt><dd>{n.sunrise}</dd></div>
@@ -51,7 +51,7 @@ export function SkyScreen() {
         <ul className="plain-list">{n.stars.map((s) => <li key={s}>{s}</li>)}</ul>
       </Card>
       </>}
-      <Card labelledBy="sky-views">
+      <Card labelledBy="sky-views" tour="sky-views">
         <h2 id="sky-views" className="card__title">{th('sky.views')}</h2>
         <div className="chip-row"><Chip pressed={stepFree} onToggle={() => setStepFree(!stepFree)}>{t('rt.stepFree')}</Chip></div>
         <ul className="plain-list">

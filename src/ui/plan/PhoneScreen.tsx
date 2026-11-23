@@ -17,7 +17,7 @@ export function PhoneScreen() {
     <div className="page">
       <p>{t('phone.intro')}</p>
       {moment !== 'none' && <Banner kind="warning" title={t(`phone.moment.${moment}` as StringKey)}><p>{t(`phone.moment.${moment}.body` as StringKey)}</p></Banner>}
-      <Card labelledBy="phone-steps-h">
+      <Card labelledBy="phone-steps-h" tour="phone-steps">
         <h2 id="phone-steps-h" className="card__title">{th('phone.steps')}</h2>
         <p role="status" className="muted">{t('phone.progress', { done: done.length, total: PHONE_STEPS.length })}</p>
         <ul className="plain-list">

@@ -64,7 +64,7 @@ export function ProfileScreen() {
 
       <Load state={party}>
         {(list) => list.length > 1 && (
-          <section aria-labelledby="party-h">
+          <section aria-labelledby="party-h" data-tour="profile-party">
             <h2 id="party-h">{th('profile.party')}</h2>
             <p className="muted">{t('profile.partyIntro')}</p>
             <ul className="plain-list">

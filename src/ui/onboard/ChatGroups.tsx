@@ -85,7 +85,7 @@ export function NewGroupPage({ onCreated }: { onCreated: (group: ChatGroup) => v
     else setFound((x) => [...x, p])
   }
   return (
-    <section aria-labelledby="new-group-h">
+    <section aria-labelledby="new-group-h" data-tour="chat-newgroup">
       <h2 id="new-group-h" className="visually-hidden">{t('cgroup.new')}</h2>
       <form onSubmit={(e) => { e.preventDefault(); if (canCreateGroup(name, total)) void create.run() }}>
         <Card>

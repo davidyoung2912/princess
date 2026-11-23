@@ -15,7 +15,7 @@ const CONTRASTS: readonly ContrastChoice[] = ['standard', 'high']
 export function DisplaySettings() {
   const [settings, update] = useSettings()
   return (
-    <section aria-labelledby="display-settings-h">
+    <section aria-labelledby="display-settings-h" data-tour="settings-display">
       <h2 id="display-settings-h">{th('settings.title')}</h2>
       <LanguageSwitch />
       <fieldset>

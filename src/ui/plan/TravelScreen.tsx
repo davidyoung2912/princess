@@ -20,7 +20,7 @@ export function TravelScreen() {
   return (
     <div className="page">
       <p>{t('travel.intro')}</p>
-      <Card labelledBy="port-h">
+      <Card labelledBy="port-h" tour="travel-port">
         <h2 id="port-h" className="card__title">{PORT_FACTS.name}</h2>
         <dl className="summary">
           {([['address', PORT_FACTS.address], ['airport', PORT_FACTS.airport], ['terminal', PORT_FACTS.terminal], ['boarding', PORT_FACTS.boarding], ['porters', PORT_FACTS.porters]] as const).map(([k, v]) => (

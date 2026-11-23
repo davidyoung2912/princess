@@ -39,7 +39,7 @@ export function StanleyCanScreen() {
         )
       })}
       <p><Link to="/me/stanley-activity">{t('stanleyActivity.link')}</Link></p>
-      <Card info labelledBy="stanley-can-never-h">
+      <Card info labelledBy="stanley-can-never-h" tour="stanley-never">
         <h2 id="stanley-can-never-h">{th('stanleyIntro.never.title')}</h2>
         <p>{t('stanleyIntro.never.body')}</p>
       </Card>

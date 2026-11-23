@@ -86,7 +86,7 @@ export function AwayFromShipPanel({ day }: { day: PortToday }) {
   return (
     <>
       <h1 className="visually-hidden">{headingCase(t('aship.title'))}</h1>
-      <Card hero labelledBy="aship-hero-h">
+      <Card hero labelledBy="aship-hero-h" tour="away-hero">
         <h2 id="aship-hero-h" className="card__title">{th('aship.hero.title')}</h2>
         <p className="aboard__deadline"><strong>{t('aship.hero.ship', { time: day.allAboardShip })}</strong></p>
         {day.allAboardShip !== day.allAboardLocal && <p className="muted">{t('aship.hero.local', { time: day.allAboardLocal, port: port.name })}</p>}
@@ -100,7 +100,7 @@ export function AwayFromShipPanel({ day }: { day: PortToday }) {
 
       <TextReminderNudge />
 
-      <Card labelledBy="aship-times-h">
+      <Card labelledBy="aship-times-h" tour="away-times">
         <h2 id="aship-times-h" className="card__title">{th('aship.times.title')}</h2>
         <ul className="plain-bullets">
           {times.map((x) => (

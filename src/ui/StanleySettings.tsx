@@ -8,7 +8,7 @@ export function StanleySettings() {
   const [settings, update] = useSettings()
   const current = proactivityOfLevel(settings.stanleyLevel)
   return (
-    <section aria-labelledby="stanley-level-h" className="settings-stanley">
+    <section aria-labelledby="stanley-level-h" className="settings-stanley" data-tour="settings-stanley">
       <h2 id="stanley-level-h">{th('stanley.level.title')}</h2>
       <p>{t('stanley.level.intro')}</p>
       <fieldset>

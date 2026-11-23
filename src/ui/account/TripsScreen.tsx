@@ -41,7 +41,7 @@ export function TripsScreen() {
       <Load state={trips}>
         {(data) => (
           <>
-            <section aria-labelledby="up-h">
+            <section aria-labelledby="up-h" data-tour="trips-up">
               <h2 id="up-h">{th('trips.upcoming')}</h2>
               {data.upcoming.length === 0 ? <Card info><p>{t('trips.noneUpcoming')}</p></Card> : <ul className="card-grid">{data.upcoming.map((x) => <TripCard key={x.number} trip={x} />)}</ul>}
             </section>
@@ -57,7 +57,7 @@ export function TripsScreen() {
         )}
       </Load>
 
-      <section aria-labelledby="link-h">
+      <section aria-labelledby="link-h" data-tour="trips-link">
         <h2 id="link-h">{th('trips.link.title')}</h2>
         <p>{t('trips.link.intro')}</p>
         <form onSubmit={(e) => void submit(e)} noValidate>

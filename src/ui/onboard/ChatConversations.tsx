@@ -148,7 +148,7 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   // A group is managed (people, invitations, leaving, deleting) on a page of its own.
   const manage = (c: ChatConversation) => { void nav(`/chat/c/${encodeURIComponent(c.id)}?manage=1`) }
   return (
-    <section aria-labelledby="conv-h">
+    <section aria-labelledby="conv-h" data-tour="chat-groups">
       {deleting && <DeleteChat chat={deleting} onClose={() => setDeleting(null)} onDeleted={() => { setDeleting(null); load(); chatChanged() }} />}
       <h2 id="conv-h">{heading('conv.title')}</h2>
       {failed && rows && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
@@ -772,7 +772,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   return (
     <StanleyTapProvider value={tap}>
     <CoordinatorProvider value={conversation?.kind === 'group' && groupStanley.data ? { groupId: id, state: groupStanley.data } : null}>
-    <section aria-labelledby="thread-h">
+    <section aria-labelledby="thread-h" data-tour="chat-thread">
       <h2 id="thread-h"><span className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</span></h2>
       {permanent && <p className="muted" role="note">{t('stanley.chat.permanent')}</p>}
       {conversation && conversation.kind !== 'direct' && !permanent && !room && (
@@ -825,7 +825,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
       {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && room && roomPostState(room) !== 'open' ? <p className="muted" role="note">{t(roomClosedKey(roomPostState(room)))}</p> : phase === 'ready' && !room && !canPost(conversation) ? <p className="muted" role="note">{t('announce.only')}</p> : phase === 'ready' && (
         <>
-        <form ref={form} className="composer composer--chat" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+        <form ref={form} data-tour="chat-composer" className="composer composer--chat" onSubmit={(e) => { e.preventDefault(); void submit() }}>
           {replyTo?.id && (
             <div className="chat-replying" role="group" aria-label={t('conv.replyingTo', { who: replyTo.from === mine ? t('chat.you') : (replyTo.fromName ?? '') })}>
               <p className="chat-replying__text"><strong>{t('conv.replyingTo', { who: replyTo.from === mine ? t('chat.you') : (replyTo.fromName ?? '') })}</strong><span className="muted"> {replyTo.text || t('conv.photo')}</span></p>

@@ -65,7 +65,7 @@ export function StanleyRemindersScreen() {
       {problem(r.failure)}
       <AddReminder />
 
-      <Card labelledBy="stanley-rem-up-h">
+      <Card labelledBy="stanley-rem-up-h" tour="rem-up">
         <h2 id="stanley-rem-up-h">{th('stanleyReminders.upcoming')}</h2>
         {upcoming.length === 0 ? <p>{t('stanleyReminders.none')}</p> : (
           <ul className="stanley-reminders__list">
@@ -109,7 +109,7 @@ function AddReminder() {
     setBusy(false)
   }
   return (
-    <Card labelledBy="stanley-rem-add-h">
+    <Card labelledBy="stanley-rem-add-h" tour="rem-add">
       <h2 id="stanley-rem-add-h">{th('stanleyReminders.add.title')}</h2>
       {prepared ? (
         <div role="status">

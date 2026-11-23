@@ -25,7 +25,7 @@ export function ShipScreen() {
       <p>{t('ship.intro')}</p>
       <StanleyChanges screen="ship" />
 
-      <Card hero labelledBy="safe-h">
+      <Card hero labelledBy="safe-h" tour="ship-safety">
         <h2 id="safe-h" className="card__title"><Siren aria-hidden="true" /> {th('ship.safety')}</h2>
         <div className="button-row">
           <LinkButton to="/ship/emergency">{t('route.emergency')}</LinkButton>
