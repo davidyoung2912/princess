@@ -4,11 +4,11 @@
  *
  * `embark` day 1 · `night` every day with a night aboard (day 1 to the last night) · `last` the last night · `sea` every sea day ·
  * `seaMid` every sea day except the last night · `firstSea` the first sea day · `laterSea` every sea day after the first except the last night · `port` every port of call · `portOdd` and `portEven` the first, third...
- * and the second, fourth... port of call · `earlyPortOdd` the first, third... port of call except the last · `lastPort` the last port of call · `friday` a calendar Friday (the Shabbat service).
+ * and the second, fourth... port of call · `earlyPortOdd` the first, third... port of call except the last · `lastPort` the last port of call · `friday` a calendar Friday (the Shabbat service) · `disembark` the last day, the morning of leaving the ship (no night aboard).
  */
-export type DayKind = 'embark' | 'night' | 'last' | 'sea' | 'seaMid' | 'firstSea' | 'laterSea' | 'port' | 'portOdd' | 'portEven' | 'earlyPortOdd' | 'lastPort' | 'friday'
+export type DayKind = 'embark' | 'night' | 'last' | 'sea' | 'seaMid' | 'firstSea' | 'laterSea' | 'port' | 'portOdd' | 'portEven' | 'earlyPortOdd' | 'lastPort' | 'friday' | 'disembark'
 
-export const DAY_KINDS: readonly DayKind[] = ['embark', 'night', 'last', 'sea', 'seaMid', 'firstSea', 'laterSea', 'port', 'portOdd', 'portEven', 'earlyPortOdd', 'lastPort', 'friday']
+export const DAY_KINDS: readonly DayKind[] = ['embark', 'night', 'last', 'sea', 'seaMid', 'firstSea', 'laterSea', 'port', 'portOdd', 'portEven', 'earlyPortOdd', 'lastPort', 'friday', 'disembark']
 
 export const isDayKind = (v: unknown): v is DayKind => (DAY_KINDS as readonly unknown[]).includes(v)
 
@@ -42,6 +42,7 @@ export function isDayKindOn(days: readonly DayShape[], day: number, kind: DayKin
     case 'portEven': return isCall(days, day) && callNumber(days, day) % 2 === 0
     case 'earlyPortOdd': return isCall(days, day) && callNumber(days, day) % 2 === 1 && callNumber(days, day) < callCount(days)
     case 'lastPort': return isCall(days, day) && callNumber(days, day) === callCount(days)
+    case 'disembark': return day === days.length
     case 'friday': return new Date(`${at.date}T00:00:00Z`).getUTCDay() === 5
   }
 }
