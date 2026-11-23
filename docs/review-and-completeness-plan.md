@@ -31,7 +31,7 @@ Status key: [ ] not started, [~] in progress, [x] done.
 | G | 8, 9: pages per stage, journey guidance | review, one new page, gap list | [x] |
 | H | 10, 11: chat and day planning | review, ranked improvement list | [x] |
 | I | 12: guided tour coverage | tour content | [x] |
-| J | 14: Stanley ideas | document only | [ ] |
+| J | 14: Stanley ideas | document only | [x] |
 
 ## Findings
 
@@ -196,3 +196,22 @@ The tour had 14 frame steps and 92 page steps over about 50 screens. This phase 
 **Limit reached:** the tour now has exactly 120 steps, the most an account can store (`HINTS_MAX_STEPS` in `hintsState.ts` and `HintsMaxSteps` in `StateRules.cs`, with a test). More steps need both constants raised together (suggest 200; the `hints` document size cap of 16,000 bytes still holds, as ids are short). That C# edit was left for a phase where the server can be built.
 
 **Still without a tour step** (largest first): PhotosScreen body, Helper, Packages upsells, Decide, Disruption hub, Loyalty, Checkin, Journey, Reservations list, Print, Calm, Wrapped, Split, What-if, Assistance, At sea, Know-How (S51).
+
+### Phase J: further Stanley improvements (step 14, document only)
+
+Nothing was built. Stanley today (from `src/ai/`, `docs/stanley-*.md`): a rules and library engine with a large corpus, page-aware questions for every screen (four each, a guard test), actions with confirmation, reminders, proactive briefs, a "what I remember" tastes page with forget, an activity log, accessibility answers, away and safety handoffs, and in chat: reword, friendlier, shorter and ask about a message. Answers come from the server's mocked concierge behind an interface.
+
+Ranked ideas, each with the reason:
+1. **Answer from the guest's own trip first.** Most replies are general. A "for you" layer that always leads with the guest's ship, day, port, party and fare ("Your dinner is at 18:00 at the Crown Grill; the walk is six minutes") makes the same engine feel personal. The data exists in the brief and bundle modules.
+2. **A "why this answer" line** on every reply (source: your booking, the ship guide, a rule of thumb), with a one-tap "that's wrong" that logs a gap for the authoring loop. This builds trust and feeds `stanley-authoring.md` with real misses.
+3. **Gap mining.** Turn unanswered and low-confidence questions (already in the activity log) into a weekly ranked list for authors, grouped by stage and page, so the corpus grows where guests ask.
+4. **Follow-up memory inside a conversation:** "and for tomorrow?", "what about the kids?" resolved against the last topic and entities. A small context window of the last two turns, rules first.
+5. **Proactive, but budgeted.** Use the guidance engine's tasks and the Phase G warning list (passport validity, excursion no longer fits, check-in closing, empty sea day) as Stanley moments, under the existing nudge budget and calm mode. Never more than one a day.
+6. **Do-it-for-me actions beyond today's set:** move a reservation, add an item to the plan, set a reminder, start check-in, share the day to chat; each with a confirmation card and an undo, as the action plan already requires.
+7. **Day-health coach** (Phase H list): Stanley reads the day health check and offers the one-tap fixes in conversation.
+8. **Group-aware answers:** "where is everyone eating?" from the shared day board and polls, only for people who opted in.
+9. **Quality loop:** extend `src/ai/eval` with a golden set per stage (about 30 questions each) run in CI, with a regression threshold on reach, and a monthly review of the five worst pages.
+10. **Voice and glance surfaces** (later): a short spoken answer, a lock-screen "next thing" card, a watch complication. Needs a plan of its own.
+11. **Language** (later, English only today): answer in the guest's language by translating the final text, not the engine.
+
+Guard rails to keep: no invented prices, policies or times; the front end never knows whether data is simulated; safety topics hand off to the official screens; every proactive message can be turned off.
