@@ -215,3 +215,11 @@ Ranked ideas, each with the reason:
 11. **Language** (later, English only today): answer in the guest's language by translating the final text, not the engine.
 
 Guard rails to keep: no invented prices, policies or times; the front end never knows whether data is simulated; safety topics hand off to the official screens; every proactive message can be turned off.
+
+## Open items after phases A to J
+
+- Wire `server/Princess.Api/Content/port-excursions.json` (160 tours) into the server catalogue (needs C# build and tests).
+- Re-check the 31 historical API test failures once `dotnet` is available.
+- Carry out the performance reduction plan (Phase E).
+- Raise `HINTS_MAX_STEPS` (`src/settings/hintsState.ts`) and `HintsMaxSteps` (`StateRules.cs`) together before adding more tour steps (now at the cap of 120).
+- Build the ranked improvements from Phases G, H and J as separate phases when asked.
