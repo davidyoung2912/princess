@@ -12,7 +12,7 @@ describe('screen registry (P2)', () => {
     const entries = new Set(SCREEN_LIST.map((s) => s.path))
     expect(ROUTES.filter((r) => !TAB_FRONT_PATHS.includes(r.path) && !entries.has(r.path)).map((r) => r.path)).toEqual([])
     expect(SCREEN_LIST.filter((s) => !routes.has(s.path)).map((s) => s.path)).toEqual([])
-    expect(SCREEN_LIST).toHaveLength(274)
+    expect(SCREEN_LIST).toHaveLength(282)
   })
 
   it('has unique ids, paths and titles, each with a title and a subtext', () => {
@@ -88,7 +88,7 @@ describe('screen registry (P2)', () => {
 
   it('leaves exactly the developer page, the account page, the stage overview and the two link-only pages outside every stage (and Chat, which belongs to none)', () => {
     const outside = SCREEN_LIST.filter((s) => !JOURNEY_STAGES.some((st) => stageUses(s.id, st))).map((s) => s.id)
-    expect(outside.sort()).toEqual(['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29', 'X30', 'X31', 'X32', 'X33', 'X34', 'X35', 'X36', 'X37', 'X38', 'X39', 'X40', 'X41', 'X42', 'X43', 'X44', 'X45', 'X46', 'X47', 'X48', 'X49', 'X50', 'X51', 'X52', 'X53', 'X54', 'X55', 'X56', 'X57', 'X58', 'X59', 'X60', 'X61', 'X62', 'X63', 'X64', 'X65', 'X66', 'X67', 'X68'])
+    expect(outside.sort()).toEqual(['C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27', 'X29', 'X30', 'X31', 'X32', 'X33', 'X34', 'X35', 'X36', 'X37', 'X38', 'X39', 'X40', 'X41', 'X42', 'X43', 'X44', 'X45', 'X46', 'X47', 'X48', 'X49', 'X50', 'X51', 'X52', 'X53', 'X54', 'X55', 'X56', 'X57', 'X58', 'X59', 'X60', 'X61', 'X62', 'X63', 'X64', 'X65', 'X66', 'X67', 'X68', 'X69', 'X70', 'X71', 'X72', 'X73', 'X74', 'X75', 'X76'])
   })
 
   it('counts the screens each stage uses as the plan lists them (Chat is global, so it is not counted)', () => {

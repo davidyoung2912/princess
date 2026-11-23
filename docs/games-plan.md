@@ -189,3 +189,16 @@ Thirteen games in one pass, all drawn in SVG/CSS (no image assets), framework-fr
 - **One opponent scale everywhere:** Cadet, Captain, Admiral, with shared names and strings (`bd.skill.*`) and one picker (`board/SkillPicker.tsx`). Stronger opponents search deeper and also pause longer before moving (`THINK_MS` in `board/shared.ts`).
 - **Fair play:** every AI works only from the position (all of these are open-information games, and Backgammon's AI is given only its own dice), and tests check that it plays legal moves and beats a random player.
 - **Shared frame:** `board/VsShell.tsx` holds setup, status line, Undo (which also takes back the computer's reply), result card and How to Play.
+
+## Dice, deduction and small-board games (X69 to X76)
+
+Pig, Yacht, Shut the Box, Mastermind (break or make a code), Connect Four, Breakthrough, Konane and Nim, all on the shared `board/VsShell`, the Cadet / Captain / Admiral ladder, remembered choices, Hint, and a device-local record per opponent.
+
+- **Dice games** roll fair dice in the screen; the AI sees only the dice, the scores and its own card. Pig uses hold thresholds (Cadet random, Captain 20, Admiral score-aware), Yacht the odds of every way of keeping dice for the Admiral, and Shut the Box a table of expected scores for the Admiral.
+- **Mastermind** scores clues honestly; the computer as guesser sees only the clues (Cadet sometimes ignores one, Captain guesses a consistent code, Admiral picks the guess that splits the possibilities best).
+- **Nim** uses the nim-sum (and the misère exception); Cadet and Captain slip with a chance of a random move.
+- **Connect Four, Breakthrough, Konane** use the shared alpha-beta `search.ts`.
+
+## Consistency pass
+
+One opponent ladder everywhere (Battleship included, `bd.skill.*`); choices (opponent, size, side, who moves first) remembered per game in `shared/settings/gamePrefs.ts`; Hint on every opponent game; records and a nudge to the next opponent after three clean wins; daily puzzle for Lights Out and 15 Puzzle; catalogue cards say sizes, opponents and variants from `facets`; filters and Surprise me on the explorer page. Not done: handicaps, a quick-game toggle, numbered deals for the other card games, sound and haptics.

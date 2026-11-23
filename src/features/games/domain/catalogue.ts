@@ -62,6 +62,14 @@ export const GAMES: readonly GameEntry[] = [
   { id: 'kalah', path: '/games-explorer/kalah', mode: 'single', titleKey: 'gx.game.kalah.title', bodyKey: 'gx.game.kalah.body', levels: 3, minutes: [5, 15], players: 1, facets: { sizes: 3, opponents: 3 }, vs: true, noShare: true },
   { id: 'backgammon', path: '/games-explorer/backgammon', mode: 'single', titleKey: 'gx.game.backgammon.title', bodyKey: 'gx.game.backgammon.body', levels: 3, minutes: [15, 40], players: 1, facets: { opponents: 3 }, vs: true, noShare: true },
   { id: 'checkers', path: '/games-explorer/checkers', mode: 'single', titleKey: 'gx.game.checkers.title', bodyKey: 'gx.game.checkers.body', levels: 3, minutes: [10, 30], players: 1, facets: { opponents: 3 }, vs: true, noShare: true },
+  { id: 'pig', path: '/games-explorer/pig', mode: 'single', titleKey: 'gx.game.pig.title', bodyKey: 'gx.game.pig.body', levels: 3, minutes: [3, 15], players: 1, facets: { sizes: 3, opponents: 3 }, vs: true, noShare: true },
+  { id: 'yacht', path: '/games-explorer/yacht', mode: 'single', titleKey: 'gx.game.yacht.title', bodyKey: 'gx.game.yacht.body', levels: 3, minutes: [10, 25], players: 1, facets: { opponents: 3 }, vs: true, noShare: true },
+  { id: 'shutbox', path: '/games-explorer/shutbox', mode: 'single', titleKey: 'gx.game.shutbox.title', bodyKey: 'gx.game.shutbox.body', levels: 3, minutes: [5, 15], players: 1, facets: { sizes: 3, opponents: 3 }, vs: true, noShare: true },
+  { id: 'mastermind', path: '/games-explorer/mastermind', mode: 'single', titleKey: 'gx.game.mastermind.title', bodyKey: 'gx.game.mastermind.body', levels: 3, minutes: [3, 15], players: 1, facets: { variants: 2, sizes: 3 }, vs: true, noShare: true },
+  { id: 'connect4', path: '/games-explorer/connect4', mode: 'single', titleKey: 'gx.game.connect4.title', bodyKey: 'gx.game.connect4.body', levels: 3, minutes: [3, 15], players: 1, facets: { opponents: 3 }, vs: true, noShare: true },
+  { id: 'breakthrough', path: '/games-explorer/breakthrough', mode: 'single', titleKey: 'gx.game.breakthrough.title', bodyKey: 'gx.game.breakthrough.body', levels: 3, minutes: [5, 20], players: 1, facets: { sizes: 3, opponents: 3 }, vs: true, noShare: true },
+  { id: 'konane', path: '/games-explorer/konane', mode: 'single', titleKey: 'gx.game.konane.title', bodyKey: 'gx.game.konane.body', levels: 3, minutes: [5, 20], players: 1, facets: { sizes: 2, opponents: 3 }, vs: true, noShare: true },
+  { id: 'nim', path: '/games-explorer/nim', mode: 'single', titleKey: 'gx.game.nim.title', bodyKey: 'gx.game.nim.body', levels: 3, minutes: [2, 10], players: 1, facets: { sizes: 3, variants: 2 }, vs: true, noShare: true },
 ]
 
 export const gamesOf = (mode: GameEntry['mode']): GameEntry[] => GAMES.filter((g) => g.mode === mode)

@@ -17,7 +17,9 @@ export interface VsResult { title: string; body: string; outcome: Outcome }
  * The frame every game against the computer shares. Setup: the game's own options, who moves first, the same Cadet / Captain / Admiral opponent picker, Start. Play: a status line, Undo, Hint
  * ("what would the Captain play?"), the result card with your record against this opponent, and a nudge to the next opponent after three clean wins. The board is passed in as children.
  */
-export function VsShell({ game, name, skill, onSkill, opening, onOpening, options, started, onStart, onNew, status, thinking, result, onAgain, meta, undo, hint, tools, help, children }: {
+export function VsShell({ skillUsed = true, game, name, skill, onSkill, opening, onOpening, options, started, onStart, onNew, status, thinking, result, onAgain, meta, undo, hint, tools, help, children }: {
+  /** False when the opponent's strength plays no part in the chosen mode (the picker is then left out). */
+  skillUsed?: boolean
   /** The catalogue id, which keys the saved record. */
   game: string
   name: string
@@ -57,8 +59,8 @@ export function VsShell({ game, name, skill, onSkill, opening, onOpening, option
         <div className="sd bd">
           {options}
           {opening && onOpening && <LevelBar name={`${name}-opening`} legend={t('bd.opening.label')} levels={OPENINGS.map((o) => ({ id: o, label: t(o === 'you' ? 'bd.opening.you' : 'bd.opening.computer') }))} level={opening} onLevel={onOpening} />}
-          <SkillPicker name={name} skill={skill} onSkill={onSkill} />
-          <SetupRecord game={game} skill={skill} />
+          {skillUsed && <SkillPicker name={name} skill={skill} onSkill={onSkill} />}
+          {skillUsed && <SetupRecord game={game} skill={skill} />}
           <Button onClick={onStart}>{t('bd.start')}</Button>
           {helpBox}
         </div>
@@ -71,7 +73,7 @@ export function VsShell({ game, name, skill, onSkill, opening, onOpening, option
   return (
     <div className="page">
       <div className="sd bd">
-        <p className="sd-meta"><span>{skillName(skill)}</span>{meta}</p>
+        <p className="sd-meta">{skillUsed && <span>{skillName(skill)}</span>}{meta}</p>
         <div className={`bd-turn ${thinking ? 'bd-turn--cpu' : 'bd-turn--you'}`} role="status" aria-live="polite"><strong>{result ? result.title : status}</strong></div>
         {children}
         {hint?.shown && !result && <p className="bd-note" role="status">{t('bd.hint.shown')}</p>}
