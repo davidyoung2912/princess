@@ -37,7 +37,9 @@ public sealed class ConfigureJwtBearer(IOptions<JwtOptions> jwt) : IConfigureNam
             OnTokenValidated = async ctx =>
             {
                 if (ctx.SecurityToken is not Microsoft.IdentityModel.JsonWebTokens.JsonWebToken jwt || !Guid.TryParse(jwt.Subject, out var id)) return;
-                var user = await ctx.HttpContext.RequestServices.GetRequiredService<Data.IUserStore>().FindByPublicIdAsync(id, ctx.HttpContext.RequestAborted);
+                Data.UserRecord? user;
+                try { user = await ctx.HttpContext.RequestServices.GetRequiredService<Data.IUserStore>().FindByPublicIdAsync(id, ctx.HttpContext.RequestAborted); }
+                catch (OperationCanceledException) when (ctx.HttpContext.RequestAborted.IsCancellationRequested) { return; }   // the browser dropped the request (a page change, a typing signal); nobody is waiting, so this is not a failure worth logging
                 // The stored time is rounded to the second, so allow a second either way.
                 if (user?.SessionsValidFrom is { } from && jwt.IssuedAt.AddSeconds(1) < DateTime.SpecifyKind(from, DateTimeKind.Utc))
                     ctx.Fail("sessionEnded");
