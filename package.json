@@ -18,6 +18,7 @@
     "stanley:misses": "vitest run src/ai/understand/missesReport.test.ts --silent=false",
     "content:gen": "vite-node scripts/gen-content.ts",
     "portguides:gen": "vite-node scripts/gen-port-guides.ts",
+    "portexcursions:gen": "vite-node scripts/gen-port-excursions.ts",
     "countryguides:gen": "vite-node scripts/gen-country-guides.ts",
     "db:seed:gen": "vite-node scripts/gen-reference-seed.ts",
     "db:seed:check": "vite-node scripts/check-reference-seed.ts",
