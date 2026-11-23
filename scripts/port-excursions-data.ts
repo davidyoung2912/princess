@@ -2,7 +2,7 @@
 // (server/Princess.Api/Content/port-guides.json) and writes server/Princess.Api/Content/port-excursions.json. docs/review-and-completeness-plan.md (Phase B) explains why:
 // the booked catalogue (`ExcursionRules.Catalogue`) holds 12 tours at 3 of the 99 ports the three ships call at. This file is authored concept data like the 12: prices, ratings and
 // capacities come from the tour's length and a hash of its id, never from a source. It is NOT yet loaded by the server; wiring it in is the open item in the plan.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import type { Attraction } from './gen-port-guides.ts'
 
 const root = new URL('../', import.meta.url)
