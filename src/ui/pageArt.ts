@@ -93,3 +93,6 @@ export function homeArt(avoid: PoseId | undefined, random: number = Math.random(
   const choices = HOME_ART.filter((a) => a.pose === undefined || a.pose !== avoid)
   return choices[Math.min(choices.length - 1, Math.floor(random * choices.length))]!
 }
+
+/** The picture at the end of every sign-in page's header card (sign up, the code step, forgot password): the security head, since these pages guard the account. */
+export const SIGN_IN_ART: PageArt = { head: 'security' }

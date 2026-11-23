@@ -9,6 +9,7 @@ import { Button } from './Button'
 import { Card } from './Card'
 import { KeyRound, Mail, UserPlus } from './icons'
 import { PageHeader } from './PageHeader'
+import { SIGN_IN_ART } from './pageArt'
 import { ErrorSummary, Field } from './Field'
 
 const actions = (): AccountActions | undefined => auth.account
@@ -58,7 +59,7 @@ export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreate
   if (twin) {
     return (
       <>
-        <PageHeader title={th('signin.signup.twin.title')} subtext={t('signin.signup.twin.body')} icon={UserPlus} />
+        <PageHeader title={th('signin.signup.twin.title')} subtext={t('signin.signup.twin.body')} icon={UserPlus} art={SIGN_IN_ART} />
         <div className="page">
         <Card>
           <p role="alert">{t('signin.signup.twin.body')}</p>
@@ -74,7 +75,7 @@ export function SignUpForm({ onBack, onCreated }: { onBack: () => void; onCreate
   }
   return (
     <>
-      <PageHeader title={th('signin.signup.title')} subtext={t('signin.signup.intro')} icon={UserPlus} />
+      <PageHeader title={th('signin.signup.title')} subtext={t('signin.signup.intro')} icon={UserPlus} art={SIGN_IN_ART} />
       <div className="page">
       <ErrorSummary title={t('signin.problems')} errors={summary} />
       <Card>
@@ -133,7 +134,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
   if (done) {
     return (
       <>
-        <PageHeader title={th('signin.code.title.forgot')} icon={KeyRound} />
+        <PageHeader title={th('signin.code.title.forgot')} icon={KeyRound} art={SIGN_IN_ART} />
         <div className="page">
           <p role="status">{t('signin.code.done')}</p>
           <Button onClick={onBack}>{t('signin.mode.back')}</Button>
@@ -144,7 +145,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
   const title = t(purpose === 'reset' ? 'signin.code.title.forgot' : 'signin.code.title.magic')
   return (
     <>
-      <PageHeader title={headingCase(title)} subtext={t('signin.code.intro')} icon={purpose === 'reset' ? KeyRound : Mail} />
+      <PageHeader title={headingCase(title)} subtext={t('signin.code.intro')} icon={purpose === 'reset' ? KeyRound : Mail} art={SIGN_IN_ART} />
       <div className="page">
       <ErrorSummary title={t('signin.problems')} errors={errors} />
       <Card>
