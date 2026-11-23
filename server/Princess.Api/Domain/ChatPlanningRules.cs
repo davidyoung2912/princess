@@ -2,8 +2,11 @@ using System.Text.Json;
 
 namespace Princess.Api.Domain;
 
-/// <summary>A poll as it travels in <c>ChatMessages.Payload</c>: the question and two to five options, nothing else.</summary>
-public sealed record ChatPoll(string Question, List<string> Options);
+/// <summary>
+/// A poll as it travels in <c>ChatMessages.Payload</c>: the question and two to five options (six when one is a bundle). Phase B3: <c>Refs</c> (when present) has one entry per option, a bundle ref (see <see cref="ChatBundleRules"/>) for an option that is a real thing from the app and
+/// null for a typed one; the option's text is then the bundle's title, so an older app reads the poll as plain text.
+/// </summary>
+public sealed record ChatPoll(string Question, List<string> Options, List<string?>? Refs = null);
 
 /// <summary>
 /// The pure rules of group planning (docs/chat-features-research.md, section 11, phase 4): polls (two to five options, a vote that can be changed, closing on demand or after 24 hours), plans with an RSVP that
@@ -15,7 +18,7 @@ public static class ChatPlanningRules
 
     // ---- Polls ----
 
-    public const int MinOptions = 2, MaxOptions = 5, MaxQuestion = 100, MaxOption = 40;
+    public const int MinOptions = 2, MaxOptions = 5, MaxWithBundles = 6, MaxQuestion = 100, MaxOption = 40;
 
     /// <summary>A poll closes by itself this long after it was sent.</summary>
     public static readonly TimeSpan PollLife = TimeSpan.FromHours(24);
@@ -32,19 +35,43 @@ public static class ChatPlanningRules
     /// <summary>
     /// The poll a sender asked for, cleaned: a question, and two to five different options (the same words twice, in any case, count once). Null when the question is missing or too long, an option is too long, or fewer than two options remain.
     /// </summary>
-    public static ChatPoll? CleanPoll(string? question, IEnumerable<string?>? options)
+    public static ChatPoll? CleanPoll(string? question, IEnumerable<string?>? options) => CleanPoll(question, options, null, _ => null);
+
+    /// <summary>
+    /// As <see cref="CleanPoll(string?, IEnumerable{string?}?)"/>, where option <c>i</c> is the bundle <c>refs[i]</c> when that is not empty: its text is <paramref name="titleOf"/> of the ref (cut to <see cref="MaxOption"/>), and the same ref twice counts once.
+    /// Null when a ref has no title (the caller could not build it).
+    /// </summary>
+    public static ChatPoll? CleanPoll(string? question, IEnumerable<string?>? options, IList<string?>? refs, Func<string, string?> titleOf)
     {
         var q = CleanLine(question, MaxQuestion);
         if (q is null) return null;
         var kept = new List<string>();
+        var keptRefs = new List<string?>();
+        var i = 0;
         foreach (var raw in options ?? [])
         {
-            if (string.IsNullOrWhiteSpace(raw)) continue;   // an empty row in the form is simply left out
-            var o = CleanLine(raw, MaxOption);
-            if (o is null) return null;
-            if (!kept.Contains(o, StringComparer.OrdinalIgnoreCase)) kept.Add(o);
+            var r = refs is not null && i < refs.Count && !string.IsNullOrWhiteSpace(refs[i]) ? refs[i] : null;
+            i++;
+            string? o;
+            if (r is not null)
+            {
+                if (titleOf(r) is not { } title || CleanLine(title, 200) is not { } cleanTitle) return null;
+                o = cleanTitle.Length > MaxOption ? cleanTitle[..(MaxOption - 1)].TrimEnd() + "…" : cleanTitle;
+                if (keptRefs.Contains(r)) continue;
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(raw)) continue;   // an empty row in the form is simply left out
+                o = CleanLine(raw, MaxOption);
+                if (o is null) return null;
+            }
+            if (r is null && kept.Contains(o, StringComparer.OrdinalIgnoreCase)) continue;
+            kept.Add(o);
+            keptRefs.Add(r);
         }
-        return kept.Count is < MinOptions or > MaxOptions ? null : new ChatPoll(q, kept);
+        var hasRefs = keptRefs.Any(x => x is not null);
+        if (kept.Count < MinOptions || kept.Count > (hasRefs ? MaxWithBundles : MaxOptions)) return null;
+        return new ChatPoll(q, kept, hasRefs ? keptRefs : null);
     }
 
     public static string Serialise(ChatPoll poll) => JsonSerializer.Serialize(poll, Json);

@@ -295,7 +295,14 @@ export interface ChatPlannable { ref: string; title: string; day: number; time: 
 export interface ChatShareables { items: ChatShareable[]; places: ChatPlace[]; events?: ChatPlannable[] }
 
 /** A poll: a question and two to five options. */
-export interface ChatPoll { question: string; options: string[] }
+export interface ChatPoll {
+  question: string
+  options: string[]
+  /** Phase B3: one entry per option, the thing it stands for (rebuilt for you), or null for a typed option or one that is no longer available. Absent when no option is a thing from the app. */
+  bundles?: (ChatBundle | null)[]
+  /** Phase B3: the options that were a thing from the app but are not available to you now (cancelled, past, or not on your sailing). */
+  gone?: number[]
+}
 /**
  * The answers to a poll or plan. `counts` is one number per poll option, or going, maybe and no for a plan; `mine` is your own choice (the option's index, or 0, 1, 2 for a plan). A poll's answers are counted, never named.
  * `closesAt` (ship milliseconds) and `mayClose` are for a poll; `going` names the others going to a plan; `addedToPlan` says your Going put the event on your own programme.
@@ -308,7 +315,7 @@ export type ChatTypedSend =
   | { kind: 'card'; shareRef: string }
   | { kind: 'place'; placeId: string; note?: string }
   | { kind: 'plan'; shareRef: string; note?: string }
-  | { kind: 'poll'; question: string; options: string[] }
+  | { kind: 'poll'; question: string; options: string[]; optionRefs?: (string | null)[] }
   | { kind: 'bundle'; shareRef: string; note?: string }
 
 /** One of the six reactions in use on a message. `names` are the others (first name and last initial) for a screen reader; yours is counted and marked by `mine`, not named. */

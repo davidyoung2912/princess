@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatPlannable, ChatTally } from '../api/chatTypes'
 import {
-  OPTION_MAX, QUESTION_MAX, adminCandidates, applyRsvp, applyVote, canAddOption, canPost, cleanPollDraft, eventsOnDay, isPlan, isPoll, isPollClosed, leaders, percentOf, planDays, pollResultText, rsvpIndex, rsvpOf,
+  OPTION_MAX, QUESTION_MAX, cleanPollRows, adminCandidates, applyRsvp, applyVote, canAddOption, canPost, cleanPollDraft, eventsOnDay, isPlan, isPoll, isPollClosed, leaders, percentOf, planDays, pollResultText, rsvpIndex, rsvpOf,
 } from './chatPlanning'
 import { answerJob, isBookingPlan, readAnswerJob, withHeld } from './chatPlanning'
 import { readReactionJob } from './chatReactions'
@@ -143,5 +143,22 @@ describe('plans for something booked', () => {
     expect(isBookingPlan({ path: '/dining-today' })).toBe(true)
     expect(isBookingPlan({ path: '/explore/venue/x' })).toBe(false)
     expect(isBookingPlan({})).toBe(false)
+  })
+})
+
+describe('cleanPollRows (bundle options)', () => {
+  it('keeps the ref of a thing from the app and lets a sixth option in only then', () => {
+    const typed = ['a', 'b', 'c', 'd', 'e', 'f'].map((text) => ({ text }))
+    expect(cleanPollRows('Which?', typed)).toBeNull()
+    const six = [{ text: 'Trivia', ref: 'event:t:3' }, ...typed.slice(0, 5)]
+    expect(cleanPollRows('Which?', six)?.optionRefs).toEqual(['event:t:3', null, null, null, null, null])
+    expect(cleanPollRows('Which?', [{ text: 'a' }, { text: 'b' }])).toEqual({ question: 'Which?', options: ['a', 'b'] })
+  })
+
+  it('counts the same thing once and cuts a long title', () => {
+    expect(cleanPollRows('Which?', [{ text: 'Trivia', ref: 'event:t:3' }, { text: 'Trivia', ref: 'event:t:3' }, { text: 'x' }])?.options).toEqual(['Trivia', 'x'])
+    expect(cleanPollRows('Which?', [{ text: 'T'.repeat(60), ref: 'event:t:3' }, { text: 'x' }])?.options[0]).toHaveLength(OPTION_MAX)
+    expect(canAddOption(5, true)).toBe(true)
+    expect(canAddOption(6, true)).toBe(false)
   })
 })

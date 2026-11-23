@@ -70,4 +70,21 @@ public class ChatBundleRulesTests
         Assert.False(ChatCardRules.CannotEdit(ChatCardRules.Text));
         Assert.False(ChatCardRules.IsTyped(ChatBundleRules.Kind));   // the old card kinds are untouched
     }
+
+    [Fact]
+    public void ABundlePollOptionTakesItsTitleAndSixAreAllowedOnlyWithABundle()
+    {
+        string? Title(string r) => r == "event:a:3" ? "Trivia: Ship Secrets, with a very long name indeed" : r == "event:b:3" ? "Karaoke" : null;
+        var poll = ChatPlanningRules.CleanPoll("Which?", ["", "Pizza"], ["event:a:3", null], Title);
+        Assert.NotNull(poll);
+        Assert.Equal(2, poll!.Options.Count);
+        Assert.True(poll.Options[0].Length <= ChatPlanningRules.MaxOption);
+        Assert.Equal(["event:a:3", null], poll.Refs);
+        Assert.Null(ChatPlanningRules.CleanPoll("Which?", ["", "Pizza"], ["event:zzz:3", null], Title));   // a ref that cannot be built
+        Assert.Single(ChatPlanningRules.CleanPoll("Which?", ["", "", "x"], ["event:a:3", "event:a:3", null], Title)!.Refs!.Where(r => r == "event:a:3"));
+        var six = new[] { "1", "2", "3", "4", "5", "6" };
+        Assert.Null(ChatPlanningRules.CleanPoll("Which?", six));
+        Assert.NotNull(ChatPlanningRules.CleanPoll("Which?", ["", "2", "3", "4", "5", "6"], ["event:b:3", null, null, null, null, null], Title));
+        Assert.Null(ChatPlanningRules.CleanPoll("Which?", ["a", "b"])!.Refs);
+    }
 }

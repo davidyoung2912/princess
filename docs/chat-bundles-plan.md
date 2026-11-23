@@ -238,6 +238,8 @@ Rules for every phase (CLAUDE.md): English only; verify with `npm run test`, `np
 - Coordinator reuse: remind, tally card, compromise text for bundle options.
 - Done when: "Which dinner on Tuesday?" can be a poll of three real venues, anyone allowed can add a fourth, and everyone can open each.
 
+> **Built 2026-11-23** (front end checked with test, lint, tsc and build; C# written but not compiled or run, so please run `dotnet build` once, as open question 2 planned after B3). **Done:** poll payload gains `Refs` (one per option, a bundle ref or null; the option's words are the bundle's title, so an older app reads plain text and the old payload still parses); `POST` poll takes `optionRefs`, rebuilds each through `BundleAsync` (400 `shareRef` when this sailing lacks it), up to six options when one is a bundle (five otherwise, so Stanley's polls are unchanged); on every read the options are rebuilt for the reader (`Bundles`, and `Gone` for one that is no longer available to them); `ChatPlanningRules.CleanPoll` overload with tests; front end `cleanPollRows`, the poll form's **Add a thing from the app** picker (the plannable events, tours and dinners the guest's own trip runs), bundle options shown with where, when and Open, "No longer available" for a gone one. **Not done, on purpose (moved to B4):** Suggest (anyone adds an option), the who-can-add setting and the `ChatOptions` table, coverage of venues and ports in the picker (arrives with B7), and coordinator compromise text for bundle options.
+
 ### B4: decide and make it happen
 
 - **Decide** (creator or admin): closes the poll and posts the **decision card**; `DecidedOption` and `DecidedBy`; refuses a cancelled or past winner; ties resolved by the decider choosing.

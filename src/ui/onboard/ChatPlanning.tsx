@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ChatConversation, ChatMessage, ChatPlannable, ChatRsvp, ChatTally } from '../../api/chatTypes'
+import type { ChatConversation, ChatMessage, ChatPoll, ChatPlannable, ChatRsvp, ChatTally } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { newClientId } from '../../domain/chatThread'
 import {
-  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, answerJob, applyRsvp, applyVote, canAddOption, cleanPollDraft, eventsOnDay, isBookingPlan, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MAX_OPTIONS, POLL_MIN_OPTIONS, rsvpOf, totalVotes, withHeld,
+  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, answerJob, applyRsvp, applyVote, canAddOption, cleanPollRows, POLL_MAX_WITH_BUNDLES, type PollRow, eventsOnDay, isBookingPlan, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MIN_OPTIONS, rsvpOf, totalVotes, withHeld,
 } from '../../domain/chatPlanning'
+import { bundleLink, eventRef } from '../../domain/chatBundles'
 import { cardLink, cleanNote, NOTE_MAX } from '../../domain/chatCards'
 import { clock12 } from '../../domain/planCard'
 import { useAction } from '../../hooks/useAction'
@@ -77,6 +78,7 @@ export function PollMessage({ conversationId, message, canAct, onChanged, held, 
                 <span className="chat-poll__text">{option}</span>
                 <span className="muted chat-poll__count">{votes(count)} · {share}%</span>
               </label>
+              <OptionThing poll={poll} index={i} />
               <span className="chat-poll__bar" aria-hidden="true"><span style={{ inlineSize: `${share}%` }} /></span>
             </li>
           )
@@ -93,6 +95,20 @@ export function PollMessage({ conversationId, message, canAct, onChanged, held, 
       {vote.error && <p role="alert" className="field__error">{t(vote.error.message === 'pollClosed' ? 'cpoll.isClosed' : 'cpoll.failed')}</p>}
       {close.error && <p role="alert" className="field__error">{t('cpoll.closeFailed')}</p>}
     </fieldset>
+  )
+}
+
+/** Phase B3: under a poll option that is a thing from the app: where and when, with Open; or "No longer available" when it was one but cannot be opened by this reader now. Nothing for a typed option. */
+function OptionThing({ poll, index }: { poll: ChatPoll; index: number }) {
+  const b = poll.bundles?.[index]
+  if (!b) return poll.gone?.includes(index) ? <span className="muted chat-poll__thing">{t('cpoll.gone')}</span> : null
+  const when = [b.day !== undefined ? t('card.day', { day: b.day }) : '', b.time ? clock12(b.time) : ''].filter(Boolean).join(', ')
+  const link = bundleLink(b)
+  return (
+    <span className="chat-poll__thing">
+      <span className="muted">{[b.subtitle, when, b.place && b.place !== b.title ? b.place : ''].filter(Boolean).join(' · ')}</span>
+      {link && <LinkButton to={link} variant="tertiary" aria-label={t('cpoll.open.label', { title: b.title })}>{t('card.open')}</LinkButton>}
+    </span>
   )
 }
 
@@ -182,19 +198,31 @@ function planningError(e: unknown): StringKey {
 }
 
 /** The form for a poll: a question and two to five options, one row each. An empty row is left out; the Ask button stays off until the poll could be sent. */
-function PollForm({ conversationId, onSent }: { conversationId: string; onSent: (sent: ChatMessage) => void }) {
+function PollForm({ conversationId, events, onSent }: { conversationId: string; events: readonly ChatPlannable[]; onSent: (sent: ChatMessage) => void }) {
   const [question, setQuestion] = useState('')
-  const [options, setOptions] = useState<string[]>(['', ''])
+  const [rows, setRows] = useState<PollRow[]>([{ text: '' }, { text: '' }])
   const [announce, setAnnounce] = useState('')
-  const draft = cleanPollDraft(question, options)
+  const draft = cleanPollRows(question, rows)
+  const hasBundle = rows.some((r) => r.ref)
   const ask = useAction(async () => {
     if (!draft) return
-    const sent = await api.chatConversations.sendTyped(conversationId, { kind: 'poll', question: draft.question, options: draft.options }, newClientId())
+    const sent = await api.chatConversations.sendTyped(conversationId, { kind: 'poll', question: draft.question, options: draft.options, ...(draft.optionRefs ? { optionRefs: draft.optionRefs } : {}) }, newClientId())
     setQuestion('')
-    setOptions(['', ''])
+    setRows([{ text: '' }, { text: '' }])
     setAnnounce(t('cpoll.sent'))
     onSent(sent)
   })
+  const addThing = (ref: string) => {
+    const found = events.find((e) => e.ref === ref)
+    if (!found) return
+    setAnnounce(t('cpoll.thing', { n: rows.length + 1, title: found.title }))
+    // The first empty typed row is used up before another row is added.
+    setRows((cur) => {
+      const free = cur.findIndex((r) => !r.ref && r.text.trim() === '')
+      const row = { text: found.title, ref: eventRef(found.ref) }
+      return free >= 0 ? cur.map((r, j) => (j === free ? row : r)) : [...cur, row]
+    })
+  }
   return (
     <form onSubmit={(e) => { e.preventDefault(); void ask.run() }}>
       <h3>{headingCase(t('cpoll.heading'))}</h3>
@@ -204,14 +232,23 @@ function PollForm({ conversationId, onSent }: { conversationId: string; onSent: 
         <label htmlFor="poll-question">{t('cpoll.question')}</label>
         <input id="poll-question" type="text" value={question} maxLength={QUESTION_MAX} autoComplete="off" onChange={(e) => setQuestion(e.target.value)} />
       </div>
-      {options.map((value, i) => (
+      {rows.map((row, i) => (
         <div key={i} className="field chat-poll__row">
           <label htmlFor={`poll-option-${i}`}>{t('cpoll.option', { n: i + 1 })}</label>
-          <input id={`poll-option-${i}`} type="text" value={value} maxLength={OPTION_MAX} autoComplete="off" onChange={(e) => setOptions((cur) => cur.map((o, j) => (j === i ? e.target.value : o)))} />
-          {options.length > POLL_MIN_OPTIONS && <button type="button" className="chat-act" aria-label={t('cpoll.removeOption', { n: i + 1 })} onClick={() => setOptions((cur) => cur.filter((_, j) => j !== i))}>{t('cgroup.remove')}</button>}
+          <input id={`poll-option-${i}`} type="text" value={row.text} readOnly={row.ref !== undefined} maxLength={OPTION_MAX} autoComplete="off" onChange={(e) => setRows((cur) => cur.map((o, j) => (j === i ? { text: e.target.value } : o)))} />
+          {rows.length > POLL_MIN_OPTIONS && <button type="button" className="chat-act" aria-label={t('cpoll.removeOption', { n: i + 1 })} onClick={() => setRows((cur) => cur.filter((_, j) => j !== i))}>{t('cgroup.remove')}</button>}
         </div>
       ))}
-      {canAddOption(options.length) && options.length < POLL_MAX_OPTIONS && <Button type="button" variant="tertiary" onClick={() => setOptions((cur) => [...cur, ''])}>{t('cpoll.addOption')}</Button>}
+      {canAddOption(rows.length, hasBundle) && <Button type="button" variant="tertiary" onClick={() => setRows((cur) => [...cur, { text: '' }])}>{t('cpoll.addOption')}</Button>}
+      {events.length > 0 && (rows.length < POLL_MAX_WITH_BUNDLES || rows.some((r) => !r.ref && r.text.trim() === '')) && (
+        <div className="field">
+          <label htmlFor="poll-thing">{t('cpoll.addThing')}</label>
+          <select id="poll-thing" value="" onChange={(e) => addThing(e.target.value)}>
+            <option value="">{t('cpoll.addThing.choose')}</option>
+            {events.map((e) => <option key={e.ref} value={e.ref}>{t('card.day', { day: e.day })} {clock12(e.time)} {e.title}{e.place ? ` (${e.place})` : ''}</option>)}
+          </select>
+        </div>
+      )}
       <Button type="submit" disabled={ask.busy || !draft}>{t('cpoll.ask')}</Button>
       {ask.error && <p role="alert" className="field__error">{t(planningError(ask.error))}</p>}
     </form>
@@ -280,7 +317,7 @@ export function PlanTools({ conversation, onSent }: { conversation: ChatConversa
     <details className="chat-share chat-plan-tools chat-more--tools" onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary>{headingCase(t('cplan.tools'))}</summary>
       <p className="muted">{t('cplan.tools.hint')}</p>
-      <PollForm conversationId={conversation.id} onSent={onSent} />
+      <PollForm conversationId={conversation.id} events={events ?? []} onSent={onSent} />
       {open && !events && !failed && <p role="status" className="muted">{t('conv.share.loading')}</p>}
       {failed && <p role="alert" className="field__error">{t('conv.share.failed')}</p>}
       {events && <PlanForm conversationId={conversation.id} events={events} onSent={onSent} />}

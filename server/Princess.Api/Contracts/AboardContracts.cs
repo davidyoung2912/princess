@@ -144,7 +144,7 @@ public sealed record ChatBundleDto(string Type, int V, string Title,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null);
 
 /// <summary>A poll (phase 4): the question and its two to five options.</summary>
-public sealed record ChatPollDto(string Question, List<string> Options);
+public sealed record ChatPollDto(string Question, List<string> Options, List<ChatBundleDto?>? Bundles = null, List<int>? Gone = null);
 
 /// <summary>
 /// The answers to a poll or plan as one reader sees them. <c>Counts</c> is one number per poll option, or going, maybe and no for a plan. <c>Mine</c> is the reader's own choice. <c>Closed</c>, <c>ClosesAt</c> and <c>MayClose</c> are for a poll.
@@ -219,7 +219,7 @@ public sealed record ChatPhotoDto(string Photo);
 /// Phase 4 adds <c>poll</c> (a <c>Question</c> and two to five <c>Options</c>) and <c>plan</c> (a <c>ShareRef</c> of <c>eventId:day</c> from the plannable list, an optional <c>Note</c>).
 /// <c>Mentions</c> are the public ids of members the message names (at most 10); anyone who is not an active member is left out.
 /// </summary>
-public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null, string? Kind = null, string? ShareRef = null, string? PlaceId = null, string? Note = null, List<Guid>? Mentions = null, string? Question = null, List<string>? Options = null);
+public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null, string? Kind = null, string? ShareRef = null, string? PlaceId = null, string? Note = null, List<Guid>? Mentions = null, string? Question = null, List<string>? Options = null, List<string?>? OptionRefs = null);
 
 /// <summary>Alert me only when I am mentioned in this conversation.</summary>
 public sealed record ChatMentionsOnlyRequest(bool On);

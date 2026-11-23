@@ -99,6 +99,12 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     }
 
     /// <summary>A stored card as a reader sees it. A place is "expired" once its time has passed on the same clock it was stamped with.</summary>
+    private async Task<ChatBundleDto?> TryBundleAsync(UserRecord actor, string shareRef, CancellationToken ct)
+    {
+        try { return BundleDto(await share.BundleAsync(actor, shareRef, null, ct)); }
+        catch (ApiException) { return null; }
+    }
+
     private static ChatBundleDto BundleDto(ChatBundle b) => new(b.Type, b.V, b.Title, b.Subtitle, b.Path, b.Day, b.Time, b.Place, b.Ref, b.Note);
 
     private static ChatCardDto CardDto(ChatCard c, long nowMs, IReadOnlySet<Guid>? stillBooked = null) => new(c.Type, c.Title, c.Subtitle, c.Day, c.Time, c.Place, c.Path, c.ExpiresAt, ChatCardRules.IsExpired(c.ExpiresAt, nowMs), c.Note, stillBooked is not null && ChatCardRules.IsGone(c, stillBooked));
@@ -138,6 +144,21 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var answerable = page.Where(m => m.DeletedAt is null && (m.Kind == ChatPlanningRules.Poll || m.Kind == ChatCardRules.Plan)).Select(m => m.Id).ToList();
         var answers = answerable.Count == 0 ? new List<ChatResponseRow>() : await store.ListResponsesAsync(answerable, ct);
         var answersOf = answers.ToLookup(r => r.MessageId);
+        // Phase B3: a poll option that is a bundle is rebuilt for this reader on every read, so a thing their sailing does not have, or that is gone, shows as no longer available (null).
+        var pollBundles = new Dictionary<long, (List<ChatBundleDto?> Bundles, List<int> Gone)>();
+        foreach (var m in page.Where(m => m.DeletedAt is null && m.Kind == ChatPlanningRules.Poll))
+            if (ChatPlanningRules.ParsePoll(m.Payload) is { Refs: { } refs })
+            {
+                var list = new List<ChatBundleDto?>();
+                var gone = new List<int>();
+                foreach (var r in refs)
+                {
+                    var one = r is null ? null : await TryBundleAsync(actor, r, ct);
+                    if (r is not null && one is null) gone.Add(list.Count);
+                    list.Add(one);
+                }
+                pollBundles[m.Id] = (list, gone);
+            }
         var adminHere = ChatPlanningService.AdminOf(member, actor.Id);
         var blockedForAnswers = answerable.Count == 0 ? new HashSet<long>() : new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct));
         var messages = new List<ChatMessageDto>();
@@ -176,7 +197,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
                 Reactions: reactions, ReplyTo: m.ReplyToId is null ? null : QuoteDto(m.Reply, actor.Id, byId), Delivered: delivered, Edited: m.EditedAt is not null,
                 Kind: ChatCardRules.IsTyped(m.Kind) || m.Kind is ChatPlanningRules.Poll or ChatBundleRules.Kind ? m.Kind : null, Bundle: m.Kind == ChatBundleRules.Kind && ChatBundleRules.Parse(m.Payload) is { } bundle ? BundleDto(bundle) : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs, stillBooked) : null,
                 Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()],
-                Poll: m.Kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(m.Payload) is { } poll ? new ChatPollDto(poll.Question, poll.Options) : null,
+                Poll: m.Kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(m.Payload) is { } poll ? new ChatPollDto(poll.Question, poll.Options, pollBundles.TryGetValue(m.Id, out var pb) ? pb.Bundles : null, pollBundles.TryGetValue(m.Id, out var pg) && pg.Gone.Count > 0 ? pg.Gone : null) : null,
                 Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers) : null,
                 Avatar: name is null ? null : byId.GetValueOrDefault(m.FromUserId)?.Avatar));
         }
@@ -212,14 +233,22 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         // A card or place is built here from the server's own data; the sender supplies a ref or a named place (and a short note), never the words.
         string text;
         string? payload = null;
+        Dictionary<string, ChatBundle>? built = null;
         if (kind == ChatCardRules.Text) text = ChatConversationRules.CleanText(body?.Text) ?? throw ApiException.Invalid("text");
         else if (kind == ChatPlanningRules.Poll)
         {
             // A poll is the one typed message whose words come from the sender, so every line of it is held to the rules of a message.
-            var poll = ChatPlanningRules.CleanPoll(body?.Question, body?.Options) ?? throw ApiException.Invalid("poll");
+            // Phase B3: an option may be a real thing from the app. It is rebuilt here from the ship's data (a ref the guest's sailing does not have is a 400 shareRef), and its title becomes the option's words.
+            built = [];
+            foreach (var r in (body?.OptionRefs ?? []).Where(r => !string.IsNullOrWhiteSpace(r)).Distinct().Take(ChatPlanningRules.MaxOptions + 1))
+                built[r!] = await share.BundleAsync(actor, r, null, ct);
+            var poll = ChatPlanningRules.CleanPoll(body?.Question, body?.Options, body?.OptionRefs, r => built.TryGetValue(r, out var found) ? found.Title : null) ?? throw ApiException.Invalid("poll");
             var age = await AgeAsync(actor, now, ct);
-            foreach (var line in poll.Options.Prepend(poll.Question))
+            for (var o = -1; o < poll.Options.Count; o++)
             {
+                var line = o < 0 ? poll.Question : poll.Options[o];
+                if (o >= 0 && poll.Refs is { } pr && pr[o] is not null) continue;   // a bundle's title is the ship's own words
+
                 if (ServiceRules.ChildSafeProblem(line, age) is { } pollProblem) throw ApiException.Invalid(pollProblem);
                 if (ProfanityFilter.IsBlocked(line)) throw ApiException.Invalid("blocked");
             }
@@ -368,7 +397,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         }
         var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, PhotoCount: sent.Row.ExtraPhotos > 0 ? sent.Row.ExtraPhotos + 1 : null, ReplyTo: quote,
             Kind: ChatCardRules.IsTyped(kind) || kind is ChatPlanningRules.Poll or ChatBundleRules.Kind ? kind : null, Bundle: kind == ChatBundleRules.Kind && ChatBundleRules.Parse(payload) is { } madeBundle ? BundleDto(madeBundle) : null, Card: ChatCardRules.IsTyped(kind) && ChatCardRules.Parse(payload) is { } made ? CardDto(made, Shipboard.Ms(now)) : null,
-            Poll: kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(payload) is { } sentPoll ? new ChatPollDto(sentPoll.Question, sentPoll.Options) : null,
+            Poll: kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(payload) is { } sentPoll ? new ChatPollDto(sentPoll.Question, sentPoll.Options, sentPoll.Refs is null ? null : [.. sentPoll.Refs.Select(r => r is not null && built is not null && built.TryGetValue(r, out var made1) ? BundleDto(made1) : (ChatBundleDto?)null)]) : null,
             Tally: kind is ChatPlanningRules.Poll or ChatCardRules.Plan ? ChatPlanningService.TallyOf(sent.Row, [], actor.Id, now, ChatPlanningService.AdminOf(member, actor.Id), new Dictionary<long, ChatPeerRow>(), new HashSet<long>()) : null);
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
         typing.Clear(member.GroupId, actor.Id);   // the message is the end of "is typing"

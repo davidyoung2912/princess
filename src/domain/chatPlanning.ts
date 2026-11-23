@@ -3,6 +3,8 @@ import type { ChatCard, ChatMessage, ChatPlannable, ChatPoll, ChatRsvp, ChatTall
 
 export const POLL_MIN_OPTIONS = 2
 export const POLL_MAX_OPTIONS = 5
+/** A poll with at least one thing from the app (a bundle) may have one more option. */
+export const POLL_MAX_WITH_BUNDLES = 6
 export const QUESTION_MAX = 100
 export const OPTION_MAX = 40
 
@@ -26,8 +28,38 @@ export function cleanPollDraft(question: string, options: readonly string[]): Ch
   return kept.length < POLL_MIN_OPTIONS || kept.length > POLL_MAX_OPTIONS ? null : { question: q, options: kept }
 }
 
+/** One row of the poll form: typed words, or a thing from the app (its `ref` and its title as the words). */
+export interface PollRow { text: string; ref?: string }
+
+/** The poll the rows describe, as the server will read it: a bundle row keeps its ref, a typed row is cleaned as before; six options are allowed once a row is a bundle. */
+export function cleanPollRows(question: string, rows: readonly PollRow[]): (ChatPoll & { optionRefs?: (string | null)[] }) | null {
+  const q = line(question)
+  if (q.length === 0 || q.length > QUESTION_MAX) return null
+  const options: string[] = []
+  const refs: (string | null)[] = []
+  for (const row of rows) {
+    if (row.ref) {
+      if (refs.includes(row.ref)) continue
+      const title = line(row.text)
+      if (title === '') return null
+      options.push(title.length > OPTION_MAX ? `${title.slice(0, OPTION_MAX - 1).trimEnd()}…` : title)
+      refs.push(row.ref)
+      continue
+    }
+    const o = line(row.text)
+    if (o.length === 0) continue
+    if (o.length > OPTION_MAX) return null
+    if (options.some((k, i) => refs[i] === null && k.toLowerCase() === o.toLowerCase())) continue
+    options.push(o)
+    refs.push(null)
+  }
+  const hasBundle = refs.some((r) => r !== null)
+  if (options.length < POLL_MIN_OPTIONS || options.length > (hasBundle ? POLL_MAX_WITH_BUNDLES : POLL_MAX_OPTIONS)) return null
+  return hasBundle ? { question: q, options, optionRefs: refs } : { question: q, options }
+}
+
 /** Whether another option row can be added to the form. */
-export const canAddOption = (rows: number): boolean => rows < POLL_MAX_OPTIONS
+export const canAddOption = (rows: number, hasBundle = false): boolean => rows < (hasBundle ? POLL_MAX_WITH_BUNDLES : POLL_MAX_OPTIONS)
 
 /** Whether a poll is closed: the server says so, and a copy held on the device also stops taking votes once its 24 hours have passed. */
 export const isPollClosed = (tally: Pick<ChatTally, 'closed' | 'closesAt'>, now: number): boolean => tally.closed || (tally.closesAt !== undefined && tally.closesAt <= now)

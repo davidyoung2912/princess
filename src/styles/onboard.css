@@ -944,3 +944,5 @@ section[aria-labelledby='thread-h'] > .conv__stats { margin-bottom: var(--space-
 .receive__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .show-code { max-width: 24rem; }
 .share-code__url { overflow-wrap: anywhere; }
+
+.chat-poll__thing { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; margin-block-start: 0.25rem; }
