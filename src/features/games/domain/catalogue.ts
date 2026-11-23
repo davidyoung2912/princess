@@ -13,6 +13,10 @@ export interface GameEntry {
   minutes: readonly [number, number]
   /** How many people play at once. */
   players: number
+  /** Words for the levels when they are not Easy to Expert (a game with board sizes, say). */
+  levelsKey?: StringKey
+  /** True for a game with no puzzle to send to a chat (a match against the computer, say), so it has no bundle adapter. */
+  noShare?: boolean
 }
 
 export const GAMES: readonly GameEntry[] = [
@@ -34,6 +38,7 @@ export const GAMES: readonly GameEntry[] = [
   { id: 'minesweeper', path: '/games-explorer/minesweeper', mode: 'single', titleKey: 'gx.game.minesweeper.title', bodyKey: 'gx.game.minesweeper.body', levels: 4, minutes: [2, 20], players: 1 },
   { id: 'hashi', path: '/games-explorer/hashi', mode: 'single', titleKey: 'gx.game.hashi.title', bodyKey: 'gx.game.hashi.body', levels: 4, minutes: [3, 25], players: 1 },
   { id: 'nurikabe', path: '/games-explorer/nurikabe', mode: 'single', titleKey: 'gx.game.nurikabe.title', bodyKey: 'gx.game.nurikabe.body', levels: 4, minutes: [3, 25], players: 1 },
+  { id: 'battleship', path: '/games-explorer/battleship', mode: 'single', titleKey: 'gx.game.battleship.title', bodyKey: 'gx.game.battleship.body', levels: 3, minutes: [5, 20], players: 1, levelsKey: 'gx.meta.battleship', noShare: true },
 ]
 
 export const gamesOf = (mode: GameEntry['mode']): GameEntry[] => GAMES.filter((g) => g.mode === mode)

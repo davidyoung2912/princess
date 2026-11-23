@@ -1,7 +1,7 @@
 # Games Explorer plan
 
 The Games Explorer (`/games-explorer`, screen X30) lists every game; each game has its own page under `/games-explorer/<id>` and its own screen id.
-Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42) and **Slitherlink** (X43) and **Crossmath** (X44) and **Nonogram** (X45) and **Minesweeper** (X46) and **Hashi** (X47), **Nurikabe** (X48). All seventeen games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
+Built so far: **Cruise Wordle** (X31), **Sudoku** (X32), **Diagonal Sudoku** (X33) and **Jigsaw Sudoku** (X34), **Killer Sudoku** (X35), **Binairo** (X36) and **Futoshiki** (X37), **KenKen** (X38), **Kakuro** (X39), **Codeword** (X40) **Hitori** (X41) and **Word Search** (X42) and **Slitherlink** (X43) and **Crossmath** (X44) and **Nonogram** (X45) and **Minesweeper** (X46) and **Hashi** (X47), **Nurikabe** (X48) and **Battleship** (X49, the first game against the computer). All eighteen games are built. Sudoku is the design reference for every game below: level picker, New puzzle, timer with clock
 icon, Hint (mistakes first, then the next logical move with its reason, Fill it in, dismissable), Undo, Notes, red cells for anything that can no longer be
 solved, solved card, "How to Play" panel under the game, phone-first (large touch targets, digit pad, no hover-only controls), keyboard support, spoken cell labels.
 
@@ -161,3 +161,8 @@ Built with one change: every island has exactly one number, so there are no numb
 - Numbered squares are islands: shade the rest so each island is one white region of exactly its number size, every region holds one number, the shaded wall is one connected piece and contains no 2x2 block. Levels 5x5 to 10x10.
 - Generator: grow islands and a connected wall without 2x2 blocks, write one number per island, remove numbers while a logic solver (squares next to two islands are wall, an island that is complete is walled in, unreachable squares are wall, a 2x2 would form so one square is white, wall connectivity) still finishes. Highest-risk uniqueness: build and test it first.
 - Tap cycles empty, wall, dot (known white); red for a 2x2 wall, a region with two numbers or the wrong size, a split wall. Hints name the rule. Reuses the Hitori shade and circle marks and connectivity helpers.
+
+
+## Battleship (X49)
+
+Official Milton Bradley / Hasbro rules: 10 by 10, Carrier 5, Battleship 4, Cruiser 3, Submarine 3, Destroyer 2, ships straight and never overlapping, alternate single shots, "sunk" is announced, first to sink the fleet wins. Our variations: board size (Small 8x8 with 4 ships, Classic, Large 12x12 with 7) and opponent (Cadet, Captain, Admiral). The engine and AI are in `features/games/domain/battleship.ts`; the AI is handed only `AiView` (its own shots and the ships it has sunk), and a test proves its choice cannot depend on unsunk ship positions. Not shareable to chat (`noShare` in the catalogue). Ideas for later: Salvo rules, a first-turn coin toss, win/loss streak on the device.

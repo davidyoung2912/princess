@@ -244,6 +244,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/games-explorer/minesweeper': screen(() => import('../features/explorer/ui/games/MinesweeperScreen'), 'MinesweeperScreen'),
   '/games-explorer/hashi': screen(() => import('../features/explorer/ui/games/HashiScreen'), 'HashiScreen'),
   '/games-explorer/nurikabe': screen(() => import('../features/explorer/ui/games/NurikabeScreen'), 'NurikabeScreen'),
+  '/games-explorer/battleship': screen(() => import('../features/explorer/ui/games/BattleshipScreen'), 'BattleshipScreen'),
   '/games-explorer/hitori': screen(() => import('../features/explorer/ui/games/HitoriScreen'), 'HitoriScreen'),
   '/games-explorer/kakuro': screen(() => import('../features/explorer/ui/games/KakuroScreen'), 'KakuroScreen'),
   '/games-explorer/kenken': screen(() => import('../features/explorer/ui/games/KenKenScreen'), 'KenKenScreen'),

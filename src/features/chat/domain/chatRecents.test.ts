@@ -32,7 +32,7 @@ describe('release gates: bundles', () => {
   })
   it('every game that can be played alone has a bundle adapter', () => {
     for (const id of SHAREABLE_GAMES) expect(BUNDLE_TYPES[`game.${id}`], id).toBeDefined()
-    const alone = GAMES.filter((g) => g.mode === 'single').map((g) => g.id).filter((id) => (SHAREABLE_GAMES as readonly string[]).includes(id) === false)
+    const alone = GAMES.filter((g) => g.mode === 'single' && !g.noShare).map((g) => g.id).filter((id) => (SHAREABLE_GAMES as readonly string[]).includes(id) === false)
     expect(alone).toEqual([])
   })
 })
