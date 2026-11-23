@@ -144,6 +144,7 @@ export {
   Ship as ShipExplorer,
   Star,
   QrCode,
+  ScanQrCode,
   Printer,
   LogIn as Arrive,
   LogOut as Depart,

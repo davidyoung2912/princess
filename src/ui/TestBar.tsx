@@ -14,6 +14,7 @@ import { Button } from './Button'
 import { Dialog } from './Dialog'
 import { ChevronLeft, ChevronRight, CloudSun, Compass, Drama, MapPin, MessagesSquare, Plan, RouteMap, Activities, Games, ShipExplorer, Exercise, ShoppingBag, Spa, UtensilsCrossed } from './icons'
 import { Field } from './Field'
+import { ScanButton } from './scan/ScanButton'
 
 const AT_LINKS = [
   { to: '/chat', Icon: MessagesSquare, label: 'testbar.at.chat' },
@@ -145,6 +146,7 @@ function TestBarBody({ isDemo, menu, chatCount, typing }: { isDemo: boolean; men
       <div className="testbar__carousel">
         <button type="button" className="testbar__arrow" aria-label={t('testbar.at.prev')} disabled={!edges.start} onClick={() => step(-1)}><ChevronLeft aria-hidden="true" /></button>
         <nav className="testbar__at" ref={track} aria-label={t('testbar.at.label')}>
+          <ScanButton />
           {AT_LINKS.map(({ to, Icon, label }) => (
             <Link key={to} to={to} data-tour={tourMark(to)} className={isExplorerButton(to) ? 'testbar__at-link testbar__at-link--explorer' : 'testbar__at-link'} aria-label={to === '/chat' && chatCount > 0 ? `${t(label)}. ${t('people.tabBadge', { count: chatCount })}` : t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined} onClick={reveal} onFocus={reveal}>
               <Icon aria-hidden="true" />

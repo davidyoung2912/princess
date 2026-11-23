@@ -929,3 +929,5 @@ section[aria-labelledby='thread-h'] > .conv__stats { margin-bottom: var(--space-
 /* Quick replies: a row for answers, a row for getting together, a row for feelings. */
 .chat-quick { flex-direction: column; overflow-x: visible; gap: var(--space-2); }
 .chat-quick__row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.scan-panel { display: flex; flex-direction: column; gap: var(--space-3); }
+.scan-panel .qr-video { max-height: 55dvh; object-fit: cover; background: #000; }

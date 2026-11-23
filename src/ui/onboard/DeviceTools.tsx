@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useState } from 'react'
 import { bearingDegrees, directionWord, distanceMetres, fixIsRough, headingFromOrientation, turnBy, type Fix } from '../../domain/deviceSense'
 import { PORT_COORDS } from '../../domain/ports'
-import { readCode, type ScanResult } from '../../domain/scanCode'
 import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { ScannerPanel } from '../scan/ScannerPanel'
 
 type OrientationEvt = Event & { webkitCompassHeading?: number; alpha?: number | null; absolute?: boolean }
 type Gate = { requestPermission?: () => Promise<'granted' | 'denied'> }
@@ -72,57 +71,13 @@ export function PortDirection({ port }: { port: string }) {
   )
 }
 
-declare class BarcodeDetector { constructor(o?: { formats: string[] }); detect(s: ImageBitmapSource): Promise<{ rawValue: string }[]> }
-
-/** Read a QR code with the camera where the browser can, or type the code (MOB-10). A code only finds a place or a link in this app. It is never proof of boarding. */
+/** Read a QR code with the camera (the browser's own reader, or a small JavaScript one where it has none), or type the code (MOB-10). A code only finds a place or a link in this app. It is never proof of boarding. */
 export function CodeScanner() {
-  const [typed, setTyped] = useState('')
-  const [result, setResult] = useState<ScanResult | null>(null)
-  const [scanning, setScanning] = useState(false)
-  const video = useRef<HTMLVideoElement>(null)
-  const canScan = typeof window !== 'undefined' && 'BarcodeDetector' in window && !!navigator.mediaDevices?.getUserMedia
-
-  useEffect(() => {
-    if (!scanning) return
-    let stop = false
-    let stream: MediaStream | null = null
-    ;(async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        const el = video.current
-        if (!el || stop) return
-        el.srcObject = stream
-        await el.play()
-        const det = new BarcodeDetector({ formats: ['qr_code'] })
-        while (!stop) {
-          const found = await det.detect(el).catch(() => [])
-          if (found[0]) { setResult(readCode(found[0].rawValue, window.location.origin)); setScanning(false); return }
-          await new Promise((r) => setTimeout(r, 400))
-        }
-      } catch { setScanning(false) }
-    })()
-    return () => { stop = true; stream?.getTracks().forEach((x) => x.stop()) }
-  }, [scanning])
-
   return (
     <Card labelledBy="qr-h">
       <h2 id="qr-h" className="card__title">{th('qr.title')}</h2>
       <p>{t('qr.intro')}</p>
-      {canScan && !scanning && <Button variant="secondary" onClick={() => setScanning(true)}>{t('qr.scan')}</Button>}
-      {scanning && <><video ref={video} className="qr-video" muted playsInline aria-label={t('qr.video')} /><Button variant="secondary" onClick={() => setScanning(false)}>{t('qr.stop')}</Button></>}
-      <form onSubmit={(e) => { e.preventDefault(); setResult(readCode(typed, window.location.origin)) }}>
-        <div className="field">
-          <label htmlFor="qr-code">{t('qr.type')}</label>
-          <input id="qr-code" className="field__input" value={typed} onChange={(e) => setTyped(e.target.value)} />
-        </div>
-        <Button type="submit" variant="secondary">{t('qr.read')}</Button>
-      </form>
-      <div role="status" aria-live="polite">
-        {result?.kind === 'place' && <p>{t('qr.place', { name: result.place.name, deck: result.place.deck })}</p>}
-        {result?.kind === 'link' && <p><Link to={result.path}>{t('qr.open')}</Link></p>}
-        {result?.kind === 'text' && <p>{t('qr.text', { text: result.text })}</p>}
-        {result?.kind === 'empty' && <p>{t('qr.empty')}</p>}
-      </div>
+      <ScannerPanel />
       <p className="muted">{t('qr.note')}</p>
     </Card>
   )

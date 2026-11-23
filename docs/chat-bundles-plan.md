@@ -189,6 +189,8 @@ Rules for every phase (CLAUDE.md): English only; verify with `npm run test`, `np
 
 ### Q0: the in-app QR scanner (before B1)
 
+> **Built 2026-11-22** (front end checked with test, lint, tsc and build; no browser testing, so the camera on a real iPhone and Android phone is for the owner to check). **Done:** scan icon first in the top ribbon (`ScanButton` in `TestBar.tsx`, there is no brand bar on phones) opening a dialog over the page; `ScannerPanel` shared with the Tools card (`CodeScanner`); `useCodeScanner` (browser reader when it reads QR codes, otherwise `jsqr` loaded only on first scan as its own 48 kB gzip chunk; camera released on close, on a result and when the page is hidden, and restarted when it is back); pure `scanSession.ts` and `scanCode.ts` (now reads `/s/<code>` and `/s?t=&r=` as `share`, still follows only this origin) with tests; `Permissions-Policy` now `camera=(self)` in `SecurityHeaders.cs` and `docs/static-host-headers.md` (**the real static host must send the same header when it is deployed**). A share code shows "not available yet" until Q1.
+
 - Top-bar **scan icon** beside Search (name "Scan a code"); opens a full-screen scanner dialog without leaving the page: focus-trapped, Escape closes, camera off on close, tab hidden or result found; typed-code box kept for guests who decline the camera.
 - **Safari and Firefox fallback**: a small JavaScript QR decoder used when `BarcodeDetector` is missing (the existing `CodeScanner` shows no scan button on an iPhone today). Check the bundle cost and load it only when the scanner opens.
 - **Fix the headers**: `Permissions-Policy` `camera=(self)` in `server/Princess.Api/Services/SecurityHeaders.cs` and `docs/static-host-headers.md`, with the security test updated.

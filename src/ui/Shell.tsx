@@ -46,7 +46,8 @@ import { BrowseDepthNote } from './BrowseDepthNote'
 import { LocalReminders } from './LocalReminders'
 import { CatchUp, OfflineFirings } from './StanleyOffline'
 import { OfflineNote } from './OfflineNote'
-import { pageArt } from './pageArt'
+import { homeArt, pageArt, tabArt } from './pageArt'
+import { poseForStage } from '../routes/stageMood'
 import { DeepLinkNote } from './DeepLinkNote'
 import { useActiveDeck } from '../hooks/useShipCatalogue'
 import { TipCard } from './TipCard'
@@ -55,8 +56,8 @@ import { Tour } from './Tour'
 import { StageOverviewCta } from './home/StageOverviewCta'
 import { GuideCrumb, WhatNext } from './GuideFlow'
 
-/** Pages that take no tip card: the chat list and a conversation, where the room is needed for the messages. */
-const NO_TIP_SCREENS: readonly string[] = ['C01', 'C07']
+/** Pages that take no tip card: a conversation, where the room is needed for the messages. The chat list (C01) does show one. */
+const NO_TIP_SCREENS: readonly string[] = ['C07']
 import { StanleyCoach } from './ai/StanleyCoach'
 import { tipIdFor } from '../settings/tips'
 import { tabText } from './tabText'
@@ -74,7 +75,7 @@ import { APP_WELCOME_KEY, hasWelcomeCopy, shouldShowAppWelcome, shouldShowStanle
  * screen to screen readers, and moves focus to the main area so keyboard users start at the top of the new content.
  */
 export function Shell() {
-  const { pathname, search, state } = useLocation()
+  const { pathname, search, state, key: visitKey } = useLocation()
   const navigationType = useNavigationType()
   const { stage, focusSailingId } = useJourneyPosition()
   const navigate = useNavigate()
@@ -120,6 +121,9 @@ export function Shell() {
   const area = areaAt(pathname, route?.path ?? null, stage, (state as { area?: unknown } | null)?.area, previous, fallbackArea)
   if (seen?.path !== pathname || seen.area !== area) setSeen({ path: pathname, area, previous })
   const landingWords = landing ? tabText(landing, stage) : null
+  // Home's header picture is chosen again each time Home is opened, and stays the same while the guest is on it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const homeHeaderArt = useMemo(() => homeArt(poseForStage(stage)), [visitKey, stage])
   const action = actionWords(pathname, search)
   // Stanley's introduction shares the /welcome address with the stage welcome, but it is not the stage overview.
   const introKind = pathname === '/welcome' ? (state as { intro?: unknown } | null)?.intro : null
@@ -279,7 +283,7 @@ export function Shell() {
       <UpdateBanner />
       <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        {invitationsPage ? <PageHeader title={t('invitations.title')} subtext={t('invitations.subtext')} icon={headerIcon} back /> : newGroupPage ? <PageHeader title={t('cgroup.new')} subtext={t('cgroup.newSubtext')} icon={headerIcon} back /> : personalChatPage ? <PageHeader title={t('cpersonal.new')} subtext={t('cpersonal.newSubtext')} icon={headerIcon} back /> : chatPeoplePage ? <PageHeader title={t('chatPeople.title')} subtext={t('chatPeople.subtext')} icon={headerIcon} back /> : appWelcomePage ? <PageHeader title={th('appWelcome.eyebrow')} subtext={t('appWelcome.subtext')} icon={headerIcon} /> : stanleyIntroPage ? <PageHeader title={th('stanleyIntro.eyebrow')} subtext={t('stanleyIntro.subtext')} icon={headerIcon} /> : action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pageArt(route?.path)} back={pathname !== '/welcome'} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
+        {invitationsPage ? <PageHeader title={t('invitations.title')} subtext={t('invitations.subtext')} icon={headerIcon} back /> : newGroupPage ? <PageHeader title={t('cgroup.new')} subtext={t('cgroup.newSubtext')} icon={headerIcon} back /> : personalChatPage ? <PageHeader title={t('cpersonal.new')} subtext={t('cpersonal.newSubtext')} icon={headerIcon} back /> : chatPeoplePage ? <PageHeader title={t('chatPeople.title')} subtext={t('chatPeople.subtext')} icon={headerIcon} back /> : appWelcomePage ? <PageHeader title={th('appWelcome.eyebrow')} subtext={t('appWelcome.subtext')} icon={headerIcon} /> : stanleyIntroPage ? <PageHeader title={th('stanleyIntro.eyebrow')} subtext={t('stanleyIntro.subtext')} icon={headerIcon} /> : action ? <PageHeader title={th(action.title)} subtext={t(action.subtext)} icon={CalendarCheck} art={pageArt(route?.path)} back /> : landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} art={landing ? (landing.key === 'home' ? homeHeaderArt : tabArt(landing.key)) : undefined} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} art={pathname === '/welcome' ? { pose: poseForStage(stage) } : pageArt(route?.path)} back={pathname !== '/welcome'} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} art={pageArt(route.path)} back />}
         {route && !route.public && !landing && <GuideCrumb />}
         {route && !route.public && <DeepLinkNote />}
         {route && !route.public && <OfflineNote path={route.path} />}

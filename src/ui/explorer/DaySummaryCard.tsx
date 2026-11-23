@@ -6,8 +6,6 @@ import type { ExplorerDayState } from '../../hooks/useExplorer'
 import { t, headingCase } from '../../i18n'
 import type { StringKey } from '../../i18n'
 import { Card } from '../Card'
-import { StanleyPose } from '../StanleyPose'
-import { EXPLORER_POSE } from './venueArt'
 
 /** The card at the top of an Explorer: what the chosen day holds, in that Explorer's own words (hours now, what is next, what is on your plan). The page header already says what the Explorer is. */
 export function DaySummaryCard({ kind, data, state }: { kind: ExplorerKind; data: ExplorerDay; state: ExplorerDayState }) {
@@ -15,7 +13,6 @@ export function DaySummaryCard({ kind, data, state }: { kind: ExplorerKind; data
   if (lines.length === 0) return null
   return (
     <Card hero labelledBy="exp-sum-h">
-      <span className="landing-pose calm-hide"><StanleyPose pose={EXPLORER_POSE[kind]} size={72} /></span>
       <h2 id="exp-sum-h" className="card__title">{headingCase(t('exp.sum.title'))}</h2>
       <ul className="exp-sum">
         {lines.map((l) => <li key={l.key}>{t(`exp.sum.${l.key}` as StringKey, l.params)}</li>)}

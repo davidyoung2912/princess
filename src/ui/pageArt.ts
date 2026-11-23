@@ -25,6 +25,12 @@ const ART: Record<string, PageArt> = {
   '/ship/muster': { pose: 'lifejacket' },
   '/ship/port': { pose: 'port-visit' }, '/ship/port/guide': { pose: 'port-visit' }, '/home/ports/:id': { pose: 'port-visit' },
   '/ship/drinks': { pose: 'bar' }, '/ship/spa': { pose: 'spa' }, '/ship/shops': { pose: 'shopping' }, '/ship/photos': { pose: 'camera' },
+  // The explorers and Today's Plan: the picture for the thing they cover.
+  '/entertainment': { pose: 'theatre' }, '/shopping-today': { pose: 'shopping' }, '/spa-explorer': { pose: 'spa' }, '/exercise-explorer': { pose: 'exercise' },
+  '/activities-explorer': { pose: 'dancing' }, '/games-explorer': { head: 'gaming' }, '/ship-explorer': { head: 'captain' }, '/excursions-explorer': { pose: 'port-visit' },
+  '/today': { pose: 'checking-itinerary' }, '/day-details': { pose: 'planning' },
+  '/ship/venues': { pose: 'dining' }, '/plan/away': { pose: 'port-visit' }, '/ship/away': { pose: 'port-visit' },
+  '/home/medallion': { pose: 'passport' }, '/me/activity': { head: 'stanley' },
 }
 
 /** Art for a whole area of the app: the longest listed prefix of a screen's path wins, and a screen listed in `ART` above keeps its own. The explorers and Today's Plan draw their own art, so they are not listed. */
@@ -61,10 +67,29 @@ const AREA_ART = new Map<string, PageArt>(AREAS.flatMap(([paths, art]) => paths.
 /** The art for a screen's route path: its own entry, else the nearest enclosing area. */
 export function pageArt(path: string | undefined): PageArt | undefined {
   if (!path) return undefined
-  if (ART[path]) return ART[path]
   for (let p = path; p; p = p.slice(0, p.lastIndexOf('/'))) {
-    const hit = AREA_ART.get(p)
+    const hit = ART[p] ?? AREA_ART.get(p)
     if (hit) return hit
   }
   return undefined
+}
+
+/** The picture at the end of each tab's landing page header, chosen by what the tab is for. Home gets the plain friendly face, because its first card already shows the pose for the journey stage. */
+const TAB_ART: Record<string, PageArt> = {
+  me: { head: 'stanley' }, ask: { head: 'searching' }, board: { pose: 'suitcase' }, booking: { head: 'scheduler' }, cabin: { pose: 'sleep' }, cost: { head: 'accounting' },
+  explore: { pose: 'binoculars' }, feedback: { head: 'proud' }, group: { pose: 'cheer' }, leave: { pose: 'wave' }, memories: { pose: 'camera' }, needs: { head: 'gentle' },
+  next: { head: 'idea' }, pay: { head: 'accountant' }, people: { head: 'chatting' }, plan: { head: 'planning' }, port: { pose: 'port-visit' }, prepare: { pose: 'checklist' },
+  sailing: { pose: 'poolside' }, ship: { head: 'captain' }, today: { pose: 'checking-itinerary' }, travel: { pose: 'passport' }, travellers: { head: 'formal' }, trip: { pose: 'map' },
+}
+
+/** The art for a tab's landing page, by the tab's key. */
+export const tabArt = (key: string): PageArt | undefined => TAB_ART[key]
+
+/** The cheerful pictures Home's header draws from, one per visit. Never an error or a shrug. */
+export const HOME_ART: readonly PageArt[] = [{ pose: 'wave' }, { pose: 'thumbs' }, { pose: 'cheer' }, { head: 'excited' }, { head: 'proud' }, { head: 'sunglasses' }]
+
+/** One of the Home pictures at random, never the pose Home's first card already shows (`avoid`). `random` is 0 up to 1, so it can be tested. */
+export function homeArt(avoid: PoseId | undefined, random: number = Math.random()): PageArt {
+  const choices = HOME_ART.filter((a) => a.pose === undefined || a.pose !== avoid)
+  return choices[Math.min(choices.length - 1, Math.floor(random * choices.length))]!
 }

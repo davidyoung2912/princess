@@ -16,7 +16,7 @@ public static class SecurityHeaders
                 h["X-Frame-Options"] = "DENY";
                 h["Referrer-Policy"] = "no-referrer";
                 h["Cross-Origin-Resource-Policy"] = "same-site";
-                h["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+                h["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()";
                 if (hsts && http.Request.IsHttps) h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
                 if (IsData(http.Request.Path))
                 {

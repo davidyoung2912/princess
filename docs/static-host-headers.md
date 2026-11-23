@@ -9,7 +9,7 @@ The API sets its own security headers (`SecurityHeaders.cs`). The front end is s
 | `X-Frame-Options` | `DENY` (older browsers; `frame-ancestors` is the real control) |
 | `X-Content-Type-Options` | `nosniff` |
 | `Referrer-Policy` | `no-referrer` |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` (widen only for a feature that needs it) |
+| `Permissions-Policy` | `camera=(self), microphone=(), geolocation=()` (the camera is on for this app only, for the QR scanner and the photo coach; widen anything else only for a feature that needs it) |
 
 ## Caching
 
