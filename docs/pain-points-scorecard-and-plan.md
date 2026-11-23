@@ -1,6 +1,57 @@
 # Pain-points scorecard and gap-closing plan (R1 to R8)
 
-Status: **Proposed 2026-11-23. Nothing here is built.** Source: `docs/princess_passenger_pain_points_pwa_research.md` (21 Nov 2026), the 14 ranked pain points, the cross-cutting principles (section 5), the Stanley table (section 9) and the four-release roadmap (section 7).
+Status: **Proposed 2026-11-23; built overnight 2026-11-23 to 24 (see the update below).** Source: `docs/princess_passenger_pain_points_pwa_research.md` (21 Nov 2026), the 14 ranked pain points, the cross-cutting principles (section 5), the Stanley table (section 9) and the four-release roadmap (section 7).
+
+## Update 2026-11-24: after the overnight pass (R1 to R8)
+
+Phases R1 to R8 were run in one pass, with G-01 dropped by the owner. Each phase has its own commit; what could not be closed is in `docs/pain-points-round2-gaps.md`. Nothing was walked on a device, so no row is A+. The original sections below are kept as first written.
+
+### Corrections to the first read
+
+Reading the code more closely while building showed I had under-graded several rows. These were already there:
+
+- **My Trips** (`/me/trips`) lists every booking and links one with five distinct failures (`format`, `noMatch`, `alreadyLinked`, `review`, `supervised`). Rows 1.1 and 1.2 were too low. Only the switcher that makes Home follow a chosen trip is missing.
+- **Dining eligibility**: `diningWindow` and `actionGate` give a stated reason and a date and never show a disabled button (open, opensOn, needsBooking, readOnly, closed, finished). My search for the word "eligib" missed it. Rows 9.2 and 9.3 were too low.
+- **Step-free routing**, closed-lift rerouting, a drawn route and a route from the guest's cabin already exist. Row 11.5 was too low.
+- **Report a problem** already attaches the problem log and a screenshot, and cases already show their owner team and due date. Rows 14.5 and 14.7 were too low.
+- **Named-place sharing with an expiry** already exists as a meeting-point card, so G-07 was mostly done before it started.
+
+### What R1 to R8 changed
+
+| Phase | Result |
+| --- | --- |
+| R1 | Back returns to the same place in a list; filters on explorers, excursions, ports, venues and the day planner live in the address; saving with no signal is held and sent later |
+| R2 | A support reference on errors; the loyalty screen says what unlocks each missing perk; a check-in contradiction banner |
+| R3 | The reservations list has kind chips, search (venue, day, date, reference) and a compact view; global search links to it; Explorer days say whether the programme is preliminary or confirmed |
+| R4 | "Download my cruise" with choices, an estimate, progress, a failure list and retry; a Home reminder close to sailing |
+| R5 | One Travel party hub: people, groups, one invitation sheet (QR, link, share, email), what connecting allows; linked from Plan and Chat |
+| R6 | "Take me there" from the planner and meeting-point cards |
+| R7 | A service-notice banner for declared incidents; a routing line on the report screen |
+| R8 | An on-device top-task funnel and `docs/pain-points-measures.md` |
+
+### Revised scoreboard
+
+| # | Pain point | First | Now | Still stopping A+ |
+| ---: | --- | :---: | :---: | --- |
+| 1 | Reliability, identity, booking trust | B+ | **A-** | No trip switcher; reference ids only on two error paths; no "what is fresh" per source |
+| 2 | Travel party | B | **B+** | No per-person permissions; no group booking from other cabins; no location (owner: not yet) |
+| 3 | One view of every booking | B | **B+** | Not in the global index; no per-item freshness; no switcher |
+| 4 | Offline | B+ | **A-** | Port pack and party plans not in the download; no scheduled retry; never walked in airplane mode |
+| 5 | Check-in | A- | **A-** | No step-specific help links; Walk rows pending |
+| 6 | Navigation and search | B | **B+** | Chips on a few more screens; reservations not in the index; no search-success measure |
+| 7 | Port day | A- | **A-** | Custom route builder; tender queue in the return buffer |
+| 8 | Onboard schedule | B+ | **A-** | No performer search or "updated" state; status rule is authored |
+| 9 | Dining and packages | B | **B+** | Party picker across cabins; a decided poll does not become a booking request |
+| 10 | Wallet and loyalty | B+ | **A-** | Locked-perk list is a front-end copy of the table; redemption history |
+| 11 | Maps and wayfinding | B | **A-** | "Take me there" only on the planner and meeting points |
+| 12 | Chat and notifications | A- | **A-** | Test-notification button; iOS install guidance; measured delivery |
+| 13 | OceanNow | B+ | **B+** | Not re-checked this pass: cart across a reload, ETA wording |
+| 14 | Support | B+ | **A-** | No screenshot redaction; reports show no status |
+| 5.x | Cross-cutting principles | B+ | **B+** | One legend for the six labels; privacy scopes per person |
+| 9 | Stanley | A- | **A-** | Unchanged |
+| 8 | Metrics | C+ | **B-** | No fleet measure, no baseline sessions |
+
+**Overall: A- in the main, with four areas at B+.** The shortest path to A+ is not more code: it is the device walk, then the open items above, in the order given in the round 2 list.
 
 ## 1. How to read this, and how far to trust it
 

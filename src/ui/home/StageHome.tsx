@@ -15,6 +15,7 @@ import { stageTiles } from '../../routes/stageHome'
 import { useTileLive } from '../../hooks/useTileLive'
 import { needsAttention, type TileLine } from '../../domain/tileLive'
 import { TileLiveLine } from '../TileLiveLine'
+import { PackNudge } from './PackNudge'
 
 /** Home for every stage with its own plan: the guide (Do this now, Coming up, Done), then six tiles with one line of state each (plan section 8). */
 export function StageHome() {
@@ -34,6 +35,7 @@ export function StageHome() {
       <StanleyModeCard />
       <StanleyNext />
       <StageGuide />
+      <PackNudge />
       <hr className="brass-rule" aria-hidden="true" />
       <nav aria-labelledby="stage-tiles-h" data-tour="home-tiles">
         <h2 id="stage-tiles-h">{th('stage.tiles.title')}</h2>
