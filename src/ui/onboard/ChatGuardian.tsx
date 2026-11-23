@@ -99,7 +99,7 @@ function ChildThread({ child, conversation, onBack }: { child: ChatChild; conver
             ? <li key={m.id} className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
             : (
               <li key={m.id} className={m.from === child.id ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
-                <p className="chat-msg__meta"><strong>{m.from === child.id ? child.name : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+                <p className="chat-msg__meta"><strong>{m.from === child.id ? child.name : (m.fromName ?? '')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
                 {m.text && <p>{m.text}</p>}
                 {m.photo && <p className="muted">{t('guard.photo')}</p>}
               </li>

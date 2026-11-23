@@ -24,7 +24,7 @@ public static class StanleyNoticeRules
     public static readonly string[] BypassKinds = ["allAboard", "backAboard", "disruption", "payment", "travel", "scheduleChange", "muster"];
 
     /// <summary>Kinds that need action soon without being safety: they are Important when they do not bypass.</summary>
-    private static readonly string[] ImportantKinds = ["allAboard", "backAboard", "disruption", "payment", "travel", "reservation", "case", "helper", "documents", "checkin", "service", "muster"];
+    private static readonly string[] ImportantKinds = ["allAboard", "backAboard", "disruption", "payment", "travel", "reservation", "case", "helper", "documents", "checkin", "service", "muster", "chatEvent"];
 
     public static string LaneOf(PushNotice n) =>
         n.Kind == OfferKind ? Info   // an offer is never critical and never important, whatever it claims

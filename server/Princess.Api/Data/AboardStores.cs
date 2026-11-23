@@ -490,6 +490,10 @@ public interface IChatStore
     Task<bool> EditMessageAsync(long messageId, long userId, string text, DateTime at, DateTime windowStart, CancellationToken ct);
     /// <summary>Deletes the sender's own message for everyone, with the same guard as <see cref="EditMessageAsync"/>: the text is blanked and <c>OriginalText</c> keeps it for staff review of a report. False when nothing changed.</summary>
     Task<bool> DeleteMessageAsync(long messageId, long userId, DateTime at, DateTime windowStart, CancellationToken ct);
+    /// <summary>Removes one message from the guest's own Stanley thread (their copy only: the thread is theirs alone). The text is blanked and the row stays marked deleted, so a notice with the same key is not written again. False when it was already deleted.</summary>
+    /// <summary>How many chat events (someone declined, left a group or a personal chat) are waiting in the guest's Stanley thread for Got it. The app shows each as a popup until it is acknowledged.</summary>
+    Task<int> CountUnackedEventsAsync(long userId, CancellationToken ct);
+    Task<bool> DeleteStanleyMessageAsync(long groupId, long messageId, DateTime at, CancellationToken ct);
     /// <summary>How many messages the person has sent to the conversation since <paramref name="since"/> (the send rate limit).</summary>
     Task<int> CountSentInAsync(long groupId, long userId, DateTime since, CancellationToken ct);
     /// <summary>The newest message in the conversation a person said that the reader may read (their window, nobody they blocked), or null: what a header Report of a person files.</summary>

@@ -1,4 +1,4 @@
-import { Check, Trash2, Users, X } from '../icons'
+import { Check, Depart, Trash2, Users, X } from '../icons'
 import { useState } from 'react'
 import type { ChatConnections, ChatGroup, ChatGroupInvite, ChatPerson } from '../../api/chatTypes'
 import { canCreateGroup, cleanGroupName, groupProblem, invitable, MAX_GROUP_NAME, togglePicked } from '../../domain/chatGroups'
@@ -136,6 +136,37 @@ export function NewGroupPage({ onCreated }: { onCreated: (group: ChatGroup) => v
         <Button type="submit" disabled={create.busy || !canCreateGroup(name, total)}>{t('cgroup.make')}</Button>
       </form>
     </section>
+  )
+}
+
+/**
+ * Leaving a chat from its card on the main chat page: a member who is not the leader leaves a group (the others stay and see a line that they left), and either person leaves a personal
+ * chat, which removes it for both. Asks once, in words that say what happens. (The leader of a group cannot leave: they delete it, which sends everyone out.)
+ */
+export function LeaveChat({ chat, onClose, onLeft }: { chat: { id: string; kind: string; name: string }; onClose: () => void; onLeft: () => void }) {
+  const personal = chat.kind === 'direct'
+  const leave = useAction(async () => {
+    if (personal) {
+      // A personal chat belongs to the connection between the two people, found by its conversation.
+      const list = await api.chatConnections.list()
+      const connection = list.connected.find((c) => c.conversationId === chat.id)
+      if (!connection) throw new Error('notFound')
+      await api.chatConnections.end(connection.id)
+    } else {
+      await api.chatGroups.leave(chat.id)
+    }
+    chatChanged()
+    onLeft()
+  })
+  return (
+    <Dialog title={t('conv.leave.title')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('conv.leave.title')} subtext={chat.name} icon={Depart} onClose={onClose} />}>
+      <p>{t(personal ? 'cpersonal.leave.body' : 'conv.leave.body', { name: chat.name })}</p>
+      {leave.error && <p role="alert" className="field__error">{t('conv.leave.failed')}</p>}
+      <div className="button-row">
+        <Button disabled={leave.busy} onClick={() => void leave.run().catch(() => undefined)}>{t('conv.leave.yes')}</Button>
+        <Button variant="secondary" onClick={onClose}>{t('conv.leave.no')}</Button>
+      </div>
+    </Dialog>
   )
 }
 

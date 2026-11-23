@@ -531,6 +531,17 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(true);
     }
 
+    public Task<int> CountUnackedEventsAsync(long userId, CancellationToken ct) => Task.FromResult(0);
+
+    public Task<bool> DeleteStanleyMessageAsync(long groupId, long messageId, DateTime at, CancellationToken ct)
+    {
+        var m = Messages.FirstOrDefault(x => x.Row.Id == messageId)?.Row;
+        if (m is null || m.DeletedAt is not null || m.IsSystem) return Task.FromResult(false);
+        m.Text = "";
+        m.DeletedAt = at;
+        return Task.FromResult(true);
+    }
+
     public Task<bool> DeleteMessageAsync(long messageId, long userId, DateTime at, DateTime windowStart, CancellationToken ct)
     {
         var m = Messages.FirstOrDefault(x => x.Row.Id == messageId)?.Row;

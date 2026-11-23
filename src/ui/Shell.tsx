@@ -19,7 +19,7 @@ import { SCREEN_BY_ID, screenForPath, type TabColour } from '../routes/screens'
 import { useGuideView } from '../hooks/useGuideView'
 import { tabsHoldingUrgent } from '../guide/tabs'
 import { useTabAlerts } from '../hooks/useTabAlerts'
-import { useChatSummary } from '../hooks/useChatSummary'
+import { useChatSummary, useTypingConversations } from '../hooks/useChatSummary'
 import { useChatNotice } from '../hooks/useChatNotice'
 import { ChatToast } from './ChatToast'
 import { chatBadge } from '../domain/chatConnections'
@@ -106,6 +106,8 @@ export function Shell() {
   const alerts = useMemo(() => new Set([...tileAlerts, ...(guideView ? tabsHoldingUrgent(guideView, tabs.map((x) => ({ key: x.key, paths: tabScreenIds(x, stage).map((id) => SCREEN_BY_ID.get(id)?.path ?? '') }))) : [])]), [tileAlerts, guideView, tabs, stage])
   const chat = useChatSummary(!!route && !route.public)
   const chatCount = chatBadge(chat)
+  // Someone typing in a chat shows as moving dots on the Chat icon, unless a chat page is open (its own cards and thread show it there).
+  const someoneTyping = useTypingConversations().size > 0 && !isChatPath(pathname)
   const chatNotice = useChatNotice(chat)
   // Until the server has said which stage the guest is in, the stage is a guess; a stale address is only judged once it is known.
   // A screen of an earlier stage opens when the guest chose it from a search result ("From your trip"); typed or refreshed, it is stale.
@@ -239,6 +241,7 @@ export function Shell() {
           )}
           <Link to="/chat" className="topbar__chat" aria-label={chatCount > 0 ? `${t('route.chat')}. ${t('people.tabBadge', { count: chatCount })}` : t('route.chat')} aria-current={isChatPath(pathname) ? 'page' : undefined}>
             <MessagesSquare aria-hidden="true" />
+            {someoneTyping && <span className="topbar__typing chat-typing__dots chat-typing__dots--small" role="status" aria-label={t('conv.typing.many')}><i /><i /><i /></span>}
             {chatCount > 0 && <span className="topbar__count" aria-hidden="true">{chatCount > 9 ? '9+' : chatCount}</span>}
           </Link>
           <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>

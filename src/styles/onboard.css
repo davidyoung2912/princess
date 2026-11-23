@@ -835,3 +835,20 @@ button.chat-quote { cursor: pointer; }
 /* A group invitation card: the group's name is the title. */
 .invite-card__title { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); font-size: var(--fs-title, 1.25rem); color: var(--primary); }
 .invite-card__title svg { width: 1.5rem; height: 1.5rem; flex: none; }
+
+/* The delete control at the foot of a card in the Stanley chat: right-aligned, and the Delete / Keep it question sits on one line with it. */
+.chat-msg__tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); margin: var(--space-2) 0 0; }
+
+/* The time a message was sent always sits in the top-right corner of its card, whoever sent it. */
+.chat-msg__time { position: absolute; inset-block-start: var(--space-2); inset-inline-end: var(--space-3); margin: 0; font-size: var(--fs-small, 0.875rem); }
+
+/* Someone is typing: the dots on a conversation card, on the Chat icon, and in the temporary card inside the chat. */
+.chat-typing__dots--small { padding: var(--space-1) var(--space-2); gap: 3px; }
+.chat-typing__dots--small i { width: 6px; height: 6px; }
+.conv__typing { display: flex; align-items: center; gap: var(--space-2); }
+.chat-typing-card { justify-self: start; }
+.chat-typing-card p { margin: 0; }
+.topbar__typing { position: absolute; inset-block-end: -0.5rem; inset-inline-end: -0.5rem; background: var(--surface, #fff); border: var(--border-width) solid var(--primary); }
+@media (prefers-reduced-motion: reduce) { .chat-typing__dots i { animation: none; opacity: 0.7; } }
+:root[data-motion='reduced'] .chat-typing__dots i { animation: none; opacity: 0.7; }
+.conv__time { font-weight: 700; }

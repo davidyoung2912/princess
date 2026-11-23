@@ -1,13 +1,11 @@
 /** When and what the in-app chat notice shows (docs/chat-plan.md, phase 8). Framework-free. */
-import type { ChatConnection, ChatConnections, ChatConversation, ChatSummary } from '../api/chatTypes'
-
-/** How long a notice stays before it goes away by itself. */
-export const NOTICE_MS = 6000
+import type { ChatConnection, ChatConnections, ChatConversation, ChatMessage, ChatSummary } from '../api/chatTypes'
+import { noticeBody, noticeHeadline } from './stanleyThread'
 
 export interface ChatNotice {
   /** One notice replaces another with the same key; a new arrival in the same conversation updates it. */
   key: string
-  kind: 'request' | 'message'
+  kind: 'request' | 'message' | 'info'
   name: string
   /** For a message: how many are unread in that conversation. */
   count: number
@@ -16,6 +14,10 @@ export interface ChatNotice {
   conversationId: string | null
   /** An unacknowledged urgent message: it stays until "Got it", ignores calm mode and the pop-ups setting, and is announced at once. */
   urgent?: boolean
+  /** An informative notice (someone declined or left): its words, and the Stanley message it acknowledges. It stays until Got it. */
+  title?: string
+  body?: string
+  messageId?: string
 }
 
 export interface Arrivals { requests: number; messages: number }
@@ -60,6 +62,13 @@ export function chooseUrgentNotice(urgentIds: readonly string[], conversations: 
   const c = newest(conversations.filter((x) => urgentIds.includes(x.id)).map((x) => ({ ...x, at: x.last?.at ?? x.at })))
   if (!c) return null
   return { key: `urgent:${c.id}`, kind: 'message', name: c.last?.fromName || c.name, count: Math.max(1, urgentIds.length), requestId: null, conversationId: c.id, urgent: true }
+}
+
+/** The informative notice for the newest chat event in the Stanley thread that is still waiting for Got it (someone declined, left a group or a personal chat), or null when there is none. */
+export function chooseInfoNotice(conversationId: string, messages: readonly ChatMessage[]): ChatNotice | null {
+  const m = messages.filter((x) => x.notice?.kind === 'chatEvent' && x.acked === false && !x.deleted && !x.notice.superseded).reduce<ChatMessage | null>((best, x) => (!best || x.at > best.at ? x : best), null)
+  if (!m) return null
+  return { key: `info:${m.id}`, kind: 'info', name: '', count: 1, requestId: null, conversationId, title: noticeHeadline(m.text), body: noticeBody(m.text), messageId: m.id }
 }
 
 const request = (c: ChatConnection, canAccept: boolean): ChatNotice =>

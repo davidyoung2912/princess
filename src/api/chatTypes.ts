@@ -42,6 +42,8 @@ export type ChatUrgency = 'normal' | 'important' | 'urgent'
 export interface ChatSummary {
   incoming: number; approvals: number; answers: number; newlyConnected: number; unread: number
   urgentUnacked: number; urgentConversations: string[]
+  /** Chat events (someone declined, left a group or a personal chat) waiting in the Stanley thread for Got it. Absent from an older server. */
+  infoNotices?: number
 }
 
 /** One-tap do not disturb: when it ends (milliseconds), or 0 when it is off. It ends by itself and follows the guest across devices. */
@@ -418,6 +420,8 @@ export interface ChatConversationsApi {
   remove(id: string, messageId: string): Promise<void>
   /** You are typing. Quiet on failure; the server sends at most one nudge in three seconds and does nothing when you have the indicator off. */
   typing(id: string): Promise<void>
+  /** You gave up on the message (cleared the box or left): the others' dots stop at once. Quiet on failure. */
+  typingStop(id: string): Promise<void>
   /** Who is typing here now (first name and last initial); empty when you have the indicator off. */
   typingNow(id: string): Promise<string[]>
   /** Reports a person from the header, filed against their newest message you can read. Rejects `invalid` (`badReason`, `notInChat`) or `notFound` when they have said nothing. */

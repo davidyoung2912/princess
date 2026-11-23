@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import type { ChatSummary } from '../api/chatTypes'
-import { arrivals, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyUrgent, type ChatNotice } from '../domain/chatNotice'
+import { arrivals, chooseInfoNotice, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyUrgent, type ChatNotice } from '../domain/chatNotice'
 import { api } from '../runtime'
 import { useChatDnd } from './useChatDnd'
 import { useSettings } from './useSettings'
@@ -38,8 +38,24 @@ export function useChatNotice(summary: ChatSummary | null): { notice: ChatNotice
     if (!urgentIds || urgentIds.length === 0) { setUrgent(null); return }
     void api.chatConversations.list().then((rows) => { if (urgentKey.current === key) setUrgent(chooseUrgentNotice(urgentIds, rows)) }, () => { urgentKey.current = '' })
   }, [urgentIds])
-  const close = useCallback(() => { setUrgent(null); setNotice(null) }, [])
+  // A chat event (someone declined, left a group or a personal chat) stays until Got it. The summary says how many wait; the Stanley thread has the words.
+  const [info, setInfo] = useState<ChatNotice | null>(null)
+  const infoCount = summary?.infoNotices ?? 0
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- the summary is the external state: nothing waiting means the popup goes
+    if (infoCount === 0) { setInfo(null); return }
+    let live = true
+    void api.chatConversations.list().then(async (rows) => {
+      const stanley = rows.find((r) => r.kind === 'stanley')
+      if (!stanley) return
+      const th = await api.chatConversations.thread(stanley.id)
+      if (live) setInfo(chooseInfoNotice(stanley.id, th.messages))
+    }, () => undefined)
+    return () => { live = false }
+  }, [infoCount])
+  const close = useCallback(() => { setUrgent(null); setNotice(null); setInfo(null) }, [])
   const showing = mayNotify({ popups: settings.chatPopups, calm: settings.calm, path: pathname, dnd })
   if (urgent && mayNotifyUrgent(pathname)) return { notice: urgent, close }
+  if (info && showing) return { notice: info, close }
   return { notice: showing ? notice : null, close }
 }

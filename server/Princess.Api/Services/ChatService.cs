@@ -533,7 +533,16 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     public async Task DeleteAsync(UserRecord actor, Guid conversationId, Guid messageId, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
-        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
+        if (ChatConversationRules.IsPermanent(member.Kind))
+        {
+            // The Stanley thread is the guest's own inbox: they may remove any message in it (Stanley's, a notice, or their own question), whenever they like. Only their copy goes.
+            var own = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
+            if (own.IsSystem) throw ApiException.Invalid(ChatControlRules.NotMessage);
+            if (own.DeletedAt is not null) return;
+            await store.DeleteStanleyMessageAsync(member.GroupId, own.Id, await userClock.NowAsync(actor, ct), ct);
+            await TellThreadChangedAsync(actor, member, "deleted", ct);
+            return;
+        }
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
         var now = await userClock.NowAsync(actor, ct);
@@ -577,6 +586,21 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (member.Status != ChatConversationRules.Active || ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) return;
         if (!(await store.GetTypingAsync(actor.Id, ct))) return;
         if (!typing.Touch(member.GroupId, actor.Id, DateTime.UtcNow)) return;
+        var recipients = (await store.ListRecipientsAsync(member.GroupId, actor.Id, ct)).Where(r => r.Typing).Select(r => r.UserId).ToList();
+        var ashore = recipients.Count == 0 ? new HashSet<long>() : await sms.AshoreAsync(recipients, ct);
+        await Task.WhenAll(recipients.Where(id => !ashore.Contains(id)).Select(id => notifier.ThreadChangedAsync(id, conversationId, "typing", ct)));
+    }
+
+    /// <summary>
+    /// The caller gave up on the message (cleared the box or left): they stop showing as typing, and the other members' open apps are nudged so the dots go at once instead of fading after six seconds. Nothing
+    /// happens in a room or a permanent chat, or when the caller has the indicator off. 404 not a member.
+    /// </summary>
+    public async Task StopTypingAsync(UserRecord actor, Guid conversationId, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind) || ChatRoomRules.IsRoomKind(member.Kind)) return;
+        typing.Clear(member.GroupId, actor.Id);
+        if (!(await store.GetTypingAsync(actor.Id, ct))) return;
         var recipients = (await store.ListRecipientsAsync(member.GroupId, actor.Id, ct)).Where(r => r.Typing).Select(r => r.UserId).ToList();
         var ashore = recipients.Count == 0 ? new HashSet<long>() : await sms.AshoreAsync(recipients, ct);
         await Task.WhenAll(recipients.Where(id => !ashore.Contains(id)).Select(id => notifier.ThreadChangedAsync(id, conversationId, "typing", ct)));

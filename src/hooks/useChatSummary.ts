@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { ChatSummary } from '../api/chatTypes'
 import { API_URL, api, auth } from '../runtime'
 import { startVisibleInterval } from './visibleInterval'
@@ -6,7 +6,7 @@ import { requestsWaiting, shouldAck } from '../domain/chatNotice'
 import { closeSettledChatNotices } from '../push/browser'
 import { createHubConnection, hubUrl, type HubState } from '../realtime/hubClient'
 import { coalesce } from '../domain/coalesce'
-import { typingEventConversation } from '../domain/chatControl'
+import { TYPING_EXPIRE_MS, typingEventConversation } from '../domain/chatControl'
 
 const CHANGED = 'princess:chat-changed'
 const LIVE = 'princess:chat-live'
@@ -48,6 +48,33 @@ export function useChatTyping(onTyping: (conversationHex: string) => void): void
     return () => window.removeEventListener(TYPING, run)
   }, [])
 }
+
+// ---- Who is typing where, for the conversation cards and the Chat icon (never stored) ----
+// A typing nudge says only "someone is typing in this conversation". The names are asked for, and an empty answer (they stopped, or sent) takes the dots away.
+let typingMap: ReadonlyMap<string, readonly string[]> = new Map()
+const typingTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const typingSubs = new Set<() => void>()
+const setTypingIn = (hex: string, names: readonly string[]): void => {
+  const next = new Map(typingMap)
+  const old = typingTimers.get(hex)
+  if (old) clearTimeout(old)
+  if (names.length === 0) { next.delete(hex); typingTimers.delete(hex) }
+  else { next.set(hex, names); typingTimers.set(hex, setTimeout(() => setTypingIn(hex, []), TYPING_EXPIRE_MS)) }
+  typingMap = next
+  typingSubs.forEach((f) => f())
+}
+const askTyping = (hex: string): void => { api.chatConversations.typingNow(hex).then((names) => setTypingIn(hex, names), () => undefined) }
+function subscribeTyping(notify: () => void): () => void {
+  typingSubs.add(notify)
+  const onTyping = (e: Event) => { const hex = (e as CustomEvent<string>).detail; if (typeof hex === 'string') askTyping(hex) }
+  // Any other change (a message arriving ends "is typing") re-asks about the conversations still showing dots.
+  const onLive = () => { typingMap.forEach((_, hex) => askTyping(hex)) }
+  window.addEventListener(TYPING, onTyping)
+  window.addEventListener(LIVE, onLive)
+  return () => { typingSubs.delete(notify); window.removeEventListener(TYPING, onTyping); window.removeEventListener(LIVE, onLive) }
+}
+/** Who is typing, by conversation (32 hex digits), for every conversation the guest has an open app nudge about. Empty when nobody is. */
+export const useTypingConversations = (): ReadonlyMap<string, readonly string[]> => useSyncExternalStore(subscribeTyping, () => typingMap, () => typingMap)
 
 /**
  * The numbers for the Chat tab badge, from the server so they match on every device. Loaded on launch, when the app comes back to the front, after an action,

@@ -16,8 +16,8 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     {
         await eligibility.RequirePeopleAsync(actor, ct);
         var clean = ChatConnectionRules.CleanQuery(query) ?? throw ApiException.Invalid("query");
-        var byEmail = ChatConnectionRules.IsEmail(clean);
-        var people = await store.FindPeopleAsync(actor.Id, byEmail ? null : clean, null, ChatConnectionRules.MaxResults, ct, byEmail ? clean : null);
+        // Only a whole chat nickname or a whole username finds a guest (never an email address, a last name or part of a name), and only a guest who allows being found.
+        var people = ChatConnectionRules.IsEmail(clean) ? [] : await store.FindPeopleAsync(actor.Id, clean, null, ChatConnectionRules.MaxResults, ct);
         var list = new List<ChatPersonDto>();
         foreach (var p in people)
         {
@@ -101,7 +101,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         var invites = await groups.ListInvitesForAsync(actor.Id, ct);
         var forChild = invites.Count(i => i.GuardianUserId == actor.Id && i.Status == ChatGroupRules.AwaitingGuardian);
         var urgent = await chat.ListUnackedUrgentAsync(actor.Id, ct);
-        return new(l.Incoming.Count + invites.Count - forChild, l.Approvals.Count + forChild, l.Answers.Count + await groups.CountAnswersAsync(actor.Id, ct), l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct), urgent.Count, [.. urgent.Select(u => u.ConversationId).Distinct()]);
+        return new(l.Incoming.Count + invites.Count - forChild, l.Approvals.Count + forChild, l.Answers.Count + await groups.CountAnswersAsync(actor.Id, ct), l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct), urgent.Count, [.. urgent.Select(u => u.ConversationId).Distinct()], await chat.CountUnackedEventsAsync(actor.Id, ct));
     }
 
     /// <summary>The sender has seen the answers (declines, and new connections).</summary>
@@ -169,7 +169,9 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     {
         if (await users.FindByIdAsync(row.RequesterId, ct) is not { } requester) return;
         var name = ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast);
-        await stanleyThread.TellAsync(requester, ChatConnectionRules.NoticeKey("declinedThread", row.PublicId), "Chat request declined", ChatStanleyVoice.Declined(name), now, ct);
+        var key = ChatConnectionRules.NoticeKey("declinedThread", row.PublicId);
+        await stanleyThread.TellAsync(requester, key, "Chat request declined", ChatStanleyVoice.Declined(name), now, ct);
+        await notifier.InfoAsync(requester.Id, key, "Chat request declined", ChatStanleyVoice.Declined(name), ct, phone: false);   // DeclinedAsync has already sent the phone alert
         // The Stanley message is how the sender hears of it, so the Chat badge does not also count the same answer until a page that clears it is opened.
         await store.MarkAnswerSeenAsync(row.Id, now, ct);
     }
@@ -228,8 +230,18 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         }
 
         // The person themself, or their guardian for a child, says yes: they can now chat.
-        if (await store.AcceptAsync(row.Id, now, ct) is null) throw ApiException.Conflict("answered");
+        var chatId = await store.AcceptAsync(row.Id, now, ct) ?? throw ApiException.Conflict("answered");
         await notifier.AcceptedAsync(row.RequesterId, row.PublicId, ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast), ct);
+        // The person who said yes (not a guardian answering for a child, and never where a child is one of the two) is thanked by Stanley inside the new chat.
+        if (asTarget && !row.RequesterSupervised && !row.TargetSupervised)
+        {
+            try
+            {
+                if (await chat.GetMemberAsync(actor.Id, chatId, ct) is { } member)
+                    await chat.AddGroupStanleyMessageAsync(member.GroupId, ChatHostRules.AcceptThanks(ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast)), false, now, ct);
+            }
+            catch (Exception e) when (e is not OperationCanceledException) { }
+        }
         return Answer(actor.Id, (await store.GetAsync(id, ct))!);
     }
 
@@ -257,7 +269,10 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         if (actor.Id == row.TargetId && await users.FindByIdAsync(row.RequesterId, ct) is { } leader)
         {
             var who = ChatConnectionRules.ShortName(row.TargetFirst, row.TargetLast);
-            await stanleyThread.TellAsync(leader, ChatConnectionRules.NoticeKey("personalLeft", row.PublicId), "Personal chat ended", $"{who} left your personal chat, so it has been removed.", await clock.NowAsync(actor, ct), ct);
+            var key = ChatConnectionRules.NoticeKey("personalLeft", row.PublicId);
+            var body = $"{who} left your personal chat, so it has been removed.";
+            await stanleyThread.TellAsync(leader, key, "Personal chat ended", body, await clock.NowAsync(actor, ct), ct);
+            await notifier.InfoAsync(leader.Id, key, "Personal chat ended", body, ct, phone: false);   // PersonalChatEndedAsync has already sent the phone alert
         }
     }
 

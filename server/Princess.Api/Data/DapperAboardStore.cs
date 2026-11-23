@@ -620,10 +620,10 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
                    (SELECT MAX(x.[At]) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId = me.UserId) AS LastMineAt,
                    (SELECT MAX(x.[At]) FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.IsSystem = 0 AND x.DeletedAt IS NULL AND x.FromUserId IS NOT NULL AND x.FromUserId <> me.UserId) AS LastTheirsAt,
                    (SELECT COUNT(*) FROM dbo.ChatMessages m
-                    WHERE m.GroupId = g.Id AND m.IsSystem = 0 AND ISNULL(m.FromUserId, 0) <> me.UserId AND NOT (m.FromUserId IS NULL AND g.Kind <> 'stanley' AND me.StanleyMuted = 1) AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}) AS Unread
+                    WHERE m.GroupId = g.Id AND m.IsSystem = 0 AND ISNULL(m.FromUserId, 0) <> me.UserId AND NOT (m.FromUserId IS NULL AND g.Kind <> 'stanley' AND me.StanleyMuted = 1) AND (g.Kind <> 'stanley' OR m.DeletedAt IS NULL) AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}) AS Unread
             FROM dbo.ChatGroupMembers me
             JOIN dbo.ChatGroups g ON g.Id = me.GroupId
-            OUTER APPLY (SELECT TOP 1 m.Id, m.FromUserId, m.[Text], m.Photo, m.[At], m.Urgency, m.DeletedAt FROM dbo.ChatMessages m WHERE m.GroupId = g.Id AND (g.Kind <> 'stanley' OR m.IsSystem = 0) AND {Window} ORDER BY m.Id DESC) lm
+            OUTER APPLY (SELECT TOP 1 m.Id, m.FromUserId, m.[Text], m.Photo, m.[At], m.Urgency, m.DeletedAt FROM dbo.ChatMessages m WHERE m.GroupId = g.Id AND (g.Kind <> 'stanley' OR (m.IsSystem = 0 AND m.DeletedAt IS NULL)) AND {Window} ORDER BY m.Id DESC) lm
             OUTER APPLY (SELECT TOP 1 x.Persona, x.Subtitle FROM dbo.ChatMessages x WHERE g.Kind = 'stanley' AND x.GroupId = g.Id AND x.Persona IS NOT NULL ORDER BY x.Id DESC) sp
             WHERE me.UserId = @userId AND me.Status = 'active'
             ORDER BY CASE WHEN g.Kind = 'stanley' THEN 0 ELSE 1 END, ISNULL(lm.[At], g.CreatedAt) DESC, g.Id DESC
@@ -861,6 +861,26 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             UPDATE dbo.ChatMessages SET OriginalText = ISNULL(OriginalText, [Text]), [Text] = N'', DeletedAt = @at
             WHERE Id = @messageId AND FromUserId = @userId AND DeletedAt IS NULL AND IsSystem = 0 AND [At] >= @windowStart
             """, new { messageId, userId, at, windowStart }, null, ct)) > 0;
+    }
+
+    public async Task<int> CountUnackedEventsAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<int>(Sql.Cmd("""
+            SELECT COUNT(*)
+            FROM dbo.ChatGroups g
+            JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId AND me.Status = 'active'
+            JOIN dbo.ChatMessages m ON m.GroupId = g.Id
+            WHERE g.Kind = 'stanley' AND m.NoticeKind = 'chatEvent' AND m.Urgency = 'important' AND m.DeletedAt IS NULL AND m.SupersededAt IS NULL
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatMessageAcks a WHERE a.MessageId = m.Id AND a.UserId = @userId)
+            """, new { userId }, null, ct));
+    }
+
+    public async Task<bool> DeleteStanleyMessageAsync(long groupId, long messageId, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd(
+            "UPDATE dbo.ChatMessages SET [Text] = N'', Photo = NULL, DeletedAt = @at WHERE Id = @messageId AND GroupId = @groupId AND DeletedAt IS NULL AND IsSystem = 0", new { groupId, messageId, at }, null, ct)) > 0;
     }
 
     public async Task<int> CountSentInAsync(long groupId, long userId, DateTime since, CancellationToken ct)
@@ -1130,7 +1150,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             FROM dbo.ChatGroupMembers me
             JOIN dbo.ChatGroups g ON g.Id = me.GroupId
             JOIN dbo.ChatMessages m ON m.GroupId = g.Id
-            WHERE me.UserId = @userId AND me.Status = 'active' AND m.IsSystem = 0 AND ISNULL(m.FromUserId, 0) <> me.UserId AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}
+            WHERE me.UserId = @userId AND me.Status = 'active' AND m.IsSystem = 0 AND ISNULL(m.FromUserId, 0) <> me.UserId AND (g.Kind <> 'stanley' OR m.DeletedAt IS NULL) AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}
             """, new { userId }, null, ct));
     }
 

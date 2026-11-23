@@ -137,7 +137,7 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
         <ol className="chat-log" aria-label={t('chat.log')}>
           {th.messages.map((m) => (
             <li key={m.id} className={m.from === 'me' ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
-              <p className="chat-msg__meta"><strong>{m.from === 'me' ? t('chat.you') : m.crew}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+              <p className="chat-msg__meta"><strong>{m.from === 'me' ? t('chat.you') : m.crew}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
               <p>{m.text}</p>
             </li>
           ))}

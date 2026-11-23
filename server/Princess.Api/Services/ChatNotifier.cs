@@ -108,6 +108,13 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     }
 
     /// <summary>
+    /// A plain event for the guest to read and acknowledge (a request was declined, someone left their chat group or personal chat). The same words are in their Stanley thread; this nudges an open app, which shows
+    /// them as a popup that stays until Got it, and sends the phone alert when no app answers (<paramref name="phone"/> false when another alert for the same event already does).
+    /// </summary>
+    public Task InfoAsync(long userId, string key, string title, string body, CancellationToken ct, bool phone = true) =>
+        Deliver(userId, "info", new PushNotice(key, "chatEvent", "chat", false, 45, "/chat", title, body, []), phone, ct);
+
+    /// <summary>
     /// The other person left a personal chat, so it is gone for both. Told at once like a deleted group (an open app drops it from its list and closes the thread), with words that fit a chat between two people. Nothing of what was said is named.
     /// </summary>
     public Task PersonalChatEndedAsync(long userId, Guid conversationId, CancellationToken ct) =>

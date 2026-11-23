@@ -106,7 +106,19 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var group = await CreatorGroupAsync(actor, id, ct);
         var members = await store.ListActiveAsync(group.Id, ct);
         await store.DeleteGroupAsync(group.Id, ct);
-        await Task.WhenAll(members.Where(m => m.UserId != actor.Id).Select(m => notifier.ChatEndedAsync(m.UserId, group.PublicId, group.Name, true, ct)));
+        var others = members.Where(m => m.UserId != actor.Id).ToList();
+        await Task.WhenAll(others.Select(m => notifier.ChatEndedAsync(m.UserId, group.PublicId, group.Name, true, ct)));
+        // Everyone is out at once, and each is told in words: a popup that stays until Got it, and a message in their Stanley chat to refer back to.
+        var leader = members.FirstOrDefault(m => m.UserId == actor.Id);
+        var now = await clock.NowAsync(actor, ct);
+        var body = $"{(leader is null ? "The leader" : Short(leader))} closed “{group.Name}”, so it has now been removed from your chats. Thank you for being part of the conversation!";
+        foreach (var m in others)
+        {
+            if (await users.FindByIdAsync(m.UserId, ct) is not { } member) continue;
+            var key = $"chat:groupEnded:{group.PublicId:N}:{m.UserId}";
+            await stanleyThread.TellAsync(member, key, "A chat group has ended", body, now, ct);
+            await notifier.InfoAsync(m.UserId, key, "A chat group has ended", body, ct, phone: false);   // ChatEndedAsync has already sent the phone alert
+        }
     }
 
     /// <summary>Anyone in the group can leave except its leader, who has to delete the group instead (403 leader). The others are told by a line in the thread and read nothing said after.</summary>
@@ -119,7 +131,12 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         if (!await store.RemoveMemberAsync(group.Id, actor.Id, "left", ChatGroupRules.LeftLine(Short(me)), now, ct)) throw ApiException.NotFound();
         // The leader's Stanley thread says who left. One message per leaving (a person who rejoins and leaves again is told again).
         if (group.CreatedByUserId is long leaderId && await users.FindByIdAsync(leaderId, ct) is { } leader)
-            await stanleyThread.TellAsync(leader, $"chat:left:{group.PublicId:N}:{actor.Id}:{now.Ticks}", "Someone left your chat group", $"{Short(me)} left “{group.Name}”.", now, ct);
+        {
+            var key = $"chat:left:{group.PublicId:N}:{actor.Id}:{now.Ticks}";
+            var body = $"{Short(me)} left “{group.Name}”.";
+            await stanleyThread.TellAsync(leader, key, "Someone left your chat group", body, now, ct);
+            await notifier.InfoAsync(leaderId, key, "Someone left your chat group", body, ct);
+        }
     }
 
     /// <summary>Invitations waiting for the caller, and for children they are guardian of.</summary>
@@ -160,7 +177,22 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         if (result == "full") throw ApiException.Conflict("full");
         if (result is not null) throw ApiException.Conflict("answered");
         await notifier.GroupAnsweredAsync(row.InviterId, row.PublicId, who, row.GroupName, true, ct);
+        // The person who said yes (not a guardian answering for a child) is thanked by Stanley inside the group they joined.
+        if (asInvitee) await ThanksAsync(row.GroupId, who, now, ct);
         await WelcomeAsync(row.GroupId, row.GroupName, now, ct);
+    }
+
+    /// <summary>Stanley's thank-you in the group, as his own message. Held back in the same cases as his welcome: no child in the group, his help off there, or his chat route switched off. A failure never undoes the join.</summary>
+    private async Task ThanksAsync(long groupId, string who, DateTime now, CancellationToken ct)
+    {
+        if (!options.Value.Switches.Chat) return;
+        try
+        {
+            var members = await store.ListActiveAsync(groupId, ct);
+            if (members.Any(m => m.IsSupervised) || await stanley.IsOffAsync(groupId, ct)) return;
+            await chat.AddGroupStanleyMessageAsync(groupId, ChatHostRules.AcceptThanks(who), false, now, ct);
+        }
+        catch (Exception e) when (e is not OperationCanceledException) { }
     }
 
     /// <summary>

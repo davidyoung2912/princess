@@ -294,6 +294,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     edit: (id, messageId, text) => send('patch', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}`, { text }),
     remove: async (id, messageId) => { await send('delete', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}`) },
     typing: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/typing`) },
+    typingStop: async (id) => { await send('delete', `/me/chat/conversations/${seg(id)}/typing`) },
     typingNow: (id) => get(`/me/chat/conversations/${seg(id)}/typing`),
     reportPerson: async (id, personId, reason) => { await send('post', `/me/chat/conversations/${seg(id)}/people/${seg(personId)}/report`, { reason }) },
     notifyAway: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/notify-away`, { on }),

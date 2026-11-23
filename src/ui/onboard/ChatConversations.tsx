@@ -5,7 +5,7 @@ import stanleyPicture from '../../assets/stanley-small.png'
 import { useStanleyAsk, useStanleyBusy } from '../ai/useStanleyAsk'
 import { GroupStanleyPills } from '../ai/GroupStanleyPills'
 import { StanleyReply } from '../ai/StanleyReply'
-import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
+import { getStanleyThread, setStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, GroupStanley, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
@@ -30,7 +30,7 @@ import { ackedCount, announceMode, levelsFor, sortConversations, urgencyOf } fro
 import { clearChatCache, readCachedThread, readList, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
 import { MAX_PLAN_DAY } from '../../domain/nightsRules'
-import { chatChanged, fetchChatSummary, isChatLive, useChatLive, useChatTyping } from '../../hooks/useChatSummary'
+import { chatChanged, fetchChatSummary, isChatLive, useChatLive, useChatTyping, useTypingConversations } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
@@ -47,7 +47,7 @@ import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
-import { OctagonAlert, TriangleAlert } from '../icons'
+import { Depart, OctagonAlert, TriangleAlert } from '../icons'
 import { BellRing, Check, CircleCheck, EllipsisVertical, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, X, Footprints, type LucideIcon } from 'lucide-react'
 
 /** A small icon for each quick reply; the words are its label. */
@@ -57,7 +57,7 @@ import { ActionError } from '../account/parts'
 import { ClearDraft } from '../ClearDraft'
 import { BlockedList, DraftPhotos, MessageSafety, PhotoAttach, type StagedPhoto } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
-import { DeleteChat, GroupPage, NewGroupPage } from './ChatGroups'
+import { DeleteChat, GroupPage, LeaveChat, NewGroupPage } from './ChatGroups'
 import { LeavePersonalChat, NewPersonalChatPage } from './ChatPersonal'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
@@ -146,11 +146,13 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   useVisibleInterval(() => { if (!isChatLive()) load() }, 30_000)
   // The chat the guest is about to delete: only a group they started.
   const [deleting, setDeleting] = useState<ChatConversation | null>(null)
+  const [leaving, setLeaving] = useState<ChatConversation | null>(null)
   const nav = useNavigate()
   // A group is managed (people, invitations, leaving, deleting) on a page of its own.
   const manage = (c: ChatConversation) => { void nav(`/chat/c/${encodeURIComponent(c.id)}?manage=1`) }
   return (
     <section aria-labelledby="conv-h" data-tour="chat-groups">
+      {leaving && <LeaveChat chat={leaving} onClose={() => setLeaving(null)} onLeft={() => { setLeaving(null); load(); chatChanged() }} />}
       {deleting && <DeleteChat chat={deleting} onClose={() => setDeleting(null)} onDeleted={() => { setDeleting(null); load(); chatChanged() }} />}
       <h2 id="conv-h">{heading('conv.title')}</h2>
       {failed && rows && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
@@ -161,13 +163,13 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
         return (
           <>
             <ul className="conv-list" aria-label={t('conv.title')}>
-              {shown.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} onManage={manage} onDelete={setDeleting} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
+              {shown.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} onManage={manage} onDelete={setDeleting} onLeave={setLeaving} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
             </ul>
             {archived.length > 0 && (
               <details className="conv-archived">
                 <summary>{headingCase(t('conv.archivedTitle', { count: archived.length }))}</summary>
                 <ul className="conv-list" aria-label={t('conv.archivedTitle', { count: archived.length })}>
-                  {archived.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} onManage={manage} onDelete={setDeleting} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
+                  {archived.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} onManage={manage} onDelete={setDeleting} onLeave={setLeaving} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
                 </ul>
               </details>
             )}
@@ -232,13 +234,17 @@ function ChatStats({ c, shipTime }: { c: ChatConversation; shipTime: (at: number
   return <span className="conv__stats muted">{lines.join(' · ')}</span>
 }
 
-function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, shipTime, now, keptDay }: { c: ChatConversation; urgentIds: readonly string[]; onOpen: (id: string) => void; onManage: (c: ChatConversation) => void; onDelete: (c: ChatConversation) => void; shipTime: (at: number) => string; now: number; keptDay: number | null }) {
+function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, onLeave, shipTime, now, keptDay }: { c: ChatConversation; urgentIds: readonly string[]; onOpen: (id: string) => void; onManage: (c: ChatConversation) => void; onDelete: (c: ChatConversation) => void; onLeave: (c: ChatConversation) => void; shipTime: (at: number) => string; now: number; keptDay: number | null }) {
+  const typingIn = useTypingConversations()
+  const typers = [...typingIn].find(([hex]) => isSameConversation(c.id, hex))?.[1] ?? []
+  // The leader of a group edits or deletes it; everyone else in a group or a personal chat can leave it (unless it has already ended for them).
+  const canLeave = !c.owner && !c.closed && !c.permanent && (c.kind === 'group' || c.kind === 'direct')
   const level: ChatUrgency = urgentIds.includes(c.id) ? 'urgent' : urgencyOf(c.last) === 'important' && c.unread > 0 && !c.last?.mine ? 'important' : 'normal'
   const muted = isMuted(c, now)
   const tags = [muted && (c.mutedUntil ? t('conv.mutedUntil', { time: shipTime(c.mutedUntil) }) : t('conv.muted')), c.closed && t('conv.closed'), keptDay !== null && t('keep.tag', { date: keepDate(keptDay) })].filter(Boolean)
   return (
     <li className="conv-item">
-      <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`, c.owner && 'conv--tools'].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
+      <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`, (c.owner || canLeave) && 'conv--tools'].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
         {isStanleyChat(c)
           ? <img className="conv__avatar conv__avatar--stanley" src={stanleyPicture} alt="" width="44" height="44" />
           : c.ownerName ? <ChatAvatar avatar={c.ownerAvatar} name={c.ownerName} /> : <ChatAvatar avatar={c.avatar} name={c.name} />}
@@ -249,7 +255,9 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, shipTime, 
             {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
           </span>
           {level !== 'normal' && <UrgencyTag level={level} />}
-          <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>
+          {typers.length > 0
+            ? <span className="conv__last conv__typing" role="status"><span className="chat-typing__dots chat-typing__dots--small" aria-hidden="true"><i /><i /><i /></span><span className="muted">{typingText(typers)}</span></span>
+            : <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>}
           {tags.length > 0 && <span className="conv__tags muted">{tags.join(' · ')}</span>}
           {!c.permanent && c.kind !== 'stanley' && !c.room && <ChatStats c={c} shipTime={shipTime} />}
         </span>
@@ -260,6 +268,11 @@ function ConversationItem({ c, urgentIds, onOpen, onManage, onDelete, shipTime, 
           </span>
         )}
       </button>
+      {canLeave && (
+        <span className="conv__tools" role="group" aria-label={t('conv.tools.label', { name: c.name })}>
+          <button type="button" className="conv__tool conv__tool--danger" onClick={() => onLeave(c)} aria-label={t('conv.tool.leave', { name: c.name })} title={t('conv.tool.leave', { name: c.name })}><Depart aria-hidden="true" /></button>
+        </span>
+      )}
       {c.owner && (
         <span className="conv__tools" role="group" aria-label={t('conv.tools.label', { name: c.name })}>
           <button type="button" className="conv__tool" onClick={() => onManage(c)} aria-label={t('conv.tool.edit', { name: c.name })} title={t('conv.tool.edit', { name: c.name })}><Pencil aria-hidden="true" /></button>
@@ -384,6 +397,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [emojiOk] = useState(() => typeof window !== 'undefined' && wantsEmojiPicker(!!window.matchMedia?.('(pointer: fine)').matches, !!window.matchMedia?.('(hover: hover)').matches))
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Leaving the chat with words in the box also ends "is typing".
+  useEffect(() => () => { if (typingSentAt.current !== null) { typingSentAt.current = null; api.chatConversations.typingStop(id).catch(() => undefined) } }, [id])
   const typersRef = useRef<string[]>([])
   const end = useRef<HTMLDivElement>(null)
   const lastSeen = useRef<string | null>(null)
@@ -807,7 +822,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       <div ref={top} />
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {permanent
-          ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onChanged={runChanged} onBlocked={onBlocked} />
+          ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onChanged={runChanged} onBlocked={onBlocked} onDelete={runRemove} />
           : shownMessages.map((m, at) => (
             <Fragment key={m.id}>
               {m.id === dividerId && <li id="chat-unread" className="chat-divider" tabIndex={-1} aria-label={t('conv.newMessagesDivider')}><span>{t('conv.newMessagesDivider')}</span></li>}
@@ -856,6 +871,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
               if (problem) setProblem(null)
               // Tell the others, at most every three seconds, only while there is something written and the guest has the indicator on.
               const tick = Date.now()
+              // Gave up on the message (box cleared): the others' dots stop now, and start again when they type again.
+              if (typingOn && !room && !e.target.value.trim() && typingSentAt.current !== null) { typingSentAt.current = null; api.chatConversations.typingStop(id).catch(() => undefined) }
               if (typingOn && !room && e.target.value.trim() && shouldSendTyping(typingSentAt.current, tick)) { typingSentAt.current = tick; api.chatConversations.typing(id).catch(() => { typingSentAt.current = null }) }
             }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } else if (e.key === 'Escape' && typedMention) { e.preventDefault(); setMentionOff(true) } }}
@@ -943,23 +960,24 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
  * The permanent Stanley chat's log: the notices and lines the server holds, and the questions and answers held on this device, in time order. A second device shows the notices only.
  * The device's history is the Ask dialog's, so a question asked there appears here and the other way round.
  */
-function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck, onChanged, onBlocked }: {
-  messages: ChatMessage[]; mine: string; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onChanged: () => void; onBlocked: () => void
+function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck, onChanged, onBlocked, onDelete }: {
+  messages: ChatMessage[]; mine: string; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onChanged: () => void; onBlocked: () => void; onDelete: (messageId: string) => Promise<void>
 }) {
   const device = useSyncExternalStore(subscribeStanley, getStanleyThread)
   const waiting = useStanleyBusy()
   // The server's "I'm now speaking for ..." lines are left out: the cards no longer name the ship, so a change of voice needs no marker.
-  const items = threadItems(messages.filter((m) => !m.system), device)
+  const items = threadItems(messages.filter((m) => !m.system && !m.deleted), device)
   const dots = waiting ? <li key="waiting" className="chat-msg chat-msg--answer"><p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /><strong>{t('stanley.chat.reply')}</strong></p><p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p></li> : null
   const rows = items.map((item, i) => {
     const heading = startsDay(items, i) ? <li key={`h:${item.key}`} className="chat-day"><h3>{new Date(item.at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h3></li> : null
     const row = ((): ReactNode => {
-    if (item.kind === 'server') return <MessageRow key={item.key} m={item.message} mine={mine} shipTime={shipTime} conversationId={conversationId} kind="stanley" peerName="" ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} />
+    if (item.kind === 'server') return <MessageRow key={item.key} m={item.message} mine={mine} shipTime={shipTime} conversationId={conversationId} kind="stanley" peerName="" ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} onDelete={onDelete} />
     const asked = item.kind === 'question'
     return (
       <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg chat-msg--answer'}>
-        <p className="chat-msg__meta">{asked ? <MyChatAvatar small /> : <GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace>}<strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.reply')}</strong> <span className="muted">{shipTime(item.at)}</span></p>
+        <p className="chat-msg__meta">{asked ? <MyChatAvatar small /> : <GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace>}<strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.reply')}</strong> <span className="muted chat-msg__time">{shipTime(item.at)}</span></p>
         {asked ? <p>{item.text}</p> : <StanleyReply m={item.turn} />}
+        <DeleteStanleyMessage onDelete={async () => setStanleyThread(getStanleyThread().filter((x) => x.id !== item.key.slice(2)))} />
       </li>
     )
     })()
@@ -1074,8 +1092,33 @@ interface MessageRowProps {
   ask?: string | null
 }
 
+/**
+ * The delete control on a card in the Stanley chat: a small trash icon that asks once (Delete or Keep it) and then removes the message from this guest's thread. The thread is theirs alone,
+ * so nothing is deleted for anyone else. A failure is said on the card and nothing is removed.
+ */
+function DeleteStanleyMessage({ onDelete }: { onDelete: () => Promise<void> }) {
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const run = async () => {
+    setBusy(true)
+    setFailed(false)
+    try { await onDelete() } catch { setFailed(true); setBusy(false); return }
+    setBusy(false)
+  }
+  if (!asking) return <p className="chat-msg__tools"><button type="button" className="chat-act chat-act--icon" aria-label={t('stanley.chat.delete')} title={t('stanley.chat.delete')} onClick={() => setAsking(true)}><Trash2 aria-hidden="true" /></button></p>
+  return (
+    <div className="chat-msg__tools" role="group" aria-label={t('stanley.chat.deleteAsk')}>
+      <span className="muted">{t('stanley.chat.deleteAsk')}</span>
+      <Button variant="secondary" disabled={busy} onClick={() => void run()}>{t('stanley.chat.deleteYes')}</Button>
+      <Button variant="tertiary" disabled={busy} onClick={() => { setAsking(false); setFailed(false) }}>{t('stanley.chat.deleteNo')}</Button>
+      {failed && <span role="alert" className="field__error">{t('stanley.chat.deleteFailed')}</span>}
+    </div>
+  )
+}
+
 /** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
-function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }: { m: ChatMessage; n: NonNullable<ChatMessage['notice']>; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onChanged?: () => void }) {
+function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged, onDelete }: { m: ChatMessage; n: NonNullable<ChatMessage['notice']>; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onChanged?: () => void; onDelete?: (messageId: string) => Promise<void> }) {
   const now = useNow()
   // Its lane in words (never by colour alone), the text, why it may no longer apply, a link into the app and Got it where it asks for one.
   const state = noticeState(m, now)
@@ -1084,7 +1127,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
   return (
     <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}${m.acked === true ? ' chat-msg--seen' : ''}`}>
       {m.acked !== true && <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>}
-      <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+      <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
       <p><strong>{noticeHeadline(m.text)}</strong></p>
       {body && <p>{body}</p>}
       {state !== 'active' && <p className="muted">{t(state === 'superseded' ? (n.lane === 'suggestion' ? 'stanley.moment.putAway' : 'stanley.notice.superseded') : 'stanley.notice.expired')}</p>}
@@ -1092,6 +1135,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
       {state === 'active' && onChanged && n.lane === 'suggestion' && <MomentButtons m={m} conversationId={conversationId} onChanged={onChanged} />}
       {state === 'active' && onChanged && <ChatNoticeOffers m={m} conversationId={conversationId} onChanged={onChanged} />}
       {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
+      {onDelete && <DeleteStanleyMessage onDelete={() => onDelete(m.id)} />}
     </li>
   )
 }
@@ -1105,13 +1149,14 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     if (!n) {
       return (
         <li className="chat-msg chat-msg--stanley">
-          <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+          <p className="chat-msg__meta"><GreetFace name="Stanley"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={28} height={28} /></GreetFace><strong>{t('stanley.chat.notification')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span></p>
           <p>{m.text}</p>
           {ask && <GroupStanleyPills question={ask} />}
+          {onDelete && kind === 'stanley' && <DeleteStanleyMessage onDelete={() => onDelete(m.id)} />}
         </li>
       )
     }
-    return <NoticeRow m={m} n={n} shipTime={shipTime} conversationId={conversationId} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} />
+    return <NoticeRow m={m} n={n} shipTime={shipTime} conversationId={conversationId} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onDelete={kind === 'stanley' ? onDelete : undefined} />
   }
   if (m.deleted) {
     // Deleted for everyone: the fact and who and when, nothing of what it said.
@@ -1143,7 +1188,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
     <li id={`msg-${m.id}`} tabIndex={-1} {...press} className={['chat-msg', own && 'chat-msg--mine', m.mentionsYou && 'chat-msg--mention', m.pinned && 'chat-msg--pinned', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
       {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} onJump={onJump} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
-      <p className="chat-msg__meta">{own ? <MyChatAvatar small /> : <GreetFace name={m.fromName ?? ''}><ChatAvatar avatar={m.avatar} name={m.fromName ?? ''} small /></GreetFace>}<strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
+      <p className="chat-msg__meta">{own ? <MyChatAvatar small /> : <GreetFace name={m.fromName ?? ''}><ChatAvatar avatar={m.avatar} name={m.fromName ?? ''} small /></GreetFace>}<strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted chat-msg__time">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
       {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} held={held} onHold={onHold} />
         : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
@@ -1235,9 +1280,13 @@ function typingText(names: readonly string[]): string {
 function TypingLine({ names }: { names: readonly string[] }) {
   if (names.length === 0) return null
   return (
-    <div className="chat-typing">
-      <span className="chat-typing__dots" aria-hidden="true"><i /><i /><i /></span>
-      <span>{typingText(names)}</span>
+    <div className="chat-msg chat-typing-card">
+      <p className="chat-msg__meta">
+        {names.length === 1 && <ChatAvatar avatar={undefined} name={names[0]} small />}
+        <strong>{names.length === 1 ? names[0] : t('conv.typing.many')}</strong>
+        <span className="chat-typing__dots" aria-hidden="true"><i /><i /><i /></span>
+      </p>
+      <span className="visually-hidden">{typingText(names)}</span>
     </div>
   )
 }
