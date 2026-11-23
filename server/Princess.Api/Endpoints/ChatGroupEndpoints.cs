@@ -9,7 +9,7 @@ public static class ChatGroupEndpoints
 {
     public static void MapChatGroupEndpoints(this IEndpointRouteBuilder api)
     {
-        var chat = api.MapGroup("/me/chat").WithTags("Chat groups");
+        var chat = api.MapGroup("/me/chat").WithTags("Chat: groups");
 
         chat.MapPost("/groups", async (ChatGroupCreateBody body, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Makes a group from 2 to 24 people the caller is connected with, and invites each. The caller is the creator. 400 name|blocked|tooFew|tooMany|notConnected|noGuardian, 403 supervised (a child cannot make a group). Returns the group; its id is the conversation id.");

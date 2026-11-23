@@ -156,7 +156,7 @@ public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users,
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<HistoryRecord>(Sql.Cmd("""
-            SELECT h.PublicId, h.[At], ISNULL(p.FirstName, N'') AS [By], h.What, h.Detail
+            SELECT TOP (200) h.PublicId, h.[At], ISNULL(p.FirstName, N'') AS [By], h.What, h.Detail
             FROM dbo.HistoryEntries h LEFT JOIN dbo.Profiles p ON p.UserId = h.ByUserId
             WHERE h.UserId = @userId OR h.UserId IN (SELECT Id FROM dbo.Users WHERE BookerUserId = @userId)
             ORDER BY h.[At] DESC, h.Id DESC
@@ -390,7 +390,7 @@ public sealed class DapperInboxStore(IDbConnectionFactory db) : IInboxStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<TicketRow>(Sql.Cmd(
-            "SELECT PublicId, Kind, Status, Detail, [At] FROM dbo.SupportTickets WHERE UserId = @userId ORDER BY [At] DESC, Id DESC", new { userId }, null, ct))).ToList();
+            "SELECT TOP (200) PublicId, Kind, Status, Detail, [At] FROM dbo.SupportTickets WHERE UserId = @userId ORDER BY [At] DESC, Id DESC", new { userId }, null, ct))).ToList();
     }
 
     public async Task<TicketRow> AddTicketAsync(long userId, string kind, string detail, DateTime now, CancellationToken ct)
@@ -403,11 +403,12 @@ public sealed class DapperInboxStore(IDbConnectionFactory db) : IInboxStore
             """, new { userId, kind, detail, now }, null, ct));
     }
 
+    /// <summary>The caller's feedback rows. <c>Screenshot</c> is only a marker here (empty when one was attached): the list never reads the image data, which can be megabytes per row.</summary>
     public async Task<List<FeedbackRecord>> ListFeedbackAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<FeedbackRecord>(Sql.Cmd(
-            "SELECT PublicId, Kind, [Text], [Log] AS LogJson, Screenshot, Reference, [At] FROM dbo.Feedback WHERE UserId = @userId ORDER BY [At] DESC, Id DESC", new { userId }, null, ct))).ToList();
+            "SELECT TOP (200) PublicId, Kind, [Text], [Log] AS LogJson, CASE WHEN Screenshot IS NULL THEN NULL ELSE N'' END AS Screenshot, Reference, [At] FROM dbo.Feedback WHERE UserId = @userId ORDER BY [At] DESC, Id DESC", new { userId }, null, ct))).ToList();
     }
 
     public async Task AddFeedbackAsync(long userId, FeedbackRecord f, CancellationToken ct)

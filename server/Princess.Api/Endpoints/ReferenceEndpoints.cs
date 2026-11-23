@@ -11,7 +11,11 @@ public static class ReferenceEndpoints
 {
     public static void MapReferenceEndpoints(this IEndpointRouteBuilder api)
     {
-        api.MapGet("/rates", async (RateService rates, CancellationToken ct) => Results.Ok(await rates.CurrentAsync(ct)))
+        api.MapGet("/rates", async (RateService rates, HttpContext http, CancellationToken ct) =>
+            {
+                http.Response.Headers.CacheControl = "public, max-age=300";   // the same for every device, and it only moves when the source does
+                return Results.Ok(await rates.CurrentAsync(ct));
+            })
             .WithTags("Reference").WithSummary("Exchange rates per US dollar, the same for every device, with the date they are from (`asOf`). The source is chosen by configuration (`Providers:Rates`, a stub by default) and is asked at most every six hours; when it cannot answer, the last table it gave is kept with its own older date. For reading only: the account is charged in US dollars.");
 
         api.MapGet("/reference/access", () => Results.Ok(ReferenceRules.Access()))

@@ -31,17 +31,29 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
     public async Task<int> SailingDaysAsync(UserRecord actor, CancellationToken ct) =>
         await CurrentAsync(actor, ct) is { } booking ? TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure)).Days.Count : 0;
 
-    /// <summary>Phase B5: the indexes of the slots that overlap something on the guest's own programme. Computed for the reader only; the poll never stores or shows anyone's clashes to others.</summary>
-    public async Task<List<int>> SlotClashesAsync(UserRecord actor, IReadOnlyList<string> slots, CancellationToken ct)
+    /// <summary>Phase B5: what is on the guest's own programme, as (day, start, minutes), so a thread with several polls and boards reads it once. Empty without a current booking.</summary>
+    public async Task<IReadOnlyList<(int Day, string Start, int Minutes)>> BusyAsync(UserRecord actor, CancellationToken ct)
     {
-        var result = new List<int>();
-        if (onboard is null || await CurrentAsync(actor, ct) is not { } booking) return result;
         var busy = new List<(int, string, int)>();
+        if (onboard is null || await CurrentAsync(actor, ct) is not { } booking) return busy;
         foreach (var row in await onboard.ListPlanAsync(actor.Id, booking.SailingId, ct))
             if (ProgramRules.ById(row.EventId, AboardPlans.ShipOfSailing(booking.SailingId)) is { } ev) busy.Add((row.Day, ev.Start, ev.Minutes));
-        for (var i = 0; i < slots.Count; i++) if (ChatPlanningRules.SlotClashes(slots[i], busy)) result.Add(i);
+        return busy;
+    }
+
+    /// <summary>The indexes of the slots that overlap something in <paramref name="busy"/>.</summary>
+    public static List<int> ClashesAmong(IReadOnlyList<(int Day, string Start, int Minutes)> busy, IReadOnlyList<string> slots)
+    {
+        var result = new List<int>();
+        if (busy.Count == 0) return result;
+        var list = busy.Select(b => (b.Day, b.Start, b.Minutes)).ToList();
+        for (var i = 0; i < slots.Count; i++) if (ChatPlanningRules.SlotClashes(slots[i], list)) result.Add(i);
         return result;
     }
+
+    /// <summary>Phase B5: the indexes of the slots that overlap something on the guest's own programme. Computed for the reader only; the poll never stores or shows anyone's clashes to others.</summary>
+    public async Task<List<int>> SlotClashesAsync(UserRecord actor, IReadOnlyList<string> slots, CancellationToken ct) =>
+        ClashesAmong(await BusyAsync(actor, ct), slots);
 
     private static string Clock(TimeOnly t) => t.ToString("HH:mm");
 

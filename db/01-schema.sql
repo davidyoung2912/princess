@@ -624,7 +624,7 @@ CREATE TABLE dbo.Profiles (
   CONSTRAINT CK_Profiles_Citizenship CHECK (Citizenship IN ('us','other')),
   CONSTRAINT CK_Profiles_Bedding CHECK (Bedding IN ('queen','twin','noPreference'))
 );
-CREATE INDEX IX_Profiles_PhoneTail ON dbo.Profiles (PhoneTail) INCLUDE (Phone) WHERE PhoneTail IS NOT NULL;
+CREATE INDEX IX_Profiles_PhoneTail ON dbo.Profiles (PhoneTail) INCLUDE (Phone);   -- not filtered: a filter cannot name a computed column (Msg 10609)
 END
 IF COL_LENGTH(N'dbo.Profiles', N'KeepOut') IS NULL ALTER TABLE dbo.Profiles ADD KeepOut VARCHAR(60) NOT NULL CONSTRAINT DF_Profiles_KeepOut DEFAULT '';
 -- Dish heads-ups (alcohol, raw, spicy) the guest wants flagged on menus, comma separated; all three are on for a new account.
@@ -2436,7 +2436,7 @@ CREATE TABLE dbo.ChatMessages (
   CONSTRAINT FK_ChatMessages_Users_From FOREIGN KEY (FromUserId) REFERENCES dbo.Users (Id)
 );
 CREATE INDEX IX_ChatMessages_GroupId_At ON dbo.ChatMessages (GroupId, [At]);
-CREATE INDEX IX_ChatMessages_FromUserId ON dbo.ChatMessages (FromUserId);
+CREATE INDEX IX_ChatMessages_FromUserId_At ON dbo.ChatMessages (FromUserId, [At]);   -- per-guest stats and "my messages" reads
 END
 
 IF OBJECT_ID(N'dbo.ChatReads', N'U') IS NULL

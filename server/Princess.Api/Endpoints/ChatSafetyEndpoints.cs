@@ -11,7 +11,7 @@ public static class ChatSafetyEndpoints
 {
     public static void MapChatSafetyEndpoints(this IEndpointRouteBuilder api)
     {
-        var chat = api.MapGroup("/me/chat/children").WithTags("Chat safety");
+        var chat = api.MapGroup("/me/chat/children").WithTags("Chat: safety");
 
         chat.MapGet("", async (ICurrentUser me, ChatSafetyService svc, CancellationToken ct) => Results.Ok(await svc.ChildrenAsync(await GuardianAsync(me, ct), ct)))
             .WithSummary("The supervised children the caller is the booker of (id and first name). No conversation is read. A child gets an empty list; a booker acting as a child is refused (403).");
@@ -29,7 +29,7 @@ public static class ChatSafetyEndpoints
         chat.MapPut("/{childId:guid}/conversations/{id:guid}/keep", async (Guid childId, Guid id, ChatKeepBody body, ICurrentUser me, ChatKeepService svc, CancellationToken ct) => Results.Ok(await svc.SetForChildAsync(await GuardianAsync(me, ct), childId, id, body, ct)))
             .WithSummary("The guardian agrees to keep the child's conversation, or takes it back. The chat is kept only when everyone in it has agreed. 403 stanley; 404; 409 closed|noTrip|tooLate. Returns the new state.");
 
-        var admin = api.MapGroup("/admin/chat/reports").WithTags("Chat safety");
+        var admin = api.MapGroup("/admin/chat/reports").WithTags("Chat: safety");
 
         admin.MapGet("", async (string? status, ICurrentUser me, ChatSafetyService svc, CancellationToken ct) => Results.Ok(await svc.ReportsAsync(await AdminAsync(me, ct), status, ct)))
             .WithSummary("Administrators only (403 otherwise): chat reports, oldest first. `status` is open (the default), dismissed or removed. No message text and no names.");

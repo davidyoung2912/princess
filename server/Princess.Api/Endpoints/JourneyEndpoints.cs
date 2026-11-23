@@ -53,9 +53,9 @@ public static class JourneyEndpoints
                 Results.Ok(await svc.RevokeHelperAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Ends the helper's access at once.");
 
-        api.MapGet("/me/history", async (ICurrentUser me, AccountService svc, CancellationToken ct) =>
-                Results.Ok(await svc.HistoryAsync(await me.LoadAsync(ct), ct)))
-            .WithTags("Account").WithSummary("Changes made to your record and your supervised children's, newest first.");
+        api.MapGet("/me/history", async (int? limit, ICurrentUser me, AccountService svc, CancellationToken ct) =>
+                Results.Ok(await svc.HistoryAsync(await me.LoadAsync(ct), ct, limit)))
+            .WithTags("Account").WithSummary("Changes made to your record and your supervised children's, newest first. `limit` (default 100, at most 200) keeps the newest.");
     }
 
     private static void MapTrips(IEndpointRouteBuilder api)
@@ -166,9 +166,9 @@ public static class JourneyEndpoints
                 Results.Ok(await svc.SavePrefsAsync(await me.LoadAsync(ct), body, ct)))
             .WithTags("Notifications").WithSummary("Saves channel and quiet-hours preferences; critical notices stay on.");
 
-        api.MapGet("/me/support-tickets", async (ICurrentUser me, InboxService svc, CancellationToken ct) =>
-                Results.Ok(await svc.TicketsAsync(await me.LoadAsync(ct), ct)))
-            .WithTags("Support").WithSummary("Your callback and email requests, newest first.");
+        api.MapGet("/me/support-tickets", async (int? limit, ICurrentUser me, InboxService svc, CancellationToken ct) =>
+                Results.Ok(await svc.TicketsAsync(await me.LoadAsync(ct), ct, limit)))
+            .WithTags("Support").WithSummary("Your callback and email requests, newest first. `limit` (default 100, at most 200) keeps the newest.");
 
         api.MapPost("/me/support-tickets", async (CreateTicketRequest body, ICurrentUser me, InboxService svc, CancellationToken ct) =>
                 Results.Ok(await svc.CreateTicketAsync(await me.LoadAsync(ct), body, ct)))
@@ -193,9 +193,9 @@ public static class JourneyEndpoints
         api.MapGet("/help/incidents", (IIncidentFeed feed) => Results.Ok(feed.Current()))
             .AllowAnonymous().WithTags("Help").WithSummary("Known problems with the service: `[{id, area, startedAt, message, resolvedAt}]`, newest first, declared by the operator (`Status:Incidents`). Resolved ones stay for a day.");
 
-        api.MapGet("/me/feedback", async (ICurrentUser me, InboxService svc, CancellationToken ct) =>
-                Results.Ok(await svc.FeedbackAsync(await me.LoadAsync(ct), ct)))
-            .WithTags("Feedback").WithSummary("Feedback you have sent.");
+        api.MapGet("/me/feedback", async (int? limit, ICurrentUser me, InboxService svc, CancellationToken ct) =>
+                Results.Ok(await svc.FeedbackAsync(await me.LoadAsync(ct), ct, limit)))
+            .WithTags("Feedback").WithSummary("Feedback you have sent, newest first. `limit` (default 100, at most 200) keeps the newest.");
 
         api.MapPost("/me/feedback", async (SendFeedbackRequest body, ICurrentUser me, InboxService svc, CancellationToken ct) =>
                 Results.Ok(await svc.SendFeedbackAsync(await me.LoadAsync(ct), body, ct)))

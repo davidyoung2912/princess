@@ -11,7 +11,7 @@ public static class ChatHostEndpoints
 {
     public static void MapChatHostEndpoints(this IEndpointRouteBuilder api)
     {
-        var h = api.MapGroup("/me/chat/host").WithTags("Chat host");
+        var h = api.MapGroup("/me/chat/host").WithTags("Chat: host");
 
         h.MapGet("/{id:guid}/meetups", async (Guid id, ICurrentUser me, ChatHostService svc, CancellationToken ct) => Results.Ok(await svc.ListMeetUpsAsync(await me.LoadAsync(ct), id, ct)))
             .WithSummary("The meet-ups of a room or made group, newest first, with how many are in and how many maybe, and the caller's own answer. A decline is never counted or shown.");
@@ -40,7 +40,7 @@ public static class ChatHostEndpoints
         h.MapPost("/messages/{messageId:guid}/flag", async (Guid messageId, ChatHostFlagBody body, ICurrentUser me, ChatHostService svc, CancellationToken ct) => { await svc.FlagAsync(await me.LoadAsync(ct), messageId, body, ct); return Results.NoContent(); })
             .WithSummary("Flags a post to staff (spam, unsafe, rude, other). Nothing happens to the post or the person until staff decide. 400 unknown; 403 supervised; 404; 429 limit (five a day).");
 
-        var admin = api.MapGroup("/admin/chat/host").WithTags("Chat host");
+        var admin = api.MapGroup("/admin/chat/host").WithTags("Chat: host");
 
         admin.MapGet("/flags", async (ICurrentUser me, ChatHostService svc, CancellationToken ct) => Results.Ok(await svc.ListFlagsAsync(await AdminAsync(me, ct), ct)))
             .WithSummary("Administrators only: flags waiting, oldest first, with the room, the post's id, the reason and when. Never the words.");

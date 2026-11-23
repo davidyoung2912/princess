@@ -61,6 +61,12 @@ public interface IChatHostStore
     /// <summary>Everyone's live opt-ins in one room, with whether each is an adult (profile date of birth, 18 or over) and supervised.</summary>
     Task<List<ChatIntroOptInRow>> ListLiveOptInsAsync(long groupId, DateTime now, CancellationToken ct);
     Task<bool> WereIntroducedAsync(long a, long b, CancellationToken ct);
+    /// <summary>How many introductions each of the people has had since the time (people with none are absent). One query for the whole room.</summary>
+    Task<Dictionary<long, int>> IntroducedCountsSinceAsync(IReadOnlyCollection<long> userIds, DateTime since, CancellationToken ct);
+    /// <summary>Every (blocker, blocked) pair among the people, in the direction it was set. One query for the whole room.</summary>
+    Task<HashSet<(long Blocker, long Blocked)>> BlockedAmongAsync(IReadOnlyCollection<long> userIds, CancellationToken ct);
+    /// <summary>Every pair among the people who have already been introduced, in both orders. One query for the whole room.</summary>
+    Task<HashSet<(long A, long B)>> IntroducedAmongAsync(IReadOnlyCollection<long> userIds, CancellationToken ct);
     /// <summary>Records the pair once and ends both opt-ins in the same transaction. False when the pair already exists or an opt-in was already ended (another request got there first).</summary>
     Task<bool> CreateIntroductionAsync(long a, long b, long groupId, string interest, DateTime now, CancellationToken ct);
     Task<Dictionary<long, (string First, string Last)>> NamesAsync(IReadOnlyCollection<long> userIds, CancellationToken ct);
@@ -171,6 +177,38 @@ public sealed class DapperChatHostStore(IDbConnectionFactory db) : IChatHostStor
             JOIN dbo.ChatGroupMembers m ON m.GroupId = o.GroupId AND m.UserId = o.UserId AND m.Status = 'active'
             WHERE o.GroupId = @groupId AND o.WithdrawnAt IS NULL AND o.EndsAt > @now
             """, new { groupId, now }, null, ct))).ToList();
+    }
+
+    public async Task<Dictionary<long, int>> IntroducedCountsSinceAsync(IReadOnlyCollection<long> userIds, DateTime since, CancellationToken ct)
+    {
+        if (userIds.Count == 0) return [];
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<(long UserId, int N)>(Sql.Cmd("""
+            SELECT u.UserId, COUNT(*) AS N
+            FROM dbo.ChatIntroductions i
+            CROSS APPLY (VALUES (i.UserLow), (i.UserHigh)) AS u (UserId)
+            WHERE u.UserId IN @userIds AND i.CreatedAt >= @since
+            GROUP BY u.UserId
+            """, new { userIds, since }, null, ct));
+        return rows.ToDictionary(r => r.UserId, r => r.N);
+    }
+
+    public async Task<HashSet<(long Blocker, long Blocked)>> BlockedAmongAsync(IReadOnlyCollection<long> userIds, CancellationToken ct)
+    {
+        if (userIds.Count < 2) return [];
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<(long Blocker, long Blocked)>(Sql.Cmd("SELECT UserId AS Blocker, BlockedUserId AS Blocked FROM dbo.ChatBlocks WHERE UserId IN @userIds AND BlockedUserId IN @userIds", new { userIds }, null, ct));
+        return [.. rows];
+    }
+
+    public async Task<HashSet<(long A, long B)>> IntroducedAmongAsync(IReadOnlyCollection<long> userIds, CancellationToken ct)
+    {
+        if (userIds.Count < 2) return [];
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<(long Low, long High)>(Sql.Cmd("SELECT UserLow AS Low, UserHigh AS High FROM dbo.ChatIntroductions WHERE UserLow IN @userIds AND UserHigh IN @userIds", new { userIds }, null, ct));
+        var set = new HashSet<(long, long)>();
+        foreach (var (lo, hi) in rows) { set.Add((lo, hi)); set.Add((hi, lo)); }
+        return set;
     }
 
     public async Task<bool> WereIntroducedAsync(long a, long b, CancellationToken ct)

@@ -20,7 +20,7 @@ public sealed class ChatHostOptions
 /// send an ordinary chat request. Room answers come from the curated library only. A flag goes to staff as ids and a reason. Stanley never removes, mutes, pins or closes anything, and says nothing where the member muted him
 /// or a supervised child is present. Nothing here logs or audits a name or a message.
 /// </summary>
-public sealed class ChatHostService(IChatHostStore store, IChatStore chat, ChatService chatService, IChatGroupStore groups, IChatHuddleStore profiles, IUserClock userClock, IClock clock, IAuditLog audit, IOptions<ChatHostOptions> options, IOptions<ChatRoomOptions> roomOptions, ChatNotifier notifier)
+public sealed class ChatHostService(IChatHostStore store, IChatStore chat, ChatService chatService, IChatHuddleStore profiles, IUserClock userClock, IClock clock, IAuditLog audit, IOptions<ChatHostOptions> options, IOptions<ChatRoomOptions> roomOptions, ChatNotifier notifier)
 {
     public const string IntroTail = " You can send a chat request from your chats if you like.";
     private const int MaxMeetUps = 20;
@@ -124,16 +124,12 @@ public sealed class ChatHostService(IChatHostStore store, IChatStore chat, ChatS
     private async Task<string?> TryMatchAsync(long groupId, long me, DateTime now, CancellationToken ct)
     {
         var live = await store.ListLiveOptInsAsync(groupId, now, ct);
-        var counts = new Dictionary<long, int>();
-        foreach (var o in live) counts[o.UserId] = await store.IntroducedSinceAsync(o.UserId, now.AddHours(-24), ct);
-        var blocked = new HashSet<(long, long)>();
-        var met = new HashSet<(long, long)>();
-        foreach (var a in live)
-            foreach (var b in live.Where(x => x.UserId != a.UserId && x.Interest == a.Interest))
-            {
-                if (await groups.HasBlockedAsync(a.UserId, b.UserId, ct)) blocked.Add((a.UserId, b.UserId));
-                if (await store.WereIntroducedAsync(a.UserId, b.UserId, ct)) met.Add((a.UserId, b.UserId));
-            }
+        // Three queries for the whole room, not two per pair of people.
+        var ids = live.Select(o => o.UserId).Distinct().ToList();
+        var since = await store.IntroducedCountsSinceAsync(ids, now.AddHours(-24), ct);
+        var counts = ids.ToDictionary(id => id, id => since.GetValueOrDefault(id));
+        var blocked = await store.BlockedAmongAsync(ids, ct);
+        var met = await store.IntroducedAmongAsync(ids, ct);
         var pairs = ChatHostRules.Match(live.Select(o => new IntroCandidate(o.UserId, o.Interest, o.AskedAt, o.Adult, o.Supervised, counts[o.UserId])), (a, b) => blocked.Contains((a, b)), (a, b) => met.Contains((a, b)));
         string? mine = null;
         foreach (var p in pairs)

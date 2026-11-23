@@ -709,12 +709,12 @@ public class AboardApiTests : JourneyWorld
     private static JsonElement Message(JsonElement thread, string id) => thread.GetProperty("messages").EnumerateArray().First(m => m.GetProperty("id").GetString() == id);
 
     [Fact]
-    public async Task AReactionIsOnePerPersonAndThePickedOneAgainTakesItAway()
+    public async Task AReactionIsOnePerPersonAndSettingNoneClearsIt()
     {
         var group = F.Chat.Group(Daniel.Id, Priya.Id);
         var said = await Say(group, Priya, "Dinner at eight?", 0);
         var daniel = await DanielToken();
-        var react = (string emoji) => ChatPost($"conversations/{group.PublicId}/messages/{said}/react", daniel, new { emoji });
+        var react = (string? emoji) => ChatPut($"conversations/{group.PublicId}/messages/{said}/reaction", daniel, new { emoji });
         var first = (await react("👍")).Json.EnumerateArray().Single();
         Assert.Equal((1, true), (first.GetProperty("count").GetInt32(), first.GetProperty("mine").GetBoolean()));
         var replaced = (await react("❤️")).Json.EnumerateArray().Single();
@@ -722,7 +722,7 @@ public class AboardApiTests : JourneyWorld
         var seenByPriya = Message((await ChatGet(Msgs(group), await SignIn(Priya))).Json, said).GetProperty("reactions").EnumerateArray().Single();
         Assert.Equal(["Daniel U."], seenByPriya.GetProperty("names").EnumerateArray().Select(n => n.GetString()!).ToArray());
         Assert.False(seenByPriya.GetProperty("mine").GetBoolean());
-        Assert.Empty((await react("❤️")).Json.EnumerateArray());   // the same one again clears it
+        Assert.Empty((await react(null)).Json.EnumerateArray());   // setting none clears it
         Assert.False(Message((await ChatGet(Msgs(group), daniel)).Json, said).TryGetProperty("reactions", out _));
         Is(HttpStatusCode.BadRequest, "emoji", await react("🔥"));
     }
@@ -734,7 +734,7 @@ public class AboardApiTests : JourneyWorld
         var theirs = F.Chat.Direct(Paul.Id, Stranger.Id);
         var theirMessage = await Say(theirs, Paul, "Private", 0);
         var daniel = await DanielToken();
-        Assert.Equal(HttpStatusCode.NotFound, (await ChatPost($"conversations/{theirs.PublicId}/messages/{theirMessage}/react", daniel, new { emoji = "👍" })).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatPut($"conversations/{theirs.PublicId}/messages/{theirMessage}/reaction", daniel, new { emoji = "👍" })).Status);
         Assert.Equal(HttpStatusCode.NotFound, (await ChatPost($"conversations/{theirs.PublicId}/delivered", daniel)).Status);
         // Naming their message from my own conversation is refused as if it did not exist, and nothing is stored.
         Is(HttpStatusCode.BadRequest, "replyTo", await ChatPost(Msgs(mine), daniel, new { text = "Hi", replyTo = theirMessage }));
@@ -743,7 +743,7 @@ public class AboardApiTests : JourneyWorld
         // And a member cannot react to a message of their own conversation that is not a person's (a line about the group).
         F.Chat.Messages.Add(new InMemoryChatStore.Stored(mine.Id, new ChatMessageRow { Id = 9001, PublicId = Guid.NewGuid(), FromUserId = Priya.Id, Text = "Priya joined", IsSystem = true, At = SeaDay }, null));
         var line = F.Chat.Messages.Last().Row.PublicId;
-        Is(HttpStatusCode.BadRequest, "notMessage", await ChatPost($"conversations/{mine.PublicId}/messages/{line}/react", daniel, new { emoji = "👍" }));
+        Is(HttpStatusCode.BadRequest, "notMessage", await ChatPut($"conversations/{mine.PublicId}/messages/{line}/reaction", daniel, new { emoji = "👍" }));
     }
 
     [Fact]
@@ -779,7 +779,7 @@ public class AboardApiTests : JourneyWorld
         var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
         var said = await Say(direct, Priya, "Bye", 0);
         direct.DirectEnded = true;
-        Is(HttpStatusCode.Conflict, "closed", await ChatPost($"conversations/{direct.PublicId}/messages/{said}/react", await DanielToken(), new { emoji = "👍" }));
+        Is(HttpStatusCode.Conflict, "closed", await ChatPut($"conversations/{direct.PublicId}/messages/{said}/reaction", await DanielToken(), new { emoji = "👍" }));
     }
 
     [Fact]
@@ -1075,7 +1075,7 @@ public class AboardApiTests : JourneyWorld
         var gone = Message(thread, said);
         Assert.Equal(("", true), (gone.GetProperty("text").GetString(), gone.GetProperty("deleted").GetBoolean()));
         Assert.True(Message(thread, answer).GetProperty("replyTo").GetProperty("removed").GetBoolean());
-        Is(HttpStatusCode.BadRequest, "notMessage", await ChatPost($"{One(group, said)}/react", priya, new { emoji = "👍" }));
+        Is(HttpStatusCode.BadRequest, "notMessage", await ChatPut($"{One(group, said)}/reaction", priya, new { emoji = "👍" }));
         Is(HttpStatusCode.BadRequest, "replyTo", await ChatPost(Msgs(group), priya, new { text = "Still there?", replyTo = said }));
         Is(HttpStatusCode.Conflict, "deleted", await ChatPatch(One(group, said), daniel, new { text = "Back again" }));
         Assert.Equal("Wrong chat, sorry", F.Chat.Messages.Single(m => m.Row.PublicId.ToString() == said).Row.OriginalText);

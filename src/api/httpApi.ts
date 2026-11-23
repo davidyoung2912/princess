@@ -275,7 +275,6 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     boardIn: (id, messageId, item, on) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/board`, { item, in: on }),
     bundleOutcome: (id, messageId, done, how) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/outcome`, how === undefined ? { done } : { done, how }),
     rsvp: (id, messageId, choice) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/rsvp`, { choice }),
-    react: (id, messageId, emoji) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/react`, { emoji }),
     setReaction: (id, messageId, emoji) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/reaction`, { emoji }),
     delivered: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/delivered`) },
     ack: async (id, messageId) => { await send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/ack`) },

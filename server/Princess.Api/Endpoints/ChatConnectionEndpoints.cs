@@ -11,7 +11,7 @@ public static class ChatConnectionEndpoints
 
     public static void MapChatConnectionEndpoints(this IEndpointRouteBuilder api)
     {
-        var chat = api.MapGroup("/me/chat").WithTags("Chat connections");
+        var chat = api.MapGroup("/me/chat").WithTags("Chat: connections");
 
         chat.MapGet("/people", async (string? query, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SearchAsync(await me.LoadAsync(ct), query, ct)))
             .RequireRateLimiting(SearchLimiter)

@@ -195,6 +195,6 @@ public sealed class AccountService(
     private static HelperDto? ToDto(HelperRecord? h, DateTime now) => h is null ? null : new(
         h.Name, h.Relationship, h.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), h.Status, TripRules.ToMs(h.ChangedAt), h.HelperUserId is not null, h.InviteExpiresAt > now ? h.InviteCode : null, h.InviteExpiresAt is { } e ? TripRules.ToMs(e) : null);
 
-    public async Task<List<HistoryEntryDto>> HistoryAsync(UserRecord actor, CancellationToken ct) =>
-        (await accounts.ListHistoryAsync(actor.Id, ct)).Select(h => new HistoryEntryDto(h.PublicId, TripRules.ToMs(h.At), h.By, h.What, h.Detail)).ToList();
+    public async Task<List<HistoryEntryDto>> HistoryAsync(UserRecord actor, CancellationToken ct, int? limit = null) =>
+        (await accounts.ListHistoryAsync(actor.Id, ct)).Take(ListLimit.Clamp(limit)).Select(h => new HistoryEntryDto(h.PublicId, TripRules.ToMs(h.At), h.By, h.What, h.Detail)).ToList();
 }

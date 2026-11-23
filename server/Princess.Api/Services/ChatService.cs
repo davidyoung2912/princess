@@ -105,7 +105,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         catch (ApiException) { return null; }
     }
 
-    private async Task<ChatBoardDto> BoardDtoAsync(UserRecord actor, ChatBoard board, CancellationToken ct)
+    private async Task<ChatBoardDto> BoardDtoAsync(UserRecord actor, ChatBoard board, CancellationToken ct, IReadOnlyList<(int Day, string Start, int Minutes)>? busy = null)
     {
         var items = new List<ChatBundleDto?>();
         var gone = new List<int>();
@@ -116,7 +116,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             items.Add(one);
         }
         var slots = items.Select(i => i?.Time is { } t && i.Day is { } d ? $"{d}@{t}" : "").ToList();
-        var clashes = (await share.SlotClashesAsync(actor, slots, ct));
+        var clashes = busy is null ? await share.SlotClashesAsync(actor, slots, ct) : ChatShareService.ClashesAmong(busy, slots);
         return new ChatBoardDto(board.Day, items, gone.Count > 0 ? gone : null, clashes.Count > 0 ? clashes : null);
     }
 
@@ -177,13 +177,15 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
                 pollBundles[m.Id] = (list, gone);
             }
         // Phase B5: for a time poll, which slots clash with the reader's own programme (private to the reader).
+        // The reader's own programme is read once for every poll and board on the page, not once per message.
+        var busy = page.Any(m => m.DeletedAt is null && m.Kind is ChatPlanningRules.Poll or ChatBoardRules.Kind) ? await share.BusyAsync(actor, ct) : [];
         var slotClashes = new Dictionary<long, List<int>>();
         foreach (var m in page.Where(m => m.DeletedAt is null && m.Kind == ChatPlanningRules.Poll))
-            if (ChatPlanningRules.ParsePoll(m.Payload) is { Slots: { } slots }) slotClashes[m.Id] = await share.SlotClashesAsync(actor, slots, ct);
+            if (ChatPlanningRules.ParsePoll(m.Payload) is { Slots: { } slots }) slotClashes[m.Id] = ChatShareService.ClashesAmong(busy, slots);
         // Phase B6: a day board's things are rebuilt for this reader on every read, with the ones that clash with their own programme marked (private to them).
         var boards = new Dictionary<long, ChatBoardDto>();
         foreach (var m in page.Where(m => m.DeletedAt is null && m.Kind == ChatBoardRules.Kind))
-            if (ChatBoardRules.Parse(m.Payload) is { } board) boards[m.Id] = await BoardDtoAsync(actor, board, ct);
+            if (ChatBoardRules.Parse(m.Payload) is { } board) boards[m.Id] = await BoardDtoAsync(actor, board, ct, busy);
         var adminHere = ChatPlanningService.AdminOf(member, actor.Id);
         var blockedForAnswers = answerable.Count == 0 ? new HashSet<long>() : new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct));
         var messages = new List<ChatMessageDto>();
@@ -493,30 +495,23 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     }
 
     /// <summary>
-    /// Reacts to a message with one of the six emoji (phase 1): a different one replaces the caller's old reaction, the same one again takes it away. Returns the chips now under the message.
-    /// The other members' open apps are nudged to refetch; no phone alert is ever sent for a reaction. 400 emoji or notMessage (a line about the group, or a notice); 403 stanley; 404 for a message the caller cannot read; 409 closed.
-    /// </summary>
-    public Task<List<ChatReactionDto>> ReactAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatReactRequest? body, CancellationToken ct) =>
-        ApplyReactionAsync(actor, conversationId, messageId, body?.Emoji, toggle: true, ct);
-
-    /// <summary>
-    /// Sets the caller's reaction to exactly <c>emoji</c>, or clears it when <c>emoji</c> is null or empty (phase 1 follow-up). Unlike <see cref="ReactAsync"/> it is idempotent, so a tap queued while offline
-    /// can be replayed after a reconnect without undoing anything. The last write wins. Same refusals as <see cref="ReactAsync"/>.
+    /// Sets the caller's reaction to exactly <c>emoji</c> (one of the six), or clears it when <c>emoji</c> is null or empty. Idempotent, so a tap queued while offline can be replayed after a reconnect without
+    /// undoing anything; the last write wins. Returns the chips now under the message. The other members' open apps are nudged to refetch; no phone alert is ever sent for a reaction.
+    /// 400 emoji or notMessage (a line about the group, or a notice); 403 stanley; 404 for a message the caller cannot read; 409 closed.
     /// </summary>
     public Task<List<ChatReactionDto>> SetReactionAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatReactRequest? body, CancellationToken ct) =>
-        ApplyReactionAsync(actor, conversationId, messageId, string.IsNullOrEmpty(body?.Emoji) ? null : body!.Emoji, toggle: false, ct);
+        ApplyReactionAsync(actor, conversationId, messageId, string.IsNullOrEmpty(body?.Emoji) ? null : body!.Emoji, ct);
 
-    private async Task<List<ChatReactionDto>> ApplyReactionAsync(UserRecord actor, Guid conversationId, Guid messageId, string? emoji, bool toggle, CancellationToken ct)
+    private async Task<List<ChatReactionDto>> ApplyReactionAsync(UserRecord actor, Guid conversationId, Guid messageId, string? emoji, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
-        if (emoji is null ? toggle : !ChatReactionRules.IsAllowed(emoji)) throw ApiException.Invalid("emoji");
+        if (emoji is not null && !ChatReactionRules.IsAllowed(emoji)) throw ApiException.Invalid("emoji");
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
         if (!ChatReactionRules.CanTarget(message.IsSystem, message.FromStanley) || message.DeletedAt is not null) throw ApiException.Invalid("notMessage");
         var now = await userClock.NowAsync(actor, ct);
-        var next = toggle ? ChatReactionRules.Toggle(await store.GetReactionAsync(message.Id, actor.Id, ct), emoji!) : emoji;
-        await store.SetReactionAsync(message.Id, actor.Id, next, now, ct);
+        await store.SetReactionAsync(message.Id, actor.Id, emoji, now, ct);
         await TellThreadChangedAsync(actor, member, "reaction", ct);
         var peers = (await store.ListMembersAsync(member.GroupId, ct)).ToDictionary(p => p.UserId);
         return ReactionDtos(await store.ListReactionsAsync(message.Id, ct), actor.Id, peers, new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct)));

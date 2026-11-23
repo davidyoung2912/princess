@@ -14,7 +14,7 @@ public static class ChatRoomEndpoints
 {
     public static void MapChatRoomEndpoints(this IEndpointRouteBuilder api)
     {
-        var chat = api.MapGroup("/me/chat/rooms").WithTags("Chat rooms");
+        var chat = api.MapGroup("/me/chat/rooms").WithTags("Chat: rooms");
 
         chat.MapGet("", async (ICurrentUser me, ChatRoomService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("The channels and rooms the caller may see: open channels, interest rooms, and the sailing rooms of sailings the caller is booked on (plus any they are already in). `blocked` says why they cannot join: off, child, closed, noBooking, full, removed.");
@@ -34,7 +34,7 @@ public static class ChatRoomEndpoints
         chat.MapPost("/{id:guid}/questions", async (Guid id, ChatRoomQuestionBody body, ICurrentUser me, ChatRoomService svc, CancellationToken ct) => { await svc.SuggestQuestionAsync(await me.LoadAsync(ct), id, body, ct); return Results.NoContent(); })
             .WithSummary("Suggests a question for the room's popular questions (any guest who can see the room; it reaches staff only). 400 text|contactInfo|blocked, 403 child, 404, 429 tooMany (three waiting).");
 
-        var admin = api.MapGroup("/admin/chat/rooms").WithTags("Chat rooms");
+        var admin = api.MapGroup("/admin/chat/rooms").WithTags("Chat: rooms");
 
         admin.MapGet("", async (ICurrentUser me, ChatRoomService svc, CancellationToken ct) => Results.Ok(await svc.ListAdminAsync(await AdminAsync(me, ct), ct)))
             .WithSummary("Administrators only: every channel and room with members, moderators, whether it is closed, slow mode and whether moderators are on duty now.");

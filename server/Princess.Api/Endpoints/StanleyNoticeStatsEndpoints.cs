@@ -95,7 +95,7 @@ public static class StanleyNoticeStatsEndpoints
                 return Results.NoContent();
             })
             .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
-            .WithTags("Chat Stanley")
+            .WithTags("Chat: Stanley")
             .WithSummary("The guest tapped Use this on one of Stanley's suggestions (`kind`: reword, icebreakers or reply). Counts only: nothing about the text or the conversation is kept. 400 kind.");
     }
 

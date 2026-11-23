@@ -26,9 +26,9 @@ public static class MediaEndpoints
             .WithTags("Pictures")
             .WithSummary("Keeps a picture the guest sends as the request body (JPEG or PNG, at most 2 MB, at most 8000 pixels a side and 25 million in all), with ?purpose=cabin|book|postcard|case, ?ref= (a stateroom category for cabin, a cruise day 1 to 8 or cover for book, none for postcard, a case number for case), ?kind= (room, view, obstruction or noise for cabin) and ?caption= (at most 140 characters). The type is read from the bytes, the EXIF and other metadata are removed, and a scanner looks at it first. A cabin picture waits for moderation. 400 badPurpose, empty, size, badRef, badKind, badCaption, type, unreadable or scan; 403 childCannotUpload; 409 full (40 pictures or 20 MB).");
 
-        api.MapGet("/me/media", async (string? purpose, ICurrentUser me, MediaService svc, CancellationToken ct) => Results.Ok(await svc.MineAsync(await me.LoadAsync(ct), purpose, ct)))
+        api.MapGet("/me/media", async (string? purpose, int? limit, ICurrentUser me, MediaService svc, CancellationToken ct) => Results.Ok(await svc.MineAsync(await me.LoadAsync(ct), purpose, ct, limit)))
             .WithTags("Pictures")
-            .WithSummary("The guest's own pictures, newest first, optionally for one purpose, each with its moderation status (pending, approved or rejected).");
+            .WithSummary("The guest's own pictures, newest first, optionally for one purpose, each with its moderation status (pending, approved or rejected). `limit` (default 100, at most 200) keeps the newest.");
 
         api.MapGet("/me/media/usage", async (ICurrentUser me, MediaService svc, CancellationToken ct) => Results.Ok(await svc.UsageAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Pictures")

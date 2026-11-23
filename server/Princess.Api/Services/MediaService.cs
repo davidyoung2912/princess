@@ -1,3 +1,4 @@
+using Princess.Api.Contracts;
 using System.Text;
 using Princess.Api.Auth;
 using Princess.Api.Data;
@@ -53,11 +54,11 @@ public sealed class MediaService(IMediaStore store, IUserClock clock, IMediaScan
         return Dto((await store.FindAsync(id, ct))!, now, true);
     }
 
-    public async Task<List<MediaDto>> MineAsync(UserRecord user, string? purpose, CancellationToken ct)
+    public async Task<List<MediaDto>> MineAsync(UserRecord user, string? purpose, CancellationToken ct, int? limit = null)
     {
         if (purpose is not null && !MediaRules.KnownPurpose(purpose)) throw ApiException.Invalid("badPurpose");
         var now = await clock.NowAsync(user, ct);
-        return [.. (await store.ListMineAsync(user.Id, purpose, ct)).Select(r => Dto(r, now, true))];
+        return [.. (await store.ListMineAsync(user.Id, purpose, ct)).Take(ListLimit.Clamp(limit)).Select(r => Dto(r, now, true))];
     }
 
     public async Task<MediaUsageDto> UsageAsync(UserRecord user, CancellationToken ct)

@@ -9,7 +9,7 @@ public static class ChatStanleyEndpoints
 {
     public static void MapChatStanleyEndpoints(this IEndpointRouteBuilder api)
     {
-        var chat = api.MapGroup("/me/chat").WithTags("Chat Stanley");
+        var chat = api.MapGroup("/me/chat").WithTags("Chat: Stanley");
 
         chat.MapGet("/stanley", async (ICurrentUser me, ChatHelpService svc, CancellationToken ct) => Results.Ok(svc.Status(await me.LoadAsync(ct))))
             .WithSummary("Whether Stanley's friendly chat help is on for the caller (never for a supervised child), and the lines the request screens show.");

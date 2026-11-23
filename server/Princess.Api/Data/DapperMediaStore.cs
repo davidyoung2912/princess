@@ -25,7 +25,7 @@ public sealed class DapperMediaStore(IDbConnectionFactory db) : IMediaStore
     public async Task<List<MediaRow>> ListMineAsync(long userId, string? purpose, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        return (await c.QueryAsync<MediaRow>(Sql.Cmd($"SELECT {Columns} FROM dbo.GuestMedia WHERE UserId = @userId AND (@purpose IS NULL OR Purpose = @purpose) ORDER BY CreatedAt DESC, Id DESC", new { userId, purpose }, null, ct))).ToList();
+        return (await c.QueryAsync<MediaRow>(Sql.Cmd($"SELECT TOP (200) {Columns} FROM dbo.GuestMedia WHERE UserId = @userId AND (@purpose IS NULL OR Purpose = @purpose) ORDER BY CreatedAt DESC, Id DESC", new { userId, purpose }, null, ct))).ToList();
     }
 
     public async Task<List<MediaRow>> ListByReferenceAsync(string purpose, string reference, int max, CancellationToken ct)

@@ -71,10 +71,10 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
 
     // ---- Support ----
 
-    public async Task<List<TicketDto>> TicketsAsync(UserRecord actor, CancellationToken ct)
+    public async Task<List<TicketDto>> TicketsAsync(UserRecord actor, CancellationToken ct, int? limit = null)
     {
         var now = await clock.NowAsync(actor, ct);
-        return (await inbox.ListTicketsAsync(actor.Id, ct)).Select(t => Ticket(t, now)).ToList();
+        return (await inbox.ListTicketsAsync(actor.Id, ct)).Take(ListLimit.Clamp(limit)).Select(t => Ticket(t, now)).ToList();
     }
 
     public async Task<TicketDto> CreateTicketAsync(UserRecord actor, CreateTicketRequest req, CancellationToken ct)
@@ -102,8 +102,8 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
 
     // ---- Feedback ----
 
-    public async Task<List<FeedbackRowDto>> FeedbackAsync(UserRecord actor, CancellationToken ct) =>
-        (await inbox.ListFeedbackAsync(actor.Id, ct)).Select(Row).ToList();
+    public async Task<List<FeedbackRowDto>> FeedbackAsync(UserRecord actor, CancellationToken ct, int? limit = null) =>
+        (await inbox.ListFeedbackAsync(actor.Id, ct)).Take(ListLimit.Clamp(limit)).Select(Row).ToList();
 
     public async Task<List<FeedbackRowDto>> SendFeedbackAsync(UserRecord actor, SendFeedbackRequest req, CancellationToken ct)
     {

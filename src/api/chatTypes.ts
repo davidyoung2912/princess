@@ -413,13 +413,8 @@ export interface ChatConversationsApi {
   /** Alerts you only for a mention in this conversation. Returns the new state. Rejects `forbidden` (`stanley`) or `notFound`. */
   mentionsOnly(id: string, on: boolean): Promise<boolean>
   /**
-   * Reacts with one of the six emoji (`REACTIONS`): a different one replaces yours, the same one again takes it away. Returns the chips now under the message.
+   * Sets your reaction to exactly `emoji` (one of `REACTIONS`), or clears it with null; a different one replaces yours. Idempotent, so a queued tap can be replayed after a reconnect without undoing anything. Returns the chips now under the message.
    * Rejects `invalid` (`emoji`, `notMessage`), `forbidden` (`stanley`), `notFound` or `conflict` (`closed`).
-   */
-  react(id: string, messageId: string, emoji: string): Promise<ChatReaction[]>
-  /**
-   * Sets your reaction to exactly `emoji`, or clears it with null. Unlike `react` it is idempotent, so it is the one a queued tap uses: replaying it after a reconnect cannot undo anything.
-   * Rejects as `react` does.
    */
   setReaction(id: string, messageId: string, emoji: string | null): Promise<ChatReaction[]>
   /** This device has the messages others sent here, so their senders can show Delivered. Idempotent; rejects `notFound`. */
